@@ -77,8 +77,12 @@
 	aria-label={onClose ? 'Menu' : 'Mailboxes'}
 >
 	{#if onClose}
-		<!-- Drawer header: the drawer is a screen of its own on a phone. -->
-		<div class="flex h-14 shrink-0 items-center justify-between border-b border-[var(--z-hairline)] px-3">
+		<!--
+			Drawer header: the drawer is a screen of its own on a phone. The header,
+			sections and accounts are phone-only: from `md` the shell header is back
+			with its tabs and avatar, and the drawer is just the folder list.
+		-->
+		<div class="flex h-14 shrink-0 items-center justify-between border-b border-[var(--z-hairline)] px-3 md:hidden">
 			<!-- Home is this very page, so tapping the mark just puts the drawer away. -->
 			<ZaurMark onNavigate={onClose} />
 			<button type="button" class="z-icon-btn !size-11 !rounded-[10px]" aria-label="Close folder list" onclick={onClose}>
@@ -90,8 +94,8 @@
 	{/if}
 
 	{#if onClose}
-		<!-- The header tabs hide on a phone; the drawer is where you change section. -->
-		<nav class="grid shrink-0 grid-cols-2 gap-1 border-b border-[var(--z-hairline)] px-3 py-2" aria-label="Sections">
+		<!-- Mail's phone bar has no tabs or avatar; the drawer is where you change section and account. -->
+		<nav class="grid shrink-0 grid-cols-2 gap-1 border-b border-[var(--z-hairline)] px-3 py-2 md:hidden" aria-label="Sections">
 			{#each sections as section (section.href)}
 				{@const current = section.match(page.url.pathname)}
 				<a
@@ -159,7 +163,7 @@
 	</div>
 
 	{#if onClose && session}
-		<div class="shrink-0 border-t border-[var(--z-hairline)] px-3 py-2">
+		<div class="shrink-0 border-t border-[var(--z-hairline)] px-3 py-2 md:hidden">
 			<h2 class="z-caption mb-1.5 px-1.5">Accounts</h2>
 			{#if accountError}
 				<p class="mb-1 px-1.5 text-[12px] text-[var(--z-ch-discard-ink)]" role="alert">{accountError}</p>

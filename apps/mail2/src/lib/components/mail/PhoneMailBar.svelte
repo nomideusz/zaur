@@ -6,16 +6,16 @@
 	import type { ListRow } from '#lib/mail/rows';
 	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
 	import { COUNT_BADGE, mailboxChannel } from '#lib/mail/colors';
-	import AccountMenu from './AccountMenu.svelte';
 	import ActionIcon from './ActionIcon.svelte';
 
 	/**
 	 * The phone's one bar. The shell header and the list header would otherwise
 	 * stack, and a selection would stack a third idea under them. This row wears
 	 * whichever of the three the screen is in, at 44px targets: browsing (folder,
-	 * select, filter, search, compose, account), searching, or acting on a
-	 * selection. It sits above the panes, so the folder drawer cannot cover the
-	 * control that dismisses it.
+	 * filter, search, compose), searching, or acting on a selection. Accounts and
+	 * sections live in the folder drawer, so the bar carries no avatar. It sits
+	 * above the panes, so the folder drawer cannot cover the control that
+	 * dismisses it.
 	 */
 	interface Props {
 		class?: string;
@@ -270,7 +270,6 @@
 				</button>
 			{/if}
 		</div>
-		<AccountMenu class="!size-11 shrink-0 rounded-[10px] text-[13px]" />
 	{:else}
 		<div class="flex min-w-0 flex-1 items-center gap-1">
 		{#if onToggleSidebar}
@@ -312,18 +311,13 @@
 		{:else}
 			<span class="min-w-0 truncate px-2 text-[15px] font-semibold">{activeMailbox?.name ?? 'Folder'}</span>
 		{/if}
-			<AccountMenu class="!size-11 shrink-0 rounded-[10px] text-[13px]" />
 		</div>
 
 		<!--
-			The icon cluster owns the right edge. Below 360px the select menu
-			yields so the folder name still fits; a row checkbox starts a
-			selection, and the menu comes back on the bulk bar.
+			Only what the list screen reaches for. A row's checkbox starts a
+			selection, and the select menu comes with the bulk bar.
 		-->
 		<div class="flex shrink-0 items-center gap-1">
-		<div class="contents max-[359px]:hidden">
-			{@render selectMenu()}
-		</div>
 
 		{#if !searchQuery}
 			<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
@@ -333,7 +327,14 @@
 						: '!border-[var(--z-accent-line)] !text-[var(--z-accent-ink)]'}"
 					aria-label="Filter, {filterLabel}"
 				>
-					{filterLabel}
+					<!-- Quiet while the list is whole; once it narrows the list, it says how. -->
+					{#if filter === 'all'}
+						<svg class="size-[18px] text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M2.5 4.5h11M4.5 8h7M6.5 11.5h3" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+						</svg>
+					{:else}
+						{filterLabel}
+					{/if}
 				</Menu.Trigger>
 				<Portal>
 					<Menu.Positioner>
