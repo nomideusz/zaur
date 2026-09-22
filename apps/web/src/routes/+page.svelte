@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Laya',
+			desc: "Laya's open decision model behind TypeSafe's /v1/systemone API, so Jev SDK code runs on your own server.",
+			deploy: 'https://railway.com/deploy/laya',
+			source: 'https://github.com/nomideusz/laya-railway'
+		},
+		{
 			name: 'Minecraft Server',
 			desc: "A Paper server players can join minutes after deploy, run from Crafty's web panel, with nightly backups.",
 			deploy: 'https://railway.com/deploy/minecraft-java',
