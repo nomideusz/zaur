@@ -94,15 +94,15 @@
 		reader.close();
 	}
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 	const myEmails = $derived(
 		new Set((session?.accounts ?? []).map((account) => account.username.toLowerCase()))
 	);
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
-		const current = whoami()?.current;
-		if (whoami().ready && !current) goto('/login', { replaceState: true });
+		if (who.ready && !who.current) goto('/login', { replaceState: true });
 	});
 
 	/**

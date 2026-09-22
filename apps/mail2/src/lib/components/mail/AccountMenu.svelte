@@ -17,7 +17,8 @@
 	 */
 	let { class: className = '' }: { class?: string } = $props();
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 	const others = $derived((session?.accounts ?? []).filter((account) => !account.active));
 
 	function initialsOf(name: string, email: string): string {

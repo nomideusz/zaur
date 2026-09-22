@@ -9,14 +9,14 @@
 	import { contacts as contactsRemote, saveContact, deleteContact } from '../../contacts.remote';
 	import { LiveUpdates } from '#lib/mail/live';
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 	const resource = $derived(session ? contactsRemote() : undefined);
 	const contactsState = $derived(resource?.current ?? null);
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
-		const current = whoami()?.current;
-		if (whoami().ready && !current) goto('/login', { replaceState: true });
+		if (who.ready && !who.current) goto('/login', { replaceState: true });
 	});
 
 	// Push: a card saved on the phone shows up here without a reload.

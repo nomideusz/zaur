@@ -32,11 +32,11 @@
 		createCalendar
 	} from '../../calendar.remote';
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 
 	$effect(() => {
-		const current = whoami()?.current;
-		if (whoami().ready && !current) goto('/login', { replaceState: true });
+		if (who.ready && !who.current) goto('/login', { replaceState: true });
 	});
 
 	/* ── Where we are looking ─────────────────────────────────────────── */

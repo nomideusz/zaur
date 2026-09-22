@@ -19,7 +19,8 @@
 
 	let { mailboxes, activeMailboxId, onSelectMailbox, onNewMessage, onClose }: Props = $props();
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 	const others = $derived((session?.accounts ?? []).filter((account) => !account.active));
 	let accountError = $state<string | null>(null);
 

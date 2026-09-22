@@ -25,7 +25,8 @@
 	import { accountPrefs, setAccountPrefs, aiCategoriesOffered } from '../../settings.remote';
 	import { CATEGORIES } from '@zaur/mail-core';
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 	const identitiesResource = $derived(session ? identities() : undefined);
 	const quotaResource = $derived(session ? quota() : undefined);
 	const rulesResource = $derived(session ? rulesQuery() : undefined);

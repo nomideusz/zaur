@@ -22,7 +22,8 @@
 	} from '../../../security.remote';
 	import type { CredentialSummary, CredentialType } from '@zaur/server-auth';
 
-	const session = $derived(whoami()?.current ?? null);
+	const who = whoami();
+	const session = $derived(who.current ?? null);
 	const overviewResource = $derived(session ? securityOverview() : undefined);
 	const overview = $derived(overviewResource?.current ?? null);
 

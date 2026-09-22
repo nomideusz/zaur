@@ -18,6 +18,12 @@ import { pushWatcher } from '#lib/server/push-watcher';
  * Sessions are created by Mail 2.0's own login (login.remote.ts); the same
  * store/cookie is shared with webmail 1.0, so a 1.0 login also works here
  * and vice versa.
+ *
+ * Components hold the query (`const who = whoami()`) instead of reading
+ * `whoami().current` inline. Kit 3 evicts a query's cache once nothing
+ * references it any more, and after that the query's `current` stops
+ * updating. A page that fetched it fresh after navigating (Calendar → Mail)
+ * stayed on "Session ended" until a reload.
  */
 export const whoami = query(async () => {
 	const { cookies } = getRequestEvent();
