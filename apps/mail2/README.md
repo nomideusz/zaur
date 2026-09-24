@@ -544,13 +544,16 @@ Those were left for discussion, decided together, and landed in this order:
 
 - **`@zaur/sprite` dropped.** The ZA/UR logomark is the mark; mail2 imported nothing
   from the package any more.
-- **A Flagged filter, and no Channels sidebar.** The list header is
-  All / Unseen / Flagged. Each goes to the server as one JMAP
-  `FilterCondition` (`notKeyword: '$seen'`, `hasKeyword: '$flagged'`), not a
+- **A Flagged filter, and a Labels group under Mailboxes.** The list header is
+  All / Unseen / Flagged plus a Label… select. Each goes to the server as one
+  JMAP `FilterCondition` (`notKeyword: '$seen'`, `hasKeyword: <keyword>`), not a
   client-side sieve of the loaded page, so it is right across the whole folder.
-  The design's Channels group in the sidebar was not built: a channel is derived
-  from a folder and a flag, so every entry in it would have duplicated a folder
-  row or this filter.
+  The design's Channels group became **Labels** (`src/lib/mail/labels.ts`):
+  Important, Flagged and each category, with their unseen counts. A label
+  filters the open folder, so the folder stays ticked alongside it. It is one
+  filter at a time, shared with the header, and ticking it again turns it off.
+  The design's rows (Needs reply, Digests, Confirmations) were placeholders, so
+  the rows are the keywords the mail really carries.
 - **Attachment retry.** A failed upload keeps its chip, in the discard channel,
   with Retry; the compose store holds the `File` until it goes up or the chip
   is removed. A chip that is still uploading shows a sliding rule rather than a

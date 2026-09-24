@@ -5,7 +5,7 @@
 	import { resyncPush } from '#lib/push';
 	import { makeRecipient } from '#lib/compose/recipients';
 	import { switchAccount, whoami } from '../session.remote';
-	import { mailboxes, threads, thread, quota, bulk, type BulkAction, type ListFilter,
+	import { mailboxes, threads, thread, quota, bulk, labelCounts, type BulkAction, type ListFilter,
 		search as searchRemote
 	} from '../mail.remote';
 	import {
@@ -81,6 +81,21 @@
 		selection = new Set();
 		// A folder you picked is a folder you want to see, not results filtered by it.
 		searchQuery = '';
+	}
+
+	function setFilter(value: ListFilter) {
+		listFilter = value;
+		cursorId = null;
+	}
+
+	/**
+	 * A label picked in the sidebar is a view you want to see: the filter the
+	 * list header hides during a search, so the search goes, and so does the drawer.
+	 */
+	function pickLabel(value: ListFilter) {
+		setFilter(value);
+		drawerOpen = false;
+		if (searchQuery) runSearch('');
 	}
 
 	function runSearch(next: string) {
@@ -190,6 +205,16 @@
 				})
 			: undefined
 	);
+
+	const labelCountsResource = $derived(
+		session && activeMailbox ? labelCounts({ mailboxId: activeMailbox.id }) : undefined
+	);
+	// Whatever moves a folder's unread count moves its labels' too, and every
+	// path that changes one (push, a read, a move) refreshes the folder list.
+	$effect(() => {
+		if (!mailboxList) return;
+		untrack(() => void labelCountsResource?.refresh());
+	});
 
 	/** Whichever of the two is driving the list right now. */
 	const listResource = $derived(searching ? searchResource : threadsResource);
@@ -712,10 +737,7 @@
 			{searchQuery}
 			onSearch={runSearch}
 			filter={listFilter}
-			onFilter={(value) => {
-				listFilter = value;
-				cursorId = null;
-			}}
+			onFilter={setFilter}
 			rows={flatRows}
 			{selection}
 			onSetSelection={(ids) => (selection = ids)}
@@ -747,6 +769,9 @@
 					mailboxes={mailboxList}
 					activeMailboxId={selectedMailboxId}
 					onSelectMailbox={selectMailbox}
+					filter={listFilter}
+					onFilter={pickLabel}
+					labelCounts={labelCountsResource?.current}
 					onClose={viewport.compact ? () => (drawerOpen = false) : undefined}
 					onNewMessage={() => {
 						drawerOpen = false;
@@ -769,10 +794,7 @@
 			{cursorId}
 			{openThreadId}
 			{selection}
-			onFilter={(value) => {
-				listFilter = value;
-				cursorId = null;
-			}}
+			onFilter={setFilter}
 			onSetSelection={(ids) => (selection = ids)}
 			onToggleSelect={toggleSelect}
 			onOpen={(threadId) => void openRow(threadId)}

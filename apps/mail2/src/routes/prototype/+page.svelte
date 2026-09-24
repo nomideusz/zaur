@@ -370,6 +370,9 @@
 					<Sidebar
 						mailboxes={mockMailboxes}
 						activeMailboxId={selectedMailboxId}
+						filter={listFilter}
+						onFilter={(value) => (listFilter = value)}
+						labelCounts={undefined}
 						onSelectMailbox={(id) => {
 							selectedMailboxId = id;
 							drawerOpen = false;

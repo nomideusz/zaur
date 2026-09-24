@@ -5,6 +5,7 @@
 	import type { RowGroup, ListRow } from '#lib/mail/rows';
 	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
 	import { CATEGORIES, CATEGORY_OTHER, categoryLabel } from '@zaur/mail-core';
+	import { filterKeyword, filterName } from '#lib/mail/labels';
 	import { formatListTime, initials } from '#lib/mail/rows';
 	import {
 		CHANNELS,
@@ -137,11 +138,20 @@
 		trash: { title: 'Trash is empty', hint: 'Deleted messages stay here before final removal.' }
 	};
 
+	/** A label (not Flagged, which has its own segment) is narrowing the folder. */
+	const labelled = $derived(filter === 'important' || filter.startsWith('cat:'));
+
+	// An empty label is not an empty folder: "Inbox zero" over a filtered inbox would lie.
 	const emptyCopy = $derived(
-		EMPTY_COPY[mailbox?.kind ?? ''] ?? {
-			title: `Nothing in ${mailbox?.name ?? 'this folder'}`,
-			hint: 'Messages will appear here as soon as they arrive.'
-		}
+		filterKeyword(filter)
+			? {
+					title: `Nothing labelled ${filterName(filter)}`,
+					hint: `No message in ${mailbox?.name ?? 'this folder'} carries this label.`
+				}
+			: (EMPTY_COPY[mailbox?.kind ?? ''] ?? {
+					title: `Nothing in ${mailbox?.name ?? 'this folder'}`,
+					hint: 'Messages will appear here as soon as they arrive.'
+				})
 	);
 </script>
 
@@ -222,15 +232,19 @@
 						<button type="button" class="z-segment !h-6 !px-2.5 @max-[430px]:hidden" aria-pressed={filter === 'flagged'} onclick={() => onFilter('flagged')}>
 							Flagged
 						</button>
-						<!-- Categories are a kind, not a state: one select keeps the group short. -->
+						<!--
+							The rest of the sidebar's Labels, in one select to keep the group
+							short — so a label ticked there is never a filter this header hides.
+						-->
 						<select
 							class="z-segment !h-6 !px-2 !pr-1 appearance-none"
-							aria-label="Category"
-							aria-pressed={filter.startsWith('cat:')}
-							value={filter.startsWith('cat:') ? filter : ''}
+							aria-label="Label"
+							aria-pressed={labelled}
+							value={labelled ? filter : ''}
 							onchange={(event) => onFilter((event.currentTarget.value || 'all') as ListFilter)}
 						>
-							<option value="">Kind…</option>
+							<option value="">Label…</option>
+							<option value="important">Important</option>
 							{#each CATEGORIES as category (category.id)}
 								<option value="cat:{category.id}">{category.label}</option>
 							{/each}
@@ -408,12 +422,16 @@
 				</span>
 				<p class="text-[14px] font-bold text-[var(--z-ink)]">{emptyCopy.title}</p>
 				<p class="max-w-[260px] text-[12.5px] leading-relaxed text-[var(--z-muted)]">{emptyCopy.hint}</p>
-				<button type="button" class="btn-tactile mt-3 !h-8" onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}>
-					<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-					</svg>
-					New message
-				</button>
+				{#if filterKeyword(filter)}
+					<button type="button" class="btn-tactile mt-3 !h-8" onclick={() => onFilter('all')}>Show all</button>
+				{:else}
+					<button type="button" class="btn-tactile mt-3 !h-8" onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}>
+						<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+						</svg>
+						New message
+					</button>
+				{/if}
 			</div>
 		{:else if groups}
 			{#each groups as group (group.label)}

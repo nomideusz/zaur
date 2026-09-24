@@ -2,7 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import type { MailboxDTO } from '#lib/mail/types';
-	import { channelStyle, identityStyle, mailboxChannel } from '#lib/mail/colors';
+	import { CHANNELS, channelStyle, identityStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
+	import { LABEL_FILTERS, filterName, type ListFilter } from '#lib/mail/labels';
 	import { signOutAccount, switchAccount, whoami } from '../../../routes/session.remote';
 	import { logout } from '../../../routes/login.remote';
 	import { sections } from './SectionTabs.svelte';
@@ -12,12 +13,37 @@
 		mailboxes: MailboxDTO[] | undefined;
 		activeMailboxId: string | null;
 		onSelectMailbox: (id: string) => void;
+		/** The list's filter; the Labels group sets it. */
+		filter: ListFilter;
+		onFilter: (value: ListFilter) => void;
+		/** Unseen mail under each label in the open folder, keyed by filter. */
+		labelCounts: Record<string, number> | undefined;
 		onNewMessage: () => void;
 		/** Set when the sidebar is a phone drawer: it gets its own header and a way to close. */
 		onClose?: () => void;
 	}
 
-	let { mailboxes, activeMailboxId, onSelectMailbox, onNewMessage, onClose }: Props = $props();
+	let {
+		mailboxes,
+		activeMailboxId,
+		onSelectMailbox,
+		filter,
+		onFilter,
+		labelCounts,
+		onNewMessage,
+		onClose
+	}: Props = $props();
+
+	/**
+	 * Your flag and the server's "important" wear the channels their chips do;
+	 * a category has no hue of its own, so it takes the one a custom folder
+	 * does — digest, what people file into them.
+	 */
+	function labelChannel(label: ListFilter): Channel {
+		if (label === 'flagged') return CHANNELS.flagged;
+		if (label === 'important') return CHANNELS.needs;
+		return CHANNELS.digest;
+	}
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
@@ -72,6 +98,38 @@
 	}
 </script>
 
+<!--
+	A checkbox row in a channel: the open folder (or the label in force) takes
+	the channel's fill and stroke, its rail lights, its box ticks in the
+	channel's hue. Anything else is plain, and the box says so. A folder row is
+	where you are (`aria-current`); a label row is a switch (`aria-pressed`).
+-->
+{#snippet checkRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false)}
+	<button
+		type="button"
+		class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] {on
+			? 'z-hue-wash font-semibold'
+			: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'}"
+		style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{on ? '1' : '0'}"
+		style:color={on ? channel.ink : undefined}
+		aria-current={!toggle && on ? 'true' : undefined}
+		aria-pressed={toggle ? on : undefined}
+		{onclick}
+	>
+		<span class="hobday-checkbox" data-checked={on} aria-hidden="true"></span>
+		<span class="min-w-0 flex-1 truncate">{name}</span>
+		{#if count > 0}
+			<span
+				class="z-count"
+				style:--z-stroke={on ? channel.stroke : 'var(--z-line)'}
+				style:--z-ink-on={on ? channel.ink : 'var(--z-muted)'}
+			>
+				{count}
+			</span>
+		{/if}
+	</button>
+{/snippet}
+
 <aside
 	class="flex h-full w-full shrink-0 flex-col border-r border-[var(--z-line)] bg-[var(--z-surface)] select-none"
 	aria-label={onClose ? 'Menu' : 'Mailboxes'}
@@ -123,35 +181,10 @@
 			{#if mailboxes}
 				{#each mailboxes as mailbox (mailbox.id)}
 					{@const isSelected = mailbox.id === activeMailboxId}
-					{@const channel = mailboxChannel(mailbox.kind)}
 					<li>
-						<!--
-							A checkbox row in the folder's channel: the open folder takes the
-							channel's fill and stroke, its rail lights, its box ticks in the
-							channel's hue. A closed folder is plain, and the box says so.
-						-->
-						<button
-							type="button"
-							class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] {isSelected
-								? 'z-hue-wash font-semibold'
-								: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'}"
-							style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{isSelected ? '1' : '0'}"
-							style:color={isSelected ? channel.ink : undefined}
-							aria-current={isSelected ? 'true' : undefined}
-							onclick={() => onSelectMailbox(mailbox.id)}
-						>
-							<span class="hobday-checkbox" data-checked={isSelected} aria-hidden="true"></span>
-							<span class="min-w-0 flex-1 truncate">{mailbox.name}</span>
-							{#if mailbox.unread > 0}
-								<span
-									class="z-count"
-									style:--z-stroke={isSelected ? channel.stroke : 'var(--z-line)'}
-									style:--z-ink-on={isSelected ? channel.ink : 'var(--z-muted)'}
-								>
-									{mailbox.unread}
-								</span>
-							{/if}
-						</button>
+						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
+							onSelectMailbox(mailbox.id)
+						)}
 					</li>
 				{/each}
 			{:else}
@@ -159,6 +192,24 @@
 					<li class="z-skeleton h-[33px] rounded-[8px] bg-[var(--z-sunken)]"></li>
 				{/each}
 			{/if}
+		</ul>
+
+		<!--
+			Labels narrow the open folder to what a message carries — your flag, the
+			server's "important", a category — so the folder above stays ticked. One
+			label at a time: it is the list's filter, the one the header's Flagged and
+			Label… show too, and ticking the ticked one lets go of it.
+		-->
+		<h2 class="z-caption mt-5 mb-[9px] px-1.5">Labels</h2>
+		<ul class="flex flex-col gap-[3px]" role="list">
+			{#each LABEL_FILTERS as label (label)}
+				{@const isOn = filter === label}
+				<li>
+					{@render checkRow(filterName(label), labelChannel(label), isOn, labelCounts?.[label] ?? 0, () =>
+						onFilter(isOn ? 'all' : label), true
+					)}
+				</li>
+			{/each}
 		</ul>
 	</div>
 

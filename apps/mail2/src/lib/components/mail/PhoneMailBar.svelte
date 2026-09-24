@@ -5,6 +5,7 @@
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { ListRow } from '#lib/mail/rows';
 	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
+	import { filterName } from '#lib/mail/labels';
 	import { COUNT_BADGE, mailboxChannel } from '#lib/mail/colors';
 	import ActionIcon from './ActionIcon.svelte';
 
@@ -72,7 +73,8 @@
 	const archiveTarget = $derived(
 		(mailboxes ?? []).find((box) => box.kind === 'archive' && box.id !== activeMailbox?.id)
 	);
-	const filterLabel = $derived(filter === 'unseen' ? 'Unseen' : filter === 'flagged' ? 'Flagged' : 'All');
+	// A label ticked in the drawer shows here too, or the phone list would look unfiltered.
+	const filterLabel = $derived(filterName(filter));
 
 	export async function focusSearch() {
 		searchWanted = true;

@@ -8,11 +8,11 @@ import {
 	resolveMailboxKind
 } from '@zaur/mail-core';
 import type { MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
-import { categoryKeyword } from '@zaur/mail-core';
 import { getAccountPrefs, getStoreDb } from '@zaur/server-auth';
 import type { MailboxDTO, ThreadListDTO } from '#lib/mail/types';
 import { connect, requireAccount, requireAccountKey } from '#lib/server/account';
 import { categorizeInBackground } from '#lib/server/categorize';
+import { LABEL_FILTERS, filterKeyword, type ListFilter } from '#lib/mail/labels';
 
 function schema<T>() {
 	return {
@@ -48,8 +48,7 @@ export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 		);
 });
 
-/** The list header's filter: everything, only unseen, only what you flagged, or one category. */
-export type ListFilter = 'all' | 'unseen' | 'flagged' | `cat:${string}`;
+export type { ListFilter };
 
 /** Folders whose mail is worth categorising: what arrived, not what you sent or threw away. */
 const CATEGORIZED_KINDS: (MailboxKind | null | undefined)[] = ['inbox', 'archive', 'important', 'custom'];
@@ -70,17 +69,42 @@ export const threads = query(
 			mailboxId,
 			Math.min(500, Math.max(1, Number(limit) || 50)),
 			0,
-			{
-				unseenOnly: filter === 'unseen',
-				flaggedOnly: filter === 'flagged',
-				keyword: filter?.startsWith('cat:') ? categoryKeyword(filter.slice(4)) : undefined
-			}
+			{ unseenOnly: filter === 'unseen', keyword: filterKeyword(filter) }
 		);
 		if (CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn()) categorizeInBackground(client, emails);
 		return {
 			mailboxId,
 			rows: emails.map((email) => mapEmailPreview(email, mailboxId))
 		};
+	}
+);
+
+/**
+ * Unseen mail under each label in one folder — the sidebar's counts, the same
+ * number a folder row shows, in one round trip of `Email/query` totals.
+ */
+export const labelCounts = query(
+	schema<{ mailboxId: string }>(),
+	async ({ mailboxId }): Promise<Record<string, number>> => {
+		const client = await connect();
+		const response = await client.request(
+			LABEL_FILTERS.map((filter, index) => [
+				'Email/query',
+				{
+					accountId: client.getAccountId(),
+					filter: { inMailbox: mailboxId, notKeyword: '$seen', hasKeyword: filterKeyword(filter) },
+					limit: 1,
+					calculateTotal: true
+				},
+				`c${index}`
+			])
+		);
+		return Object.fromEntries(
+			LABEL_FILTERS.map((filter, index) => [
+				filter,
+				Number(response.methodResponses?.[index]?.[1]?.total) || 0
+			])
+		);
 	}
 );
 
