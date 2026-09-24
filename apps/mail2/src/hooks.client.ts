@@ -14,7 +14,9 @@ if (PUBLIC_TRACEWAY_DSN) {
 	init(PUBLIC_TRACEWAY_DSN, {
 		sessionRecording: false,
 		captureLogs: false,
-		ignoreErrors: [...DEFAULT_IGNORE_PATTERNS]
+		// "Script error." is a cross-origin or extension error with every detail
+		// stripped; the ResizeObserver one is the spec's benign loop notice.
+		ignoreErrors: [...DEFAULT_IGNORE_PATTERNS, /^Script error\./, /^ResizeObserver loop/]
 	});
 }
 

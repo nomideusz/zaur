@@ -84,6 +84,20 @@ function basicAuthHeader(username: string, password: string): string {
 	}
 	return `Basic ${btoa(credentials)}`;
 }
+
+/**
+ * Stalwart caps concurrent requests per account, and every tab and device of
+ * that account counts. A refused request never ran, so trying again is safe.
+ */
+async function whenNotBusy(send: () => Promise<Response>): Promise<Response> {
+	for (let attempt = 0; ; attempt++) {
+		const response = await send();
+		if (response.status !== 400 || attempt >= 4) return response;
+		if (!(await response.clone().text()).includes('maxConcurrentRequests')) return response;
+		await new Promise((resolve) => setTimeout(resolve, 200 * 2 ** attempt * (0.5 + Math.random())));
+	}
+}
+
 const sessionCache = new Map<string, CachedSessionEntry>();
 
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
@@ -422,7 +436,9 @@ export class JMAPClient {
 		if (cached) sessionCache.delete(cacheKey);
 
 		try {
-			const sessionResponse = await this.authenticatedFetch(sessionUrl, { method: 'GET' });
+			const sessionResponse = await whenNotBusy(() =>
+				this.authenticatedFetch(sessionUrl, { method: 'GET' })
+			);
 
 			if (!sessionResponse.ok) {
 				if (sessionResponse.status === 401) {
@@ -688,18 +704,20 @@ export class JMAPClient {
 			methodCalls
 		});
 
-		const response = this.proxyMode
-			? await fetch('/api/jmap', {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body
-				})
-			: await this.authenticatedFetch(this.apiUrl, {
-					method: 'POST',
-					headers: { 'Content-Type': 'application/json' },
-					body
-				});
+		const send = () =>
+			this.proxyMode
+				? fetch('/api/jmap', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body
+					})
+				: this.authenticatedFetch(this.apiUrl, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body
+					});
 
+		const response = await whenNotBusy(send);
 		const responseText = await response.text();
 		if (!response.ok) {
 			if (response.status === 401) {
@@ -2041,7 +2059,18 @@ export class JMAPClient {
 		}
 	}
 
+	/**
+	 * The account's send-as identities. Stalwart (0.16.21+) can leave an account
+	 * with none at all, and then every submission fails "Identity not found" —
+	 * so an empty list gets the primary address created on the spot.
+	 */
 	async getIdentities(): Promise<JMAPIdentity[]> {
+		const list = await this.readIdentities();
+		if (list.length || !this.username.includes('@')) return list;
+		return this.createIdentities([{ email: this.username, name: '' }]);
+	}
+
+	private async readIdentities(): Promise<JMAPIdentity[]> {
 		const response = await this.request(
 			[['Identity/get', { accountId: this.accountId }, 'id']],
 			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
@@ -2051,6 +2080,20 @@ export class JMAPClient {
 			return [];
 		}
 		return (first[1].list as JMAPIdentity[]) ?? [];
+	}
+
+	/** Create identities (best effort — the server refuses foreign addresses) and return the list after. */
+	private async createIdentities(list: Omit<JMAPIdentity, 'id'>[]): Promise<JMAPIdentity[]> {
+		const create = Object.fromEntries(list.map((identity, n) => [`i${n}`, identity]));
+		const response = await this.request(
+			[
+				['Identity/set', { accountId: this.accountId, create }, 'ic'],
+				['Identity/get', { accountId: this.accountId }, 'ig']
+			],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+		);
+		const got = response.methodResponses?.find(([name]) => name === 'Identity/get');
+		return (got?.[1].list as JMAPIdentity[]) ?? [];
 	}
 
 	/**
@@ -2083,8 +2126,12 @@ export class JMAPClient {
 			}
 		}
 
-		// The next get regenerates one identity per current address (primary + aliases).
-		const after = await this.getIdentities();
+		// The next get regenerates one identity per current address (primary + aliases)
+		// on the Stalwart versions that still do; put back whatever it did not.
+		let after = await this.readIdentities();
+		const kept = new Set(after.map((identity) => identity.email?.trim().toLowerCase()));
+		const lost = before.filter((identity) => identity.email && !kept.has(identity.email.trim().toLowerCase()));
+		if (lost.length) after = await this.createIdentities(lost.map(({ id: _id, ...identity }) => identity));
 
 		// Regeneration resets names (and drops signatures stored on the identity) —
 		// put back what the user had on addresses that still exist.
@@ -2578,8 +2625,8 @@ export class JMAPClient {
 		if (!identityId) {
 			const identities = await this.getIdentities();
 			const fromEmail = options?.fromEmail ?? this.username;
-			identityId =
-				identities.find((id) => id.email === fromEmail)?.id ?? identities[0]?.id ?? this.accountId;
+			identityId = identities.find((id) => id.email === fromEmail)?.id ?? identities[0]?.id;
+			if (!identityId) throw new Error('This account has no address to send from');
 		}
 
 		const fromEmail = options?.fromEmail ?? this.username;
@@ -2656,6 +2703,12 @@ export class JMAPClient {
 			],
 			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
 		);
+		// A refused submission leaves the copy made in phase 1 sitting in Sent as
+		// if it went out — remove it. Only when the submission itself was refused:
+		// a failed move after an accepted one must keep the copy.
+		if (!(response.methodResponses?.[0]?.[1]?.created as Record<string, unknown> | undefined)?.['1']) {
+			await this.destroyEmails([emailId]).catch(() => undefined);
+		}
 		this.throwOnSetErrors(response, 'Failed to send email');
 	}
 

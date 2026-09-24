@@ -146,7 +146,7 @@ export async function attemptLogin(input: {
 		const client = await createConnectedClient(sessionData);
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email) ?? identities[0];
-		sessionData.displayName = primary?.name ?? primary?.email ?? email;
+		sessionData.displayName = primary?.name || primary?.email || email;
 	} catch (error) {
 		if (classifyJmapError(error) === 'invalid_credentials') {
 			return { status: 'invalid_credentials' };

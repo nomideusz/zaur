@@ -35,7 +35,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 				email: identity.email,
 				replyTo: identity.replyTo
 			}));
-			const activeDisplayName = primary?.name ?? primary?.email ?? active.username;
+			const activeDisplayName = primary?.name || primary?.email || active.username;
 
 			const current = session;
 			const accounts = current.accounts.map((acct) => {

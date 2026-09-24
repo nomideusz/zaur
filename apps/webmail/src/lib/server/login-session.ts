@@ -57,6 +57,6 @@ export async function buildSessionFromCredentials(input: {
 	const client = await createConnectedClient(sessionData);
 	const identities = await client.getIdentities();
 	const primary = findIdentityEmail(identities, input.email) ?? identities[0];
-	sessionData.displayName = primary?.name ?? primary?.email ?? input.email;
+	sessionData.displayName = primary?.name || primary?.email || input.email;
 	return { status: 'ok', sessionData, identities };
 }
