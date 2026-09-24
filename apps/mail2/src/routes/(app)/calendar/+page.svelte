@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
 	import type { CalendarViewId, TimelineEvent } from '@nomideusz/svelte-calendar';
 	import type { Calendar, CalendarEvent } from '@zaur/mail-core';
@@ -15,6 +16,7 @@
 		toDateInputValue,
 		weekDays
 	} from '@zaur/mail-core/utils/dates';
+	import { extractMeetingGroup } from '@zaur/mail-core/utils/meet';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import EventEditor, { type EventDraft } from '#lib/components/calendar/EventEditor.svelte';
 	import CalendarList from '#lib/components/calendar/CalendarList.svelte';
@@ -535,6 +537,7 @@
 						calendars={calendarList}
 						{saving}
 						error={editorError}
+						meetEnabled={page.data.meetEnabled === true}
 						onSave={save}
 						onDelete={mode === 'edit' && editing ? () => remove(editing!) : undefined}
 						onCancel={() => {
@@ -564,16 +567,19 @@
 						{:else}
 							<ul class="space-y-2" role="list">
 								{#each agenda as event (eventKey(event))}
-									<li>
+									{@const meeting = extractMeetingGroup(event.location)}
+									<li class="relative">
 										<button
 											type="button"
-											class="z-event w-full !flex-col !items-stretch !gap-0.5 !rounded-[8px] !px-3 !py-2"
+											class="z-event w-full !flex-col !items-stretch !gap-0.5 !rounded-[8px] !px-3 !py-2 {meeting ? '!pr-[76px]' : ''}"
 											style:--z-rail={colorOf(event)}
 											onclick={() => startEdit(event)}
 										>
 											<span class="text-[13.5px] font-semibold">{event.title}</span>
 											<span class="text-[12px] opacity-80">{formatEventTime(event)}</span>
-											{#if event.location}
+											{#if meeting}
+												<span class="truncate text-[12px] opacity-70">Zaur Meet</span>
+											{:else if event.location}
 												<span class="truncate text-[12px] opacity-70">{event.location}</span>
 											{/if}
 											<span class="text-[11px] opacity-60">
@@ -582,6 +588,17 @@
 													: ''}
 											</span>
 										</button>
+										{#if meeting}
+											<!-- A sibling, not inside the row: a link cannot sit in a button. -->
+											<a
+												class="btn-tactile btn-primary absolute top-2 right-2 !h-[26px] !px-2.5 !text-[12px]"
+												href="/meet/{meeting}"
+												target="_blank"
+												rel="noopener"
+											>
+												Join
+											</a>
+										{/if}
 									</li>
 								{/each}
 							</ul>

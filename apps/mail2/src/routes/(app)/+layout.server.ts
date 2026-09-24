@@ -1,5 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
+import { meetConfig } from '#lib/server/meet';
 import type { LayoutServerLoad } from './$types';
 
 /**
@@ -14,4 +15,5 @@ export const load: LayoutServerLoad = ({ cookies, url }) => {
 		const target = url.pathname === '/' && url.search === '' ? '' : `?next=${encodeURIComponent(url.pathname + url.search)}`;
 		redirect(303, `/login${target}`);
 	}
+	return { meetEnabled: meetConfig() !== null };
 };

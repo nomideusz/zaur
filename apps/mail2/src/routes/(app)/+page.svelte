@@ -4,6 +4,7 @@
 	import { page } from '$app/state';
 	import { resyncPush } from '#lib/push';
 	import { makeRecipient } from '#lib/compose/recipients';
+	import { isMeetGroupId, meetingJoinPath } from '@zaur/mail-core/utils/meet';
 	import { switchAccount, whoami } from '../session.remote';
 	import { mailboxes, threads, thread, quota, bulk, labelCounts, type BulkAction, type ListFilter,
 		search as searchRemote
@@ -403,23 +404,35 @@
 
 	/**
 	 * `/?to=ada@example.com` opens a draft to that address — the Contacts pane's
-	 * "Write" link. The parameter is consumed once and taken off the URL, so a
-	 * reload does not open a second draft.
+	 * "Write" link. `/?invite=zaur-…` opens one inviting to that Meet call — the
+	 * call's "Email an invite". The parameter is consumed once and taken off the
+	 * URL, so a reload does not open a second draft.
 	 */
 	let composeLinkHandled = false;
 	$effect(() => {
 		if (!session || composeLinkHandled) return;
 		const to = page.url.searchParams.get('to');
-		if (to === null) return;
+		const invite = page.url.searchParams.get('invite');
+		if (to === null && invite === null) return;
 		composeLinkHandled = true;
-		const recipient = makeRecipient(to, 'Contact');
-		compose.newDraft({
-			...panelPosition(),
-			to: recipient ? [recipient] : [],
-			focusTarget: recipient ? 'subject' : 'to'
-		});
+		if (to !== null) {
+			const recipient = makeRecipient(to, 'Contact');
+			compose.newDraft({
+				...panelPosition(),
+				to: recipient ? [recipient] : [],
+				focusTarget: recipient ? 'subject' : 'to'
+			});
+		} else if (invite && isMeetGroupId(invite)) {
+			compose.newDraft({
+				...panelPosition(),
+				subject: 'Join me on Zaur Meet',
+				body: `Join me on Zaur Meet:\n${page.url.origin}${meetingJoinPath(invite)}\n\nNo account needed: open the link, type your name and join.`,
+				focusTarget: 'to'
+			});
+		}
 		const url = new URL(page.url.href);
 		url.searchParams.delete('to');
+		url.searchParams.delete('invite');
 		replaceState(url, page.state);
 	});
 

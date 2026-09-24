@@ -7,7 +7,7 @@ import {
 	isMeetingUrl,
 	meetingJoinPath,
 	normalizeMeetBaseUrl
-} from '../src/lib/utils/meet.ts';
+} from '../src/utils/meet.ts';
 
 describe('meet helpers', () => {
 	it('normalizes base URLs', () => {

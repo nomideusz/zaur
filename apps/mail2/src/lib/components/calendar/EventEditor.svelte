@@ -2,7 +2,9 @@
 	import { untrack } from 'svelte';
 	import type { Calendar, CalendarEvent, EventRecurrence } from '@zaur/mail-core';
 	import { calendarKey, isRecurringInstance, recurrenceFrom } from '@zaur/mail-core';
+	import { createMeetingUrl, extractMeetingGroup } from '@zaur/mail-core/utils/meet';
 	import RepeatPanel from './RepeatPanel.svelte';
+	import MeetIcon from '../meet/MeetIcon.svelte';
 	import {
 		defaultEventTimes,
 		durationBetween,
@@ -38,6 +40,7 @@
 		calendars,
 		saving = false,
 		error = null,
+		meetEnabled = false,
 		onSave,
 		onDelete,
 		onCancel
@@ -50,6 +53,8 @@
 		calendars: Calendar[];
 		saving?: boolean;
 		error?: string | null;
+		/** The server can host calls; without it the Video call switch is not offered. */
+		meetEnabled?: boolean;
 		onSave: (draft: EventDraft) => void;
 		onDelete?: () => void;
 		onCancel: () => void;
@@ -118,6 +123,30 @@
 			}
 		});
 	});
+
+	/**
+	 * A call lives in the location as its join link, as webmail made them, so
+	 * every calendar app shows it and either app joins it. Switching it off
+	 * gives back whatever place was typed before.
+	 */
+	const meeting = $derived(extractMeetingGroup(location));
+	let placeBefore = '';
+	let copied = $state(false);
+
+	function setMeeting(on: boolean) {
+		if (on) {
+			placeBefore = location;
+			location = createMeetingUrl(window.location.origin);
+		} else {
+			location = placeBefore;
+		}
+	}
+
+	async function copyLink() {
+		await navigator.clipboard.writeText(location.trim());
+		copied = true;
+		setTimeout(() => (copied = false), 1500);
+	}
 
 	function toggleAllDay(next: boolean) {
 		const start = allDay ? parseDateInputValue(startValue) : parseDatetimeLocalValue(startValue);
@@ -253,10 +282,45 @@
 
 			<RepeatPanel bind:recurrence start={parsed?.start ?? day} disabled={instance} />
 
-			<label>
-				<span class={label}>Location</span>
-				<input class="{field} mt-1" bind:value={location} autocomplete="off" />
-			</label>
+			{#if meetEnabled || meeting}
+				<div
+					class="rounded-[10px] border p-3 {meeting
+						? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent-tint)] text-[var(--z-accent-ink)]'
+						: 'border-[var(--z-line)] text-[var(--z-strong)]'}"
+				>
+					<label class="flex cursor-pointer items-center gap-2.5">
+						<span class="flex size-[30px] shrink-0 items-center justify-center rounded-[8px] border border-current/40 bg-[var(--z-surface)]">
+							<MeetIcon name="cam" />
+						</span>
+						<span class="min-w-0 flex-1">
+							<span class="block text-[13.5px] font-semibold">Video call</span>
+							<span class="block text-[12px] opacity-85">Zaur Meet</span>
+						</span>
+						<input type="checkbox" role="switch" class="z-check" checked={Boolean(meeting)} onchange={(e) => setMeeting(e.currentTarget.checked)} />
+					</label>
+					{#if meeting}
+						<div class="mt-2.5 flex h-8 items-center gap-2 rounded-[7px] border border-[var(--z-accent-line)] bg-[var(--z-surface)] pr-1 pl-2.5">
+							<span class="z-mono min-w-0 flex-1 truncate text-[11.5px]">{location.trim()}</span>
+							<button type="button" class="btn-tactile !h-6 !px-2 !text-[12px]" onclick={copyLink}>
+								<MeetIcon name={copied ? 'check' : 'copy'} class="size-3.5" />
+								{copied ? 'Copied' : 'Copy'}
+							</button>
+							<a class="btn-tactile !h-6 !px-2 !text-[12px]" href="/meet/{meeting}" target="_blank" rel="noopener">Join</a>
+						</div>
+						<p class="mt-2 text-[12px] leading-normal">
+							The link goes in the event's location, so any calendar app shows it. Guests join from it with a name;
+							people with an account join as themselves.
+						</p>
+					{/if}
+				</div>
+			{/if}
+
+			{#if !meeting}
+				<label>
+					<span class={label}>Location</span>
+					<input class="{field} mt-1" bind:value={location} autocomplete="off" />
+				</label>
+			{/if}
 
 			<label>
 				<span class={label}>Description</span>

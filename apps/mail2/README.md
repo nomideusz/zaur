@@ -1042,6 +1042,42 @@ Shared calendars ride along: `getCalendars` walks every account the session
 advertises, and an event carries the account it lives in so a write goes back
 to the right one.
 
+## Meet (video calls)
+
+`/meet/{room}` is Zaur Meet on LiveKit Cloud, rebuilt from webmail 1.0's
+`MeetRoom` to the design in Claude Design ("Zaur Meet"). A call is born in an
+event: the editor's **Video call** switch writes a join link into the
+location (`createMeetingUrl`, shared with 1.0 from
+`@zaur/mail-core/utils/meet`), and the day's agenda shows **Join** on it.
+Links from either app join the same room from the other.
+
+- **Outside the `(app)` gate.** A guest with the link has no account: the
+  lobby asks for a name, and `joinCall` (`meet.remote.ts`) mints a token as
+  `guest-{uuid}`. Signed in, you join as your address. Both are rate limited
+  per client address, since a token needs no session.
+- **A lobby first.** You see and hear yourself (mirrored preview, mic meter,
+  device pickers) and what you switch off stays off when you join. It says
+  who is already in — a snapshot from the server at page load.
+- **The call is dark whatever the theme**; the lobby follows yours. The page
+  sets `data-theme="dark"` on `<html>` for the call and puts it back after.
+- **Four channels carry meaning:** speaking is green (a ring and bars, never
+  colour alone), off and broken are red, a raised hand and reconnecting are
+  amber, presenting and a pressed toggle are blue. People keep their identity
+  tones on avatar tiles.
+- **Kept from 1.0:** Share is feature-detected (iOS has no `getDisplayMedia`),
+  Safari gets uncapped screen capture, the camera asks for the front one,
+  `getDisplayMedia` stays inside the click, a cancelled picker is not an
+  error, and the toggles are read back from the room rather than trusted.
+- **Raised hands** are a participant attribute (`hand` = the time it went
+  up), so the token grants `canUpdateOwnMetadata` and nothing more — no
+  admin.
+- **Email an invite** (signed in only) opens `/?invite={room}` in a new tab,
+  which starts a Mail draft with the link.
+
+Keys: `m` mic, `v` camera, `h` hand, `p` people. Env: `LIVEKIT_URL`,
+`LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` (all three, or Meet is off — see
+`.env.example`).
+
 ## Installable app (PWA)
 
 `static/` holds the icons and `manifest.webmanifest`; `scripts/generate-icons.py`
