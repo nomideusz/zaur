@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Moodle 5.2',
+			desc: 'The current official Moodle 5.2 release on Postgres, installed from the command line with a generated admin password, with cron, upgrades on redeploy and nightly backups to a Railway bucket.',
+			deploy: 'https://railway.com/deploy/moodle-5',
+			source: 'https://github.com/nomideusz/moodle-railway'
+		},
+		{
 			name: 'SUB/WAVE',
 			desc: 'A personal internet radio station: an AI DJ picks tracks from your Navidrome library, talks between them and takes requests, all on one Icecast stream.',
 			deploy: 'https://railway.com/deploy/subwave',
