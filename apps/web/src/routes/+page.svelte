@@ -223,7 +223,7 @@
 			source: 'https://github.com/nomideusz/vscodium-railway'
 		},
 		{
-			name: 'Ubuntu Terminal',
+			name: 'Linux Terminal (Ubuntu)',
 			desc: 'Ubuntu shell in the browser and over SSH — tmux sessions survive disconnects, home persists.',
 			deploy: 'https://railway.com/deploy/ubuntu-terminal',
 			source: 'https://github.com/nomideusz/terminal-railway'
@@ -251,6 +251,48 @@
 			desc: 'Full Ubuntu XFCE desktop streamed to your browser — sudo, persistent home, password-gated.',
 			deploy: 'https://railway.com/deploy/linux-desktop',
 			source: 'https://github.com/nomideusz/webtop-railway'
+		},
+		{
+			name: 'Linux Desktop (KDE Plasma)',
+			desc: 'Ubuntu KDE Plasma desktop streamed to your browser — sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-kde',
+			source: 'https://github.com/nomideusz/webtop-kde-railway'
+		},
+		{
+			name: 'Linux Desktop (MATE)',
+			desc: 'Ubuntu MATE desktop streamed to your browser — light, sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-mate',
+			source: 'https://github.com/nomideusz/webtop-mate-railway'
+		},
+		{
+			name: 'Linux Desktop (i3)',
+			desc: 'Ubuntu i3 tiling desktop in your browser — 150 MB idle, sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-i3',
+			source: 'https://github.com/nomideusz/webtop-i3-railway'
+		},
+		{
+			name: 'Linux Desktop (LXQt)',
+			desc: 'Ubuntu LXQt desktop streamed to your browser — light, sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-lxqt',
+			source: 'https://github.com/nomideusz/webtop-lxqt-railway'
+		},
+		{
+			name: 'Linux Desktop (Arch)',
+			desc: 'Arch Linux XFCE desktop in your browser — pacman, sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-arch',
+			source: 'https://github.com/nomideusz/webtop-arch-railway'
+		},
+		{
+			name: 'Linux Desktop (Debian)',
+			desc: 'Debian KDE Plasma desktop streamed to your browser — sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-debian',
+			source: 'https://github.com/nomideusz/webtop-debian-railway'
+		},
+		{
+			name: 'Linux Desktop (Alpine)',
+			desc: 'Alpine KDE Plasma desktop streamed to your browser — sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop-alpine',
+			source: 'https://github.com/nomideusz/webtop-alpine-railway'
 		},
 		{
 			name: 'LobeHub (Lobe Chat)',
