@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { messageOf } from '#lib/errors';
 	import { goto } from '$app/navigation';
 	import { QrCode } from '@ark-ui/svelte/qr-code';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
@@ -166,14 +167,6 @@
 		} finally {
 			busy = null;
 		}
-	}
-
-	function messageOf(cause: unknown, fallback: string): string {
-		if (cause && typeof cause === 'object' && 'body' in cause) {
-			const body = (cause as { body?: { message?: string } }).body;
-			if (body?.message) return body.message;
-		}
-		return cause instanceof Error && cause.message ? cause.message : fallback;
 	}
 
 	function whenDate(iso: string | null): string {

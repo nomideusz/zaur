@@ -7,12 +7,13 @@ import {
 	mailboxKindOrder,
 	resolveMailboxKind
 } from '@zaur/mail-core';
-import type { MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
+import type { JMAPClient, MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
 import { getAccountPrefs, getStoreDb } from '@zaur/server-auth';
 import type { MailboxDTO, ThreadListDTO } from '#lib/mail/types';
-import { connect, requireAccount, requireAccountKey } from '#lib/server/account';
+import { connect, refuse, requireAccount, requireAccountKey } from '#lib/server/account';
 import { categorizeInBackground } from '#lib/server/categorize';
 import { LABEL_FILTERS, filterKeyword, type ListFilter } from '#lib/mail/labels';
+import { treeOrder } from '#lib/mail/folders';
 
 function schema<T>() {
 	return {
@@ -41,8 +42,8 @@ export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 		client.reconcileScheduledEmails().catch(() => {});
 	}
 	const list = await client.getMailboxes();
-	return list
-		.map((m): MailboxDTO => {
+	const sorted = list
+		.map((m): Omit<MailboxDTO, 'depth'> => {
 			const kind = resolveMailboxKind({ name: m.name, role: m.role ?? null });
 			return {
 				id: m.id,
@@ -51,14 +52,70 @@ export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 				kind,
 				unread: m.unreadEmails ?? 0,
 				total: m.totalEmails ?? 0,
-				primary: isPrimarySidebarMailbox(kind)
+				primary: isPrimarySidebarMailbox(kind),
+				parentId: m.parentId ?? null
 			};
 		})
 		.sort(
 			(a, b) =>
 				mailboxKindOrder(a.kind) - mailboxKindOrder(b.kind) || a.name.localeCompare(b.name)
 		);
+	return treeOrder(sorted);
 });
+
+function folderName(raw: unknown): string {
+	const name = String(raw ?? '').trim();
+	if (!name) error(400, 'Name the folder');
+	if (name.length > 100) error(400, 'That name is too long');
+	return name;
+}
+
+/** Inbox, Sent, Trash and the rest are the server's: only your own folders change. */
+async function ownFolder(client: JMAPClient, id: unknown): Promise<string> {
+	const [mailbox] = await client.getMailboxesByIds([String(id)]);
+	if (!mailbox) error(404, 'No such folder');
+	if (mailbox.role) error(400, `${mailbox.name} can't be changed`);
+	return mailbox.id;
+}
+
+export const createFolder = command(
+	schema<{ name: string; parentId?: string | null }>(),
+	async ({ name, parentId }): Promise<{ id: string }> => {
+		const client = await connect();
+		const id = await client
+			.createMailbox(folderName(name), parentId ? String(parentId) : null)
+			.catch(refuse);
+		await mailboxes().refresh();
+		return { id };
+	}
+);
+
+/** Rename a folder and/or move it under another (`parentId: null` for the top level). */
+export const updateFolder = command(
+	schema<{ id: string; name: string; parentId: string | null }>(),
+	async ({ id, name, parentId }): Promise<{ ok: true }> => {
+		const client = await connect();
+		await client
+			.updateMailbox(await ownFolder(client, id), {
+				name: folderName(name),
+				parentId: parentId ? String(parentId) : null
+			})
+			.catch(refuse);
+		await mailboxes().refresh();
+		return { ok: true };
+	}
+);
+
+/** Delete a folder and the mail that lives only in it — the caller has asked. */
+export const deleteFolder = command(
+	schema<{ id: string }>(),
+	async ({ id }): Promise<{ ok: true }> => {
+		const client = await connect();
+		await client.destroyMailbox(await ownFolder(client, id), true).catch(refuse);
+		await mailboxes().refresh();
+		return { ok: true };
+	}
+);
 
 export type { ListFilter };
 

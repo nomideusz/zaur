@@ -39,9 +39,10 @@
 		LIST_MAX,
 		DEFAULT_PREFS
 	} from '#lib/settings.svelte.ts';
-	import { accountPrefs, setAccountPrefs } from '../settings.remote';
+	import { accountPrefs, identities, setAccountPrefs } from '../settings.remote';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
+	import { uploadFile } from '#lib/compose/attachments';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { ComposeContact } from '#lib/compose/types';
@@ -112,9 +113,15 @@
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
+	const identitiesResource = $derived(session ? identities() : undefined);
+	// Aliases are me too: reply-all leaves them out, and compose offers them in From.
 	const myEmails = $derived(
-		new Set((session?.accounts ?? []).map((account) => account.username.toLowerCase()))
+		new Set([
+			...(session?.accounts ?? []).map((account) => account.username.toLowerCase()),
+			...(identitiesResource?.current ?? []).map((identity) => identity.email.toLowerCase())
+		])
 	);
+	$effect(() => compose.setIdentities(identitiesResource?.current ?? []));
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
@@ -267,28 +274,7 @@
 			return result;
 		},
 		cancelScheduled: (emailId) => cancelScheduled({ emailId }),
-		uploadAttachment: async (file) => {
-			const response = await fetch('/api/upload', {
-				method: 'POST',
-				headers: { 'Content-Type': file.type || 'application/octet-stream' },
-				body: file
-			});
-			const payload = (await response.json().catch(() => ({}))) as {
-				blobId?: string;
-				size?: number;
-				type?: string;
-				error?: string;
-			};
-			if (!response.ok || !payload.blobId) {
-				throw new Error(payload.error ?? `Upload failed (${response.status})`);
-			}
-			return {
-				blobId: payload.blobId,
-				name: file.name,
-				type: payload.type ?? file.type,
-				size: payload.size ?? file.size
-			};
-		},
+		uploadAttachment: uploadFile,
 		saveDraft: async (input) => {
 			const result = await saveDraftRemote(input);
 			afterMailMutation();
@@ -349,10 +335,12 @@
 
 	$effect(() => {
 		if (!session) return;
-		const drain = () =>
+		const drain = () => {
+			void compose.recoverLocalDrafts();
 			void compose.drainOutbox().then((sent) => {
 				if (sent > 0) listResource?.refresh();
 			});
+		};
 		void drain();
 		window.addEventListener('online', drain);
 		return () => window.removeEventListener('online', drain);

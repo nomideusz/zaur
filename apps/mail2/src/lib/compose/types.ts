@@ -19,6 +19,14 @@ export type FocusTarget = 'to' | 'subject' | 'body' | null;
 /** The three address fields. They are the same field three times over. */
 export type RecipientField = 'to' | 'cc' | 'bcc';
 
+/** One of the account's own addresses, as compose offers it in From. */
+export interface ComposeIdentity {
+	email: string;
+	name: string;
+	/** Plain text, without the "-- " delimiter; '' for none. */
+	signature: string;
+}
+
 export interface ComposeContact {
 	name: string;
 	email: string;
@@ -57,6 +65,13 @@ export interface PanelRect {
 export interface Draft {
 	id: string;
 	kind: DraftKind;
+	/** The address it goes out from; '' until the account's addresses have loaded (the primary). */
+	from: string;
+	/**
+	 * The signature block compose put in the body ("\n\n-- \n…"), or ''. Kept so
+	 * a changed From can swap it, and so a signature alone is not a draft worth saving.
+	 */
+	signature: string;
 	/**
 	 * The three address fields, each a chip list with its own typing state:
 	 * what is half-typed (`Input`), whether its suggestion list is up (`Open`),
@@ -119,6 +134,7 @@ export interface SendPayload {
 	bodyHtml?: string;
 	sendAt?: string;
 	attachments?: OutgoingAttachment[];
+	from?: string;
 	/**
 	 * The account that wrote it (its lowercased address). A message waiting in the
 	 * outbox is only ever sent from that account; the server refuses anything else.
@@ -129,6 +145,7 @@ export interface SendPayload {
 /** Everything needed to reopen a server draft in a panel. */
 export interface DraftSeed {
 	jmapDraftId: string | null;
+	from: string;
 	to: Recipient[];
 	cc: Recipient[];
 	bcc: Recipient[];
@@ -140,6 +157,7 @@ export interface DraftSeed {
 
 export interface DraftSaveInput {
 	jmapDraftId: string | null;
+	from: string;
 	to: string[];
 	cc: string[];
 	bcc: string[];

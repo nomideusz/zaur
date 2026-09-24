@@ -5,7 +5,8 @@ import {
 	DRAFT_CONTENT_KEYS,
 	buildDraftSaveInput,
 	draftContentSignature,
-	hasDraftContent
+	hasDraftContent,
+	localDraft
 } from '../src/lib/compose/draft-save.ts';
 import { outgoingHtml } from '../src/lib/compose/html.ts';
 import { draftSeed } from '../src/lib/compose/quote.ts';
@@ -21,6 +22,8 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 	return {
 		id: 'd1',
 		kind: 'new',
+		from: '',
+		signature: '',
 		to: [],
 		toInput: '',
 		toOpen: false,
@@ -89,6 +92,7 @@ test('DRAFT_CONTENT_KEYS: content only — no toInput, no geometry', () => {
 		'body',
 		'bodyHtml',
 		'cc',
+		'from',
 		'subject',
 		'to'
 	]);
@@ -153,6 +157,14 @@ test('hasDraftContent: empty draft is empty, whitespace does not count', () => {
 	);
 });
 
+test('hasDraftContent: a signature alone is not a draft', () => {
+	const signature = '\n\n-- \nAda';
+	assert.equal(hasDraftContent(draft({ body: signature, signature })), false);
+	assert.equal(hasDraftContent(draft({ body: `Hi${signature}`, signature })), true);
+	// Changing From is a change worth saving.
+	assert.notEqual(draftContentSignature(draft({ from: 'a@x.com' })), draftContentSignature(draft()));
+});
+
 // --- reopening a server draft ---
 
 test('draftSeed: recipients, body and file attachments — inline images stay out', () => {
@@ -200,4 +212,31 @@ test('outgoingHtml: quotes carry their own rule, since mail has no stylesheet', 
 	const html = outgoingHtml('<div>Hi</div><blockquote>Earlier</blockquote>');
 	assert.match(html, /<blockquote style="[^"]*border-left[^"]*">Earlier/);
 	assert.equal(outgoingHtml('<div>Hi</div>'), '<div>Hi</div>');
+});
+
+test('localDraft: a plain copy of the content; an upload in flight comes back failed', () => {
+	const live = draft({
+		subject: 'Offline',
+		to: [chip('a@x.com')],
+		toInput: 'half-typ',
+		attachments: [
+			{ id: 'c1', name: 'a.pdf', type: 'application/pdf', size: 1, blobId: null, status: 'uploading' },
+			attachmentFromServer({ blobId: 'b2', name: 'b.pdf', type: 'application/pdf', size: 2 })
+		]
+	});
+	const record = localDraft(live, 'acct', true);
+	assert.equal(record.id, 'd1');
+	assert.equal(record.account, 'acct');
+	assert.equal(record.closed, true);
+	assert.equal(record.draft.subject, 'Offline');
+	assert.deepEqual(
+		record.draft.attachments.map((chip) => chip.status),
+		['error', 'ready']
+	);
+	// The live draft is untouched, and panel state stays behind.
+	assert.equal(live.attachments[0]!.status, 'uploading');
+	assert.equal('toInput' in record.draft, false);
+	assert.equal('x' in record.draft, false);
+	// It saves exactly as the panel would have.
+	assert.deepEqual(buildDraftSaveInput(record.draft), buildDraftSaveInput(live));
 });

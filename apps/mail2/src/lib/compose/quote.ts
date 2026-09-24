@@ -29,6 +29,7 @@ export function forwardSubject(subject: string): string {
 export function draftSeed(message: MessageDetail): DraftSeed {
 	return {
 		jmapDraftId: message.id,
+		from: message.from.email,
 		to: message.to.map((person) => ({ name: person.name, email: person.email, meta: '' })),
 		// Chips, so a reopened draft keeps the names its recipients arrived with.
 		cc: message.cc.map((person) => ({ name: person.name, email: person.email, meta: '' })),
@@ -40,6 +41,17 @@ export function draftSeed(message: MessageDetail): DraftSeed {
 			.filter((part) => part.disposition !== 'inline')
 			.map((part) => attachmentFromServer(part))
 	};
+}
+
+/** The conventional "-- " delimiter keeps a signature out of quoting clients' replies. */
+export function signatureBlock(signature: string | undefined): string {
+	const text = signature?.trim();
+	return text ? `\n\n-- \n${text}` : '';
+}
+
+/** Under what is written, over what is quoted (a reply or forward seed starts "\n\n---\n"). */
+export function withSignature(body: string, block: string): string {
+	return body.startsWith('\n\n---\n') ? block + body : body + block;
 }
 
 /** Same quote shape webmail 1.0 uses for plain-text replies (`\n\n---\n` marker). */

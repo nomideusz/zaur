@@ -1966,15 +1966,18 @@ export class JMAPClient {
 	async renameMailbox(mailboxId: string, name: string): Promise<void> {
 		const trimmed = name.trim();
 		if (!trimmed) throw new Error('Folder name cannot be empty');
+		await this.updateMailbox(mailboxId, { name: trimmed });
+	}
 
+	/** Rename and/or move a mailbox; `parentId: null` makes it top-level. */
+	async updateMailbox(
+		mailboxId: string,
+		patch: { name?: string; parentId?: string | null }
+	): Promise<void> {
 		const response = await this.request([
-			[
-				'Mailbox/set',
-				{ accountId: this.accountId, update: { [mailboxId]: { name: trimmed } } },
-				'mbr'
-			]
+			['Mailbox/set', { accountId: this.accountId, update: { [mailboxId]: patch } }, 'mbr']
 		]);
-		this.throwOnSetErrors(response, 'Could not rename folder');
+		this.throwOnSetErrors(response, 'Could not change folder');
 	}
 
 	async createMailbox(name: string, parentId?: string | null): Promise<string> {
@@ -2118,11 +2121,19 @@ export class JMAPClient {
 
 	/** Update the display name on one of the account's send-as identities. */
 	async setIdentityName(identityId: string, name: string): Promise<void> {
+		await this.updateIdentity(identityId, { name });
+	}
+
+	/** Patch a send-as identity; only the provided fields change. */
+	async updateIdentity(
+		identityId: string,
+		patch: Partial<Pick<JMAPIdentity, 'name' | 'textSignature' | 'htmlSignature'>>
+	): Promise<void> {
 		const response = await this.request(
-			[['Identity/set', { accountId: this.accountId, update: { [identityId]: { name } } }, 'is']],
+			[['Identity/set', { accountId: this.accountId, update: { [identityId]: patch } }, 'is']],
 			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
 		);
-		this.throwOnSetErrors(response, 'Could not update display name');
+		this.throwOnSetErrors(response, 'Could not update the address');
 	}
 
 	async queryEmails(

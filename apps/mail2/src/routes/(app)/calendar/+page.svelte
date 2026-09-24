@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { messageOf } from '#lib/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
@@ -222,14 +223,6 @@
 	function flash(text: string) {
 		notice = text;
 		setTimeout(() => (notice = null), 2500);
-	}
-
-	function messageOf(cause: unknown, fallback: string): string {
-		if (cause && typeof cause === 'object' && 'body' in cause) {
-			const body = (cause as { body?: { message?: string } }).body;
-			if (body?.message) return body.message;
-		}
-		return cause instanceof Error && cause.message ? cause.message : fallback;
 	}
 
 	function startNew(at: Date = anchor, until: Date | null = null) {

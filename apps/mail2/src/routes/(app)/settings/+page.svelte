@@ -1,11 +1,14 @@
 <script lang="ts">
+	import { messageOf } from '#lib/errors';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import { disablePush, enablePush, pushStatus, type PushStatus } from '#lib/push';
 	import { whoami } from '../../session.remote';
-	import { identities, setDisplayName } from '../../settings.remote';
+	import { identities, updateIdentity, vacation as vacationQuery, saveVacation, type VacationDTO } from '../../settings.remote';
 	import { logout } from '../../login.remote';
-	import { mailboxes, quota } from '../../mail.remote';
+	import { createFolder, deleteFolder, mailboxes, quota, updateFolder } from '../../mail.remote';
+	import type { MailboxDTO } from '#lib/mail/types';
+	import { withoutBranch } from '#lib/mail/folders';
 	import { rules as rulesQuery, saveRules } from '../../rules.remote';
 	import RulesEditor from '#lib/components/settings/RulesEditor.svelte';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
@@ -52,7 +55,7 @@
 			status = { text: count === 1 ? '1 rule active' : `${count} rules active` };
 		} catch (cause) {
 			status = {
-				text: cause instanceof Error ? cause.message : 'Could not save the rules',
+				text: messageOf(cause, 'Could not save the rules'),
 				error: true
 			};
 		} finally {
@@ -60,31 +63,107 @@
 		}
 	}
 
-	// Send-as names are edited per identity; keep the pending edits keyed by id.
-	let names = $state<Record<string, string>>({});
+	// Names and signatures are edited per address; keep the pending edits keyed by id.
+	let edits = $state<Record<string, { name?: string; signature?: string }>>({});
 	let saving = $state<string | null>(null);
 	let status = $state<{ text: string; error?: boolean } | null>(null);
 
 	const rows = $derived(
 		(identitiesResource?.current ?? []).map((identity) => ({
 			...identity,
-			draft: names[identity.id] ?? identity.name
+			draftName: edits[identity.id]?.name ?? identity.name,
+			draftSignature: edits[identity.id]?.signature ?? identity.signature
 		}))
 	);
 
-	async function saveName(id: string, value: string) {
-		saving = id;
+	function edit(id: string, patch: { name?: string; signature?: string }) {
+		edits[id] = { ...edits[id], ...patch };
+	}
+
+	async function saveIdentity(row: (typeof rows)[number]) {
+		saving = row.id;
 		status = null;
 		try {
-			await setDisplayName({ identityId: id, name: value });
-			await identitiesResource?.refresh();
-			delete names[id];
-			status = { text: 'Display name saved' };
+			await updateIdentity({ identityId: row.id, name: row.draftName, signature: row.draftSignature });
+			delete edits[row.id];
+			status = { text: 'Saved' };
 		} catch (cause) {
-			status = { text: cause instanceof Error ? cause.message : 'Could not save', error: true };
+			status = { text: messageOf(cause, 'Could not save'), error: true };
 		} finally {
 			saving = null;
 		}
+	}
+
+	// The auto-reply is one form with one Save: half a vacation (dates, no message) is worse than none.
+	const vacationResource = $derived(session ? vacationQuery() : undefined);
+	let away = $state<Omit<VacationDTO, 'supported'> | null>(null);
+	let savingAway = $state(false);
+	$effect(() => {
+		const current = vacationResource?.current;
+		if (current && !away) away = { isEnabled: current.isEnabled, fromDate: current.fromDate, toDate: current.toDate, subject: current.subject, textBody: current.textBody };
+	});
+	const awayDirty = $derived.by(() => {
+		const current = vacationResource?.current;
+		if (!current || !away) return false;
+		return (['isEnabled', 'fromDate', 'toDate', 'subject', 'textBody'] as const).some((key) => away![key] !== current[key]);
+	});
+
+	async function persistAway() {
+		if (!away) return;
+		savingAway = true;
+		status = null;
+		try {
+			await saveVacation(away);
+			status = { text: away.isEnabled ? 'Auto-reply on' : 'Auto-reply saved, off' };
+		} catch (cause) {
+			status = { text: messageOf(cause, 'Could not save the auto-reply'), error: true };
+		} finally {
+			savingAway = false;
+		}
+	}
+
+	// Folders: your own ones, parents first. One is open for editing at a time.
+	const folders = $derived((mailboxesResource?.current ?? []).filter((mailbox) => !mailbox.role));
+	let editingFolder = $state<{ id: string; name: string; parentId: string } | null>(null);
+	let newFolder = $state({ name: '', parentId: '' });
+	let folderBusy = $state(false);
+
+	/** Where a folder can go: anywhere but inside itself. */
+	async function folderAction(run: () => Promise<unknown>, done: string) {
+		folderBusy = true;
+		status = null;
+		try {
+			await run();
+			status = { text: done };
+			return true;
+		} catch (cause) {
+			status = { text: messageOf(cause, 'Could not change the folder'), error: true };
+			return false;
+		} finally {
+			folderBusy = false;
+		}
+	}
+
+	async function addFolder() {
+		const name = newFolder.name.trim();
+		if (!name) return;
+		if (await folderAction(() => createFolder({ name, parentId: newFolder.parentId || null }), `Created ${name}`)) {
+			newFolder = { name: '', parentId: '' };
+		}
+	}
+
+	async function saveFolder() {
+		const edit = editingFolder;
+		if (!edit) return;
+		if (await folderAction(() => updateFolder({ id: edit.id, name: edit.name, parentId: edit.parentId || null }), 'Folder saved')) {
+			editingFolder = null;
+		}
+	}
+
+	async function removeFolder(folder: MailboxDTO) {
+		const inside = folder.total ? ` and its ${folder.total === 1 ? 'message' : `${folder.total} messages`}` : '';
+		if (!confirm(`Delete “${folder.name}”${inside}? This can't be undone.`)) return;
+		if (await folderAction(() => deleteFolder({ id: folder.id }), `Deleted ${folder.name}`)) editingFolder = null;
 	}
 
 	function signOut() {
@@ -113,7 +192,7 @@
 		try {
 			push = push === 'on' ? await disablePush() : await enablePush();
 		} catch (cause) {
-			status = { text: cause instanceof Error ? cause.message : 'Could not change notifications', error: true };
+			status = { text: messageOf(cause, 'Could not change notifications'), error: true };
 		} finally {
 			pushBusy = false;
 		}
@@ -173,11 +252,14 @@
 	</p>
 </section>
 
-<!-- Send-as display names -->
+<!-- Send-as addresses: the name recipients see, and the signature compose adds -->
 <section class="z-card">
-	<h2 class="z-card-head">Display name</h2>
+	<h2 class="z-card-head">Addresses</h2>
 	<div class="z-card-body">
-		<p class={blurb}>The name recipients see next to each of your addresses.</p>
+		<p class={blurb}>
+			The name recipients see next to each of your addresses, and the signature new messages
+			start with. Compose adds it under a “-- ” line and swaps it when you change From.
+		</p>
 		{#if identitiesResource?.error}
 			<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your addresses.</p>
 		{:else if !identitiesResource?.current}
@@ -185,36 +267,170 @@
 				<div class="h-[34px] rounded-[8px] bg-[var(--z-sunken)]"></div>
 			</div>
 		{:else}
-			<div class="mt-3 flex flex-col gap-2.5">
-				{#each rows as row (row.id)}
-					{@const dirty = row.draft !== row.name}
-					<div class="flex items-end gap-2">
-						<label class="min-w-0 flex-1">
-							<span class="z-mono block truncate text-[10.5px] text-[var(--z-soft)]">{row.email}</span>
-							<input
-								type="text"
-								maxlength="120"
-								value={row.draft}
-								oninput={(event) => (names[row.id] = event.currentTarget.value)}
-								onkeydown={(event) => {
-									if (event.key === 'Enter') void saveName(row.id, row.draft);
-								}}
-								placeholder="Your name"
-								aria-label="Display name"
-								class="z-field mt-[5px] w-full max-md:text-base"
-							/>
-						</label>
+			<div class="mt-3 flex flex-col">
+				{#each rows as row, index (row.id)}
+					{@const dirty = row.draftName !== row.name || row.draftSignature !== row.signature}
+					<div class="flex flex-col gap-2 py-3 {index > 0 ? 'border-t border-[var(--z-sunken)]' : 'pt-0'}">
+						<span class="z-mono block truncate text-[10.5px] text-[var(--z-soft)]">{row.email}</span>
+						<input
+							type="text"
+							maxlength="120"
+							value={row.draftName}
+							oninput={(event) => edit(row.id, { name: event.currentTarget.value })}
+							onkeydown={(event) => {
+								if (event.key === 'Enter' && dirty) void saveIdentity(row);
+							}}
+							placeholder="Your name"
+							aria-label="Display name for {row.email}"
+							class="z-field w-full max-md:text-base"
+						/>
+						<textarea
+							rows="3"
+							maxlength="4000"
+							value={row.draftSignature}
+							oninput={(event) => edit(row.id, { signature: event.currentTarget.value })}
+							placeholder="Signature (optional)"
+							aria-label="Signature for {row.email}"
+							class="z-field font-(family-name:--font-mail-mono) !h-auto w-full resize-y py-2 text-[13px] leading-[1.5] max-md:text-base"
+						></textarea>
 						<!-- Primary while there is something to save; a quiet "Saved" otherwise. -->
 						<button
 							type="button"
-							class="btn-tactile !h-[34px] {dirty ? 'btn-primary' : ''}"
+							class="btn-tactile !h-[30px] self-end {dirty ? 'btn-primary' : ''}"
 							disabled={saving === row.id || !dirty}
-							onclick={() => void saveName(row.id, row.draft)}
+							onclick={() => void saveIdentity(row)}
 						>
 							{saving === row.id ? 'Saving…' : dirty ? 'Save' : 'Saved'}
 						</button>
 					</div>
 				{/each}
+			</div>
+		{/if}
+	</div>
+</section>
+
+<!-- Out of office: JMAP VacationResponse, answered by the server whether or not Zaur is open -->
+{#if vacationResource?.current?.supported !== false}
+	<section class="z-card">
+		<h2 class="z-card-head">Auto-reply</h2>
+		<div class="z-card-body">
+			<p class={blurb}>Answers incoming mail while you're away. The server sends it, so it works with Zaur closed.</p>
+			{#if vacationResource?.error}
+				<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your auto-reply.</p>
+			{:else if !away}
+				<div class="z-skeleton mt-3 h-[34px] rounded-[8px] bg-[var(--z-sunken)]" aria-hidden="true"></div>
+			{:else}
+				<label class="mt-3.5 flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+					<span class={rowLabel}>Reply automatically</span>
+					<input type="checkbox" class="z-check" bind:checked={away.isEnabled} />
+				</label>
+				<div class="grid grid-cols-2 gap-2.5 border-t border-[var(--z-sunken)] py-[11px]">
+					<label class="min-w-0">
+						<span class="block text-[12px] text-[var(--z-muted)]">First day</span>
+						<input type="date" bind:value={away.fromDate} max={away.toDate || undefined} class="z-field mt-[5px] w-full max-md:text-base" />
+					</label>
+					<label class="min-w-0">
+						<span class="block text-[12px] text-[var(--z-muted)]">Last day</span>
+						<input type="date" bind:value={away.toDate} min={away.fromDate || undefined} class="z-field mt-[5px] w-full max-md:text-base" />
+					</label>
+					<span class="col-span-2 text-[11.5px] text-[var(--z-soft)]">Leave empty to start now, or to keep replying until you switch it off.</span>
+				</div>
+				<div class="flex flex-col gap-2 border-t border-[var(--z-sunken)] pt-[11px]">
+					<input type="text" maxlength="200" bind:value={away.subject} placeholder="Subject (optional)" aria-label="Auto-reply subject" class="z-field w-full max-md:text-base" />
+					<textarea
+						rows="4"
+						maxlength="8000"
+						bind:value={away.textBody}
+						placeholder="I'm away until … and will reply when I'm back."
+						aria-label="Auto-reply message"
+						class="z-field !h-auto w-full resize-y py-2 text-[13px] leading-[1.5] max-md:text-base"
+					></textarea>
+				</div>
+			{/if}
+		</div>
+		{#if away}
+			<div class="z-card-foot">
+				<button type="button" class="btn-tactile !h-[30px] {awayDirty ? 'btn-primary' : ''}" disabled={savingAway || !awayDirty} onclick={persistAway}>
+					{savingAway ? 'Saving…' : awayDirty ? 'Save' : 'Saved'}
+				</button>
+			</div>
+		{/if}
+	</section>
+{/if}
+
+<!-- Your own folders; Inbox, Sent and the rest belong to the server -->
+<section class="z-card" id="folders">
+	<h2 class="z-card-head">Folders</h2>
+	<div class="z-card-body">
+		<p class={blurb}>Folders of your own, for filing by hand or by a rule. A folder can sit inside another.</p>
+		{#snippet parentSelect(value: string, self: MailboxDTO | null, onchange: (next: string) => void)}
+			<select class="z-field min-w-0 !h-[30px]" aria-label="Inside" {value} onchange={(event) => onchange(event.currentTarget.value)}>
+				<option value="">Top level</option>
+				{#each withoutBranch(mailboxesResource?.current ?? [], self) as mailbox (mailbox.id)}
+					<option value={mailbox.id}>{'\u00a0\u00a0\u00a0'.repeat(mailbox.depth)}{mailbox.name}</option>
+				{/each}
+			</select>
+		{/snippet}
+		{#if mailboxesResource?.error}
+			<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your folders.</p>
+		{:else if !mailboxesResource?.current}
+			<div class="z-skeleton mt-3 h-[34px] rounded-[8px] bg-[var(--z-sunken)]" aria-hidden="true"></div>
+		{:else}
+			<ul class="mt-3 flex flex-col" role="list">
+				{#each folders as folder (folder.id)}
+					<li class="border-t border-[var(--z-sunken)] py-2">
+						{#if editingFolder?.id === folder.id}
+							<div class="flex flex-wrap items-center gap-2">
+								<input
+									type="text"
+									maxlength="100"
+									bind:value={editingFolder.name}
+									aria-label="Folder name"
+									class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+									onkeydown={(event) => {
+										if (event.key === 'Enter') void saveFolder();
+										if (event.key === 'Escape') editingFolder = null;
+									}}
+								/>
+								{@render parentSelect(editingFolder.parentId, folder, (next) => editingFolder && (editingFolder.parentId = next))}
+								<button type="button" class="btn-tactile btn-primary !h-[30px]" disabled={folderBusy || !editingFolder.name.trim()} onclick={saveFolder}>Save</button>
+								<button type="button" class="btn-tactile !h-[30px]" onclick={() => (editingFolder = null)}>Cancel</button>
+								<button type="button" class="btn-tactile btn-danger !h-[30px]" disabled={folderBusy} onclick={() => void removeFolder(folder)}>Delete</button>
+							</div>
+						{:else}
+							<div class="flex items-center justify-between gap-3" style:padding-left="{folder.depth * 14}px">
+								<span class="min-w-0 truncate {rowLabel}">{folder.name}</span>
+								<span class="flex shrink-0 items-center gap-2.5">
+									<span class="z-mono text-[10.5px] text-[var(--z-soft)]">{folder.total}</span>
+									<button
+										type="button"
+										class="btn-tactile !h-7 !text-[12px]"
+										onclick={() => (editingFolder = { id: folder.id, name: folder.name, parentId: folder.parentId ?? '' })}
+									>
+										Edit
+									</button>
+								</span>
+							</div>
+						{/if}
+					</li>
+				{:else}
+					<li class="border-t border-[var(--z-sunken)] py-2 text-[12.5px] text-[var(--z-muted)]">None yet.</li>
+				{/each}
+			</ul>
+			<div class="flex flex-wrap items-center gap-2 border-t border-[var(--z-sunken)] pt-3">
+				<input
+					type="text"
+					maxlength="100"
+					bind:value={newFolder.name}
+					placeholder="New folder"
+					aria-label="New folder name"
+					class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+					onkeydown={(event) => {
+						if (event.key === 'Enter') void addFolder();
+					}}
+				/>
+				{@render parentSelect(newFolder.parentId, null, (next) => (newFolder.parentId = next))}
+				<button type="button" class="btn-tactile !h-[30px] {newFolder.name.trim() ? 'btn-primary' : ''}" disabled={folderBusy || !newFolder.name.trim()} onclick={addFolder}>Create</button>
 			</div>
 		{/if}
 	</div>

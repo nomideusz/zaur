@@ -34,12 +34,12 @@
 	let rootH = $state(0);
 
 	const mockMailboxes: MailboxDTO[] = [
-		{ id: 'inbox', name: 'Inbox', kind: 'inbox', role: 'inbox', unread: 3, total: 18, primary: true },
-		{ id: 'drafts', name: 'Drafts', kind: 'drafts', role: 'drafts', unread: 0, total: 2, primary: false },
-		{ id: 'sent', name: 'Sent', kind: 'sent', role: 'sent', unread: 0, total: 34, primary: false },
-		{ id: 'archive', name: 'Archive', kind: 'archive', role: 'archive', unread: 0, total: 128, primary: false },
-		{ id: 'junk', name: 'Junk', kind: 'junk', role: 'junk', unread: 1, total: 1, primary: false },
-		{ id: 'trash', name: 'Trash', kind: 'trash', role: 'trash', unread: 0, total: 4, primary: false }
+		{ id: 'inbox', name: 'Inbox', kind: 'inbox', role: 'inbox', unread: 3, total: 18, primary: true, parentId: null, depth: 0 },
+		{ id: 'drafts', name: 'Drafts', kind: 'drafts', role: 'drafts', unread: 0, total: 2, primary: false, parentId: null, depth: 0 },
+		{ id: 'sent', name: 'Sent', kind: 'sent', role: 'sent', unread: 0, total: 34, primary: false, parentId: null, depth: 0 },
+		{ id: 'archive', name: 'Archive', kind: 'archive', role: 'archive', unread: 0, total: 128, primary: false, parentId: null, depth: 0 },
+		{ id: 'junk', name: 'Junk', kind: 'junk', role: 'junk', unread: 1, total: 1, primary: false, parentId: null, depth: 0 },
+		{ id: 'trash', name: 'Trash', kind: 'trash', role: 'trash', unread: 0, total: 4, primary: false, parentId: null, depth: 0 }
 	];
 
 	const activeMailbox = $derived(

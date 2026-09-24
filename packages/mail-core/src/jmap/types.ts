@@ -3,6 +3,8 @@ export interface JMAPIdentity {
 	name?: string;
 	email: string;
 	replyTo?: { name?: string; email: string }[];
+	textSignature?: string;
+	htmlSignature?: string;
 }
 
 /** Quota object — JMAP Quota extension, RFC 9425. */

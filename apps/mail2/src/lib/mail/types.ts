@@ -8,6 +8,9 @@ export type MailboxDTO = {
 	unread: number;
 	total: number;
 	primary: boolean;
+	parentId: string | null;
+	/** Nesting level, 0 for top-level; the list comes parents-first. */
+	depth: number;
 };
 
 export type ThreadListDTO = {

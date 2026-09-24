@@ -2,13 +2,15 @@
 
 The Mail 2.0 client (ADR-0005): a clean-room rebuild of the webmail UI on the
 shared packages, following the redesign handoff's resolved variants. **Light
-theme only** for now; Files and Meet arrive when their designs land.
+theme only** for now. Files is built from the shell's own parts (no design of its own yet).
 
 ## Status
 
 - [x] Shell scaffold, remote functions enabled, tactile shell + Hobday palette (foundation slice)
 - [x] Session-aware read path (mailbox → thread list → reader)
 - [x] Floating multi-draft compose (panels, dock, schedule send, offline outbox)
+- [x] Offline drafts: a draft the server can't take yet is kept on the device,
+  saved to Drafts on reconnect, and reopened in the dock after a reload §
 - [x] Draft persistence (Drafts mailbox) + compose attachments
 - [x] Own login (`/login` + sign out) — Stalwart OAuth credential flow in prod,
   password fallback in dev; 1.0 session sharing still works as a fallback
@@ -31,7 +33,11 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Contacts with a real source — JMAP Contacts (RFC 9610), feeding compose
   autocomplete and a Contacts pane ‡
 - [x] Calendar pane — JMAP Calendars, server-expanded recurrences ‡
-- [ ] Files pane — waits for its design (ADR-0005), and Stalwart's `FileNode`
+- [x] Send-as addresses (From picker when there are aliases), per-address
+  signatures (JMAP `Identity.textSignature`), auto-reply (`VacationResponse`),
+  and your own folders — create, rename, move, delete, nested in the sidebar ‡
+- [x] Files pane (`/files`) over JMAP `FileNode`: folders, upload (button or
+  drop, 25 MB a file), preview, rename, move, delete; your own account only ‡
 - [x] Installable app (PWA): icons from the mark, manifest, service worker — see
   [Installable app](#installable-app-pwa) §
 - [x] New-mail notifications (Web Push), closed tab included — see
@@ -1174,7 +1180,10 @@ pnpm --filter @zaur/mail2 smoke:seed    # a signed-in session in .data/store.sql
 pnpm dev:mail2                          # set the printed cookie, open the app
 ```
 
-`fake-jmap.mjs` speaks just enough of Stalwart's dialect — session, mailboxes,
+`fake-jmap.mjs` speaks just enough of Stalwart's dialect — session, mailboxes
+(with `Mailbox/set` and a nested pair), two identities, `VacationResponse`, sending
+(it logs the From and identity of each submission), blob upload, a small
+`FileNode` tree (`query`/`get` with `fetchParents`/`set`, refusing duplicate names),
 `AddressBook`/`ContactCard`, `Calendar`/`CalendarEvent` (with a fake weekly
 expansion), and the `x:` self-service objects — to exercise every remote
 function in Security, Contacts and Calendar end to end, including the
@@ -1299,9 +1308,8 @@ signed in. After that:
 
 1. **Muting an account's notifications.** The store keeps `muted_accounts` per
    device already (1.0 has the switch); nothing sets it yet.
-2. **Files pane.** Stalwart speaks JMAP for File Storage (`FileNode/*`) and
-   mail-core has the client for it from 1.0; ADR-0005 holds it until the
-   design lands.
+2. **Files, the rest of 1.0's.** Folders shared with you (they live in the
+   sharer's account), sharing your own, search, and files over 25 MB.
 
 ## What is still missing
 
@@ -1344,7 +1352,11 @@ Two smaller notes:
   the credentials they need stay on the server.
 - The offline outbox is a lightweight IndexedDB queue (`#lib/compose/outbox`)
   that drains on load and on reconnect. Drafts autosave to the server's Drafts
-  mailbox (debounced, 1.5 s).
+  mailbox (debounced, 1.5 s), and each save writes the draft to the same
+  database's `drafts` store first; the copy is dropped once the server has it.
+  What is left there on load or reconnect is settled by `recoverLocalDrafts`:
+  drafts closed offline go to Drafts, and drafts a reload interrupted come back
+  to the dock. Typing in the last 1.5 s before the tab dies is not kept.
 - **What lives in `@zaur/mail-core` rather than here:** anything a native client
   would need too — the JMAP client, the search query parser, and the rule model
   with its Sieve compiler (`sieve-rules.ts`). What stays in mail2 is the shell:

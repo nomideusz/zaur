@@ -1,6 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { command } from '$app/server';
 import { accountKey } from '@zaur/server-auth';
+import { resolveSendFrom, type JMAPClient } from '@zaur/mail-core';
 import { connect, requireAccount } from '#lib/server/account';
 
 function schema<T>() {
@@ -35,6 +36,8 @@ export interface SendInput {
 	attachments?: OutgoingAttachmentDTO[];
 	/** The account that wrote it; a message is never sent from a different one. */
 	account?: string;
+	/** One of the account's own addresses (an alias); omit for the primary. */
+	from?: string;
 }
 
 export interface SendResult {
@@ -55,6 +58,23 @@ function cleanRecipients(list: string[] | undefined): string[] {
 		out.push(email);
 	}
 	return out;
+}
+
+/**
+ * The identity a message goes out as. Only the account's own addresses: an
+ * address it does not hold is refused here rather than left to the server,
+ * and the identity's name rides along, so the display name set in Settings is
+ * what recipients see.
+ */
+async function sender(client: JMAPClient, from: string | undefined) {
+	const wanted = String(from ?? '').trim();
+	const resolved = resolveSendFrom(wanted, client.getUsername(), await client.getIdentities());
+	if (wanted && !resolved.identity) error(400, `You can't send from ${wanted}`);
+	return {
+		identityId: resolved.identity?.id,
+		fromEmail: resolved.email,
+		fromName: resolved.identity?.name?.trim() || undefined
+	};
 }
 
 const MAX_ATTACHMENTS = 10;
@@ -94,6 +114,7 @@ export const send = command(schema<SendInput>(), async (input: SendInput): Promi
 	const client = await connect();
 	let emailId: string | undefined;
 	await client.sendEmail(to, input.subject ?? '', input.body ?? '', {
+		...(await sender(client, input.from)),
 		cc: cc.length ? cc : undefined,
 		bcc: bcc.length ? bcc : undefined,
 		format: input.bodyHtml ? 'html' : 'plain',
@@ -126,6 +147,7 @@ export interface DraftSavePayload {
 	body?: string;
 	bodyHtml?: string;
 	attachments?: OutgoingAttachmentDTO[];
+	from?: string;
 }
 
 export const saveDraft = command(
@@ -154,7 +176,7 @@ export const saveDraft = command(
 			bcc: bcc.length ? bcc : undefined,
 			subject,
 			body,
-			fromEmail: client.getUsername(),
+			...(await sender(client, input.from)),
 			attachments: attachments.length ? attachments : undefined,
 			format: input.bodyHtml ? 'html' : 'plain',
 			bodyHtml: input.bodyHtml ? String(input.bodyHtml) : undefined

@@ -104,7 +104,7 @@
 	channel's hue. Anything else is plain, and the box says so. A folder row is
 	where you are (`aria-current`); a label row is a switch (`aria-pressed`).
 -->
-{#snippet checkRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false)}
+{#snippet checkRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false, depth = 0)}
 	<button
 		type="button"
 		class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] {on
@@ -112,6 +112,7 @@
 			: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'}"
 		style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{on ? '1' : '0'}"
 		style:color={on ? channel.ink : undefined}
+		style:padding-left={depth ? `${18 + depth * 14}px` : undefined}
 		aria-current={!toggle && on ? 'true' : undefined}
 		aria-pressed={toggle ? on : undefined}
 		{onclick}
@@ -176,14 +177,17 @@
 	{/if}
 
 	<div class="flex-1 overflow-y-auto px-3 py-4">
-		<h2 class="z-caption mb-[9px] px-1.5">Mailboxes</h2>
+		<h2 class="z-caption mb-[9px] flex items-center justify-between px-1.5">
+			Mailboxes
+			<a href="/settings#folders" class="font-medium text-[var(--z-soft)] hover:text-[var(--z-accent)]" onclick={onClose}>Edit</a>
+		</h2>
 		<ul class="flex flex-col gap-[3px]" role="list">
 			{#if mailboxes}
 				{#each mailboxes as mailbox (mailbox.id)}
 					{@const isSelected = mailbox.id === activeMailboxId}
 					<li>
 						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
-							onSelectMailbox(mailbox.id)
+							onSelectMailbox(mailbox.id), false, mailbox.depth
 						)}
 					</li>
 				{/each}

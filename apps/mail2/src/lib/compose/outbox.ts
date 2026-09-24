@@ -1,8 +1,11 @@
 import type { SendPayload } from './types';
+import type { LocalDraft } from './draft-save';
 
 const DB_NAME = 'zaur-mail2';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 const STORE = 'outbox';
+/** Drafts the server has not confirmed yet, see `localDraft`. */
+const DRAFTS = 'drafts';
 
 export interface OutboxEntry {
 	id: string;
@@ -21,7 +24,9 @@ function openDb(): Promise<IDBDatabase> {
 		const request = indexedDB.open(DB_NAME, DB_VERSION);
 		request.onupgradeneeded = () => {
 			const db = request.result;
-			if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE, { keyPath: 'id' });
+			for (const name of [STORE, DRAFTS]) {
+				if (!db.objectStoreNames.contains(name)) db.createObjectStore(name, { keyPath: 'id' });
+			}
 		};
 		request.onsuccess = () => resolve(request.result);
 		request.onerror = () => reject(request.error ?? new Error('IndexedDB unavailable'));
@@ -30,13 +35,14 @@ function openDb(): Promise<IDBDatabase> {
 
 function withStore<T>(
 	mode: IDBTransactionMode,
-	run: (store: IDBObjectStore) => IDBRequest<T>
+	run: (store: IDBObjectStore) => IDBRequest<T>,
+	name = STORE
 ): Promise<T> {
 	return openDb().then(
 		(db) =>
 			new Promise<T>((resolve, reject) => {
-				const tx = db.transaction(STORE, mode);
-				const request = run(tx.objectStore(STORE));
+				const tx = db.transaction(name, mode);
+				const request = run(tx.objectStore(name));
 				request.onsuccess = () => resolve(request.result);
 				request.onerror = () => reject(request.error ?? new Error('IndexedDB request failed'));
 				tx.oncomplete = () => db.close();
@@ -69,6 +75,21 @@ export async function updateOutboxEntry(entry: OutboxEntry): Promise<void> {
 export async function removeOutboxEntry(id: string): Promise<void> {
 	if (!idbAvailable()) return;
 	await withStore('readwrite', (store) => store.delete(id));
+}
+
+export async function putLocalDraft(record: LocalDraft): Promise<void> {
+	if (!idbAvailable()) return;
+	await withStore('readwrite', (store) => store.put(record), DRAFTS);
+}
+
+export async function listLocalDrafts(): Promise<LocalDraft[]> {
+	if (!idbAvailable()) return [];
+	return withStore('readonly', (store) => store.getAll() as IDBRequest<LocalDraft[]>, DRAFTS);
+}
+
+export async function removeLocalDraft(id: string): Promise<void> {
+	if (!idbAvailable()) return;
+	await withStore('readwrite', (store) => store.delete(id), DRAFTS);
 }
 
 export type FailureKind = 'network' | 'fatal';

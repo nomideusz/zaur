@@ -41,3 +41,13 @@ export async function connect(account = requireAccount()): Promise<JMAPClient> {
 		throw cause;
 	}
 }
+
+/**
+ * A JMAP refusal (a subfolder in the way, a name already taken) is for the
+ * person to read, so it goes back as a 400 with the server's words. Remote
+ * functions hide the message of anything thrown that is not an `error()`.
+ */
+export function refuse(cause: unknown): never {
+	if (cause instanceof Error) error(400, cause.message);
+	throw cause;
+}

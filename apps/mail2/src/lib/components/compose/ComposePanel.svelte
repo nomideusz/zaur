@@ -765,6 +765,24 @@
 			row with chips in it says what it is, and on a phone that gutter was a
 			fifth of the screen spent saying "To".
 		-->
+		<!-- Only an account with aliases has a choice to make, so only then is there a row. -->
+		{#if compose.identities.length > 1}
+			<label class="flex h-[45px] items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px]">
+				{@render stepDot(true)}
+				<span class="shrink-0 text-sm text-[var(--z-faint)]">From</span>
+				<select
+					value={draft.from}
+					onchange={(event) => compose.setFrom(draft.id, event.currentTarget.value)}
+					class="h-7 min-w-0 flex-1 cursor-pointer truncate border-0 bg-transparent text-sm text-[var(--z-ink)] focus:outline-none max-md:text-base"
+				>
+					{#each compose.identities as identity (identity.email)}
+						<option value={identity.email}>
+							{identity.name ? `${identity.name} <${identity.email}>` : identity.email}
+						</option>
+					{/each}
+				</select>
+			</label>
+		{/if}
 		{@render addressRow('to', 'To')}
 		{#if draft.ccShown}{@render addressRow('cc', 'Cc')}{/if}
 		{#if draft.bccShown}{@render addressRow('bcc', 'Bcc')}{/if}
@@ -810,6 +828,8 @@
 				enterkeyhint="enter"
 			></textarea>
 		{:else}
+			<!-- A swapped signature (a new From) reseeds the editor from the text. -->
+			{#key draft.signature}
 			<RichBody
 				id={bodyId}
 				toolbar={toolsId}
@@ -823,6 +843,7 @@
 					: 'opacity-68'} {filled ? 'min-h-0 flex-1 [&>*]:max-w-[46em]' : '[&>*]:max-w-[33em]'}"
 				height={filled ? undefined : `${bodyHeight}px`}
 			/>
+			{/key}
 		{/if}
 
 		{#if draft.sendError}

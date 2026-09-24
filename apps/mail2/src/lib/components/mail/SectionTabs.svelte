@@ -3,6 +3,7 @@
 		{ href: '/', label: 'Mail', match: (path: string) => path === '/' },
 		{ href: '/contacts', label: 'Contacts', match: (path: string) => path.startsWith('/contacts') },
 		{ href: '/calendar', label: 'Calendar', match: (path: string) => path.startsWith('/calendar') },
+		{ href: '/files', label: 'Files', match: (path: string) => path.startsWith('/files') },
 		{ href: '/settings', label: 'Settings', match: (path: string) => path.startsWith('/settings') }
 	] as const;
 </script>

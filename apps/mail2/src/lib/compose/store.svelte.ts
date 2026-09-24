@@ -11,21 +11,27 @@ import {
 	DRAFT_CONTENT_KEYS,
 	buildDraftSaveInput,
 	draftContentSignature,
-	hasDraftContent
+	hasDraftContent,
+	localDraft,
+	type LocalDraft
 } from './draft-save';
 import {
 	classifySendFailure,
 	enqueueOutbox,
+	listLocalDrafts,
 	listOutbox,
+	putLocalDraft,
+	removeLocalDraft,
 	removeOutboxEntry,
 	updateOutboxEntry
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
 import { formatScheduleTime } from './schedule';
 import { commitRecipient, isDuplicate, makeRecipient, recipientEmails } from './recipients';
-import { forwardSeed, replyAllRecipients, replySeed } from './quote';
+import { forwardSeed, replyAllRecipients, replySeed, signatureBlock, withSignature } from './quote';
 import type {
 	ComposeContact,
+	ComposeIdentity,
 	ComposeTransport,
 	Draft,
 	DraftAttachment,
@@ -73,7 +79,10 @@ export interface NewDraftOptions {
 	focusTarget?: FocusTarget;
 	attachments?: DraftAttachment[];
 	jmapDraftId?: string | null;
+	/** Send-as address; the account's first (primary) address when omitted. */
+	from?: string;
 }
+
 
 class ComposeStore {
 	drafts = $state<Draft[]>([]);
@@ -81,9 +90,12 @@ class ComposeStore {
 	trayDragId = $state<string | null>(null);
 	toasts = $state<Toast[]>([]);
 	contacts = $state<ComposeContact[]>([]);
+	/** The account's own addresses, primary first. */
+	identities = $state<ComposeIdentity[]>([]);
 
 	#transport: ComposeTransport | null = null;
 	#draining = false;
+	#recovering = false;
 	#saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 	#savedSignatures = new Map<string, string>();
 
@@ -93,6 +105,17 @@ class ComposeStore {
 
 	setContacts(contacts: ComposeContact[]) {
 		this.contacts = contacts;
+	}
+
+	setIdentities(identities: ComposeIdentity[]) {
+		this.identities = identities;
+	}
+
+	#identity(email: string): ComposeIdentity | undefined {
+		const want = email.trim().toLowerCase();
+		return want
+			? this.identities.find((identity) => identity.email.toLowerCase() === want)
+			: this.identities[0];
 	}
 
 	openPanels(): Draft[] {
@@ -108,9 +131,15 @@ class ComposeStore {
 	}
 
 	newDraft(options: NewDraftOptions = {}): string {
+		const from = options.from ?? this.identities[0]?.email ?? '';
+		// A reopened draft already carries whatever signature it was written with.
+		const signature = options.kind === 'draft' ? '' : signatureBlock(this.#identity(from)?.signature);
+		const body = options.body ?? '';
 		const draft: Draft = {
 			id: crypto.randomUUID(),
 			kind: options.kind ?? 'new',
+			from,
+			signature,
 			to: options.to ?? [],
 			toInput: '',
 			toOpen: false,
@@ -126,7 +155,7 @@ class ComposeStore {
 			ccShown: false,
 			bccShown: false,
 			subject: options.subject ?? '',
-			body: options.body ?? '',
+			body: withSignature(body, signature),
 			bodyHtml: options.bodyHtml ?? '',
 			// A draft that was written rich reopens rich, whatever the preference says now.
 			plain: options.bodyHtml ? false : prefs.composePlain,
@@ -161,6 +190,10 @@ class ComposeStore {
 		position?: { x: number; y: number }
 	): string {
 		const seed = mode === 'forward' ? forwardSeed(message) : replySeed(message);
+		// Answer from the address it was sent to, when that is one of ours.
+		const addressed = [...message.to, ...message.cc].find(
+			(person) => person.email && this.#identity(person.email)
+		);
 		let to: Recipient[] = [];
 		if (mode === 'reply') {
 			to = [{ name: message.from.name, email: message.from.email, meta: '' }];
@@ -173,6 +206,7 @@ class ComposeStore {
 		return this.newDraft({
 			...position,
 			kind: mode,
+			from: addressed ? this.#identity(addressed.email)?.email : undefined,
 			to,
 			subject: seed.subject,
 			body: seed.body,
@@ -197,31 +231,45 @@ class ComposeStore {
 	/**
 	 * Close: persist to the Drafts mailbox first, then remove the panel.
 	 * Silent per spec — no toast unless the save fails. An emptied draft that
-	 * already has a server copy is treated as a discard of that copy.
+	 * already has a server copy is treated as a discard of that copy. A save
+	 * that fails leaves the draft on this device until the server takes it.
 	 */
 	close(id: string) {
 		const draft = this.#find(id);
 		if (!draft) return;
+		const transport = this.#transport;
 		if (hasDraftContent(draft)) {
 			const signature = draftContentSignature(draft);
-			if (signature !== this.#savedSignatures.get(id) && this.#transport) {
-				const input = buildDraftSaveInput(draft);
+			if (signature !== this.#savedSignatures.get(id) && transport) {
+				const record = localDraft(draft, transport.account, true);
 				this.#removeInternal(id);
-				void this.#transport.saveDraft(input).catch(() => {
-					this.pushToast({ text: 'Draft could not be saved', tone: 'error' });
-				});
+				void (async () => {
+					await putLocalDraft(record).catch(() => {});
+					try {
+						await transport.saveDraft(buildDraftSaveInput(record.draft));
+						await removeLocalDraft(id);
+					} catch (cause) {
+						this.pushToast(
+							classifySendFailure(cause) === 'network'
+								? { text: "You're offline — the draft is kept on this device until it can be saved", tone: 'warning' }
+								: { text: 'Draft could not be saved', tone: 'error' }
+						);
+					}
+				})();
 				return;
 			}
-		} else if (draft.jmapDraftId && this.#transport) {
+		} else if (draft.jmapDraftId && transport) {
 			const emailId = draft.jmapDraftId;
-			void this.#transport.deleteDraft(emailId).catch(() => {});
+			void transport.deleteDraft(emailId).catch(() => {});
 		}
 		this.#removeInternal(id);
+		void removeLocalDraft(id).catch(() => {});
 	}
 
 	discard(id: string) {
 		const draft = this.#find(id);
 		this.#removeInternal(id);
+		void removeLocalDraft(id).catch(() => {});
 		if (draft?.jmapDraftId) {
 			void this.#transport
 				?.deleteDraft(draft.jmapDraftId)
@@ -323,6 +371,27 @@ class ComposeStore {
 	consumeFocus(id: string) {
 		const draft = this.#find(id);
 		if (draft) draft.focusTarget = null;
+	}
+
+	/**
+	 * Switch the send-as address. The signature follows wherever compose can
+	 * still find it: anywhere in plain text, or in a rich body nobody has written
+	 * in yet (clearing `bodyHtml` reseeds the editor from the text).
+	 */
+	setFrom(id: string, from: string) {
+		const draft = this.#find(id);
+		if (!draft || draft.from === from) return;
+		const next = signatureBlock(this.#identity(from)?.signature);
+		// ponytail: rich text that has been edited keeps its signature — swapping it
+		// inside Trix's HTML needs an editor API, add it if people switch From mid-message.
+		const untouched = draft.plain || !draft.bodyHtml;
+		if (untouched && draft.signature && draft.body.includes(draft.signature)) {
+			this.patch(id, { from, signature: next, body: draft.body.replace(draft.signature, next), bodyHtml: '' });
+		} else if (untouched && !draft.signature && !draft.body.trim()) {
+			this.patch(id, { from, signature: next, body: next, bodyHtml: '' });
+		} else {
+			this.patch(id, { from });
+		}
 	}
 
 	setSendAt(id: string, sendAt: string | null) {
@@ -549,16 +618,20 @@ class ComposeStore {
 		if (!hasDraftContent(draft)) return;
 		const signature = draftContentSignature(draft);
 		if (signature === this.#savedSignatures.get(id)) return;
-		const input = buildDraftSaveInput(draft);
+		const transport = this.#transport;
+		const record = localDraft(draft, transport.account, false);
 		draft.draftSaving = true;
 		try {
-			const { emailId } = await this.#transport.saveDraft(input);
+			// On this device first, so a reload while the server is out of reach keeps it.
+			await putLocalDraft(record).catch(() => {});
+			const { emailId } = await transport.saveDraft(buildDraftSaveInput(record.draft));
 			this.#savedSignatures.set(id, signature);
 			const current = this.#find(id);
 			if (current) {
 				current.jmapDraftId = emailId;
 				current.draftSavedAt = Date.now();
 				if (draftContentSignature(current) !== signature) this.scheduleDraftSave(id);
+				else await removeLocalDraft(id).catch(() => {});
 			}
 		} catch (cause) {
 			if (classifySendFailure(cause) !== 'network') {
@@ -575,6 +648,7 @@ class ComposeStore {
 		const id = this.newDraft({
 			...position,
 			kind: 'draft',
+			from: seed.from ? this.#identity(seed.from)?.email : undefined,
 			to: seed.to,
 			subject: seed.subject,
 			body: seed.body,
@@ -641,6 +715,7 @@ class ComposeStore {
 			bodyHtml: draft.bodyHtml ? outgoingHtml(draft.bodyHtml) : undefined,
 			sendAt: draft.sendAt ?? undefined,
 			attachments: outgoingAttachments(draft.attachments),
+			from: draft.from || undefined,
 			account: this.#transport?.account ?? undefined
 		};
 
@@ -661,6 +736,7 @@ class ComposeStore {
 				void transport.deleteDraft(savedDraftId).catch(() => {});
 			}
 			this.#removeInternal(id);
+			void removeLocalDraft(id).catch(() => {});
 			if (payload.sendAt && result.emailId) {
 				const emailId = result.emailId;
 				this.pushToast({
@@ -677,6 +753,7 @@ class ComposeStore {
 				try {
 					await enqueueOutbox(payload);
 					this.#removeInternal(id);
+					void removeLocalDraft(id).catch(() => {});
 					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
 				} catch {
 					draft.sending = false;
@@ -694,6 +771,9 @@ class ComposeStore {
 		try {
 			await this.#transport?.cancelScheduled(emailId);
 			this.newDraft({
+				// Its body already holds the signature.
+				kind: 'draft',
+				from: payload.from,
 				to: payload.to.map((email) => ({ name: '', email, meta: '' })),
 				subject: payload.subject,
 				body: payload.body,
@@ -738,6 +818,58 @@ class ComposeStore {
 			this.#draining = false;
 		}
 		return sent;
+	}
+
+	/**
+	 * Settle what only this device holds: drafts closed while the server was out
+	 * of reach go to Drafts, drafts a reload interrupted come back to the dock,
+	 * and drafts still open here retry their save. Run on load and on `online`.
+	 */
+	async recoverLocalDrafts(): Promise<void> {
+		const transport = this.#transport;
+		if (this.#recovering || !transport?.account) return;
+		this.#recovering = true;
+		let restored = 0;
+		try {
+			for (const record of await listLocalDrafts()) {
+				if (record.account && record.account !== transport.account) continue;
+				if (this.#find(record.id)) {
+					this.scheduleDraftSave(record.id);
+					continue;
+				}
+				if (record.closed) {
+					try {
+						await transport.saveDraft(buildDraftSaveInput(record.draft));
+						await removeLocalDraft(record.id);
+						continue;
+					} catch (cause) {
+						if (classifySendFailure(cause) === 'network') continue;
+						// The server refuses it: hand it back rather than lose it.
+					}
+				}
+				this.#restoreLocal(record);
+				restored += 1;
+			}
+		} catch {
+			// No local database: nothing was kept, so nothing to recover.
+		} finally {
+			this.#recovering = false;
+		}
+		if (restored) {
+			this.pushToast({
+				text: restored === 1 ? 'Restored an unsaved draft' : `Restored ${restored} unsaved drafts`,
+				tone: 'info'
+			});
+		}
+	}
+
+	// ponytail: two tabs open on load both restore the same unsaved draft, and
+	// either one's save wins; claim records per tab (Web Locks) if that bites.
+	#restoreLocal(record: LocalDraft) {
+		const draft = this.#find(this.newDraft({ kind: record.draft.kind }));
+		if (!draft) return;
+		Object.assign(draft, record.draft, { stage: 'minimized', focusTarget: null });
+		this.scheduleDraftSave(draft.id);
 	}
 
 	pushToast(toast: { text: string; tone?: ToastTone; actionLabel?: string; action?: () => void }) {

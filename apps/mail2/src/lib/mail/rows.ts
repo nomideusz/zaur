@@ -125,7 +125,7 @@ export function formatBytes(size: number): string {
 	const units = ['B', 'KB', 'MB', 'GB'];
 	const exponent = Math.min(Math.floor(Math.log2(size) / 10), units.length - 1);
 	const value = size / 2 ** (10 * exponent);
-	return `${value >= 100 ? Math.round(value) : value.toFixed(1)} ${units[exponent]}`;
+	return `${exponent === 0 || value >= 100 ? Math.round(value) : value.toFixed(1)} ${units[exponent]}`;
 }
 
 /**

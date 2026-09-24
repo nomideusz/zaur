@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { messageOf } from '#lib/errors';
 	import { goto } from '$app/navigation';
 	import { contactDisplayName, contactLetter, contactMatches } from '@zaur/mail-core';
 	import type { Contact, ContactInput } from '@zaur/mail-core';
@@ -64,14 +65,6 @@
 		selectedId = null;
 		mode = 'new';
 		editorError = null;
-	}
-
-	function messageOf(cause: unknown, fallback: string): string {
-		if (cause && typeof cause === 'object' && 'body' in cause) {
-			const body = (cause as { body?: { message?: string } }).body;
-			if (body?.message) return body.message;
-		}
-		return cause instanceof Error && cause.message ? cause.message : fallback;
 	}
 
 	async function save(input: ContactInput) {

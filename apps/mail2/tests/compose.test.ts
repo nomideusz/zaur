@@ -11,7 +11,14 @@ import {
 	recipientEmails,
 	filterContacts
 } from '../src/lib/compose/recipients.ts';
-import { formatWhen, replySeed, replyAllRecipients, forwardSeed } from '../src/lib/compose/quote.ts';
+import {
+	formatWhen,
+	replySeed,
+	replyAllRecipients,
+	forwardSeed,
+	signatureBlock,
+	withSignature
+} from '../src/lib/compose/quote.ts';
 import {
 	computeStep,
 	bodyHeightPx,
@@ -41,6 +48,8 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 	return {
 		id: 'd1',
 		kind: 'new',
+		from: '',
+		signature: '',
 		to: [],
 		toInput: '',
 		toOpen: false,
@@ -353,4 +362,14 @@ test('isSendAtValid: the server needs a minute of lead time', () => {
 test('customSendTimeMin: local datetime-local value five minutes out', () => {
 	const now = Date.UTC(2026, 8, 14, 12, 0, 0);
 	assert.equal(customSendTimeMin(now), '2026-09-14T12:05');
+});
+
+test('signature: "-- " delimiter, under new text, above a quote', () => {
+	assert.equal(signatureBlock('  '), '');
+	const block = signatureBlock('Ada\nZaur ');
+	assert.equal(block, '\n\n-- \nAda\nZaur');
+	assert.equal(withSignature('', block), block);
+	assert.equal(withSignature('Invite', block), `Invite${block}`);
+	const quote = '\n\n---\nOn Monday, Bob wrote:\nHi';
+	assert.equal(withSignature(quote, block), `${block}${quote}`);
 });

@@ -61,3 +61,27 @@ export function attachmentFromServer(part: {
 		status: 'ready'
 	};
 }
+
+/** Send a file's bytes to the account (via /api/upload) and get its blob back. */
+export async function uploadFile(file: File): Promise<OutgoingAttachment> {
+	const response = await fetch('/api/upload', {
+		method: 'POST',
+		headers: { 'Content-Type': file.type || 'application/octet-stream' },
+		body: file
+	});
+	const payload = (await response.json().catch(() => ({}))) as {
+		blobId?: string;
+		size?: number;
+		type?: string;
+		error?: string;
+	};
+	if (!response.ok || !payload.blobId) {
+		throw new Error(payload.error ?? `Upload failed (${response.status})`);
+	}
+	return {
+		blobId: payload.blobId,
+		name: file.name,
+		type: payload.type ?? file.type,
+		size: payload.size ?? file.size
+	};
+}

@@ -113,6 +113,7 @@ test('initials: two letters from name or email', () => {
 
 test('formatBytes and typeBadge', () => {
 	assert.equal(formatBytes(512), '512 B');
+	assert.equal(formatBytes(25), '25 B');
 	assert.equal(formatBytes(2048), '2.0 KB');
 	assert.equal(formatBytes(5 * 1024 * 1024), '5.0 MB');
 	assert.equal(typeBadge('application/pdf'), 'PDF');
@@ -202,4 +203,34 @@ test('previewKind: what opens in place, and what only downloads', () => {
 	assert.equal(previewKind(file('huge.log', 'text/plain', 2 * 1024 * 1024)), null);
 	assert.equal(previewKind(file('src.zip', 'application/zip')), null);
 	assert.equal(previewKind(file('report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')), null);
+});
+
+test('treeOrder: parents before children, siblings keep their order, orphans go top-level', async () => {
+	const { treeOrder } = await import('../src/lib/mail/folders.ts');
+	const order = treeOrder([
+		{ id: 'inbox', parentId: null },
+		{ id: 'b', parentId: 'a' },
+		{ id: 'a', parentId: null },
+		{ id: 'c', parentId: 'b' },
+		{ id: 'lost', parentId: 'gone' }
+	]);
+	assert.deepEqual(
+		order.map((mailbox) => `${mailbox.id}:${mailbox.depth}`),
+		['inbox:0', 'a:0', 'b:1', 'c:2', 'lost:0']
+	);
+});
+
+test('withoutBranch: a folder cannot move into itself or anything inside it', async () => {
+	const { treeOrder, withoutBranch } = await import('../src/lib/mail/folders.ts');
+	const tree = treeOrder([
+		{ id: 'a', parentId: null },
+		{ id: 'b', parentId: 'a' },
+		{ id: 'c', parentId: 'b' },
+		{ id: 'd', parentId: 'a' },
+		{ id: 'e', parentId: null }
+	]);
+	const ids = (list: { id: string }[]) => list.map((item) => item.id);
+	assert.deepEqual(ids(withoutBranch(tree, { id: 'b' })), ['a', 'd', 'e']);
+	assert.deepEqual(ids(withoutBranch(tree, { id: 'a' })), ['e']);
+	assert.deepEqual(ids(withoutBranch(tree, null)), ['a', 'b', 'c', 'd', 'e']);
 });

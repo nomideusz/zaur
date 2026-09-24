@@ -13,6 +13,8 @@ const MAIL = 'urn:ietf:params:jmap:mail';
 const CONTACTS = 'urn:ietf:params:jmap:contacts';
 const CALENDARS = 'urn:ietf:params:jmap:calendars';
 const SIEVE = 'urn:ietf:params:jmap:sieve';
+const VACATION = 'urn:ietf:params:jmap:vacationresponse';
+const FILENODE = 'urn:ietf:params:jmap:filenode';
 const STALWART = 'urn:stalwart:jmap';
 
 const session = {
@@ -28,6 +30,8 @@ const session = {
 		[CONTACTS]: {},
 		[CALENDARS]: {},
 		[SIEVE]: { extensions: ['fileinto', 'imap4flags'] },
+		[VACATION]: {},
+		[FILENODE]: {},
 		[STALWART]: {}
 	},
 	accounts: {
@@ -35,10 +39,10 @@ const session = {
 			name: 'smoke@zaur.app',
 			isPersonal: true,
 			isReadOnly: false,
-			accountCapabilities: { [MAIL]: {}, [CONTACTS]: {}, [CALENDARS]: {}, [SIEVE]: {} }
+			accountCapabilities: { [MAIL]: {}, [CONTACTS]: {}, [CALENDARS]: {}, [SIEVE]: {}, [VACATION]: {}, [FILENODE]: {} }
 		}
 	},
-	primaryAccounts: { [MAIL]: ACC, [CONTACTS]: ACC, [CALENDARS]: ACC, [SIEVE]: ACC }
+	primaryAccounts: { [MAIL]: ACC, [CONTACTS]: ACC, [CALENDARS]: ACC, [SIEVE]: ACC, [FILENODE]: ACC }
 };
 
 const mailboxes = [
@@ -48,8 +52,16 @@ const mailboxes = [
 	{ id: 'archive', name: 'Archive', role: 'archive', totalEmails: 1, unreadEmails: 0, sortOrder: 3 },
 	{ id: 'junk', name: 'Junk', role: 'junk', totalEmails: 1, unreadEmails: 1, sortOrder: 4 },
 	{ id: 'trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 5 },
-	{ id: 'scheduled', name: 'Scheduled', role: 'scheduled', totalEmails: 1, unreadEmails: 0, sortOrder: 6 }
+	{ id: 'scheduled', name: 'Scheduled', role: 'scheduled', totalEmails: 1, unreadEmails: 0, sortOrder: 6 },
+	{ id: 'work', name: 'Work', role: null, parentId: null, totalEmails: 0, unreadEmails: 0, sortOrder: 10 },
+	{ id: 'receipts', name: 'Receipts', role: null, parentId: 'work', totalEmails: 0, unreadEmails: 0, sortOrder: 10 }
 ];
+// An alias, so compose has a From to choose; Identity/set keeps names and signatures.
+const identities = [
+	{ id: 'id1', name: 'Smoke Tester', email: 'smoke@zaur.app', mayDelete: false, textSignature: 'Smoke Tester\nzaur.app' },
+	{ id: 'id2', name: 'Smoke Help', email: 'help@zaur.app', mayDelete: true, textSignature: '' }
+];
+let vacationResponse = { id: 'singleton', isEnabled: false, fromDate: null, toDate: null, subject: null, textBody: null, htmlBody: null };
 
 const now = Date.now();
 const at = (hoursAgo) => new Date(now - hoursAgo * 3_600_000).toISOString();
@@ -135,6 +147,23 @@ const blobs = {
 	'blob-photo': ['image/png', makePng(960, 640)],
 	'blob-voice': ['audio/wav', makeWav()]
 };
+
+/** File storage: two folders (one nested), files at the top and inside. */
+const fileNode = (id, parentId, name, blobId = null) => ({
+	id, parentId, name, nodeType: blobId ? 'file' : 'directory', blobId,
+	type: blobId ? blobs[blobId][0] : null, size: blobId ? blobs[blobId][1].length : null,
+	created: '2026-09-01T09:00:00Z', modified: '2026-09-20T15:30:00Z', role: null,
+	myRights: { mayRead: true, mayAddChildren: true, mayRename: true, mayDelete: true, mayModifyContent: true, mayShare: true }
+});
+const fileNodes = [
+	fileNode('fn-docs', null, 'Documents'),
+	fileNode('fn-work', null, 'Work'),
+	fileNode('fn-contracts', 'fn-work', 'Contracts'),
+	fileNode('fn-plan', null, 'rotation-plan.pdf', 'blob-2'),
+	fileNode('fn-logo', null, 'logo.svg', 'blob-logo'),
+	fileNode('fn-dkim', 'fn-docs', 'dkim.txt', 'blob-3'),
+	fileNode('fn-photo', 'fn-contracts', 'studio.png', 'blob-photo')
+];
 
 /** Sample mail: every channel, a thread, an attachment, one of each state. */
 const emails = new Map(
@@ -328,6 +357,117 @@ function handle([name, args, callId]) {
 	const ok = (data) => [name, { accountId: ACC, ...data }, callId];
 	const fail = (type, description) => ['error', { type, description }, callId];
 	switch (name) {
+		case 'Mailbox/set': {
+			const created = {};
+			for (const [key, data] of Object.entries(args.create ?? {})) {
+				const id = `mb-${randomUUID().slice(0, 6)}`;
+				mailboxes.push({ id, name: data.name, role: null, parentId: data.parentId ?? null, totalEmails: 0, unreadEmails: 0, sortOrder: 10 });
+				created[key] = { id };
+				log('Mailbox created', id, JSON.stringify(data));
+			}
+			const updated = {};
+			const notUpdated = {};
+			for (const [id, patch] of Object.entries(args.update ?? {})) {
+				const mb = mailboxes.find((m) => m.id === id);
+				if (!mb) { notUpdated[id] = { type: 'notFound' }; continue; }
+				Object.assign(mb, patch);
+				updated[id] = null;
+				log('Mailbox updated', id, JSON.stringify(patch));
+			}
+			const destroyed = [];
+			const notDestroyed = {};
+			for (const id of args.destroy ?? []) {
+				if (mailboxes.some((m) => m.parentId === id)) { notDestroyed[id] = { type: 'mailboxHasChild' }; continue; }
+				const at = mailboxes.findIndex((m) => m.id === id);
+				if (at === -1) continue;
+				mailboxes.splice(at, 1);
+				destroyed.push(id);
+				log('Mailbox destroyed', id, `onDestroyRemoveEmails=${args.onDestroyRemoveEmails}`);
+			}
+			return ok({ oldState: 'm1', newState: 'm2', created, updated, notUpdated, destroyed, notDestroyed });
+		}
+		case 'FileNode/query': {
+			const f = args.filter ?? {};
+			const ids = fileNodes
+				.filter((n) => (f.isTopLevel ? n.parentId === null : true))
+				.filter((n) => ('parentId' in f ? n.parentId === f.parentId : true))
+				.filter((n) => (f.nodeType ? n.nodeType === f.nodeType : true))
+				.map((n) => n.id);
+			return ok({ queryState: 'f1', ids, position: 0 });
+		}
+		case 'FileNode/get': {
+			const want = new Set(args.ids ?? fileNodes.map((n) => n.id));
+			if (args.fetchParents) {
+				for (const id of [...want]) {
+					for (let n = fileNodes.find((x) => x.id === id); n?.parentId; n = fileNodes.find((x) => x.id === n.parentId)) want.add(n.parentId);
+				}
+			}
+			const list = fileNodes.filter((n) => want.has(n.id));
+			return ok({ state: 'f1', list, notFound: [...want].filter((id) => !list.some((n) => n.id === id)) });
+		}
+		case 'FileNode/set': {
+			const clash = (parentId, name, self) => fileNodes.some((n) => n.parentId === parentId && n.name === name && n.id !== self);
+			const created = {};
+			const notCreated = {};
+			for (const [key, data] of Object.entries(args.create ?? {})) {
+				if (clash(data.parentId ?? null, data.name)) { notCreated[key] = { type: 'alreadyExists', description: `“${data.name}” is already here` }; continue; }
+				const node = { ...fileNode(`fn-${randomUUID().slice(0, 6)}`, data.parentId ?? null, data.name), nodeType: data.nodeType, blobId: data.blobId ?? null, type: data.type ?? null, size: data.blobId ? blobs[data.blobId]?.[1].length ?? 0 : null, modified: new Date().toISOString() };
+				fileNodes.push(node);
+				created[key] = { id: node.id };
+				log('FileNode created', node.id, JSON.stringify(data));
+			}
+			const updated = {};
+			const notUpdated = {};
+			for (const [id, patch] of Object.entries(args.update ?? {})) {
+				const node = fileNodes.find((n) => n.id === id);
+				if (!node) { notUpdated[id] = { type: 'notFound' }; continue; }
+				if (clash(patch.parentId === undefined ? node.parentId : patch.parentId, patch.name ?? node.name, id)) { notUpdated[id] = { type: 'alreadyExists', description: 'Something by that name is already there' }; continue; }
+				Object.assign(node, patch, { modified: new Date().toISOString() });
+				updated[id] = null;
+				log('FileNode updated', id, JSON.stringify(patch));
+			}
+			const destroyed = [];
+			const notDestroyed = {};
+			const drop = (id) => {
+				for (const child of fileNodes.filter((n) => n.parentId === id)) drop(child.id);
+				fileNodes.splice(fileNodes.findIndex((n) => n.id === id), 1);
+			};
+			for (const id of args.destroy ?? []) {
+				if (!args.onDestroyRemoveChildren && fileNodes.some((n) => n.parentId === id)) { notDestroyed[id] = { type: 'nodeHasChildren' }; continue; }
+				drop(id);
+				destroyed.push(id);
+				log('FileNode destroyed', id, `onDestroyRemoveChildren=${args.onDestroyRemoveChildren}`);
+			}
+			return ok({ oldState: 'f1', newState: 'f2', created, notCreated, updated, notUpdated, destroyed, notDestroyed });
+		}
+		case 'VacationResponse/get':
+			return ok({ state: 'v1', list: [vacationResponse], notFound: [] });
+		case 'VacationResponse/set':
+			vacationResponse = { ...vacationResponse, ...(args.update?.singleton ?? {}) };
+			log('VacationResponse set', JSON.stringify(vacationResponse));
+			return ok({ oldState: 'v1', newState: 'v2', updated: { singleton: null } });
+		case 'Identity/set': {
+			const updated = {};
+			for (const [id, patch] of Object.entries(args.update ?? {})) {
+				const identity = identities.find((i) => i.id === id);
+				if (!identity) continue;
+				Object.assign(identity, patch);
+				updated[id] = null;
+				log('Identity updated', id, JSON.stringify(patch));
+			}
+			return ok({ oldState: 'i1', newState: 'i2', updated });
+		}
+		case 'EmailSubmission/set': {
+			const created = {};
+			for (const [key, sub] of Object.entries(args.create ?? {})) {
+				const email = emails.get(sub.emailId);
+				log('EmailSubmission created', JSON.stringify({ identityId: sub.identityId, from: email?.from, subject: email?.subject, body: email && Object.values(email.bodyValues ?? {})[0]?.value }));
+				created[key] = { id: `sub-${sub.emailId}` };
+				const patch = args.onSuccessUpdateEmail?.[`#${key}`];
+				if (email && patch?.mailboxIds) email.mailboxIds = { ...patch.mailboxIds };
+			}
+			return ok({ oldState: 'sub1', newState: 'sub2', created });
+		}
 		case 'Mailbox/get':
 			return ok({ state: 'm1', list: args.ids ? mailboxes.filter((mb) => args.ids.includes(mb.id)) : mailboxes, notFound: [] });
 		case 'Email/query': {
@@ -380,6 +520,13 @@ function handle([name, args, callId]) {
 			return ok({ oldState: args.sinceState, newState: `e${emailState}`, hasMoreChanges: false, created, updated: [], destroyed: [] });
 		}
 		case 'Email/set': {
+			const createdEmails = {};
+			for (const [key, data] of Object.entries(args.create ?? {})) {
+				const id = `out-${randomUUID().slice(0, 6)}`;
+				emails.set(id, { threadId: id, keywords: {}, receivedAt: new Date().toISOString(), preview: '', to: [], cc: [], ...data, id });
+				createdEmails[key] = { id, blobId: id, threadId: id, size: 1 };
+				log('Email created', id, JSON.stringify({ from: data.from, subject: data.subject }));
+			}
 			const updated = {};
 			for (const [id, patch] of Object.entries(args.update ?? {})) {
 				const email = emails.get(id);
@@ -405,7 +552,7 @@ function handle([name, args, callId]) {
 				mb.totalEmails = inBox.length;
 				mb.unreadEmails = inBox.filter((e) => !e.keywords.$seen).length;
 			}
-			return ok({ oldState: 'e1', newState: 'e2', updated, destroyed });
+			return ok({ oldState: 'e1', newState: 'e2', created: createdEmails, updated, destroyed });
 		}
 		case 'EmailSubmission/query': {
 			const wanted = args.filter?.emailIds ?? [];
@@ -414,7 +561,7 @@ function handle([name, args, callId]) {
 		case 'EmailSubmission/get':
 			return ok({ state: 'sub1', list: (args.ids ?? []).map((id) => ({ id, emailId: id.slice(4), undoStatus: 'final' })), notFound: [] });
 		case 'Identity/get':
-			return ok({ state: 'i1', list: [{ id: 'id1', name: 'Smoke Tester', email: 'smoke@zaur.app', mayDelete: false }], notFound: [] });
+			return ok({ state: 'i1', list: identities, notFound: [] });
 		case 'Quota/get':
 			return ok({ state: 'q', list: [{ id: 'q1', resourceType: 'octets', used: 123456789, hardLimit: 5000000000, scope: 'account', name: 'mail', types: ['Email'] }], notFound: [] });
 		case 'SieveScript/get':
@@ -657,6 +804,19 @@ http
 			}
 			res.writeHead(200, { 'Content-Type': blob[0] });
 			return res.end(blob[1]);
+		}
+		if (req.method === 'POST' && req.url.startsWith('/jmap/upload/')) {
+			const chunks = [];
+			req.on('data', (chunk) => chunks.push(chunk));
+			req.on('end', () => {
+				const blobId = `blob-up-${randomUUID().slice(0, 6)}`;
+				const type = req.headers['content-type'] ?? 'application/octet-stream';
+				blobs[blobId] = [type, Buffer.concat(chunks)];
+				log('uploaded', blobId, type, blobs[blobId][1].length, 'bytes');
+				res.writeHead(200, { 'Content-Type': 'application/json' });
+				res.end(JSON.stringify({ accountId: ACC, blobId, type, size: blobs[blobId][1].length }));
+			});
+			return;
 		}
 		if (req.method === 'POST' && req.url === '/jmap') {
 			let body = '';
