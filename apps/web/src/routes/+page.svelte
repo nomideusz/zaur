@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'SUB/WAVE',
+			desc: 'A personal internet radio station: an AI DJ picks tracks from your Navidrome library, talks between them and takes requests, all on one Icecast stream.',
+			deploy: 'https://railway.com/deploy/subwave',
+			source: 'https://github.com/nomideusz/subwave-railway'
+		},
+		{
 			name: 'WordPress Pro',
 			desc: 'WordPress on MariaDB with a Redis object cache, nightly backups to a Railway bucket, and an admin password generated before the site ever goes public.',
 			deploy: 'https://railway.com/deploy/wordpress-pro',
