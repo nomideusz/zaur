@@ -484,6 +484,10 @@
 			const trash = mailboxList?.find((box) => box.kind === 'trash');
 			if (trash) payload = { ...payload, action: 'move', mailboxId: trash.id };
 		}
+		if (payload.action === 'delete') {
+			const n = emailIds.length;
+			if (!confirm(`Delete ${n === 1 ? 'this message' : `${n} messages`} forever? This can't be undone.`)) return;
+		}
 		const leavesFolder = payload.action === 'move' || payload.action === 'delete';
 		// Marking spam *is* a move to Junk — the toast should say what was meant,
 		// not how it was carried out.

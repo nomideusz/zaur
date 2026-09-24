@@ -10,6 +10,7 @@ import {
 	formatListTime,
 	formatReaderTime,
 	initials,
+	previewKind,
 	typeBadge,
 	type ListRow
 } from '../src/lib/mail/rows.ts';
@@ -186,4 +187,19 @@ test('attachmentUrl: encodes names that would otherwise break the query', () => 
 	assert.equal(params.get('blobId'), 'B123');
 	assert.equal(params.get('name'), 'Q2 report (final) & notes.pdf');
 	assert.equal(params.get('type'), 'application/pdf');
+});
+
+test('previewKind: what opens in place, and what only downloads', () => {
+	const file = (name: string, type: string, size = 1000) => ({ name, type, size });
+	assert.equal(previewKind(file('plan.pdf', 'application/pdf')), 'pdf');
+	assert.equal(previewKind(file('scan.PDF', 'application/octet-stream')), 'pdf');
+	assert.equal(previewKind(file('photo.jpg', 'image/jpeg')), 'image');
+	assert.equal(previewKind(file('clip.mp4', 'video/mp4')), 'video');
+	assert.equal(previewKind(file('note.wav', 'audio/wav; codecs=1')), 'audio');
+	assert.equal(previewKind(file('page.html', 'text/html')), 'text');
+	assert.equal(previewKind(file('data.json', 'application/octet-stream')), 'text');
+	// Big text downloads; an archive or a document never opens here.
+	assert.equal(previewKind(file('huge.log', 'text/plain', 2 * 1024 * 1024)), null);
+	assert.equal(previewKind(file('src.zip', 'application/zip')), null);
+	assert.equal(previewKind(file('report.docx', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document')), null);
 });

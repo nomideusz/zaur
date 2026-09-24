@@ -26,8 +26,20 @@ function schema<T>() {
 	} as any;
 }
 
+/**
+ * Stalwart leaves a scheduled message in Scheduled after it has gone out;
+ * filing it to Sent is the client's job. At most once a minute per account, in
+ * the background — the push that follows the move refreshes the counts.
+ */
+const reconciledAt = new Map<string, number>();
+
 export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 	const client = await connect();
+	const key = requireAccountKey();
+	if (Date.now() - (reconciledAt.get(key) ?? 0) > 60_000) {
+		reconciledAt.set(key, Date.now());
+		client.reconcileScheduledEmails().catch(() => {});
+	}
 	const list = await client.getMailboxes();
 	return list
 		.map((m): MailboxDTO => {
@@ -61,6 +73,10 @@ function aiCategoriesOn(): boolean {
 	}
 }
 
+/** Webmail 1.0 keeps its settings in a message with this subject; it is not mail. */
+const isMail = (email: { subject?: string | null }) =>
+	email.subject?.trim() !== '__zaur_webmail_settings_v1__';
+
 export const threads = query(
 	schema<{ mailboxId: string; filter?: ListFilter; limit?: number; kind?: MailboxKind }>(),
 	async ({ mailboxId, filter, limit, kind }): Promise<ThreadListDTO> => {
@@ -74,7 +90,7 @@ export const threads = query(
 		if (CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn()) categorizeInBackground(client, emails);
 		return {
 			mailboxId,
-			rows: emails.map((email) => mapEmailPreview(email, mailboxId))
+			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId))
 		};
 	}
 );
@@ -135,7 +151,7 @@ export const search = query(
 			mailboxId: mailboxId ?? '',
 			// Results can come from any folder, so a row is labelled by the
 			// mailbox it is actually in rather than the one we searched from.
-			rows: emails.map((email) => mapEmailPreview(email, mailboxId ?? ''))
+			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId ?? ''))
 		};
 	}
 );

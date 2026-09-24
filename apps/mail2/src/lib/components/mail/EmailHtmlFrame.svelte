@@ -91,7 +91,7 @@
 		bind:this={frame}
 		title="Email message"
 		{srcdoc}
-		sandbox="allow-same-origin allow-popups"
+		sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
 		onload={handleLoad}
 		class="w-full border-0 align-top"
 	></iframe>

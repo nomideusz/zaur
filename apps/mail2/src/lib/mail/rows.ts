@@ -138,6 +138,37 @@ export function attachmentUrl(blobId: string, name: string, type: string): strin
 	return `/api/download?${params}`;
 }
 
+export type PreviewKind = 'image' | 'pdf' | 'video' | 'audio' | 'text';
+
+/** Text is read into the page whole, so a big log or CSV downloads instead. */
+export const MAX_TEXT_PREVIEW_BYTES = 1024 * 1024;
+
+/** Text-ish types shown as source: HTML and XML included, never rendered. */
+const TEXT_TYPES = new Set([
+	'text/plain',
+	'text/csv',
+	'text/markdown',
+	'text/html',
+	'text/css',
+	'text/calendar',
+	'text/xml',
+	'application/json',
+	'application/xml'
+]);
+const TEXT_EXTENSIONS = /\.(txt|csv|md|markdown|log|json|xml|ics|css)$/i;
+
+/** What an attachment can be opened as in the preview, or null to download it. */
+export function previewKind(attachment: { name: string; type: string; size: number }): PreviewKind | null {
+	const type = attachment.type.toLowerCase().split(';')[0]!.trim();
+	if (type === 'application/pdf' || /\.pdf$/i.test(attachment.name)) return 'pdf';
+	if (type.startsWith('image/')) return 'image';
+	if (type.startsWith('video/')) return 'video';
+	if (type.startsWith('audio/')) return 'audio';
+	const textual = TEXT_TYPES.has(type) || (type === 'application/octet-stream' && TEXT_EXTENSIONS.test(attachment.name));
+	if (textual && attachment.size <= MAX_TEXT_PREVIEW_BYTES) return 'text';
+	return null;
+}
+
 export function typeBadge(mime: string): string {
 	const subtype = mime.split('/')[1] ?? mime;
 	return subtype.split('+')[0]!.slice(0, 4).toUpperCase();

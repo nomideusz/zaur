@@ -4,9 +4,10 @@
 	import { renderMessageBody } from '#lib/email/html';
 	import type { MessageDetail } from '@zaur/mail-core';
 	import type { MailboxDTO } from '#lib/mail/types';
-	import { prefs } from '#lib/settings.svelte.ts';
+	import { prefs, setPref } from '#lib/settings.svelte.ts';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
-	import { attachmentUrl, formatBytes, formatReaderTime, initials } from '#lib/mail/rows';
+	import { attachmentUrl, formatBytes, formatReaderTime, initials, previewKind } from '#lib/mail/rows';
+	import AttachmentPreview from './AttachmentPreview.svelte';
 	import { attachmentKind } from '#lib/compose/attachments';
 	import {
 		CHANNELS,
@@ -73,22 +74,39 @@
 		// Reset the collapse when a different thread loads.
 		void messages?.[0]?.threadId;
 		earlierExpanded = false;
+		previewAt = null;
 	});
 
 	const latest = $derived(messages && messages.length > 0 ? messages[messages.length - 1] : undefined);
 	const earlier = $derived(messages && messages.length > 1 ? messages.slice(0, -1) : []);
+
+	/**
+	 * Remote images stay off until asked for, message by message, unless the
+	 * account says always: a tracking pixel is a remote image. Keyed by message
+	 * id rather than reset in an effect, so the next message never renders once
+	 * with the last one's yes.
+	 */
+	let imagesFor = $state<string | null>(null);
+	const showImages = $derived(prefs.showRemoteImages || (!!latest && imagesFor === latest.id));
 
 	const rendered = $derived.by(() => {
 		if (!latest) return undefined;
 		const result = renderMessageBody({
 			bodyHtml: latest.bodyHtml,
 			bodyText: latest.bodyText,
-			allowExternal: true,
+			allowExternal: showImages,
 			// Its quote is the earlier messages again, and those are one tap above.
 			foldQuotes: earlier.length > 0
 		});
 		return { ...result, attachments: latest.attachments };
 	});
+
+	/** What the preview can open, in the order the chips show them; the rest download. */
+	const previewable = $derived(rendered?.attachments.filter((item) => previewKind(item)) ?? []);
+	let previewAt = $state<number | null>(null);
+	const MAX_THUMB_BYTES = 5 * 1024 * 1024;
+	const chipClass =
+		'flex h-10 items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[var(--z-shadow-tactile)] transition-[border-color] hover:border-[var(--z-faint)]';
 
 	const starred = $derived(threadState?.starred ?? false);
 	const unread = $derived(threadState?.unread ?? false);
@@ -491,6 +509,18 @@
 					</div>
 				{/if}
 
+				{#if rendered.blockedExternal && !showImages}
+					<div class="flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+						<span class="min-w-0 flex-1">Remote images are hidden, so the sender can't see that you opened this.</span>
+						<button type="button" class="shrink-0 text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)]" onclick={() => setPref('showRemoteImages', true)}>
+							Always
+						</button>
+						<button type="button" class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px]" onclick={() => (imagesFor = latest.id)}>
+							Show images
+						</button>
+					</div>
+				{/if}
+
 				<div class="text-[14px] leading-[1.65] text-[var(--z-body)]">
 					<EmailHtmlFrame html={rendered.html} plain={!rendered.isHtml} />
 				</div>
@@ -506,29 +536,44 @@
 						<div class="flex flex-wrap gap-[9px]">
 							{#each rendered.attachments as attachment (attachment.blobId)}
 								{@const badge = attachmentBadge(attachment.type)}
-								<a
-									href={attachmentUrl(attachment.blobId, attachment.name, attachment.type)}
-									download={attachment.name}
-									class="flex h-10 items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[var(--z-shadow-tactile)] transition-[border-color] hover:border-[var(--z-faint)]"
-									title="Download {attachment.name}"
-								>
-									<span
-										class="flex size-[22px] items-center justify-center rounded-[5px] border text-[9px] font-bold uppercase"
-										style:background-color={badge.bg}
-										style:border-color={badge.border}
-										style:color={badge.text}
-									>
-										{attachmentKind(attachment.name, attachment.type)}
-									</span>
+								{@const url = attachmentUrl(attachment.blobId, attachment.name, attachment.type)}
+								{@const at = previewable.indexOf(attachment)}
+								{#snippet chip()}
+									<!-- An image is its own badge, up to a size worth fetching for 22px. -->
+									{#if previewKind(attachment) === 'image' && attachment.size <= MAX_THUMB_BYTES}
+										<img src={url} alt="" loading="lazy" class="size-[22px] shrink-0 rounded-[5px] border border-[var(--z-line)] object-cover" />
+									{:else}
+										<span
+											class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] border text-[9px] font-bold uppercase"
+											style:background-color={badge.bg}
+											style:border-color={badge.border}
+											style:color={badge.text}
+										>
+											{attachmentKind(attachment.name, attachment.type)}
+										</span>
+									{/if}
 									<span class="max-w-48 truncate text-[13px] font-medium text-[var(--z-body)]">{attachment.name}</span>
 									<span class="z-mono text-[10.5px] text-[var(--z-soft)]">{formatBytes(attachment.size)}</span>
-								</a>
+								{/snippet}
+								{#if at >= 0}
+									<button type="button" class={chipClass} title="Open {attachment.name}" onclick={() => (previewAt = at)}>
+										{@render chip()}
+									</button>
+								{:else}
+									<a href={url} download={attachment.name} class={chipClass} title="Download {attachment.name}">
+										{@render chip()}
+									</a>
+								{/if}
 							{/each}
 						</div>
 					</div>
 				{/if}
 			</div>
 		</div>
+
+		{#if previewAt !== null && previewable.length > 0}
+			<AttachmentPreview items={previewable} bind:index={previewAt} onClose={() => (previewAt = null)} />
+		{/if}
 	{:else}
 		<div class="flex flex-1 items-center justify-center p-6 text-center">
 			<div class="flex max-w-[280px] flex-col items-center gap-[5px]">

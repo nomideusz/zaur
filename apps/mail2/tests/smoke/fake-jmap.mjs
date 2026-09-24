@@ -3,6 +3,7 @@
 // (RFC 9610), calendars, and the urn:stalwart:jmap self-service objects.
 import http from 'node:http';
 import { randomUUID } from 'node:crypto';
+import zlib from 'node:zlib';
 
 const PORT = 9911;
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -41,12 +42,13 @@ const session = {
 };
 
 const mailboxes = [
-	{ id: 'inbox', name: 'Inbox', role: 'inbox', totalEmails: 6, unreadEmails: 2, sortOrder: 0 },
+	{ id: 'inbox', name: 'Inbox', role: 'inbox', totalEmails: 7, unreadEmails: 3, sortOrder: 0 },
 	{ id: 'drafts', name: 'Drafts', role: 'drafts', totalEmails: 0, unreadEmails: 0, sortOrder: 1 },
 	{ id: 'sent', name: 'Sent', role: 'sent', totalEmails: 1, unreadEmails: 0, sortOrder: 2 },
-	{ id: 'archive', name: 'Archive', role: 'archive', totalEmails: 0, unreadEmails: 0, sortOrder: 3 },
+	{ id: 'archive', name: 'Archive', role: 'archive', totalEmails: 1, unreadEmails: 0, sortOrder: 3 },
 	{ id: 'junk', name: 'Junk', role: 'junk', totalEmails: 1, unreadEmails: 1, sortOrder: 4 },
-	{ id: 'trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 5 }
+	{ id: 'trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 5 },
+	{ id: 'scheduled', name: 'Scheduled', role: 'scheduled', totalEmails: 1, unreadEmails: 0, sortOrder: 6 }
 ];
 
 const now = Date.now();
@@ -63,6 +65,77 @@ const html = (partId, value) => ({
 	bodyValues: { [partId]: { value, isTruncated: false } },
 	bodyStructure: { partId, type: 'text/html' }
 });
+// Attachment bytes, made here so the preview has real files to open.
+function makePdf(titles) {
+	const objs = [, '<< /Type /Catalog /Pages 2 0 R >>', `<< /Type /Pages /Kids [${titles.map((_, i) => `${4 + i * 2} 0 R`).join(' ')}] /Count ${titles.length} >>`, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>'];
+	titles.forEach((title, i) => {
+		const stream = `BT /F1 28 Tf 72 700 Td (${title}) Tj ET BT /F1 12 Tf 72 660 Td (A PDF made by the smoke server, page ${i + 1} of ${titles.length}.) Tj ET`;
+		objs[4 + i * 2] = `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> >> /Contents ${5 + i * 2} 0 R >>`;
+		objs[5 + i * 2] = `<< /Length ${stream.length} >>\nstream\n${stream}\nendstream`;
+	});
+	let out = '%PDF-1.4\n';
+	const offsets = [];
+	for (let n = 1; n < objs.length; n++) {
+		offsets.push(out.length);
+		out += `${n} 0 obj\n${objs[n]}\nendobj\n`;
+	}
+	const xref = out.length;
+	out += `xref\n0 ${objs.length}\n0000000000 65535 f \n${offsets.map((o) => `${String(o).padStart(10, '0')} 00000 n \n`).join('')}`;
+	out += `trailer\n<< /Size ${objs.length} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+	return Buffer.from(out, 'latin1');
+}
+function makePng(w, h) {
+	const raw = Buffer.alloc((w * 3 + 1) * h);
+	for (let y = 0; y < h; y++) {
+		for (let x = 0; x < w; x++) {
+			const i = y * (w * 3 + 1) + 1 + x * 3;
+			raw[i] = 40 + Math.round((180 * x) / w);
+			raw[i + 1] = 90 + Math.round((120 * y) / h);
+			raw[i + 2] = 200;
+		}
+	}
+	const chunk = (type, data) => {
+		const body = Buffer.concat([Buffer.from(type), data]);
+		const head = Buffer.alloc(4);
+		head.writeUInt32BE(data.length);
+		const crc = Buffer.alloc(4);
+		crc.writeUInt32BE(zlib.crc32(body));
+		return Buffer.concat([head, body, crc]);
+	};
+	const ihdr = Buffer.alloc(13);
+	ihdr.writeUInt32BE(w, 0);
+	ihdr.writeUInt32BE(h, 4);
+	ihdr[8] = 8;
+	ihdr[9] = 2;
+	return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk('IHDR', ihdr), chunk('IDAT', zlib.deflateSync(raw)), chunk('IEND', Buffer.alloc(0))]);
+}
+function makeWav(seconds = 1.5, rate = 8000) {
+	const n = Math.floor(seconds * rate);
+	const data = Buffer.alloc(n * 2);
+	for (let i = 0; i < n; i++) data.writeInt16LE(Math.round(Math.sin((2 * Math.PI * 440 * i) / rate) * 8000 * (1 - i / n)), i * 2);
+	const head = Buffer.alloc(44);
+	head.write('RIFF', 0);
+	head.writeUInt32LE(36 + data.length, 4);
+	head.write('WAVEfmt ', 8);
+	head.writeUInt32LE(16, 16);
+	head.writeUInt16LE(1, 20);
+	head.writeUInt16LE(1, 22);
+	head.writeUInt32LE(rate, 24);
+	head.writeUInt32LE(rate * 2, 28);
+	head.writeUInt16LE(2, 32);
+	head.writeUInt16LE(16, 34);
+	head.write('data', 36);
+	head.writeUInt32LE(data.length, 40);
+	return Buffer.concat([head, data]);
+}
+const blobs = {
+	'blob-logo': ['image/svg+xml', '<svg xmlns="http://www.w3.org/2000/svg" width="120" height="36"><rect width="120" height="36" rx="8" fill="#2563eb"/><text x="60" y="24" font-family="monospace" font-size="16" fill="#fff" text-anchor="middle">ZA/UR</text></svg>'],
+	'blob-2': ['application/pdf', makePdf(['Rotation plan', 'Timeline', 'Rollback'])],
+	'blob-3': ['text/plain', 'selector: zaur2026\nalgorithm: rsa-sha256\nkey-length: 2048\n\np=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA…\n'],
+	'blob-photo': ['image/png', makePng(960, 640)],
+	'blob-voice': ['audio/wav', makeWav()]
+};
+
 /** Sample mail: every channel, a thread, an attachment, one of each state. */
 const emails = new Map(
 	[
@@ -129,6 +202,42 @@ const emails = new Map(
 			subject: 'You have been selected', receivedAt: at(5), hasAttachment: false,
 			preview: 'Claim within 24 hours.',
 			...text('1', 'Claim within 24 hours.')
+		},
+		{
+			// A remote image (blocked until asked for) and an inline cid: one (always shown).
+			id: 'm8', threadId: 't8', mailboxIds: { inbox: true }, keywords: {},
+			from: [{ name: 'Newsletter', email: 'news@example.com' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'This week at the studio', receivedAt: at(0.5), hasAttachment: true,
+			preview: 'Our logo, and a picture from somewhere else.',
+			...html('1', '<p>Our logo, sent with the message:</p><p><img src="cid:logo@zaur" alt="Studio logo"></p><p>And a picture from somewhere else:</p><p><img src="https://example.com/pixel.png" alt="Remote picture" width="120" height="40"></p>'),
+			bodyStructure: {
+				type: 'multipart/mixed',
+				subParts: [
+					{
+						type: 'multipart/related',
+						subParts: [
+							{ partId: '1', type: 'text/html' },
+							{ partId: '2', blobId: 'blob-logo', type: 'image/svg+xml', name: 'logo.svg', cid: '<logo@zaur>', disposition: 'inline', size: 200 }
+						]
+					},
+					{ partId: '3', blobId: 'blob-photo', type: 'image/png', name: 'studio.png', size: blobs['blob-photo'][1].length, disposition: 'attachment' },
+					{ partId: '4', blobId: 'blob-voice', type: 'audio/wav', name: 'voice-note.wav', size: blobs['blob-voice'][1].length, disposition: 'attachment' }
+				]
+			}
+		},
+		{
+			// Webmail 1.0's settings carrier: never shown as mail.
+			id: 'm9', threadId: 't9', mailboxIds: { archive: true }, keywords: { $seen: true },
+			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: '__zaur_webmail_settings_v1__', receivedAt: at(40), hasAttachment: false,
+			preview: '{}', ...text('1', '{}')
+		},
+		{
+			// Sent already (its submission is final), still in Scheduled until a client files it.
+			id: 'm10', threadId: 't10', mailboxIds: { scheduled: true }, keywords: { $seen: true },
+			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }], to: [{ name: 'Annie Hobday', email: 'annie@example.com' }],
+			subject: 'Weekly notes', receivedAt: at(6), hasAttachment: false,
+			preview: 'Went out this morning.', ...text('1', 'Went out this morning.')
 		}
 	].map((email) => [email.id, email])
 );
@@ -298,6 +407,12 @@ function handle([name, args, callId]) {
 			}
 			return ok({ oldState: 'e1', newState: 'e2', updated, destroyed });
 		}
+		case 'EmailSubmission/query': {
+			const wanted = args.filter?.emailIds ?? [];
+			return ok({ queryState: 'sq1', ids: wanted.filter((id) => emails.get(id)?.mailboxIds.scheduled).map((id) => `sub-${id}`) });
+		}
+		case 'EmailSubmission/get':
+			return ok({ state: 'sub1', list: (args.ids ?? []).map((id) => ({ id, emailId: id.slice(4), undoStatus: 'final' })), notFound: [] });
 		case 'Identity/get':
 			return ok({ state: 'i1', list: [{ id: 'id1', name: 'Smoke Tester', email: 'smoke@zaur.app', mayDelete: false }], notFound: [] });
 		case 'Quota/get':
@@ -533,6 +648,15 @@ http
 				streams.delete(res);
 			});
 			return;
+		}
+		if (req.method === 'GET' && req.url.startsWith('/jmap/download/')) {
+			const blob = blobs[decodeURIComponent(req.url.split('/')[4] ?? '')];
+			if (!blob) {
+				res.writeHead(404);
+				return res.end('no such blob');
+			}
+			res.writeHead(200, { 'Content-Type': blob[0] });
+			return res.end(blob[1]);
 		}
 		if (req.method === 'POST' && req.url === '/jmap') {
 			let body = '';

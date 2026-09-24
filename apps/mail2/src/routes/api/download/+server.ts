@@ -47,7 +47,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		'Content-Disposition': disposition,
 		// The blob is immutable and addressed by id, but it is also private.
 		'Cache-Control': 'private, max-age=3600',
-		'X-Content-Type-Options': 'nosniff'
+		'X-Content-Type-Options': 'nosniff',
+		// The bytes are whatever the sender attached. Should one ever be opened as
+		// a page (an HTML or SVG file), it runs no script and cannot be framed.
+		'Content-Security-Policy': "default-src 'none'; style-src 'unsafe-inline'; sandbox"
 	});
 	const length = upstream.headers.get('content-length');
 	if (length) headers.set('Content-Length', length);

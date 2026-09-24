@@ -22,6 +22,7 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 		'pageSize',
 		'showAvatars',
 		'showPreview',
+		'showRemoteImages',
 		'unseenByDefault'
 	]);
 });
@@ -34,6 +35,7 @@ test('accountPrefsOf: carries only the account keys, whatever else is set', () =
 		showPreview: DEFAULT_PREFS.showPreview,
 		showAvatars: DEFAULT_PREFS.showAvatars,
 		unseenByDefault: DEFAULT_PREFS.unseenByDefault,
+		showRemoteImages: false,
 		composePlain: DEFAULT_PREFS.composePlain,
 		aiCategories: DEFAULT_PREFS.aiCategories
 	});

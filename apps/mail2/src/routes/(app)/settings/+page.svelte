@@ -278,6 +278,14 @@
 			</label>
 
 			<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+				<span>
+					<span class="block {rowLabel}">Always show remote images</span>
+					<span class="block text-[12px] text-[var(--z-muted)]">Off, pictures from the web wait for a click, so senders can't see when you open their mail.</span>
+				</span>
+				<input type="checkbox" class="z-check" checked={prefs.showRemoteImages} onchange={(event) => setPref('showRemoteImages', event.currentTarget.checked)} />
+			</label>
+
+			<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
 				<span class={rowLabel}>Open folders on Unseen</span>
 				<input type="checkbox" class="z-check" checked={prefs.unseenByDefault} onchange={(event) => setPref('unseenByDefault', event.currentTarget.checked)} />
 			</label>

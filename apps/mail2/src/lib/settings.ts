@@ -21,6 +21,11 @@ export type Prefs = {
 	showAvatars: boolean;
 	/** Start each folder on the Unseen filter instead of All. */
 	unseenByDefault: boolean;
+	/**
+	 * Load a message's remote images without asking. Off by default: a remote
+	 * image is how a tracking pixel tells the sender you opened the mail.
+	 */
+	showRemoteImages: boolean;
 	/** Light, dark, or whatever the OS says. A device preference: a desk and a phone differ. */
 	theme: Theme;
 	/** New messages start as plain text rather than rich. Set in Settings; a panel's own switch is per draft. */
@@ -40,6 +45,7 @@ export const DEFAULT_PREFS: Prefs = {
 	showPreview: true,
 	showAvatars: false,
 	unseenByDefault: false,
+	showRemoteImages: false,
 	theme: 'system',
 	composePlain: false,
 	aiCategories: false
@@ -63,6 +69,7 @@ export const ACCOUNT_PREF_KEYS = [
 	'showPreview',
 	'showAvatars',
 	'unseenByDefault',
+	'showRemoteImages',
 	'composePlain',
 	'aiCategories'
 ] as const satisfies readonly (keyof Prefs)[];
@@ -76,6 +83,7 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		showPreview: prefs.showPreview,
 		showAvatars: prefs.showAvatars,
 		unseenByDefault: prefs.unseenByDefault,
+		showRemoteImages: prefs.showRemoteImages,
 		composePlain: prefs.composePlain,
 		aiCategories: prefs.aiCategories
 	};
