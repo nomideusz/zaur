@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Invoice Ninja 5',
+			desc: 'Invoice Ninja 5 on MariaDB with PDF rendering, queue worker and scheduler running from the first boot, your admin account created before the site goes public, and nightly backups to a Railway bucket.',
+			deploy: 'https://railway.com/deploy/invoice-ninja-5',
+			source: 'https://github.com/nomideusz/invoiceninja-railway'
+		},
+		{
 			name: 'Moodle 5.2',
 			desc: 'The current official Moodle 5.2 release on Postgres, installed from the command line with a generated admin password, with cron, upgrades on redeploy and nightly backups to a Railway bucket.',
 			deploy: 'https://railway.com/deploy/moodle-5',
