@@ -496,10 +496,14 @@ The rest follows from those two:
   ramp lives in `tokens.css` too, and every component reads tokens rather
   than hex, so one attribute flips the whole shell — see
   [Dark mode](#dark-mode).
-- **Type.** System faces only, nothing downloaded: `Seravek, 'Gill Sans Nova',
-  Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif` for the interface,
-  `ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu
-  Sans Mono', monospace` for captions, counts, times, addresses and keys. Eight roles from
+- **Type.** System sans for the interface: `Seravek, 'Gill Sans Nova', Ubuntu,
+  Calibri, 'DejaVu Sans', source-sans-pro, sans-serif`. The one downloaded face
+  is [Ioskeley Mono](https://github.com/ahatem/IoskeleyMono) (OFL), for
+  captions, counts, times, addresses and keys: three weights, subset to Latin
+  without code ligatures, ~18 KB each, in `src/routes/styles/fonts/`. Mail
+  itself (a plain-text body, code in a message) keeps the system mono,
+  `--font-mail-mono`: `ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo,
+  Consolas, 'DejaVu Sans Mono', monospace`. Eight roles from
   a 38px display down to the 11px uppercase mono caption (`.z-caption`, soft).
 - **Controls are things you could press.** `.btn-tactile` is white, 8px radius,
   `#cbd5e1` border, a 1px shadow and a half-pixel press; `.btn-primary` fills it

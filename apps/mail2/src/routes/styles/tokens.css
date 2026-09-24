@@ -18,6 +18,30 @@
  * that stroke over the surface, and the ink flips to the light tint.
  */
 
+/*
+ * Ioskeley Mono (OFL, ./fonts/OFL.txt) — the interface mono. Subset to Latin,
+ * punctuation, arrows and key symbols with code ligatures dropped (~18 KB a
+ * weight); anything outside that range falls through to the system mono.
+ */
+@font-face {
+	font-family: 'Ioskeley Mono';
+	src: url('./fonts/IoskeleyMono-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Ioskeley Mono';
+	src: url('./fonts/IoskeleyMono-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Ioskeley Mono';
+	src: url('./fonts/IoskeleyMono-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-display: swap;
+}
+
 :root {
 	color-scheme: light;
 
@@ -126,9 +150,11 @@
 	--z-id-stone-ink: #292524;
 
 	/* Type */
-	/* System faces only — nothing to download. */
+	/* System sans; the interface mono is Ioskeley, but mail itself — a
+	   plain-text body, code in a message — keeps the system mono. */
 	--font-sans: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
-	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+	--font-mail-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+	--font-mono: 'Ioskeley Mono', var(--font-mail-mono);
 	--z-measure: 33em; /* ~70 characters — reading AND writing measure */
 
 	/* Fixed columns */

@@ -93,6 +93,7 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 	}
 	.z-email-fold > summary::-webkit-details-marker { display: none; }
 	.z-email-fold > .z-email-quote { margin-top: 0.6rem; }
+	/* The system mono, as --font-mail-mono: Ioskeley is for the interface, not for mail. */
 	pre, code {
 		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 		font-size: 0.9em;

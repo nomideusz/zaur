@@ -49,10 +49,12 @@ test('tokens: geometry (list width, measure, drawer) is pinned', () => {
 	assert.match(css, /--z-drawer-width: 280px/);
 });
 
-test('tokens: system faces only, no web fonts', () => {
+test('tokens: system faces, except Ioskeley as the interface mono — never for mail', () => {
 	assert.match(css, /--font-sans: Seravek, /);
-	assert.match(css, /--font-mono: ui-monospace, /);
-	assert.doesNotMatch(css, /@font-face/);
+	assert.match(css, /--font-mail-mono: ui-monospace, /);
+	assert.match(css, /--font-mono: 'Ioskeley Mono', var\(--font-mail-mono\);/);
+	const faces = css.match(/font-family: '[^']+';/g) ?? [];
+	assert.deepEqual([...new Set(faces)], ["font-family: 'Ioskeley Mono';"]);
 });
 
 test('tokens: the mark has no inks of its own — it wears the functional one', () => {

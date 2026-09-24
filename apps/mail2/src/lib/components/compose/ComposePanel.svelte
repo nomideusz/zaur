@@ -798,7 +798,7 @@
 				oninput={(event) =>
 					compose.patch(draft.id, { body: event.currentTarget.value, bodyOpened: true, sendError: null })}
 				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-				class="z-mono -mr-4 resize-none border-0 bg-transparent pt-[14px] pr-4 pb-4 text-[14px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
+				class="font-(family-name:--font-mail-mono) -mr-4 resize-none border-0 bg-transparent pt-[14px] pr-4 pb-4 text-[14px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
 					? 'opacity-100'
 					: 'opacity-68'} {filled ? 'min-h-0 flex-1' : ''}"
 				style:height={filled ? undefined : `${bodyHeight}px`}
