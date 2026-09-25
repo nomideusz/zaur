@@ -59,7 +59,8 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		type: attachment.type || 'application/octet-stream',
 		name: attachment.name,
 		blobId: attachment.blobId,
-		size: attachment.size,
+		// Unknown for an image written into the text; the server has the blob's own.
+		...(attachment.size ? { size: attachment.size } : {}),
 		...(attachment.cid ? { cid: attachment.cid } : {}),
 		disposition: attachment.disposition || 'attachment'
 	}));

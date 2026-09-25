@@ -14,6 +14,7 @@ import { connect, refuse, requireAccount, requireAccountKey } from '#lib/server/
 import { categorizeInBackground } from '#lib/server/categorize';
 import { LABEL_FILTERS, filterKeyword, type ListFilter } from '#lib/mail/labels';
 import { treeOrder } from '#lib/mail/folders';
+import { WEBMAIL_SETTINGS_SUBJECT } from '#lib/server/webmail-import';
 
 function schema<T>() {
 	return {
@@ -131,8 +132,7 @@ function aiCategoriesOn(): boolean {
 }
 
 /** Webmail 1.0 keeps its settings in a message with this subject; it is not mail. */
-const isMail = (email: { subject?: string | null }) =>
-	email.subject?.trim() !== '__zaur_webmail_settings_v1__';
+const isMail = (email: { subject?: string | null }) => email.subject?.trim() !== WEBMAIL_SETTINGS_SUBJECT;
 
 export const threads = query(
 	schema<{ mailboxId: string; filter?: ListFilter; limit?: number; kind?: MailboxKind }>(),

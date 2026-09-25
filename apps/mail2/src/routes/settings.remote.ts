@@ -4,6 +4,7 @@ import { getAccountPrefs, getStoreDb, putAccountPrefs } from '@zaur/server-auth'
 import { connect, refuse, requireAccountKey } from '#lib/server/account';
 import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
 import { aiCategoriesAvailable } from '#lib/server/categorize';
+import { importWebmailSignature } from '#lib/server/webmail-import';
 
 function schema<T>() {
 	return {
@@ -72,11 +73,17 @@ export const aiCategoriesOffered = query(async (): Promise<boolean> => aiCategor
 
 export type IdentityDTO = { id: string; email: string; name: string; signature: string };
 
-/** Send-as addresses: the primary first, then any aliases Stalwart knows about. */
+/**
+ * Send-as addresses: the primary first, then any aliases Stalwart knows about.
+ * The first load also brings over webmail 1.0's signature, if there is one.
+ */
 export const identities = query(async (): Promise<IdentityDTO[]> => {
 	const client = await connect();
 	const primary = client.getUsername().toLowerCase();
 	const list = await client.getIdentities();
+	await importWebmailSignature(client, list).catch((cause) =>
+		console.warn('[identities] webmail signature import failed', primary, cause)
+	);
 	return list
 		.map((identity) => ({
 			id: identity.id,

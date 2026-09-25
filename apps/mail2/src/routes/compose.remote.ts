@@ -3,6 +3,7 @@ import { command } from '$app/server';
 import { accountKey } from '@zaur/server-auth';
 import { resolveSendFrom, type JMAPClient } from '@zaur/mail-core';
 import { connect, requireAccount } from '#lib/server/account';
+import { inlineImages } from '#lib/server/inline-images';
 
 function schema<T>() {
 	return {
@@ -112,15 +113,16 @@ export const send = command(schema<SendInput>(), async (input: SendInput): Promi
 		error(409, `Written as ${input.account}; switch to that account to send it`);
 	}
 	const client = await connect();
+	const inline = inlineImages(String(input.bodyHtml ?? ''));
 	let emailId: string | undefined;
 	await client.sendEmail(to, input.subject ?? '', input.body ?? '', {
 		...(await sender(client, input.from)),
 		cc: cc.length ? cc : undefined,
 		bcc: bcc.length ? bcc : undefined,
 		format: input.bodyHtml ? 'html' : 'plain',
-		bodyHtml: input.bodyHtml || undefined,
+		bodyHtml: inline.html || undefined,
 		sendAt: input.sendAt,
-		attachments: sanitizeAttachments(input.attachments),
+		attachments: [...sanitizeAttachments(input.attachments), ...inline.parts],
 		onEmailCreated: (id) => {
 			emailId = id;
 		}
@@ -158,7 +160,8 @@ export const saveDraft = command(
 		const bcc = cleanRecipients(input.bcc);
 		const subject = String(input.subject ?? '');
 		const body = String(input.body ?? '');
-		const attachments = sanitizeAttachments(input.attachments);
+		const inline = inlineImages(String(input.bodyHtml ?? ''));
+		const attachments = [...sanitizeAttachments(input.attachments), ...inline.parts];
 		const hasContent =
 			to.length > 0 ||
 			cc.length > 0 ||
@@ -179,7 +182,7 @@ export const saveDraft = command(
 			...(await sender(client, input.from)),
 			attachments: attachments.length ? attachments : undefined,
 			format: input.bodyHtml ? 'html' : 'plain',
-			bodyHtml: input.bodyHtml ? String(input.bodyHtml) : undefined
+			bodyHtml: inline.html || undefined
 		});
 		return { emailId };
 	}

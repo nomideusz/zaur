@@ -130,13 +130,15 @@
 	);
 
 	// Focus is requested once per draft (and again when send-without-recipients
-	// nudges back to To); the panel consumes it after focusing.
+	// nudges back to To); the panel consumes it after focusing. A frame late: a menu
+	// that opened the panel (Reply all, Forward) hands focus back to its trigger as
+	// it closes, in a microtask after this effect.
 	$effect(() => {
 		const target = draft.focusTarget;
 		if (!target) return;
 		compose.consumeFocus(draft.id);
 		const id = target === 'to' ? fieldId('to') : target === 'subject' ? subjectId : bodyId;
-		document.getElementById(id)?.focus();
+		requestAnimationFrame(() => document.getElementById(id)?.focus());
 	});
 
 	// --- window management ---
@@ -838,6 +840,7 @@
 				onchange={(body, bodyHtml) => compose.patch(draft.id, { body, bodyHtml, bodyOpened: true, sendError: null })}
 				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
 				onfiles={(files) => compose.attachFiles(draft.id, files)}
+				onimage={(file) => compose.uploadInlineImage(draft.id, file)}
 				class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
 					? 'opacity-100'
 					: 'opacity-68'} {filled ? 'min-h-0 flex-1 [&>*]:max-w-[46em]' : '[&>*]:max-w-[33em]'}"

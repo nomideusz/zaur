@@ -215,6 +215,48 @@ scoped to `webmail.zaur.app` and mail2 never sees the login. `SESSION_SECRET`
 is required in production: session records are sealed with it, and two apps
 sharing one store must share the value.
 
+### Taking over webmail.zaur.app
+
+The plan is to point `webmail.zaur.app` at this service rather than move
+people to a new address. That way Meet links, installed PWAs, the Capacitor
+shell's URL, register's `WEBMAIL_URL` and Bartube's OIDC issuer keep working.
+What 1.0 left behind is handled here:
+
+- **Old links** — `#lib/legacy-links.ts`, run from `handle`, maps each 1.0 URL
+  to its nearest mail2 page:
+  - `/mail/<folder>/<thread>` goes to `/?thread=`;
+  - `/mail/compose?to=` goes to `/?to=`;
+  - the folder and search pages go to the inbox;
+  - `/settings/contacts` goes to `/contacts`, and other settings pages to `/settings`;
+  - `/register` goes to the register service.
+
+  They are 302s, so pointing the domain back at webmail undoes them.
+- **Signatures** — 1.0 kept one per account in its settings email.
+  `#lib/server/webmail-import.ts` copies it onto every identity without one
+  the first time an account's identities load, then tags the email
+  `$zaur-mail2-imported`.
+- **Remembered correspondents** — 1.0's autocomplete list sits in
+  `localStorage` (`zaur:contacts:v2:<accountId>`). Once mail2 serves the same
+  origin, compose offers them as "Recent", after the address book, ordered by
+  how often each was written to. It reads the list and does not copy it.
+- **Notifications** — these need three steps:
+  1. Copy webmail's `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`
+     into this service and redeploy. It is safe at any time: a browser holding
+     a subscription under another key re-subscribes on its next load
+     (`resyncPush` goes through `enablePush`).
+  2. At the switch, stop webmail, or at least unset its VAPID keys, so nobody
+     gets two of everything.
+  3. Import 1.0's subscriptions and restart this service so its watcher picks
+     them up. The import skips FCM rows and dead sessions, can be run more than
+     once, and takes `DRY_RUN=1`:
+     ```sh
+     docker exec -i <mail2 container> node - < apps/mail2/scripts/import-webmail-push.mjs
+     ```
+
+Not carried over:
+- 1.0's other settings, since mail2's are its own;
+- the Android shell's FCM push, which had no subscribers on 2026-09-25.
+
 ## SvelteKit 3 (pre-release)
 
 mail2 is on the SvelteKit 3 pre-release line (`3.0.0-next.27`, with
@@ -654,16 +696,34 @@ account); a draft that was saved rich reopens rich regardless.
   yet, leaving a dead element. So the toolbar is never unmounted in plain mode, only hidden.
 - Once Trix is loaded, `trix-initialize` fires as the element connects — before an effect can
   listen for it. `RichBody` seeds immediately when `node.editor` already exists; without that a
-  second panel, or a switch back from plain, opened empty.
+  second panel, or a switch back from plain, opened empty. That seeding is `untrack`ed: tracked,
+  every keystroke's `bodyHtml` re-seeded the editor with the caret at 0, and typing came out
+  reversed.
+- Seeding places the caret, which focuses the editor. On the first panel Trix loads after the
+  panel has focused its field, so `RichBody` hands focus back to whatever had it.
 - Trix injects an unlayered `trix-toolbar { display: block }`. Tailwind utilities are layered and
   lose to it, so the toolbar's `display: flex` is declared unlayered in the component.
 - `trix-change` fires during `loadHTML`; loading is not writing, so it is ignored.
 - While the link dialog is open Trix paints the held selection *into the document* (a
   `background-color: highlight` span). Changes carrying it are not reported; closing reports again.
-- Files dropped or pasted into the text are refused (`trix-file-accept`) and handed to the
-  attachment strip instead — no inline images yet.
+- Files dropped or pasted into the text that are not images are refused (`trix-file-accept`)
+  and handed to the attachment strip.
 - Bare `<blockquote>` renders as a plain indent in most clients, so `outgoingHtml` inlines the
   rule on send (not on save: Trix would strip it on reopen anyway).
+
+**Images in the text.** An image pasted, dropped or picked into the text stays there: Trix previews
+it at once, `compose.uploadInlineImage` uploads it (Trix's progress bar shows started/done), and the
+attachment's `url` becomes `/api/jmap/download?blobId…&inline=1`. Name and size captions are
+switched off (`Trix.config.attachments.preview.caption`); a caption the writer types is kept.
+Several images in a row become a Trix gallery. On send and save the server
+(`#lib/server/inline-images.ts`) flattens each `<figure>` to a plain `<img src="cid:BLOBID">` on
+its own line (width capped at 600 for Outlook) and adds the blob as an inline part — the Content-ID
+is the blob id, as in webmail 1.0, so the reader resolves it back when a draft reopens. Images that
+are not ours (remote URLs, `data:`) are dropped, and Send waits while an upload is in flight.
+
+**Focus.** A new message and a forward start in To; a reply starts in the body, above the quote.
+The panel focuses a frame late: a menu that opened it (Reply all, Forward) hands focus back to its
+trigger as it closes, in a microtask after the panel's effect.
 
 ## Compose panel geometry
 

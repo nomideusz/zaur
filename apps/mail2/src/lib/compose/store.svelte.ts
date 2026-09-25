@@ -1,6 +1,7 @@
 import { outgoingHtml } from './html';
 import { prefs } from '../settings.svelte.ts';
 import type { MessageDetail } from '@zaur/mail-core';
+import { inlineImageDownloadUrl } from '@zaur/mail-core/email/inline-images';
 import {
 	MAX_ATTACHMENT_BYTES,
 	MAX_ATTACHMENT_COUNT,
@@ -161,7 +162,8 @@ class ComposeStore {
 			plain: options.bodyHtml ? false : prefs.composePlain,
 			attachments: options.attachments ?? [],
 			sendAt: null,
-			bodyOpened: false,
+			// A saved draft has been written in (an image in it would not fit the closed box).
+			bodyOpened: !!options.jmapDraftId,
 			stage: 'default',
 			x: options.x ?? 24,
 			y: options.y ?? 76,
@@ -210,7 +212,8 @@ class ComposeStore {
 			to,
 			subject: seed.subject,
 			body: seed.body,
-			focusTarget: mode === 'forward' ? 'body' : 'subject'
+			// A reply is addressed and titled already: straight to writing. A forward still needs a To.
+			focusTarget: mode === 'forward' ? 'to' : 'body'
 		});
 	}
 
@@ -538,6 +541,33 @@ class ComposeStore {
 		}
 	}
 
+	/**
+	 * An image written into the text (rich compose): uploaded like an attachment,
+	 * but shown and sent inline, so it is not a chip. Resolves to the URL the
+	 * editor shows it from; the draft counts it as pending until then, and will
+	 * not send meanwhile.
+	 */
+	async uploadInlineImage(id: string, file: File): Promise<string> {
+		const draft = this.#find(id);
+		const transport = this.#transport;
+		if (!draft || !transport) throw new Error('Mail is still connecting');
+		if (file.size > MAX_ATTACHMENT_BYTES) {
+			this.pushToast({ text: `"${file.name}" is too large — the limit is 25 MB`, tone: 'warning' });
+			throw new Error('Too large');
+		}
+		draft.inlineUploads = (draft.inlineUploads ?? 0) + 1;
+		try {
+			const uploaded = await transport.uploadAttachment(file);
+			return inlineImageDownloadUrl({ blobId: uploaded.blobId, name: file.name || 'image', type: uploaded.type });
+		} catch (cause) {
+			this.pushToast({ text: `Could not upload "${file.name}"`, tone: 'error' });
+			throw cause;
+		} finally {
+			const current = this.#find(id);
+			if (current) current.inlineUploads = Math.max(0, (current.inlineUploads ?? 1) - 1);
+		}
+	}
+
 	/** The `File` behind each chip that has not uploaded yet — never persisted. */
 	#pendingFiles = new Map<string, File>();
 
@@ -703,6 +733,10 @@ class ComposeStore {
 				pending.status === 'uploading'
 					? 'Attachments are still uploading — try again in a moment.'
 					: 'An attachment failed to upload — remove it before sending.';
+			return;
+		}
+		if (draft.inlineUploads) {
+			draft.sendError = 'Images are still uploading — try again in a moment.';
 			return;
 		}
 

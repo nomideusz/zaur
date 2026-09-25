@@ -255,11 +255,13 @@ const emails = new Map(
 			}
 		},
 		{
-			// Webmail 1.0's settings carrier: never shown as mail.
+			// Webmail 1.0's settings carrier: never shown as mail. Its signature is
+			// copied onto identities without one (help@) on the first identities load.
 			id: 'm9', threadId: 't9', mailboxIds: { archive: true }, keywords: { $seen: true },
 			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
 			subject: '__zaur_webmail_settings_v1__', receivedAt: at(40), hasAttachment: false,
-			preview: '{}', ...text('1', '{}')
+			preview: '{}',
+			...text('1', JSON.stringify({ version: 2, updatedAt: at(40), settings: { 'zaur:signature:smoke@zaur.app': 'Signed in 1.0\nwebmail.zaur.app' } }))
 		},
 		{
 			// Sent already (its submission is final), still in Scheduled until a client files it.
@@ -523,7 +525,9 @@ function handle([name, args, callId]) {
 			const createdEmails = {};
 			for (const [key, data] of Object.entries(args.create ?? {})) {
 				const id = `out-${randomUUID().slice(0, 6)}`;
-				emails.set(id, { threadId: id, keywords: {}, receivedAt: new Date().toISOString(), preview: '', to: [], cc: [], ...data, id });
+				// The part tree Stalwart would build, so a reopened draft finds its attachments and cid images.
+				const bodyStructure = { type: 'multipart/mixed', subParts: [...(data.textBody ?? []), ...(data.htmlBody ?? []), ...(data.attachments ?? [])] };
+				emails.set(id, { threadId: id, keywords: {}, receivedAt: new Date().toISOString(), preview: '', to: [], cc: [], bodyStructure, ...data, id });
 				createdEmails[key] = { id, blobId: id, threadId: id, size: 1 };
 				log('Email created', id, JSON.stringify({ from: data.from, subject: data.subject }));
 			}

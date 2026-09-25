@@ -102,6 +102,8 @@ export interface Draft {
 	/** Written in a plain textarea and sent as text/plain only; `bodyHtml` stays empty. */
 	plain: boolean;
 	attachments: DraftAttachment[];
+	/** Images in the text still uploading (rich compose); the draft does not send until they land. */
+	inlineUploads?: number;
 	/** UTC ISO for a delayed send, or null to send immediately. Ephemeral — not persisted. */
 	sendAt: string | null;
 	bodyOpened: boolean;

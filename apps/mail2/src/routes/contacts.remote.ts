@@ -35,6 +35,8 @@ export interface ContactsState {
 	contacts: Contact[];
 	/** True when the cap was hit, so the list is known to be incomplete. */
 	truncated: boolean;
+	/** The JMAP account id, which keys webmail 1.0's saved correspondents in this browser. */
+	accountId: string;
 }
 
 function sortContacts(list: Contact[]): Contact[] {
@@ -48,7 +50,7 @@ function sortContacts(list: Contact[]): Contact[] {
 export const contacts = query(async (): Promise<ContactsState> => {
 	const client = await connect();
 	if (!client.hasContacts()) {
-		return { supported: false, addressBooks: [], contacts: [], truncated: false };
+		return { supported: false, addressBooks: [], contacts: [], truncated: false, accountId: client.getAccountId() };
 	}
 	const [books, cards] = await Promise.all([
 		client.getAddressBooks(),
@@ -58,7 +60,8 @@ export const contacts = query(async (): Promise<ContactsState> => {
 		supported: true,
 		addressBooks: books.map((book) => mapAddressBook(book)),
 		contacts: sortContacts(cards.map((card) => mapContactCard(card))),
-		truncated: cards.length >= MAX_CONTACTS
+		truncated: cards.length >= MAX_CONTACTS,
+		accountId: client.getAccountId()
 	};
 });
 

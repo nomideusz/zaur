@@ -290,10 +290,24 @@
 	/**
 	 * Compose suggestions: the address book first (every address on every
 	 * card, labelled by the card's own label), then whoever wrote to this
-	 * folder recently, for the people not yet saved. One list, deduplicated on
-	 * the address, so a saved person is never also offered as "Recent".
+	 * folder recently, then the people webmail 1.0 remembered in this browser
+	 * (same origin once mail2 serves its domain), most-written-to first. One
+	 * list, deduplicated on the address, so a saved person is never also
+	 * offered as "Recent".
 	 */
 	const contactsResource = $derived(session ? contactsRemote() : undefined);
+	const webmailCorrespondents = $derived.by(() => {
+		const accountId = contactsResource?.current?.accountId;
+		if (!accountId) return [];
+		try {
+			const list = JSON.parse(localStorage.getItem(`zaur:contacts:v2:${accountId}`) ?? '[]');
+			return (Array.isArray(list) ? list : [])
+				.filter((entry) => typeof entry?.email === 'string')
+				.sort((a, b) => (Number(b.count) || 0) - (Number(a.count) || 0)) as { email: string; name?: string }[];
+		} catch {
+			return [];
+		}
+	});
 	$effect(() => {
 		const rows = listResource?.current?.rows;
 		const book = contactsResource?.current?.contacts ?? [];
@@ -313,6 +327,7 @@
 			}
 		}
 		for (const row of rows ?? []) add(row.from.name, row.from.email ?? '', 'Recent');
+		for (const entry of webmailCorrespondents) add(entry.name ?? '', entry.email, 'Recent');
 		compose.setContacts(suggestions);
 	});
 
@@ -398,7 +413,8 @@
 	 */
 	let composeLinkHandled = false;
 	$effect(() => {
-		if (!session || composeLinkHandled) return;
+		// After the identities load, or the draft has no From and no signature.
+		if (!session || composeLinkHandled || identitiesResource?.loading !== false) return;
 		const to = page.url.searchParams.get('to');
 		const invite = page.url.searchParams.get('invite');
 		if (to === null && invite === null) return;

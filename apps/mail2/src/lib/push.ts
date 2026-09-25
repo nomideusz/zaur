@@ -58,7 +58,8 @@ export async function enablePush(): Promise<PushStatus> {
 	let subscription = await reg.pushManager.getSubscription();
 	const key = keyBytes(publicKey);
 	const current = subscription?.options.applicationServerKey;
-	// A subscription made under older server keys cannot be pushed to any more.
+	// A subscription made under other server keys (older ones, or webmail 1.0's
+	// on the same origin) cannot be pushed to any more.
 	if (subscription && current && !sameBytes(new Uint8Array(current), key)) {
 		await subscription.unsubscribe();
 		subscription = null;
@@ -88,12 +89,15 @@ export async function disablePush(): Promise<PushStatus> {
 	return 'off';
 }
 
-/** On app load: tell the server this browser is still here, so its row does not age out. */
+/**
+ * On app load: tell the server this browser is still here, so its row does not
+ * age out. Goes through enablePush, which re-makes a subscription taken under
+ * other keys; permission is already granted, so nothing prompts.
+ */
 export async function resyncPush(): Promise<void> {
 	if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 	if (!('Notification' in window) || Notification.permission !== 'granted') return;
-	const subscription = await (await registration())?.pushManager.getSubscription();
-	if (subscription) await subscribePush(toInput(subscription));
+	if (await (await registration())?.pushManager.getSubscription()) await enablePush();
 }
 
 function sameBytes(a: Uint8Array, b: Uint8Array): boolean {
