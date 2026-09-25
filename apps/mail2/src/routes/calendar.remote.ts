@@ -15,25 +15,34 @@ import { error } from '@sveltejs/kit';
 import { command, query } from '$app/server';
 import {
 	JmapMethodError,
+	isJmapMethodError,
 	mapCalendar,
 	mapCalendarEvent,
 	recurrenceRuleFrom,
+	rightsForShareRole,
 	type Calendar,
 	type CalendarEvent,
-	type EventRecurrence
+	type EventRecurrence,
+	type JMAPPrincipal
 } from '@zaur/mail-core';
 import { connect } from '#lib/server/account';
+import { pickPrincipal } from '#lib/share';
 
 const LOCAL_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
 const ISO_DURATION = /^P(?!$)(\d+D)?(T(?=\d)(\d+H)?(\d+M)?)?$/;
 const TIME_ZONE = v.pipe(v.string(), v.minLength(1), v.maxLength(64), v.regex(/^[A-Za-z0-9_+\-/]+$/));
 const ID = v.pipe(v.string(), v.minLength(1), v.maxLength(200));
+const ACCOUNT = v.optional(v.nullable(v.pipe(v.string(), v.maxLength(200))));
+const COLOR = v.pipe(v.string(), v.regex(/^#[0-9a-fA-F]{6}$/));
+const ROLE = v.picklist(['read', 'write']);
 
 export interface CalendarsState {
 	supported: boolean;
 	calendars: Calendar[];
 	/** Your own calendar account. Anything else in the list was shared with you. */
 	primaryAccountId: string | null;
+	/** The server has a directory of people (JMAP Principals) to share with. */
+	canShare: boolean;
 }
 
 function rethrow(cause: unknown): never {
@@ -44,12 +53,13 @@ function rethrow(cause: unknown): never {
 
 export const calendars = query(async (): Promise<CalendarsState> => {
 	const client = await connect();
-	if (!client.hasCalendars()) return { supported: false, calendars: [], primaryAccountId: null };
+	if (!client.hasCalendars()) return { supported: false, calendars: [], primaryAccountId: null, canShare: false };
 	const list = await client.getCalendars();
 	return {
 		supported: true,
 		calendars: list.map((calendar, index) => mapCalendar(calendar, index, calendar.accountId)),
-		primaryAccountId: client.getCalendarAccountId() || null
+		primaryAccountId: client.getCalendarAccountId() || null,
+		canShare: client.hasPrincipals()
 	};
 });
 
@@ -214,7 +224,7 @@ export const setCalendarVisible = command(
 export const createCalendar = command(
 	v.object({
 		name: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(200)),
-		color: v.optional(v.pipe(v.string(), v.regex(/^#[0-9a-fA-F]{6}$/)))
+		color: v.optional(COLOR)
 	}),
 	async ({ name, color }): Promise<{ id: string }> => {
 		const client = await connect();
@@ -222,6 +232,112 @@ export const createCalendar = command(
 			const id = await client.createCalendar({ name, color });
 			void calendars().refresh();
 			return { id };
+		} catch (cause) {
+			rethrow(cause);
+		}
+	}
+);
+
+export const updateCalendar = command(
+	v.object({
+		id: ID,
+		accountId: ACCOUNT,
+		name: v.pipe(v.string(), v.trim(), v.minLength(1, 'Give the calendar a name'), v.maxLength(200)),
+		color: COLOR
+	}),
+	async ({ id, accountId, name, color }): Promise<{ ok: true }> => {
+		const client = await connect();
+		try {
+			await client.updateCalendar(id, { name, color, accountId: accountId ?? null });
+			void calendars().refresh();
+			return { ok: true };
+		} catch (cause) {
+			rethrow(cause);
+		}
+	}
+);
+
+/** Where a new event lands. Only your own account has one: the flag is per account. */
+export const makeDefaultCalendar = command(v.object({ id: ID }), async ({ id }): Promise<{ ok: true }> => {
+	const client = await connect();
+	try {
+		await client.setDefaultCalendar(id);
+		void calendars().refresh();
+		return { ok: true };
+	} catch (cause) {
+		rethrow(cause);
+	}
+});
+
+/**
+ * The server refuses a calendar that still holds events unless told to take
+ * them too, so the first try asks for the calendar alone and says whether
+ * there was anything in it; only a second, confirmed try removes the events.
+ */
+export const deleteCalendar = command(
+	v.object({ id: ID, accountId: ACCOUNT, removeEvents: v.boolean() }),
+	async ({ id, accountId, removeEvents }): Promise<{ deleted: boolean }> => {
+		const client = await connect();
+		try {
+			await client.destroyCalendar(id, removeEvents, accountId ?? null);
+		} catch (cause) {
+			if (isJmapMethodError(cause, 'calendarHasEvent')) return { deleted: false };
+			rethrow(cause);
+		}
+		void calendars().refresh();
+		return { deleted: true };
+	}
+);
+
+/** Names for the people a calendar is shared with; the calendar itself only has their ids. */
+export const sharePeople = query(
+	v.pipe(v.array(ID), v.maxLength(200)),
+	async (ids): Promise<JMAPPrincipal[]> => {
+		const client = await connect();
+		// A server that will not say who someone is still shares with them: ids it is.
+		return client.getPrincipals(ids).catch(() => []);
+	}
+);
+
+/** Share by address. The address is looked up in the server's directory — see `pickPrincipal`. */
+export const shareCalendar = command(
+	v.object({
+		id: ID,
+		accountId: ACCOUNT,
+		email: v.pipe(v.string(), v.trim(), v.minLength(1), v.maxLength(320)),
+		role: ROLE
+	}),
+	async ({ id, accountId, email, role }): Promise<{ person: JMAPPrincipal }> => {
+		const client = await connect();
+		try {
+			const pick = pickPrincipal(await client.queryPrincipals(email), email, client.getCurrentUserPrincipalId());
+			if ('error' in pick) error(400, pick.error);
+			await client.updateCalendar(id, {
+				shareWith: { [pick.person.id]: rightsForShareRole(role) },
+				accountId: accountId ?? null
+			});
+			void calendars().refresh();
+			return { person: pick.person };
+		} catch (cause) {
+			if (isJmapMethodError(cause, 'forbidden'))
+				error(400, 'This server does not let you look people up. Ask its admin to allow directory queries.');
+			rethrow(cause);
+		}
+	}
+);
+
+/** Change what one person may do with a calendar, or (`role: null`) take it away from them. */
+export const setCalendarShare = command(
+	v.object({ id: ID, accountId: ACCOUNT, principalId: ID, role: v.nullable(ROLE) }),
+	async ({ id, accountId, principalId, role }): Promise<{ ok: true }> => {
+		const client = await connect();
+		try {
+			await client.updateCalendar(id, {
+				shareWith: { [principalId]: role ? rightsForShareRole(role) : null },
+				accountId: accountId ?? null
+			});
+			void calendars().refresh();
+			return { ok: true };
 		} catch (cause) {
 			rethrow(cause);
 		}

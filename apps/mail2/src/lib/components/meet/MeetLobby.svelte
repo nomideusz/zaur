@@ -12,6 +12,8 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { browser } from '$app/env';
+	import { whoIsHere } from '../../../routes/meet.remote';
 	import MeetIcon from './MeetIcon.svelte';
 	import { deviceProblem, hereLine } from '#lib/meet/call';
 	import { identityStyle } from '#lib/mail/colors';
@@ -51,6 +53,17 @@
 	let guestName = $state('');
 	let copied = $state(false);
 	let preview = $state<HTMLVideoElement>();
+
+	/** Who is in: what the page loaded with, then asked again every ten seconds while the tab is shown. */
+	const presence = $derived(browser ? whoIsHere(room) : undefined);
+	const inRoom = $derived(presence?.current ?? here);
+
+	onMount(() => {
+		const poll = setInterval(() => {
+			if (!document.hidden) presence?.refresh().catch(() => {});
+		}, 10_000);
+		return () => clearInterval(poll);
+	});
 
 	const canPickSpeaker = typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
 	const blocked = $derived([camProblem, micProblem].filter((p): p is string => Boolean(p?.includes('blocked'))));
@@ -309,14 +322,14 @@
 			<h1 class="text-[24px] leading-[1.15] font-bold tracking-[-0.025em] text-[var(--z-ink)] max-md:text-[20px]">Ready to join?</h1>
 
 			<div class="z-card flex items-center gap-3 !shadow-none px-3.5 py-3">
-				{#if here.length}
+				{#if inRoom.length}
 					<div class="flex">
-						{#each here.slice(0, 3) as name, i (i)}
+						{#each inRoom.slice(0, 3) as name, i (i)}
 							<span class="z-avatar {i ? '-ml-[3px]' : ''} ring-2 ring-[var(--z-surface)]" style={identityStyle(name)}>{initials(name, '')}</span>
 						{/each}
 					</div>
 				{/if}
-				<div class="min-w-0 text-[13.5px] font-medium text-[var(--z-body)]">{hereLine(here)}</div>
+				<div class="min-w-0 text-[13.5px] font-medium text-[var(--z-body)]">{hereLine(inRoom)}</div>
 			</div>
 
 			{#if you}

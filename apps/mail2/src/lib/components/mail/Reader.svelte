@@ -2,7 +2,7 @@
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import { renderMessageBody } from '#lib/email/html';
-	import type { MessageDetail } from '@zaur/mail-core';
+	import type { MessageAttachment, MessageDetail } from '@zaur/mail-core';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import { prefs, setPref } from '#lib/settings.svelte.ts';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
@@ -101,8 +101,34 @@
 		return { ...result, attachments: latest.attachments };
 	});
 
-	/** What the preview can open, in the order the chips show them; the rest download. */
-	const previewable = $derived(rendered?.attachments.filter((item) => previewKind(item)) ?? []);
+	/**
+	 * The history, whole: each earlier message as it was sent, its own quote
+	 * folded — that quote is the messages above it. Only worked out once asked for.
+	 */
+	const history = $derived(
+		earlierExpanded
+			? earlier.map((message) => ({
+					message,
+					...renderMessageBody({
+						bodyHtml: message.bodyHtml,
+						bodyText: message.bodyText,
+						allowExternal: showImages,
+						foldQuotes: true
+					})
+				}))
+			: []
+	);
+	const blockedExternal = $derived(
+		!!rendered?.blockedExternal || history.some((item) => item.blockedExternal)
+	);
+
+	/**
+	 * What the preview can open, in the order the chips show them; the rest
+	 * download. The whole thread's, so it pages from an old attachment to a new one.
+	 */
+	const previewable = $derived(
+		(messages ?? []).flatMap((message) => message.attachments).filter((item) => previewKind(item))
+	);
 	let previewAt = $state<number | null>(null);
 	const MAX_THUMB_BYTES = 5 * 1024 * 1024;
 	const chipClass =
@@ -486,7 +512,8 @@
 							</button>
 						</div>
 
-						{#each earlier as message (message.id)}
+						{#each history as item (item.message.id)}
+							{@const message = item.message}
 							{@const tone = identityTone(message.from.email || message.from.name)}
 							<!-- Each earlier message is railed by its own sender at a third
 							     strength, so the thread reads as a stack of one object. -->
@@ -501,15 +528,18 @@
 										{formatReaderTime(message.receivedAt)}
 									</time>
 								</div>
-								<div class="mt-1.5 text-[13px] leading-[1.6] whitespace-pre-wrap text-[var(--z-strong)]">
-									{message.bodyText}
+								<div class="mt-1.5 text-[13px] leading-[1.6] text-[var(--z-strong)]">
+									<EmailHtmlFrame html={item.html} plain={!item.isHtml} />
 								</div>
+								{#if message.attachments.length > 0}
+									<div class="mt-2.5">{@render chips(message.attachments)}</div>
+								{/if}
 							</div>
 						{/each}
 					</div>
 				{/if}
 
-				{#if rendered.blockedExternal && !showImages}
+				{#if blockedExternal && !showImages}
 					<div class="flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
 						<span class="min-w-0 flex-1">Remote images are hidden, so the sender can't see that you opened this.</span>
 						<button type="button" class="shrink-0 text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)]" onclick={() => setPref('showRemoteImages', true)}>
@@ -533,39 +563,7 @@
 							<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
 							<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)]">{rendered.attachments.length}</span>
 						</div>
-						<div class="flex flex-wrap gap-[9px]">
-							{#each rendered.attachments as attachment (attachment.blobId)}
-								{@const badge = attachmentBadge(attachment.type)}
-								{@const url = attachmentUrl(attachment.blobId, attachment.name, attachment.type)}
-								{@const at = previewable.indexOf(attachment)}
-								{#snippet chip()}
-									<!-- An image is its own badge, up to a size worth fetching for 22px. -->
-									{#if previewKind(attachment) === 'image' && attachment.size <= MAX_THUMB_BYTES}
-										<img src={url} alt="" loading="lazy" class="size-[22px] shrink-0 rounded-[5px] border border-[var(--z-line)] object-cover" />
-									{:else}
-										<span
-											class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] border text-[9px] font-bold uppercase"
-											style:background-color={badge.bg}
-											style:border-color={badge.border}
-											style:color={badge.text}
-										>
-											{attachmentKind(attachment.name, attachment.type)}
-										</span>
-									{/if}
-									<span class="max-w-48 truncate text-[13px] font-medium text-[var(--z-body)]">{attachment.name}</span>
-									<span class="z-mono text-[10.5px] text-[var(--z-soft)]">{formatBytes(attachment.size)}</span>
-								{/snippet}
-								{#if at >= 0}
-									<button type="button" class={chipClass} title="Open {attachment.name}" onclick={() => (previewAt = at)}>
-										{@render chip()}
-									</button>
-								{:else}
-									<a href={url} download={attachment.name} class={chipClass} title="Download {attachment.name}">
-										{@render chip()}
-									</a>
-								{/if}
-							{/each}
-						</div>
+						{@render chips(rendered.attachments)}
 					</div>
 				{/if}
 			</div>
@@ -591,3 +589,39 @@
 		</div>
 	{/if}
 </section>
+
+{#snippet chips(attachments: MessageAttachment[])}
+	<div class="flex flex-wrap gap-[9px]">
+		{#each attachments as attachment (attachment.blobId)}
+			{@const badge = attachmentBadge(attachment.type)}
+			{@const url = attachmentUrl(attachment.blobId, attachment.name, attachment.type)}
+			{@const at = previewable.indexOf(attachment)}
+			{#snippet chip()}
+				<!-- An image is its own badge, up to a size worth fetching for 22px. -->
+				{#if previewKind(attachment) === 'image' && attachment.size <= MAX_THUMB_BYTES}
+					<img src={url} alt="" loading="lazy" class="size-[22px] shrink-0 rounded-[5px] border border-[var(--z-line)] object-cover" />
+				{:else}
+					<span
+						class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] border text-[9px] font-bold uppercase"
+						style:background-color={badge.bg}
+						style:border-color={badge.border}
+						style:color={badge.text}
+					>
+						{attachmentKind(attachment.name, attachment.type)}
+					</span>
+				{/if}
+				<span class="max-w-48 truncate text-[13px] font-medium text-[var(--z-body)]">{attachment.name}</span>
+				<span class="z-mono text-[10.5px] text-[var(--z-soft)]">{formatBytes(attachment.size)}</span>
+			{/snippet}
+			{#if at >= 0}
+				<button type="button" class={chipClass} title="Open {attachment.name}" onclick={() => (previewAt = at)}>
+					{@render chip()}
+				</button>
+			{:else}
+				<a href={url} download={attachment.name} class={chipClass} title="Download {attachment.name}">
+					{@render chip()}
+				</a>
+			{/if}
+		{/each}
+	</div>
+{/snippet}

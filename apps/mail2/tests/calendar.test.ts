@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { describeRepeat, eventsOnDay, shiftMonth } from '../src/lib/calendar/schedule.ts';
+import { pickPrincipal } from '../src/lib/share.ts';
 import type { EventRecurrence } from '@zaur/mail-core';
 
 const day = new Date(2026, 8, 19); // Saturday 19 September 2026
@@ -86,4 +87,17 @@ test('paging by month lands on the same day, and never skips a short one', () =>
 	// Across a year boundary, in both directions.
 	assert.deepEqual(shiftMonth(new Date(2026, 11, 15), 1), new Date(2027, 0, 15));
 	assert.deepEqual(shiftMonth(new Date(2026, 0, 15), -1), new Date(2025, 11, 15));
+});
+
+test('sharing picks the person typed, never you and never a guess', () => {
+	const self = { id: 'p0', name: 'Me', email: 'me@zaur.app' };
+	const bob = { id: 'p1', name: 'Bob', email: 'bob@zaur.app' };
+	const bobby = { id: 'p2', name: 'Bobby', email: 'bobby@zaur.app' };
+
+	assert.deepEqual(pickPrincipal([bob, bobby], 'BOB@zaur.app ', 'p0'), { person: bob });
+	// A name search that found one other person is that person.
+	assert.deepEqual(pickPrincipal([self, bobby], 'bobby', 'p0'), { person: bobby });
+	assert.match((pickPrincipal([bob, bobby], 'bob', 'p0') as { error: string }).error, /Several/);
+	assert.match((pickPrincipal([self], 'me@zaur.app', 'p0') as { error: string }).error, /yours/);
+	assert.match((pickPrincipal([], 'x@zaur.app', 'p0') as { error: string }).error, /Nobody/);
 });

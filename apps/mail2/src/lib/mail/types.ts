@@ -16,4 +16,6 @@ export type MailboxDTO = {
 export type ThreadListDTO = {
 	mailboxId: string;
 	rows: import('@zaur/mail-core').MessagePreview[];
+	/** There is older mail than the list holds: "Load more" asks for a longer list. */
+	hasMore?: boolean;
 };

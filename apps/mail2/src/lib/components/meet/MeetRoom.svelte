@@ -10,7 +10,7 @@
 
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import type { Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
+	import type { LocalAudioTrack, LocalVideoTrack, Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import { isSafariUserAgent } from '@zaur/mail-core/utils/meet';
@@ -19,7 +19,7 @@
 	import { GUEST_PREFIX, TILE_ASPECT, deviceProblem, fitGrid, formatElapsed, rosterOrder, type RosterEntry } from '#lib/meet/call';
 	import type { CallTicket } from '../../../routes/meet.remote';
 	import type { MediaChoice } from './MeetLobby.svelte';
-	import MeetIcon from './MeetIcon.svelte';
+	import MeetIcon, { type MeetIconName } from './MeetIcon.svelte';
 	import MeetMedia from './MeetMedia.svelte';
 
 	interface Props {
@@ -66,6 +66,12 @@
 	let stageH = $state(0);
 	let devices = $state.raw<MediaDeviceInfo[]>([]);
 	let selected = $state<Partial<Record<MediaDeviceKind, string>>>({});
+	/** Grid or Speaker, picked in the header; null until you pick, and the call decides. */
+	let view = $state<'grid' | 'speaker' | null>(null);
+	/** Who Speaker view shows: whoever spoke last, kept through a silence. */
+	let lastSpoke = $state('');
+	let facing = $state<'user' | 'environment'>('user');
+	let noiseSuppression = $state(true);
 
 	/*
 	 * iOS and iPadOS Safari have no getDisplayMedia at all — feature-detect
@@ -79,9 +85,26 @@
 
 	const me = $derived(people.find((p) => p.isLocal));
 	const presenter = $derived(people.find((p) => p.screen));
-	const layout = $derived(presenter ? 'focus' : people.length <= 1 ? 'solo' : people.length === 2 ? 'pair' : 'grid');
+	// Until you pick, Speaker while someone presents or it is the two of you, Grid otherwise.
+	const speakerView = $derived(view ? view === 'speaker' : Boolean(presenter) || people.length === 2);
+	const featured = $derived(people.find((p) => !p.isLocal && p.sid === lastSpoke) ?? people.find((p) => !p.isLocal));
+	const layout = $derived(
+		presenter && speakerView
+			? 'focus'
+			: people.length <= 1 && !presenter
+				? 'solo'
+				: !speakerView
+					? 'grid'
+					: people.length === 2
+						? 'pair'
+						: 'focus'
+	);
 	const pad = $derived(stageW < 768 ? 10 : 16);
-	const grid = $derived(fitGrid(people.length, stageW - 2 * pad, stageH - 2 * pad, 12, stageW < 640 ? 3 / 4 : TILE_ASPECT));
+	// In Grid, a shared screen is one more tile.
+	const grid = $derived(
+		fitGrid(people.length + (presenter ? 1 : 0), stageW - 2 * pad, stageH - 2 * pad, 12, stageW < 640 ? 3 / 4 : TILE_ASPECT)
+	);
+	const cameras = $derived(devices.filter((d) => d.kind === 'videoinput').length);
 	const roster = $derived(rosterOrder(people));
 	const hands = $derived(roster.filter((p) => p.handSince));
 
@@ -146,6 +169,8 @@
 		handUp = Boolean(local.attributes.hand);
 		quality = local.connectionQuality;
 		playbackBlocked = !lk.canPlaybackAudio || !lk.canPlaybackVideo;
+		const loud = lk.activeSpeakers.find((p) => p !== local);
+		if (loud) lastSpoke = loud.sid || loud.identity;
 	}
 
 	onMount(() => {
@@ -223,6 +248,8 @@
 			sync();
 			if (choice.micOn) await setLocal('microphone', true);
 			if (choice.camOn) await setLocal('camera', true);
+			// A second camera is what puts "back camera" under More.
+			await loadDevices();
 		})();
 		return () => {
 			clearInterval(tick);
@@ -284,6 +311,45 @@
 		devices = (await navigator.mediaDevices.enumerateDevices()).filter((d) => d.deviceId);
 		for (const kind of ['audioinput', 'audiooutput', 'videoinput'] as const) {
 			selected[kind] ??= lk?.getActiveDevice(kind) ?? 'default';
+		}
+	}
+
+	/**
+	 * A phone's cameras by the way they face, whatever the OS names them. The
+	 * track keeps the constraint, so the camera comes back the same way after
+	 * it is turned off and on.
+	 */
+	async function flipCamera() {
+		const track = lk?.localParticipant.getTrackPublication(LK!.Track.Source.Camera)?.track as LocalVideoTrack | undefined;
+		if (!track) return;
+		const next = facing === 'user' ? 'environment' : 'user';
+		try {
+			await track.restartTrack({ facingMode: next });
+			facing = next;
+			selected.videoinput = track.mediaStreamTrack.getSettings().deviceId;
+		} catch (cause) {
+			notice = { text: deviceProblem(cause, 'camera') };
+		}
+	}
+
+	/**
+	 * The browser's own noise suppression, with Chrome's stronger voice
+	 * isolation alongside it: on unless you turn it off. It is a capture
+	 * setting, so a mic already captured is captured again with it (muted
+	 * stays muted); one not yet on takes it from the defaults.
+	 */
+	async function setNoiseSuppression(on: boolean) {
+		const defaults = lk?.options.audioCaptureDefaults;
+		if (!lk || !LK || !defaults) return;
+		noiseSuppression = on;
+		Object.assign(defaults, { noiseSuppression: on, voiceIsolation: on });
+		const track = lk.localParticipant.getTrackPublication(LK.Track.Source.Microphone)?.track as LocalAudioTrack | undefined;
+		try {
+			await track?.restartTrack({ ...defaults });
+			// The new capture starts enabled, and LiveKit's mute() is a no-op on a muted track.
+			if (track?.isMuted) track.mediaStreamTrack.enabled = false;
+		} catch (cause) {
+			notice = { text: deviceProblem(cause, 'microphone') };
 		}
 	}
 
@@ -354,7 +420,8 @@
 			: 'shadow-[0_0_0_1px_var(--z-hairline)]'}"
 	>
 		{#if p.cam}
-			<MeetMedia track={p.cam} class="size-full object-cover {p.isLocal ? '-scale-x-100' : ''}" />
+			<!-- You see yourself mirrored, as in the lobby; the back camera shows the room as it is. -->
+			<MeetMedia track={p.cam} class="size-full object-cover {p.isLocal && facing === 'user' ? '-scale-x-100' : ''}" />
 		{:else}
 			<div class="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
 				<span
@@ -432,40 +499,66 @@
 	{/if}
 {/snippet}
 
-{#snippet deviceMenu(kinds: MediaDeviceKind[], title: string, look: string)}
+{#snippet devicePicks(kind: MediaDeviceKind)}
+	<div class="z-menu-caption">{KIND_LABEL[kind]}</div>
+	{#each devices.filter((d) => d.kind === kind) as device (device.deviceId)}
+		<Menu.Item value="{kind}:{device.deviceId}" class="z-menu-item" onSelect={() => pickDevice(kind, device.deviceId)}>
+			<span class="flex w-4 shrink-0 text-[var(--z-accent)]">
+				{#if selected[kind] === device.deviceId}<MeetIcon name="check" />{/if}
+			</span>
+			<span class="truncate">{device.label || KIND_LABEL[kind]}</span>
+		</Menu.Item>
+	{:else}
+		<div class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">None found</div>
+	{/each}
+{/snippet}
+
+<!-- The chevron beside Mic or Camera, or the header's Settings with every device. -->
+{#snippet deviceMenu(kinds: MediaDeviceKind[], title: string, trigger: 'chevron' | 'settings', look: string)}
 	<Menu.Root
-		positioning={{ placement: 'top-start', gutter: 8, overflowPadding: 12 }}
+		positioning={{ placement: trigger === 'chevron' ? 'top-start' : 'bottom-end', gutter: 8, overflowPadding: 12 }}
 		lazyMount
 		unmountOnExit
 		onOpenChange={(details) => details.open && loadDevices()}
 	>
 		<Menu.Trigger
-			class="-ml-px inline-flex h-11 w-[26px] cursor-pointer items-center justify-center rounded-r-[10px] border transition-colors max-md:hidden {look}"
+			class="inline-flex cursor-pointer items-center justify-center border transition-colors max-md:hidden {trigger === 'chevron'
+				? '-ml-px h-11 w-[26px] rounded-r-[10px]'
+				: 'size-[30px] rounded-[8px]'} {look}"
 			aria-label={title}
 			{title}
 		>
-			<MeetIcon name="chevron-up" class="size-3.5" />
+			<MeetIcon name={trigger === 'chevron' ? 'chevron-up' : 'settings'} class={trigger === 'chevron' ? 'size-3.5' : 'size-4'} />
 		</Menu.Trigger>
 		<Portal>
 			<Menu.Positioner>
 				<Menu.Content class="z-menu z-40 w-[292px]">
 					{#each kinds as kind (kind)}
-						<div class="z-menu-caption">{KIND_LABEL[kind]}</div>
-						{#each devices.filter((d) => d.kind === kind) as device (device.deviceId)}
-							<Menu.Item value="{kind}:{device.deviceId}" class="z-menu-item" onSelect={() => pickDevice(kind, device.deviceId)}>
-								<span class="flex w-4 shrink-0 text-[var(--z-accent)]">
-									{#if selected[kind] === device.deviceId}<MeetIcon name="check" />{/if}
-								</span>
-								<span class="truncate">{device.label || KIND_LABEL[kind]}</span>
-							</Menu.Item>
-						{:else}
-							<div class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">None found</div>
-						{/each}
+						{@render devicePicks(kind)}
 					{/each}
+					{#if kinds.includes('audioinput')}
+						<div class="mx-1.5 my-1 h-px bg-[var(--z-hairline)]"></div>
+						<Menu.CheckboxItem
+							value="noise"
+							class="z-menu-item justify-between"
+							checked={noiseSuppression}
+							closeOnSelect={false}
+							onCheckedChange={setNoiseSuppression}
+						>
+							Noise suppression
+							<span class="hobday-checkbox" data-checked={noiseSuppression} aria-hidden="true"></span>
+						</Menu.CheckboxItem>
+					{/if}
 				</Menu.Content>
 			</Menu.Positioner>
 		</Portal>
 	</Menu.Root>
+{/snippet}
+
+{#snippet moreItem(value: string, icon: MeetIconName, text: string, act: () => void, disabled = false)}
+	<Menu.Item {value} class="z-menu-item" {disabled} onSelect={act}>
+		<span class="text-[var(--z-soft)]"><MeetIcon name={icon} /></span>{text}
+	</Menu.Item>
 {/snippet}
 
 <div class="z-screen flex flex-col overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
@@ -494,6 +587,23 @@
 				<MeetIcon name={copied ? 'check' : 'link'} />
 				{copied ? 'Copied' : 'Copy link'}
 			</button>
+			<div role="group" aria-label="Layout" class="flex items-center rounded-[8px] border border-[var(--z-line)] bg-[var(--z-sunken)] p-0.5 max-md:hidden">
+				{#each [['grid', 'Grid'], ['speaker', 'Speaker']] as const as [value, title] (value)}
+					{@const on = (value === 'speaker') === speakerView}
+					<button
+						type="button"
+						class="inline-flex h-[26px] w-7 cursor-pointer items-center justify-center rounded-[6px] border {on
+							? ON
+							: 'border-transparent text-[var(--z-soft)] hover:text-[var(--z-strong)]'}"
+						aria-pressed={on}
+						aria-label={title}
+						{title}
+						onclick={() => (view = value)}
+					>
+						<MeetIcon name={value} />
+					</button>
+				{/each}
+			</div>
 			<button
 				type="button"
 				class="inline-flex h-[30px] cursor-pointer items-center gap-1.5 rounded-[8px] border px-2.5 max-md:h-8 {panelOpen ? ON : PLAIN}"
@@ -505,6 +615,12 @@
 				<MeetIcon name="people" />
 				<span class="z-mono text-[11px] font-semibold">{people.length || 1}</span>
 			</button>
+			{@render deviceMenu(
+				canPickSpeaker ? ['videoinput', 'audioinput', 'audiooutput'] : ['videoinput', 'audioinput'],
+				'Settings',
+				'settings',
+				PLAIN
+			)}
 		</div>
 	</header>
 
@@ -520,11 +636,14 @@
 						</div>
 					</div>
 				</div>
-			{:else if layout === 'focus' && presenter}
+			{:else if layout === 'focus'}
+				<!-- Speaker view: the shared screen, else whoever spoke last; everyone else in a strip. -->
 				<div class="absolute flex gap-3 max-md:flex-col" style:inset="{pad}px">
-					<div class="min-h-0 min-w-0 flex-1">{@render screen(presenter)}</div>
+					<div class="min-h-0 min-w-0 flex-1">
+						{#if presenter}{@render screen(presenter)}{:else if featured}{@render tile(featured)}{/if}
+					</div>
 					<div class="flex shrink-0 gap-2.5 overflow-auto md:w-[176px] md:flex-col max-md:h-[90px]">
-						{#each people as p (p.sid)}
+						{#each presenter ? people : people.filter((p) => p !== featured) as p (p.sid)}
 							<div class="aspect-[16/10] w-[176px] shrink-0 max-md:h-full max-md:w-auto">{@render tile(p, true)}</div>
 						{/each}
 					</div>
@@ -540,6 +659,9 @@
 			{:else if layout === 'grid'}
 				<div class="absolute flex items-center justify-center" style:inset="{pad}px">
 					<div class="flex flex-wrap justify-center gap-3" style:width="{grid.cols * grid.w + (grid.cols - 1) * 12}px">
+						{#if presenter}
+							<div style:width="{grid.w}px" style:height="{grid.h}px">{@render screen(presenter)}</div>
+						{/if}
 						{#each people as p (p.sid)}
 							<div style:width="{grid.w}px" style:height="{grid.h}px">{@render tile(p)}</div>
 						{/each}
@@ -688,7 +810,7 @@
 					<MeetIcon name={micOn ? 'mic' : 'mic-off'} />
 					<span class="max-md:sr-only">Mic</span>
 				</button>
-				{@render deviceMenu(canPickSpeaker ? ['audioinput', 'audiooutput'] : ['audioinput'], 'Microphone and speakers', micOn ? PLAIN : OFF)}
+				{@render deviceMenu(canPickSpeaker ? ['audioinput', 'audiooutput'] : ['audioinput'], 'Microphone and speakers', 'chevron', micOn ? PLAIN : OFF)}
 			</div>
 			<div class="flex">
 				<button
@@ -702,12 +824,12 @@
 					<MeetIcon name={camOn ? 'cam' : 'cam-off'} />
 					<span class="max-md:sr-only">Camera</span>
 				</button>
-				{@render deviceMenu(['videoinput'], 'Choose a camera', camOn ? PLAIN : OFF)}
+				{@render deviceMenu(['videoinput'], 'Choose a camera', 'chevron', camOn ? PLAIN : OFF)}
 			</div>
 			{#if canShare}
 				<button
 					type="button"
-					class="{CTRL} rounded-[10px] {sharing ? ON : PLAIN}"
+					class="{CTRL} rounded-[10px] max-md:hidden {sharing ? ON : PLAIN}"
 					aria-pressed={sharing}
 					title={sharing ? 'Stop sharing' : 'Share your screen'}
 					disabled={status === 'connecting'}
@@ -728,6 +850,39 @@
 				<MeetIcon name="hand" />
 				<span class="max-md:sr-only">{handUp ? 'Lower hand' : 'Raise hand'}</span>
 			</button>
+			<!-- A phone's fifth control: Share, which does not fit the bar, and what only a phone has. -->
+			{#if canShare || canPickSpeaker || cameras > 1}
+				<Menu.Root
+					positioning={{ placement: 'top-end', gutter: 8, overflowPadding: 12 }}
+					lazyMount
+					unmountOnExit
+					onOpenChange={(details) => details.open && loadDevices()}
+				>
+					<Menu.Trigger
+						class="{CTRL} rounded-[10px] md:hidden {PLAIN}"
+						aria-label="More"
+						title="More: switch camera, speaker, share"
+						disabled={status === 'connecting'}
+					>
+						<MeetIcon name="more" />
+					</Menu.Trigger>
+					<Portal>
+						<Menu.Positioner>
+							<Menu.Content class="z-menu z-40 w-[260px]">
+								{#if canShare}
+									{@render moreItem('share', 'share', sharing ? 'Stop sharing' : 'Share screen', toggleShare)}
+								{/if}
+								{#if cameras > 1}
+									{@render moreItem('flip', 'refresh', facing === 'user' ? 'Use the back camera' : 'Use the front camera', flipCamera, !camOn)}
+								{/if}
+								{#if canPickSpeaker}
+									{@render devicePicks('audiooutput')}
+								{/if}
+							</Menu.Content>
+						</Menu.Positioner>
+					</Portal>
+				</Menu.Root>
+			{/if}
 		</div>
 
 		<div class="flex justify-end">

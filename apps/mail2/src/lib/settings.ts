@@ -32,6 +32,8 @@ export type Prefs = {
 	composePlain: boolean;
 	/** Let the server ask an AI (TypeSafe) to categorise mail no rule caught. Opt-in: it sends sender, subject and preview off-site. */
 	aiCategories: boolean;
+	/** How long a sent message waits, with an Undo, before it goes. 0 sends at once. */
+	undoSendSeconds: number;
 };
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -48,7 +50,8 @@ export const DEFAULT_PREFS: Prefs = {
 	showRemoteImages: false,
 	theme: 'system',
 	composePlain: false,
-	aiCategories: false
+	aiCategories: false,
+	undoSendSeconds: 5
 };
 
 /**
@@ -71,7 +74,8 @@ export const ACCOUNT_PREF_KEYS = [
 	'unseenByDefault',
 	'showRemoteImages',
 	'composePlain',
-	'aiCategories'
+	'aiCategories',
+	'undoSendSeconds'
 ] as const satisfies readonly (keyof Prefs)[];
 
 export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
@@ -85,7 +89,8 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		unseenByDefault: prefs.unseenByDefault,
 		showRemoteImages: prefs.showRemoteImages,
 		composePlain: prefs.composePlain,
-		aiCategories: prefs.aiCategories
+		aiCategories: prefs.aiCategories,
+		undoSendSeconds: prefs.undoSendSeconds
 	};
 }
 
@@ -104,12 +109,15 @@ export function mergeAccountPrefs(local: Prefs, remote: Partial<AccountPrefs> | 
 		(merged as Record<string, unknown>)[key] = value;
 	}
 	if (!PAGE_SIZES.includes(merged.pageSize)) merged.pageSize = DEFAULT_PREFS.pageSize;
+	if (!UNDO_SEND_SECONDS.includes(merged.undoSendSeconds)) merged.undoSendSeconds = DEFAULT_PREFS.undoSendSeconds;
 	return merged;
 }
 
 export const LIST_MIN = 380;
 export const LIST_MAX = 760;
 export const PAGE_SIZES = [25, 50, 100, 200];
+/** The undo windows on offer, as webmail 1.0 had them. */
+export const UNDO_SEND_SECONDS = [0, 5, 10, 20];
 
 /** Merge stored JSON over the defaults, dropping anything malformed. */
 export function parsePrefs(raw: string | null): Prefs {
@@ -129,6 +137,7 @@ export function parsePrefs(raw: string | null): Prefs {
 	}
 	next.listWidth = Math.min(LIST_MAX, Math.max(LIST_MIN, next.listWidth));
 	if (!PAGE_SIZES.includes(next.pageSize)) next.pageSize = DEFAULT_PREFS.pageSize;
+	if (!UNDO_SEND_SECONDS.includes(next.undoSendSeconds)) next.undoSendSeconds = DEFAULT_PREFS.undoSendSeconds;
 	if (!THEMES.includes(next.theme)) next.theme = DEFAULT_PREFS.theme;
 	return next;
 }

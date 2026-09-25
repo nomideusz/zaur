@@ -7,7 +7,7 @@ import {
 	mailboxKindOrder,
 	resolveMailboxKind
 } from '@zaur/mail-core';
-import type { JMAPClient, MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
+import type { EmailQueryResult, JMAPClient, MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
 import { getAccountPrefs, getStoreDb } from '@zaur/server-auth';
 import type { MailboxDTO, ThreadListDTO } from '#lib/mail/types';
 import { connect, refuse, requireAccount, requireAccountKey } from '#lib/server/account';
@@ -131,6 +131,31 @@ function aiCategoriesOn(): boolean {
 	}
 }
 
+/**
+ * A list longer than one `Email/get` may return (Stalwart's default cap is
+ * 500) comes in pages of that size, back to back. "Load more" asks for a
+ * longer list rather than the next page, so every refresh stays one list.
+ */
+const GET_CAP = 500;
+// ponytail: stops at 2000 rows; past that, search. Page by position in the client if folders get deeper.
+const LIST_CAP = 2000;
+
+async function listPages(
+	limit: unknown,
+	fetchPage: (limit: number, position: number) => Promise<EmailQueryResult>
+): Promise<EmailQueryResult> {
+	const want = Math.min(LIST_CAP, Math.max(1, Number(limit) || 50));
+	const emails: EmailQueryResult['emails'] = [];
+	let hasMore = false;
+	for (let position = 0; position < want; position += GET_CAP) {
+		const page = await fetchPage(Math.min(GET_CAP, want - position), position);
+		emails.push(...page.emails);
+		hasMore = page.hasMore && want < LIST_CAP;
+		if (!page.hasMore) break;
+	}
+	return { emails, total: null, hasMore };
+}
+
 /** Webmail 1.0 keeps its settings in a message with this subject; it is not mail. */
 const isMail = (email: { subject?: string | null }) => email.subject?.trim() !== WEBMAIL_SETTINGS_SUBJECT;
 
@@ -138,16 +163,17 @@ export const threads = query(
 	schema<{ mailboxId: string; filter?: ListFilter; limit?: number; kind?: MailboxKind }>(),
 	async ({ mailboxId, filter, limit, kind }): Promise<ThreadListDTO> => {
 		const client = await connect();
-		const { emails } = await client.queryEmails(
-			mailboxId,
-			Math.min(500, Math.max(1, Number(limit) || 50)),
-			0,
-			{ unseenOnly: filter === 'unseen', keyword: filterKeyword(filter) }
+		const { emails, hasMore } = await listPages(limit, (limit, position) =>
+			client.queryEmails(mailboxId, limit, position, {
+				unseenOnly: filter === 'unseen',
+				keyword: filterKeyword(filter)
+			})
 		);
 		if (CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn()) categorizeInBackground(client, emails);
 		return {
 			mailboxId,
-			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId))
+			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId)),
+			hasMore
 		};
 	}
 );
@@ -190,7 +216,8 @@ export const labelCounts = query(
  * in the shared package; it just was not exported from its index.
  *
  * `mailboxId` scopes the search and comes back on the DTO, which is what lets
- * the list group and open results exactly like a folder view.
+ * the list group and open results exactly like a folder view. Without it the
+ * search covers every folder.
  */
 export const search = query(
 	schema<{ query: string; mailboxId?: string; limit?: number }>(),
@@ -198,17 +225,15 @@ export const search = query(
 		const trimmed = (text ?? '').trim();
 		if (!trimmed) return { mailboxId: mailboxId ?? '', rows: [] };
 		const client = await connect();
-		const { emails } = await client.searchEmails(
-			trimmed,
-			Math.min(500, Math.max(1, Number(limit) || 50)),
-			0,
-			mailboxId
+		const { emails, hasMore } = await listPages(limit, (limit, position) =>
+			client.searchEmails(trimmed, limit, position, mailboxId)
 		);
 		return {
 			mailboxId: mailboxId ?? '',
 			// Results can come from any folder, so a row is labelled by the
 			// mailbox it is actually in rather than the one we searched from.
-			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId ?? ''))
+			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId ?? '')),
+			hasMore
 		};
 	}
 );

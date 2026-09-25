@@ -5,7 +5,7 @@
 	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
 	import type { CalendarViewId, TimelineEvent } from '@nomideusz/svelte-calendar';
 	import type { Calendar, CalendarEvent } from '@zaur/mail-core';
-	import { calendarKey, eventKey, isRecurringInstance } from '@zaur/mail-core';
+	import { calendarAllowsWrites, calendarKey, eventKey, isRecurringInstance } from '@zaur/mail-core';
 	import {
 		addDays,
 		durationBetween,
@@ -21,6 +21,8 @@
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import EventEditor, { type EventDraft } from '#lib/components/calendar/EventEditor.svelte';
 	import CalendarList from '#lib/components/calendar/CalendarList.svelte';
+	import CalendarSettings from '#lib/components/calendar/CalendarSettings.svelte';
+	import EventView from '#lib/components/calendar/EventView.svelte';
 	import { eventsOnDay, shiftMonth, startOfDay } from '#lib/calendar/schedule';
 	import { ZAUR_THEME, sourceOf, toTimelineEvent } from '#lib/calendar/bridge';
 	import { LiveUpdates } from '#lib/mail/live';
@@ -106,7 +108,9 @@
 
 	const title = $derived(
 		view === 'month'
-			? formatMonthTitle(anchor.getFullYear(), anchor.getMonth())
+			? phone
+				? anchor.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
+				: formatMonthTitle(anchor.getFullYear(), anchor.getMonth())
 			: view === 'day'
 				? anchor.toLocaleDateString(
 						undefined,
@@ -156,6 +160,11 @@
 
 	function colorOf(event: CalendarEvent): string {
 		return calendarsOf(event)[0]?.color ?? 'var(--z-accent)';
+	}
+
+	/** Whether any calendar it is filed in takes writes — the grid cannot tell per event. */
+	function mayChange(event: CalendarEvent): boolean {
+		return calendarsOf(event).some((calendar) => calendar !== undefined && calendarAllowsWrites(calendar));
 	}
 
 	/**
@@ -211,7 +220,12 @@
 
 	/* ── Editing ──────────────────────────────────────────────────────── */
 
-	let mode = $state<'view' | 'new' | 'edit'>('view');
+	/**
+	 * What the rail holds: the day (`view`), an event as it is, the editor, and
+	 * — the grid's calendars are a sidebar only on a wide screen — the calendar
+	 * list and one calendar's settings.
+	 */
+	let mode = $state<'view' | 'event' | 'new' | 'edit' | 'calendars' | 'calendar'>('view');
 	let editing = $state<CalendarEvent | null>(null);
 	/** What a new event opens on — a day, or the exact slot that was drawn. */
 	let draftAt = $state(today);
@@ -238,6 +252,17 @@
 		editing = event;
 		editorError = null;
 		mode = 'edit';
+	}
+
+	function openEvent(event: CalendarEvent) {
+		editing = event;
+		editorError = null;
+		mode = 'event';
+	}
+
+	function closePanel() {
+		mode = 'view';
+		editing = null;
 	}
 
 	async function save(draft: EventDraft) {
@@ -280,6 +305,12 @@
 		if (!event) return;
 		const calendarId = event.calendarIds[0];
 		if (!calendarId) return;
+		if (!mayChange(event)) {
+			// The grid lets any block be dragged; this one's calendar is read-only.
+			await reload();
+			flash(`“${event.title}” is in a calendar you can only read.`);
+			return;
+		}
 		try {
 			await updateEvent({
 				id: event.id,
@@ -339,6 +370,18 @@
 		}
 	}
 
+	/** The calendar whose settings are open, by key: its object is replaced on every refresh. */
+	let settingsKey = $state<string | null>(null);
+	/** Settings opened from the calendar list go back to it. */
+	let settingsFrom = $state<'view' | 'calendars'>('view');
+	const settingsCalendar = $derived(calendarList.find((calendar) => calendarKey(calendar) === settingsKey) ?? null);
+
+	function openSettings(calendar: Calendar) {
+		settingsFrom = mode === 'calendars' ? 'calendars' : 'view';
+		settingsKey = calendarKey(calendar);
+		mode = 'calendar';
+	}
+
 	let addingCalendar = $state(false);
 	async function addCalendar(name: string) {
 		addingCalendar = true;
@@ -355,9 +398,9 @@
 	const dayTitle = $derived(
 		anchor.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
 	);
-	const editorOpen = $derived(mode !== 'view');
+	const panelOpen = $derived(mode !== 'view');
 	/** The month grid needs the day's list beside it; a planner is already one. */
-	const railOpen = $derived(editorOpen || view === 'month');
+	const railOpen = $derived(panelOpen || view === 'month');
 	/** Nothing to drag an event onto if none of your calendars take writes. */
 	const readOnly = $derived(
 		!calendarList.some((calendar) => calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn)
@@ -387,7 +430,7 @@
 		>
 			<button
 				type="button"
-				class="flex h-[30px] w-7 shrink-0 items-center justify-center rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
+				class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
 				onclick={() => step(-1)}
 				aria-label="Previous"
 			>
@@ -395,7 +438,7 @@
 			</button>
 			<button
 				type="button"
-				class="h-[30px] min-w-[170px] max-w-[42vw] truncate bg-[var(--z-sunken)] px-3 text-[13px] font-semibold text-[var(--z-ink)] max-md:min-w-0 max-sm:px-1.5"
+				class="h-[30px] min-w-[170px] max-w-[42vw] truncate bg-[var(--z-sunken)] px-3 text-[13px] font-semibold text-[var(--z-ink)] max-md:min-w-0 max-sm:px-1"
 				onclick={() => (anchor = today)}
 				title="Back to today"
 			>
@@ -403,7 +446,7 @@
 			</button>
 			<button
 				type="button"
-				class="flex h-[30px] w-7 shrink-0 items-center justify-center rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
+				class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
 				onclick={() => step(1)}
 				aria-label="Next"
 			>
@@ -411,9 +454,21 @@
 			</button>
 		</div>
 
+		<!-- Below the width that has the calendars sidebar, they open in the rail. -->
 		<button
 			type="button"
-			class="btn-tactile shrink-0 gap-1.5"
+			class="btn-tactile shrink-0 !px-2 lg:hidden"
+			aria-label="Calendars"
+			aria-pressed={mode === 'calendars'}
+			onclick={() => (mode = mode === 'calendars' ? 'view' : 'calendars')}
+			disabled={!calendarsState?.supported}
+		>
+			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10.5" rx="2" stroke="currentColor" stroke-width="1.5" /><path d="M2.5 6.5h11M5.5 1.75v2.5M10.5 1.75v2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
+		</button>
+
+		<button
+			type="button"
+			class="btn-tactile shrink-0 gap-1.5 max-md:!px-2"
 			onclick={() => startNew()}
 			disabled={!calendarsState?.supported}
 		>
@@ -443,6 +498,7 @@
 					calendars={calendarList}
 					primaryAccountId={calendarsState.primaryAccountId}
 					onToggle={toggleCalendar}
+					onEdit={openSettings}
 					onAdd={addCalendar}
 					adding={addingCalendar}
 				/>
@@ -450,7 +506,7 @@
 		</aside>
 
 		<!-- The grid -->
-		<div class="flex min-w-0 flex-1 flex-col {editorOpen ? 'max-md:hidden' : ''}">
+		<div class="flex min-w-0 flex-1 flex-col {panelOpen ? 'max-md:hidden' : ''}">
 			{#if notice}
 				<p
 					class="border-b border-[var(--z-hairline)] bg-[var(--z-hover)] px-4 py-1.5 text-[12px] font-medium text-[var(--z-muted)]"
@@ -503,7 +559,7 @@
 						}}
 						oneventclick={(row) => {
 							const event = sourceOf(row);
-							if (event) startEdit(event);
+							if (event) openEvent(event);
 						}}
 						oneventcreate={({ start, end }) => startNew(start, end)}
 						oneventmove={(row, start, end) => void moveEvent(row, start, end)}
@@ -518,11 +574,51 @@
 		<!-- The day, or the editor -->
 		{#if railOpen}
 			<div
-				class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0 {editorOpen
+				class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0 {panelOpen
 					? ''
 					: 'max-md:hidden'}"
 			>
-				{#if editorOpen && calendarsState}
+				{#if mode === 'event' && editing}
+					<EventView
+						event={editing}
+						calendars={calendarsOf(editing).filter((calendar) => calendar !== undefined)}
+						writable={mayChange(editing)}
+						busy={saving}
+						error={editorError}
+						onEdit={() => startEdit(editing!)}
+						onDelete={() => remove(editing!)}
+						onClose={closePanel}
+					/>
+				{:else if mode === 'calendars' && calendarsState}
+					<div class="flex items-center justify-between gap-2 border-b border-[var(--z-hairline)] px-4 py-3">
+						<h2 class="text-[14px] font-semibold text-[var(--z-ink)]">Calendars</h2>
+						<button type="button" class="btn-tactile !h-[30px]" onclick={closePanel}>Done</button>
+					</div>
+					<CalendarList
+						calendars={calendarList}
+						primaryAccountId={calendarsState.primaryAccountId}
+						onToggle={toggleCalendar}
+						onEdit={openSettings}
+						onAdd={addCalendar}
+						adding={addingCalendar}
+					/>
+				{:else if mode === 'calendar' && settingsCalendar && calendarsState}
+					<CalendarSettings
+						calendar={settingsCalendar}
+						calendars={calendarList}
+						own={!calendarsState.primaryAccountId ||
+							!settingsCalendar.accountId ||
+							settingsCalendar.accountId === calendarsState.primaryAccountId}
+						canShare={calendarsState.canShare}
+						onDone={(message, closed) => {
+							flash(message);
+							if (!closed) return;
+							mode = settingsFrom;
+							void reload(); // its events went with it
+						}}
+						onClose={() => (mode = settingsFrom)}
+					/>
+				{:else if (mode === 'new' || mode === 'edit') && calendarsState}
 					<EventEditor
 						event={mode === 'edit' ? editing : null}
 						day={draftAt}
@@ -533,10 +629,7 @@
 						meetEnabled={page.data.meetEnabled === true}
 						onSave={save}
 						onDelete={mode === 'edit' && editing ? () => remove(editing!) : undefined}
-						onCancel={() => {
-							mode = 'view';
-							editing = null;
-						}}
+						onCancel={() => (mode === 'edit' && editing ? (mode = 'event') : closePanel())}
 					/>
 				{:else}
 					<div class="flex items-center justify-between gap-2 border-b border-[var(--z-hairline)] px-4 py-3">
@@ -566,7 +659,7 @@
 											type="button"
 											class="z-event w-full !flex-col !items-stretch !gap-0.5 !rounded-[8px] !px-3 !py-2 {meeting ? '!pr-[76px]' : ''}"
 											style:--z-rail={colorOf(event)}
-											onclick={() => startEdit(event)}
+											onclick={() => openEvent(event)}
 										>
 											<span class="text-[13.5px] font-semibold">{event.title}</span>
 											<span class="text-[12px] opacity-80">{formatEventTime(event)}</span>

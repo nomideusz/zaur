@@ -24,7 +24,8 @@ import {
 	putLocalDraft,
 	removeLocalDraft,
 	removeOutboxEntry,
-	updateOutboxEntry
+	updateOutboxEntry,
+	withOutboxLock
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
 import { formatScheduleTime } from './schedule';
@@ -56,6 +57,12 @@ export interface Toast {
 	tone?: ToastTone;
 	actionLabel?: string;
 	action?: () => void;
+}
+
+/** A sent message inside its undo window: the timer that sends it, and the draft an Undo gives back. */
+interface HeldSend {
+	timer: ReturnType<typeof setTimeout>;
+	draft: Draft;
 }
 
 export const RECIPIENT_FIELDS = ['to', 'cc', 'bcc'] as const satisfies readonly RecipientField[];
@@ -99,6 +106,13 @@ class ComposeStore {
 	#recovering = false;
 	#saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 	#savedSignatures = new Map<string, string>();
+	/** Keyed by outbox entry id. */
+	#held = new Map<string, HeldSend>();
+
+	/** A message is waiting out its undo window: leaving now would delay it to the next visit. */
+	get holding(): boolean {
+		return this.#held.size > 0;
+	}
 
 	setTransport(transport: ComposeTransport) {
 		this.#transport = transport;
@@ -212,6 +226,8 @@ class ComposeStore {
 			to,
 			subject: seed.subject,
 			body: seed.body,
+			// A forward carries the files: the blobs are already the account's, so nothing re-uploads.
+			attachments: mode === 'forward' ? message.attachments.map(attachmentFromServer) : undefined,
 			// A reply is addressed and titled already: straight to writing. A forward still needs a To.
 			focusTarget: mode === 'forward' ? 'to' : 'body'
 		});
@@ -761,6 +777,9 @@ class ComposeStore {
 			draft.sendError = 'Mail is still connecting — try again.';
 			return;
 		}
+		// A scheduled send has its own Undo, and a later time is window enough.
+		const undoMs = payload.sendAt ? 0 : prefs.undoSendSeconds * 1000;
+		if (undoMs > 0 && (await this.#hold(draft, payload, undoMs))) return;
 
 		try {
 			const result = await transport.send(payload);
@@ -785,7 +804,7 @@ class ComposeStore {
 		} catch (cause) {
 			if (classifySendFailure(cause) === 'network') {
 				try {
-					await enqueueOutbox(payload);
+					await enqueueOutbox(payload, { draftId: draft.jmapDraftId ?? undefined });
 					this.#removeInternal(id);
 					void removeLocalDraft(id).catch(() => {});
 					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
@@ -821,35 +840,119 @@ class ComposeStore {
 		}
 	}
 
+	/**
+	 * The undo window. The message waits in the outbox, not in memory, so a tab
+	 * closed or crashed inside the window still sends it — on the next load,
+	 * which is why the page asks before it is left while one is held.
+	 * False when there is no local database: then it goes at once.
+	 */
+	async #hold(draft: Draft, payload: SendPayload, undoMs: number): Promise<boolean> {
+		let entryId: string;
+		try {
+			entryId = await enqueueOutbox(payload, {
+				holdUntil: Date.now() + undoMs,
+				draftId: draft.jmapDraftId ?? undefined
+			});
+		} catch {
+			return false;
+		}
+		this.#removeInternal(draft.id);
+		void removeLocalDraft(draft.id).catch(() => {});
+		this.#held.set(entryId, { draft, timer: setTimeout(() => void this.#release(entryId), undoMs) });
+		this.pushToast({
+			text: 'Sending…',
+			tone: 'info',
+			actionLabel: 'Undo',
+			action: () => void this.#unsend(entryId),
+			duration: undoMs
+		});
+		return true;
+	}
+
+	async #release(entryId: string): Promise<void> {
+		const transport = this.#transport;
+		await withOutboxLock(async () => {
+			// Undone while the lock was busy: the Undo won.
+			const held = this.#held.get(entryId);
+			if (!held || !transport) return;
+			this.#held.delete(entryId);
+			const entry = (await listOutbox()).find((candidate) => candidate.id === entryId);
+			if (!entry) return; // another tab sent it
+			try {
+				await transport.send(entry.payload);
+				await removeOutboxEntry(entryId);
+				if (entry.draftId) void transport.deleteDraft(entry.draftId).catch(() => {});
+				this.pushToast({ text: 'Message sent', tone: 'success' });
+			} catch (cause) {
+				if (classifySendFailure(cause) === 'network') {
+					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
+					return;
+				}
+				// Refused: handed back with the reason, as a send without the window would be.
+				await removeOutboxEntry(entryId);
+				this.#giveBack(held.draft, cause instanceof Error ? cause.message : 'The message could not be sent.');
+			}
+		});
+	}
+
+	async #unsend(entryId: string): Promise<void> {
+		const held = this.#held.get(entryId);
+		if (!held) {
+			this.pushToast({ text: 'Already sent', tone: 'info' });
+			return;
+		}
+		clearTimeout(held.timer);
+		this.#held.delete(entryId);
+		await withOutboxLock(() => removeOutboxEntry(entryId));
+		this.#giveBack(held.draft, null);
+	}
+
+	/** The same panel, where it was, with what was written — and saved again, locally and to Drafts. */
+	#giveBack(draft: Draft, sendError: string | null) {
+		draft.sending = false;
+		draft.sendError = sendError;
+		if (draft.stage !== 'minimized') draft.z = ++this.zTop;
+		this.drafts = [...this.drafts, draft];
+		this.scheduleDraftSave(draft.id);
+	}
+
 	/** Drain the offline outbox; returns how many queued messages were sent. */
 	async drainOutbox(): Promise<number> {
 		if (this.#draining || !this.#transport) return 0;
 		this.#draining = true;
-		let sent = 0;
 		try {
-			const entries = await listOutbox();
-			for (const entry of entries) {
-				// Written in another account: it waits for that account, and a wait is not
-				// a failed attempt (five of those would delete the message).
-				const owner = entry.payload.account;
-				if (owner && owner !== this.#transport.account) continue;
-				try {
-					await this.#transport.send(entry.payload);
-					await removeOutboxEntry(entry.id);
-					sent += 1;
-				} catch (cause) {
-					entry.attempts += 1;
-					entry.lastError = cause instanceof Error ? cause.message : String(cause);
-					await updateOutboxEntry(entry);
-					if (classifySendFailure(cause) === 'network') break;
-					if (entry.attempts >= 5) {
-						await removeOutboxEntry(entry.id);
-						this.pushToast({ text: 'A queued message kept failing and was removed', tone: 'error' });
-					}
-				}
-			}
+			return await withOutboxLock(() => this.#drain());
 		} finally {
 			this.#draining = false;
+		}
+	}
+
+	async #drain(): Promise<number> {
+		const transport = this.#transport;
+		if (!transport) return 0;
+		let sent = 0;
+		for (const entry of await listOutbox()) {
+			// Inside an undo window — this tab's, or another's that may still take it back.
+			if (this.#held.has(entry.id) || (entry.holdUntil ?? 0) > Date.now()) continue;
+			// Written in another account: it waits for that account, and a wait is not
+			// a failed attempt (five of those would delete the message).
+			const owner = entry.payload.account;
+			if (owner && owner !== transport.account) continue;
+			try {
+				await transport.send(entry.payload);
+				await removeOutboxEntry(entry.id);
+				if (entry.draftId) void transport.deleteDraft(entry.draftId).catch(() => {});
+				sent += 1;
+			} catch (cause) {
+				entry.attempts += 1;
+				entry.lastError = cause instanceof Error ? cause.message : String(cause);
+				await updateOutboxEntry(entry);
+				if (classifySendFailure(cause) === 'network') break;
+				if (entry.attempts >= 5) {
+					await removeOutboxEntry(entry.id);
+					this.pushToast({ text: 'A queued message kept failing and was removed', tone: 'error' });
+				}
+			}
 		}
 		return sent;
 	}
@@ -906,10 +1009,20 @@ class ComposeStore {
 		this.scheduleDraftSave(draft.id);
 	}
 
-	pushToast(toast: { text: string; tone?: ToastTone; actionLabel?: string; action?: () => void }) {
+	pushToast({
+		duration,
+		...toast
+	}: {
+		text: string;
+		tone?: ToastTone;
+		actionLabel?: string;
+		action?: () => void;
+		/** How long it stays, when that is not the default for its kind. */
+		duration?: number;
+	}) {
 		const id = crypto.randomUUID();
 		this.toasts.unshift({ id, ...toast });
-		setTimeout(() => this.dismissToast(id), toast.action ? 9000 : 5000);
+		setTimeout(() => this.dismissToast(id), duration ?? (toast.action ? 9000 : 5000));
 	}
 
 	dismissToast(id: string) {

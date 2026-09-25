@@ -6,17 +6,20 @@
 	 * their own, the ones another party is attached to, and the ones they can
 	 * only read. The checkbox wears the calendar's colour (`--z-check`), so the
 	 * swatch and the switch are one control rather than two things to line up.
+	 * Each row's settings — name, colour, sharing, deleting — open in the rail.
 	 */
 	let {
 		calendars,
 		primaryAccountId,
 		onToggle,
+		onEdit,
 		onAdd,
 		adding = false
 	}: {
 		calendars: Calendar[];
 		primaryAccountId: string | null;
 		onToggle: (calendar: Calendar, visible: boolean) => void;
+		onEdit: (calendar: Calendar) => void;
 		onAdd: (name: string) => void;
 		adding?: boolean;
 	} = $props();
@@ -59,9 +62,9 @@
 		</h2>
 		<ul class="space-y-0.5" role="list">
 			{#each group.items as calendar (calendar.accountId + calendar.id)}
-				<li>
+				<li class="group flex items-center gap-0.5 rounded-[8px] hover:bg-[var(--z-hover)]">
 					<label
-						class="flex cursor-pointer items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-[14px] font-medium text-[var(--z-body)] hover:bg-[var(--z-hover)]"
+						class="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 px-2 py-1.5 text-[14px] font-medium text-[var(--z-body)]"
 						style:--z-check={calendar.color}
 					>
 						<input
@@ -72,6 +75,16 @@
 						/>
 						<span class="truncate">{calendar.name}</span>
 					</label>
+					{#if calendar.isDefault}<span class="z-chip shrink-0">Default</span>{/if}
+					<!-- Shown on hover where there is one; a finger has no hover, so it stays. -->
+					<button
+						type="button"
+						class="z-icon-btn mr-1 shrink-0 opacity-0 group-hover:opacity-100 focus-visible:opacity-100 pointer-coarse:opacity-100"
+						aria-label="Settings for {calendar.name}"
+						onclick={() => onEdit(calendar)}
+					>
+						<svg class="size-3.5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><circle cx="3.5" cy="8" r="1.25" /><circle cx="8" cy="8" r="1.25" /><circle cx="12.5" cy="8" r="1.25" /></svg>
+					</button>
 				</li>
 			{/each}
 		</ul>

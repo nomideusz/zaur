@@ -45,6 +45,12 @@
 		busy?: boolean;
 		onRetry: () => void;
 		onNewMessage: (anchor: { left: number; top: number; right: number; bottom: number }) => void;
+		/** Older mail than the list holds. */
+		hasMore?: boolean;
+		onLoadMore?: () => void;
+		/** Results come from every folder, not only `mailbox`. */
+		searchAll?: boolean;
+		onSearchAll?: (all: boolean) => void;
 	}
 
 	let {
@@ -67,8 +73,27 @@
 		onBulk,
 		busy = false,
 		onRetry,
-		onNewMessage
+		onNewMessage,
+		hasMore = false,
+		onLoadMore,
+		searchAll = false,
+		onSearchAll
 	}: Props = $props();
+
+	/**
+	 * The end of the list coming into view asks for more, so a scroll never hits
+	 * a wall; the button is there for the keyboard, and in case this does not fire.
+	 */
+	function nearEnd(node: HTMLElement) {
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting && !loading) onLoadMore?.();
+			},
+			{ rootMargin: '200px' }
+		);
+		observer.observe(node);
+		return () => observer.disconnect();
+	}
 
 	let listContainer = $state<HTMLDivElement | undefined>();
 
@@ -85,6 +110,8 @@
 		(mailboxes ?? []).find((box) => box.kind === 'archive' && box.id !== mailbox?.id)
 	);
 	const folderChannel = $derived(mailboxChannel(mailbox?.kind));
+	/** In Trash a delete destroys; results from every folder only ever go to Trash. */
+	const destroys = $derived(mailbox?.kind === 'trash' && !(searchQuery && searchAll));
 
 	$effect(() => {
 		if (!cursorId || !listContainer) return;
@@ -123,7 +150,7 @@
 	 * search ran from.
 	 */
 	function rowChannel(row: ListRow) {
-		const kind = searchQuery
+		const kind = searchQuery && searchAll
 			? (mailboxes ?? []).find((box) => box.id === row.mailboxId)?.kind
 			: mailbox?.kind;
 		return messageChannel({ mailboxKind: kind, starred: row.starred, important: row.important });
@@ -284,10 +311,10 @@
 						{/if}
 						<button
 							type="button"
-							class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] {mailbox?.kind === 'trash' ? '!text-[var(--z-ch-discard-solid)]' : ''}"
+							class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] {destroys ? '!text-[var(--z-ch-discard-solid)]' : ''}"
 							disabled={busy}
-							aria-label={mailbox?.kind === 'trash' ? 'Delete forever' : 'Delete'}
-							title={mailbox?.kind === 'trash' ? 'Delete forever (#)' : 'Delete (#)'}
+							aria-label={destroys ? 'Delete forever' : 'Delete'}
+							title={destroys ? 'Delete forever (#)' : 'Delete (#)'}
 							onclick={() => onBulk('delete')}
 						>
 							<ActionIcon name="trash" class="size-[15px]" />
@@ -401,13 +428,18 @@
 				</span>
 				<p class="text-[14px] font-bold text-[var(--z-ink)]">No matches</p>
 				<p class="max-w-[300px] text-[12.5px] leading-relaxed text-[var(--z-muted)]">
-					Nothing in {mailbox?.name ?? 'this folder'} matches
+					Nothing in {searchAll ? 'any folder' : (mailbox?.name ?? 'this folder')} matches
 					<span class="font-medium text-[var(--z-strong)]">{searchQuery}</span>.
 				</p>
 				<p class="z-mono mt-2 max-w-[320px] text-[10.5px] leading-relaxed text-[var(--z-soft)]">{searchOperatorHint()}</p>
-				{#if onClearSearch}
-					<button type="button" class="btn-tactile mt-3 !h-8" onclick={onClearSearch}>Clear search</button>
-				{/if}
+				<div class="mt-3 flex gap-2">
+					{#if !searchAll && onSearchAll}
+						<button type="button" class="btn-tactile btn-primary !h-8" onclick={() => onSearchAll(true)}>Search all folders</button>
+					{/if}
+					{#if onClearSearch}
+						<button type="button" class="btn-tactile !h-8" onclick={onClearSearch}>Clear search</button>
+					{/if}
+				</div>
 			</div>
 		{:else if groups && groups.length === 0}
 			<!-- The empty folder wears its own channel — the hue its row, switcher
@@ -434,6 +466,19 @@
 				{/if}
 			</div>
 		{:else if groups}
+			{#if searchQuery && onSearchAll}
+				<div class="flex items-center gap-2 pt-3">
+					<span class="z-caption">Search in</span>
+					<div class="z-group min-w-0" role="group" aria-label="Search in">
+						<button type="button" class="z-segment !h-6 max-w-[160px] truncate !px-2.5" aria-pressed={!searchAll} onclick={() => onSearchAll(false)}>
+							{mailbox?.name ?? 'This folder'}
+						</button>
+						<button type="button" class="z-segment !h-6 shrink-0 !px-2.5" aria-pressed={searchAll} onclick={() => onSearchAll(true)}>
+							All folders
+						</button>
+					</div>
+				</div>
+			{/if}
 			{#each groups as group (group.label)}
 				<!-- Group divider: stays put while its own rows scroll under it. -->
 				<div
@@ -587,8 +632,8 @@
 									type="button"
 									tabindex="-1"
 									class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)]"
-									aria-label={mailbox?.kind === 'trash' ? 'Delete forever' : 'Delete'}
-									title={mailbox?.kind === 'trash' ? 'Delete forever (#)' : 'Delete (#)'}
+									aria-label={destroys ? 'Delete forever' : 'Delete'}
+									title={destroys ? 'Delete forever (#)' : 'Delete (#)'}
 									onclick={(event) => rowAction(event, row.threadId, 'delete')}
 								>
 									<ActionIcon name="trash" class="size-[15px]" />
@@ -598,6 +643,13 @@
 					{/each}
 				</div>
 			{/each}
+			{#if hasMore && onLoadMore}
+				<div class="flex justify-center pt-1 pb-2" {@attach nearEnd}>
+					<button type="button" class="btn-tactile !h-8" disabled={loading} onclick={onLoadMore}>
+						{loading ? 'Loading…' : 'Load more'}
+					</button>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </section>

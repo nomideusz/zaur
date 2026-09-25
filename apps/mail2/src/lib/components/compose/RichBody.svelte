@@ -1,7 +1,7 @@
 <!--
 	The message box: Basecamp's Trix, as a web component. It is uncontrolled —
 	seeded once from the draft, then it reports what was written as both HTML and
-	its plain-text reading (the text/plain alternative, and what the rest of
+	its plain-text reading (`richToText`: the text/plain alternative, and what the rest of
 	compose still reasons about). The toolbar is RichToolbar, found by id.
 
 	Images pasted or dropped into it stay in the text: Trix previews them while
@@ -12,6 +12,7 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
 	import { plainTextToSafeHtml } from '@zaur/mail-core/email/text';
+	import { richToText } from '#lib/compose/plain';
 
 	interface TrixAttachment {
 		file?: File;
@@ -25,7 +26,6 @@
 		editor: {
 			loadHTML(html: string): void;
 			setSelectedRange(range: number): void;
-			getDocument(): { toString(): string };
 		};
 	}
 
@@ -84,10 +84,7 @@
 			// itself (a highlight span). It is gone on close, which reports again.
 			if (node.value.includes('background-color: highlight')) return;
 			known = node.value;
-			// ponytail: the text part is Trix's reading — quotes lose their "> ". Write a
-			// real html→text pass if a plain-text-only recipient ever complains.
-			// An image reads as U+FFFC; in the text part it is "[image]", as Gmail writes it.
-			const body = node.editor.getDocument().toString().replaceAll('\uFFFC', '[image]').trimEnd();
+			const body = richToText(node.value);
 			onchange(body, body ? node.value : '');
 		};
 		const accept = (event: Event) => {

@@ -13,6 +13,10 @@ export interface OutboxEntry {
 	attempts: number;
 	lastError?: string;
 	payload: SendPayload;
+	/** Inside its undo window until then: nothing sends it before. */
+	holdUntil?: number;
+	/** The saved draft it was written in, removed from Drafts once it has gone. */
+	draftId?: string;
 }
 
 export function idbAvailable(): boolean {
@@ -50,15 +54,30 @@ function withStore<T>(
 	);
 }
 
-export async function enqueueOutbox(payload: SendPayload): Promise<void> {
+export async function enqueueOutbox(
+	payload: SendPayload,
+	extra: Pick<OutboxEntry, 'holdUntil' | 'draftId'> = {}
+): Promise<string> {
 	if (!idbAvailable()) throw new Error('No local database');
 	const entry: OutboxEntry = {
 		id: crypto.randomUUID(),
 		createdAt: Date.now(),
 		attempts: 0,
-		payload
+		payload,
+		...extra
 	};
 	await withStore('readwrite', (store) => store.put(entry));
+	return entry.id;
+}
+
+/**
+ * Everything that sends from, or takes back from, the outbox runs under one
+ * lock across this browser's tabs, and re-reads the entry inside it: so one
+ * message is sent once, and an Undo either wins or finds it already gone.
+ */
+export function withOutboxLock<T>(run: () => Promise<T>): Promise<T> {
+	if (typeof navigator === 'undefined' || !navigator.locks) return run();
+	return navigator.locks.request('zaur-mail2-outbox', run);
 }
 
 export async function listOutbox(): Promise<OutboxEntry[]> {

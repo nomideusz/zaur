@@ -7,10 +7,10 @@ const go = (path: string, register?: string) => legacyRedirect(new URL(path, 'ht
 test('legacy links: 1.0 mail URLs land in the inbox, threads open', () => {
 	assert.equal(go('/mail'), '/');
 	assert.equal(go('/mail/inbox/'), '/');
-	assert.equal(go('/mail/Sent'), '/');
+	assert.equal(go('/mail/Sent'), '/?folder=Sent');
 	assert.equal(go('/mail/search?q=invoice'), '/');
 	assert.equal(go('/mail/inbox/T1a?account=b%40zaur.app'), '/?thread=T1a&account=b%40zaur.app');
-	assert.equal(go('/mail/archive/T2'), '/?thread=T2');
+	assert.equal(go('/mail/archive/T2'), '/?folder=archive&thread=T2');
 	assert.equal(go('/mail/compose?to=a%40b.c&mode=reply'), '/?to=a%40b.c');
 	assert.equal(go('/mail/compose'), '/?to=');
 });

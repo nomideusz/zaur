@@ -79,6 +79,12 @@ export async function enablePush(): Promise<PushStatus> {
 	return 'on';
 }
 
+/** This browser's push endpoint — what the server knows the device by. */
+export async function pushEndpoint(): Promise<string | null> {
+	const reg = await registration();
+	return (await reg?.pushManager.getSubscription())?.endpoint ?? null;
+}
+
 export async function disablePush(): Promise<PushStatus> {
 	const reg = await registration();
 	const subscription = await reg?.pushManager.getSubscription();

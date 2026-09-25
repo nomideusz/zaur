@@ -2,7 +2,8 @@
 	import { messageOf } from '#lib/errors';
 	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
-	import { disablePush, enablePush, pushStatus, type PushStatus } from '#lib/push';
+	import { disablePush, enablePush, pushEndpoint, pushStatus, type PushStatus } from '#lib/push';
+	import { pushMutes, setPushMutes } from '../../push.remote';
 	import { whoami } from '../../session.remote';
 	import { identities, updateIdentity, vacation as vacationQuery, saveVacation, type VacationDTO } from '../../settings.remote';
 	import { logout } from '../../login.remote';
@@ -20,6 +21,7 @@
 		setPref,
 		adoptAccountPrefs,
 		PAGE_SIZES,
+		UNDO_SEND_SECONDS,
 		THEMES,
 		DEFAULT_PREFS,
 		LIST_MIN,
@@ -185,6 +187,37 @@
 			.then((next) => (push = next))
 			.catch(() => (push = 'unsupported'));
 	});
+
+	/**
+	 * With more than one account signed in, each can be kept quiet on this
+	 * device. The server holds the list against this browser's subscription.
+	 */
+	let muted = $state<string[] | null>(null);
+	$effect(() => {
+		if (push !== 'on' || (session?.accounts.length ?? 0) < 2) {
+			muted = null;
+			return;
+		}
+		void pushEndpoint()
+			.then((endpoint) => (endpoint ? pushMutes({ endpoint }) : null))
+			.then((list) => (muted = list))
+			.catch(() => (muted = null));
+	});
+
+	async function setMuted(key: string, notify: boolean) {
+		const before = muted ?? [];
+		const next = notify ? before.filter((entry) => entry !== key) : [...before, key];
+		muted = next;
+		status = null;
+		try {
+			const endpoint = await pushEndpoint();
+			if (!endpoint) throw new Error('Notifications are off on this device');
+			await setPushMutes({ endpoint, mutedAccounts: next });
+		} catch (cause) {
+			muted = before;
+			status = { text: messageOf(cause, 'Could not change notifications'), error: true };
+		}
+	}
 
 	async function togglePush() {
 		pushBusy = true;
@@ -543,6 +576,27 @@
 				</div>
 			</div>
 
+			<div class="flex items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+				<span class="min-w-0">
+					<span class="{rowLabel} block">Undo send</span>
+					<span class="mt-[1px] block text-[11.5px] leading-[1.35] text-[var(--z-soft)]">
+						How long a sent message waits, with an Undo, before it goes.
+					</span>
+				</span>
+				<div class="z-group" role="group" aria-label="Undo send">
+					{#each UNDO_SEND_SECONDS as seconds (seconds)}
+						<button
+							type="button"
+							class="z-segment z-mono !h-[26px] !px-[9px] !text-[11.5px]"
+							aria-pressed={prefs.undoSendSeconds === seconds}
+							onclick={() => setPref('undoSendSeconds', seconds)}
+						>
+							{seconds ? `${seconds}s` : 'Off'}
+						</button>
+					{/each}
+				</div>
+			</div>
+
 			<!--
 				Not synced on purpose: a theme and a pixel width mean something
 				different on a different screen.
@@ -624,6 +678,17 @@
 				</button>
 			{/if}
 		</div>
+		{#if session && muted}
+			{#each session.accounts as account (account.key)}
+				<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+					<span class="min-w-0">
+						<span class="block truncate {rowLabel}">{account.username}</span>
+						<span class="z-mono block text-[10.5px] text-[var(--z-soft)]">{muted.includes(account.key) ? 'Muted on this device' : 'Notifies'}</span>
+					</span>
+					<input type="checkbox" class="z-check" checked={!muted.includes(account.key)} onchange={(event) => setMuted(account.key, event.currentTarget.checked)} />
+				</label>
+			{/each}
+		{/if}
 	</div>
 </section>
 

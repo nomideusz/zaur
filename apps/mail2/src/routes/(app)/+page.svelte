@@ -47,6 +47,7 @@
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { ComposeContact } from '#lib/compose/types';
 	import type { MessageDetail } from '@zaur/mail-core';
+	import type { ThreadListDTO } from '#lib/mail/types';
 
 	let selectedMailboxId = $state<string | null>(null);
 	/** '' means "showing a folder"; anything else means the list shows results. */
@@ -75,8 +76,12 @@
 	const reader = readerThread();
 	const openThreadId = $derived(reader.id);
 
+	/** Search the open folder, or every folder. It stays as picked until the page reloads. */
+	let searchAll = $state(false);
+
 	function selectMailbox(id: string) {
 		selectedMailboxId = id;
+		folderToUrl(id);
 		drawerOpen = false;
 		reader.close();
 		cursorId = null;
@@ -175,12 +180,27 @@
 	const mailboxesResource = $derived(session ? mailboxes() : undefined);
 	const mailboxList = $derived(mailboxesResource?.current ?? undefined);
 
-	// Default to the inbox once the folder list arrives.
+	/**
+	 * `?folder=<mailbox id>` is the open folder — a reload or a shared link lands
+	 * there — and the inbox is the URL without it. An unknown id opens the inbox.
+	 */
 	$effect(() => {
 		if (selectedMailboxId || !mailboxList) return;
+		const linked = page.url.searchParams.get('folder');
 		const inbox = mailboxList.find((mailbox) => mailbox.kind === 'inbox');
-		selectedMailboxId = (inbox ?? mailboxList[0])?.id ?? null;
+		const pick = mailboxList.find((mailbox) => mailbox.id === linked) ?? inbox ?? mailboxList[0];
+		selectedMailboxId = pick?.id ?? null;
+		if (linked !== null && pick?.id !== linked) untrack(() => folderToUrl(pick?.id ?? null));
 	});
+
+	function folderToUrl(id: string | null) {
+		// Not `page.url`: a shallow replaceState leaves it at the URL the page loaded on.
+		const url = new URL(location.href);
+		const inbox = mailboxList?.find((mailbox) => mailbox.kind === 'inbox');
+		if (id && id !== inbox?.id) url.searchParams.set('folder', id);
+		else url.searchParams.delete('folder');
+		if (url.href !== location.href) replaceState(url, page.state);
+	}
 
 	const activeMailbox = $derived(
 		mailboxList?.find((mailbox) => mailbox.id === selectedMailboxId) ?? null
@@ -193,23 +213,37 @@
 	}
 
 	const searching = $derived(searchQuery.trim().length > 0);
+	/** Results from every folder: the rows' own folders count, not the open one. */
+	const acrossFolders = $derived(searching && searchAll);
+
+	/**
+	 * "Load more" asks for a longer list of the same view; any other view
+	 * starts again at one page.
+	 */
+	const listKey = $derived(`${activeMailbox?.id}|${listFilter}|${searchQuery}|${searchAll}`);
+	let longer = $state({ key: '', limit: 0 });
+	const listLimit = $derived(longer.key === listKey ? longer.limit : prefs.pageSize);
+
+	function loadMore() {
+		longer = { key: listKey, limit: listLimit + prefs.pageSize };
+	}
 
 	const threadsResource = $derived(
 		session && activeMailbox && !searching
-			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: prefs.pageSize, kind: activeMailbox.kind })
+			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: listLimit, kind: activeMailbox.kind })
 			: undefined
 	);
 
 	/**
-	 * Search is scoped to the open folder, which is what the placeholder says and
-	 * what makes the results openable by the same code path as a folder row.
+	 * Search starts in the open folder, which is what the placeholder says; the
+	 * results can widen it to every folder.
 	 */
 	const searchResource = $derived(
 		session && searching
 			? searchRemote({
 					query: searchQuery,
-					mailboxId: activeMailbox?.id,
-					limit: prefs.pageSize
+					mailboxId: searchAll ? undefined : activeMailbox?.id,
+					limit: listLimit
 				})
 			: undefined
 	);
@@ -226,6 +260,18 @@
 
 	/** Whichever of the two is driving the list right now. */
 	const listResource = $derived(searching ? searchResource : threadsResource);
+	/**
+	 * What the list shows. A longer list is a new query, so while it loads the
+	 * shorter one stays up rather than blanking the list under a scrolled reader.
+	 */
+	let shownList = $state.raw<{ key: string; data: ThreadListDTO } | null>(null);
+	$effect(() => {
+		const data = listResource?.current;
+		if (data) shownList = { key: listKey, data };
+	});
+	const listData = $derived(
+		listResource?.current ?? (shownList?.key === listKey ? shownList.data : undefined)
+	);
 	const threadResource = $derived(
 		session && openThreadId ? thread({ threadId: openThreadId }) : undefined
 	);
@@ -248,7 +294,7 @@
 	});
 
 	const rowGroups = $derived.by(() => {
-		const rows = listResource?.current?.rows;
+		const rows = listData?.rows;
 		if (!rows || !activeMailbox) return undefined;
 		const isMe = (email: string) => myEmails.has(email.trim().toLowerCase());
 		return buildRowGroups(rows, activeMailbox.kind, isMe);
@@ -309,7 +355,7 @@
 		}
 	});
 	$effect(() => {
-		const rows = listResource?.current?.rows;
+		const rows = listData?.rows;
 		const book = contactsResource?.current?.contacts ?? [];
 		const seen = new Set<string>();
 		const suggestions: ComposeContact[] = [];
@@ -454,11 +500,11 @@
 		);
 	}
 
-	const selectedIds = $derived(selectedEmailIds(listResource?.current?.rows, selection));
+	const selectedIds = $derived(selectedEmailIds(listData?.rows, selection));
 
 	function markThreadRead(threadId: string) {
-		const ids = selectedEmailIds(listResource?.current?.rows, new Set([threadId])).filter(
-			(id) => listResource?.current?.rows.find((row) => row.id === id)?.unread
+		const ids = selectedEmailIds(listData?.rows, new Set([threadId])).filter(
+			(id) => listData?.rows.find((row) => row.id === id)?.unread
 		);
 		if (ids.length === 0) return;
 		return bulk({ action: 'read', emailIds: ids })
@@ -480,11 +526,13 @@
 	async function runBulk(action: BulkAction, mailboxId?: string, threadIds?: string[]) {
 		const scope = threadIds ? new Set(threadIds) : selection;
 		const emailIds = threadIds
-			? selectedEmailIds(listResource?.current?.rows, scope)
+			? selectedEmailIds(listData?.rows, scope)
 			: selectedIds;
 		if (emailIds.length === 0 || bulkBusy) return;
-		let payload = { action, emailIds, mailboxId, sourceMailboxId: activeMailbox?.id };
-		if (action === 'delete' && activeMailbox?.kind !== 'trash') {
+		// Results from every folder have no one folder to leave: a move replaces
+		// where each message lives, and a delete only ever goes to Trash.
+		let payload = { action, emailIds, mailboxId, sourceMailboxId: acrossFolders ? undefined : activeMailbox?.id };
+		if (action === 'delete' && (acrossFolders || activeMailbox?.kind !== 'trash')) {
 			const trash = mailboxList?.find((box) => box.kind === 'trash');
 			if (trash) payload = { ...payload, action: 'move', mailboxId: trash.id };
 		}
@@ -521,7 +569,8 @@
 				void threads({
 					mailboxId: payload.mailboxId,
 					filter: listFilter,
-					limit: prefs.pageSize
+					limit: prefs.pageSize,
+					kind: mailboxList?.find((box) => box.id === payload.mailboxId)?.kind
 				})
 					.refresh()
 					.catch(() => {});
@@ -555,8 +604,8 @@
 	);
 
 	/**
-	 * `/?thread=<id>` opens that thread in the inbox: where a new-mail
-	 * notification points. Taken off the URL before the reader opens, so Back
+	 * `/?thread=<id>` opens that thread, in `?folder=`'s folder or the inbox:
+	 * where a new-mail notification points. Taken off the URL before the reader opens, so Back
 	 * returns to the plain inbox and a reload does not reopen it.
 	 */
 	let threadLinkHandled = false;
@@ -571,7 +620,7 @@
 		// A real (replacing) navigation, not replaceState: on a phone the reader pushes
 		// a shallow entry relative to the page's URL, which must already be clean.
 		untrack(() => {
-			const url = new URL(page.url.href);
+			const url = new URL(location.href);
 			url.searchParams.delete('thread');
 			void goto(url, { replaceState: true, reset: false }).then(() => openRow(threadId));
 		});
@@ -586,7 +635,11 @@
 		// The reader hides the top bar on a phone, and with it the drawer's only
 		// toggle — so the drawer never survives into a thread.
 		drawerOpen = false;
-		if (activeMailbox?.kind !== 'drafts') {
+		const rowMailbox = listData?.rows.find((row) => row.threadId === threadId)?.mailboxId;
+		const kind = acrossFolders
+			? mailboxList?.find((mailbox) => mailbox.id === rowMailbox)?.kind
+			: activeMailbox?.kind;
+		if (kind !== 'drafts') {
 			reader.open(threadId);
 			if (prefs.markReadOnOpen) void markThreadRead(threadId);
 			return;
@@ -716,7 +769,13 @@
 	}
 </script>
 
-<svelte:window onkeydown={handleKeydown} />
+<!-- A held send goes out when the window closes; leaving first puts it off to the next visit. -->
+<svelte:window
+	onkeydown={handleKeydown}
+	onbeforeunload={(event) => {
+		if (compose.holding) event.preventDefault();
+	}}
+/>
 <svelte:head><title>Mail · Zaur Mail</title></svelte:head>
 
 <!--
@@ -809,8 +868,12 @@
 			mailbox={activeMailbox}
 			mailboxes={mailboxList}
 			groups={rowGroups}
-			loading={threadsResource?.loading ?? true}
-			error={threadsResource?.error}
+			loading={listResource?.loading ?? true}
+			error={listResource?.error}
+			hasMore={listData?.hasMore ?? false}
+			onLoadMore={loadMore}
+			{searchAll}
+			onSearchAll={(all) => (searchAll = all)}
 			filter={listFilter}
 			{cursorId}
 			{openThreadId}

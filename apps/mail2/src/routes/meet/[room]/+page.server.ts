@@ -20,7 +20,7 @@ export const load: PageServerLoad = async ({ params, cookies, request }) => {
 
 	const session = readSessionFull(cookies);
 	const account = session ? getActiveAccount(session) : undefined;
-	// ponytail: a snapshot at page load; poll it if people wait in the lobby for long.
+	// The lobby asks again while you wait (`whoIsHere`); this is the first answer.
 	const here = await participantNames(config, params.room);
 	return {
 		room: params.room,

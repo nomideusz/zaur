@@ -8,7 +8,8 @@ theme only** for now. Files is built from the shell's own parts (no design of it
 
 - [x] Shell scaffold, remote functions enabled, tactile shell + Hobday palette (foundation slice)
 - [x] Session-aware read path (mailbox → thread list → reader)
-- [x] Floating multi-draft compose (panels, dock, schedule send, offline outbox)
+- [x] Floating multi-draft compose (panels, dock, schedule send, offline outbox,
+  undo send)
 - [x] Offline drafts: a draft the server can't take yet is kept on the device,
   saved to Drafts on reconnect, and reopened in the dock after a reload §
 - [x] Draft persistence (Drafts mailbox) + compose attachments
@@ -37,7 +38,8 @@ theme only** for now. Files is built from the shell's own parts (no design of it
   signatures (JMAP `Identity.textSignature`), auto-reply (`VacationResponse`),
   and your own folders — create, rename, move, delete, nested in the sidebar ‡
 - [x] Files pane (`/files`) over JMAP `FileNode`: folders, upload (button or
-  drop, 25 MB a file), preview, rename, move, delete; your own account only ‡
+  drop, up to the server's 50 MB), preview, rename, move, delete, search, sharing,
+  and what others share with you — see [Files](#files) ‡
 - [x] Installable app (PWA): icons from the mark, manifest, service worker — see
   [Installable app](#installable-app-pwa) §
 - [x] New-mail notifications (Web Push), closed tab included — see
@@ -683,8 +685,11 @@ through the same path as a paste: images into the text, anything else to the att
 The paperclip still attaches everything, images included. Trix disables undo/redo when there is
 nothing to undo, and block buttons inside a code block.
 
-A draft carries both `bodyHtml` (what the editor holds) and `body` (Trix's plain-text reading: the
-`text/plain` alternative, and what the rest of compose reasons about). `bodyHtml` stays empty until
+A draft carries both `bodyHtml` (what the editor holds) and `body` (its plain-text reading,
+`richToText` in `#lib/compose/plain`: the `text/plain` alternative, and what the rest of compose
+reasons about). That reading is written for a plain-text client — a quote is `> ` lines, a list keeps
+its `- ` / `1. ` markers, a link is `words <address>`, an image is `[image]` — where Trix's own
+`toString()` dropped all of it. `bodyHtml` stays empty until
 something is written, so an untouched reply is not an edit and does not autosave. With it the
 message goes out `multipart/alternative`; without it, plain, as before.
 
@@ -728,6 +733,9 @@ Several images in a row become a Trix gallery. On send and save the server
 its own line (width capped at 600 for Outlook) and adds the blob as an inline part — the Content-ID
 is the blob id, as in webmail 1.0, so the reader resolves it back when a draft reopens. Images that
 are not ours (remote URLs, `data:`) are dropped, and Send waits while an upload is in flight.
+
+**Forwarding** carries the original's attachments as chips, pointing at the blobs already in the
+account, so nothing is downloaded or uploaded again; drop a chip to leave that file out.
 
 **Focus.** A new message and a forward start in To; a reply starts in the body, above the quote.
 The panel focuses a frame late: a menu that opened it (Reply all, Forward) hands focus back to its
@@ -814,7 +822,22 @@ filter there would be a control that lies. Empty results are their own state, an
 the operator list, because "no matches" is exactly when you want to know what
 else you could have typed.
 
-Search is scoped to the open folder, which is what the placeholder says.
+Search is scoped to the open folder, which is what the placeholder says. A
+*Search in Folder | All folders* switch sits over the results, and "No matches"
+offers the wider search as its first button. Across folders each row wears its
+own folder's colour, opening a draft opens compose, and Delete always goes to
+Trash — a result from Trash would otherwise be destroyed from a view that does
+not say "Trash".
+
+**Longer lists.** A folder or a search shows 50 threads; scrolling to the end
+(or *Load more*) asks for 50 more, and the rows already on screen stay while it
+loads. `listPages` in `mail.remote.ts` pages `Email/query` by position in
+chunks of 500 (Stalwart's default `Email/get` cap) and stops at 2,000 messages.
+
+**The open folder is in the URL** — `?folder=<mailbox id>`, nothing for the
+inbox — so a reload stays put and 1.0's `/mail/<id>` links land on the folder.
+It is written with `replaceState`, which does not update `page.url`: code that
+rewrites the query reads `location.href`.
 
 **Every search used to return nothing**, and the reason is worth keeping: the
 folder scope and the parsed query were combined as `{ and: [...] }`, which is
@@ -1144,6 +1167,25 @@ Shared calendars ride along: `getCalendars` walks every account the session
 advertises, and an event carries the account it lives in so a write goes back
 to the right one.
 
+- **A click opens the event, not the editor** (`EventView`), as 1.0's panel
+  did. Edit and Delete are there only when one of its calendars takes writes;
+  a holiday feed or a calendar shared read-only shows the details and says
+  so. Dragging such an event snaps back with a notice — the grid has no
+  per-event lock.
+- **Each calendar's ⋯ opens its settings** (`CalendarSettings`) in the same
+  rail: name and colour, make it the default (`onSuccessSetIsDefault`), share
+  it, delete it. Deleting asks twice when the server says it still has events
+  (`calendarHasEvent`, then `onDestroyRemoveEvents`); the default calendar
+  cannot be deleted.
+- **Sharing is by address**, but JMAP shares with a principal, so the address
+  goes through `Principal/query` first — 1.0's rule, in `pickPrincipal`: an
+  exact address wins, otherwise exactly one other person must match, never
+  you. Access is `shareWith/{principal}` patches (Can view / Can edit; `null`
+  removes). Offered only when the session has the principals capability and
+  the calendar grants `mayShare`.
+- **Phones get the list from the header's calendar button**, in the rail
+  where the sidebar would be — no extra bar.
+
 ## Meet (video calls)
 
 `/meet/{room}` is Zaur Meet on LiveKit Cloud, rebuilt from webmail 1.0's
@@ -1159,7 +1201,19 @@ Links from either app join the same room from the other.
   per client address, since a token needs no session.
 - **A lobby first.** You see and hear yourself (mirrored preview, mic meter,
   device pickers) and what you switch off stays off when you join. It says
-  who is already in — a snapshot from the server at page load.
+  who is already in: the server's answer at page load, then `whoIsHere`
+  every ten seconds while the tab is shown (its own rate limit).
+- **Grid or Speaker** in the header. Until you pick, it is Speaker while
+  someone presents or it is the two of you, Grid otherwise. Speaker shows
+  the last person who spoke, kept through a silence; in Grid a shared screen
+  is one more tile.
+- **Settings** (the sliders) lists camera, microphone and speakers (output
+  where the browser can choose it) and **Noise suppression**: the browser's
+  own, with voice isolation, on by default. Changing it captures the mic
+  again; muted stays muted.
+- **On a phone** the bar is Mic, Camera, Hand, More, Leave. More holds Share,
+  the front/back camera (`facingMode`, only with a second camera) and the
+  speaker route. The back camera is not mirrored.
 - **The call is dark whatever the theme**; the lobby follows yours. The page
   sets `data-theme="dark"` on `<html>` for the call and puts it back after.
 - **Four channels carry meaning:** speaking is green (a ring and bars, never
@@ -1179,6 +1233,37 @@ Links from either app join the same room from the other.
 Keys: `m` mic, `v` camera, `h` hand, `p` people. Env: `LIVEKIT_URL`,
 `LIVEKIT_API_KEY`, `LIVEKIT_API_SECRET` (all three, or Meet is off — see
 `.env.example`).
+
+## Files
+
+`/files` is JMAP `FileNode`, the same tree 1.0 showed, one folder a page
+(`?folder=`, plus `&account=` when it is someone else's).
+
+- **Shared with you** is every other account in the session with the FileNode
+  capability: what people share lives in *their* account, so each one is
+  queried and the nodes whose parent you cannot see are its roots
+  (`orphanFileRoots`), listed under "Shared with you" at the top level with the
+  owner's name. Every remote function takes the account back (`null` for your
+  own). Buttons follow `myRights`: New folder and Upload only where you may add,
+  Edit where you may rename or delete, Share with `mayShare`. A file uploaded
+  into someone else's folder goes up to your account and is created in theirs,
+  as in 1.0.
+- **Sharing is by address**, turned into a principal by 1.0's rule (the one
+  Calendar's `pickPrincipal` has): an exact address wins, otherwise exactly one
+  other person must match. Can view / Can edit are mail-core's
+  `rightsForFileShareRole`, and the whole `shareWith` map is written back —
+  1.0 put `null`s inside that replacement, which JMAP does not define. Someone
+  newly added gets a plain-text email with a link to Files, as 1.0's
+  `share-notify` sent.
+- **Search** is `FileNode/query` `{ text }` over every account, 50 hits each,
+  debounced as you type; a hit of yours links to the folder it is in.
+- **Uploads go up to the server's `maxSizeUpload`**, read from the session (50 MB
+  on Stalwart). `/api/upload` spools the body to a temporary file and hands
+  Stalwart a file-backed Blob, so a big file never sits in memory — compose's
+  attachments ride the same endpoint. The image's `BODY_SIZE_LIMIT` (50M) is the
+  other half of the cap: raise both together. Past that means `Blob/upload`
+  chunking (Stalwart takes 7.5 MB a piece, 10 MB a request) or WebDAV; neither
+  is built.
 
 ## Installable app (PWA)
 
@@ -1238,6 +1323,11 @@ cannot disagree with the browser. On iPhone and iPad push only exists for a
 Home Screen app, and the card says that instead of offering a button. Brave
 ships with its push service off; enabling fails with a hint naming the setting.
 
+**Muting an account.** With two or more accounts signed in, Settings lists
+them under *New mail*: unticking one mutes it **on this device** (the row's
+`muted_accounts`, `pushMutes` / `setPushMutes`); the watcher already skipped
+muted accounts. The same browser in another session keeps its own list.
+
 A notification opens `/?thread=<id>` (plus `&account=<key>` when the session
 holds more than one), which the mail page consumes once: it switches account if
 needed (a reload), cleans the URL with a replacing navigation — not
@@ -1281,12 +1371,14 @@ pnpm dev:mail2                          # set the printed cookie, open the app
 (it logs the From and identity of each submission), blob upload, a small
 `FileNode` tree (`query`/`get` with `fetchParents`/`set`, refusing duplicate names),
 `AddressBook`/`ContactCard`, `Calendar`/`CalendarEvent` (with a fake weekly
-expansion), and the `x:` self-service objects — to exercise every remote
+expansion, sharing, default and `calendarHasEvent`), four `Principal`s to share
+with, a second account (Anna's) with one read-only and one writable folder shared, and the `x:` self-service objects — to exercise every remote
 function in Security, Contacts and Calendar end to end, including the
 `#ids` back-references the contact and credential listings chain on. It logs
 the payloads it receives, which is how the shapes were checked. The seeded
 password is `not-a-real-password`. Point `SMOKE_JMAP_URL` at a dead port to see
-every error state instead.
+every error state instead. `FAKE_JMAP_PORT` runs a second copy beside the
+shared one.
 
 `POST http://127.0.0.1:9911/smoke/deliver` (optional `{"subject","from","fromName"}`)
 drops a new unseen message into the inbox, moves the Email state on and sends a
@@ -1381,10 +1473,11 @@ Treat the first run of each as a test. In the order they are likely to bite:
 | --- | --- | --- | --- |
 | **Security** | `x:AccountPassword` / `x:AppPassword` / `x:ApiKey` calls against the fake, incl. rejection messages; TOTP against RFC 6238 vectors; 11 + 5 tests | a Bearer OAuth token being accepted for `x:` methods (1.0 relied on it; Stalwart's WebUI does the same); enabling TOTP with a client-minted `otpauth://` URL | Stalwart wanting a code to *enable* TOTP after all — the fake does not ask; if it does, the same code the page already verified is in the request, so it should pass. Check the permission preset on API keys is accepted verbatim |
 | **Contacts** | `AddressBook/get`, `ContactCard/query`+`get` chained on `#ids`, `set` create/update/destroy against the fake; JSContact mapping, 7 tests | Stalwart's `ContactCard/query` sort by `name/surname` (there is an unsorted fallback on `unsupportedSort`); `uid` handling on create | The `Card` shape on create — `@type`/`version` are sent; Stalwart may insist on `kind` or reject an unknown property |
-| **Calendar** | `Calendar/get`, `CalendarEvent/query`+`get` with `expandRecurrences`, `set` against the fake | real server-side expansion (synthetic id format, `recurrenceId`), updating one occurrence, `sendSchedulingMessages` | An update on a synthetic id being refused rather than recorded as an override; the editor says "this occurrence" — if Stalwart says no, the message surfaces |
+| **Calendar** | `Calendar/get`, `CalendarEvent/query`+`get` with `expandRecurrences`, `set` against the fake; calendar rename/colour/default/delete and `shareWith` patches, `Principal/query`+`get` against the fake; `pickPrincipal` tested | real server-side expansion (synthetic id format, `recurrenceId`), updating one occurrence, `sendSchedulingMessages`; Stalwart's `Principal/query` (it may refuse directory lookups — surfaced as a message), `onSuccessSetIsDefault`, `calendarHasEvent`, whether a sharee may rename | An update on a synthetic id being refused rather than recorded as an override; the editor says "this occurrence" — if Stalwart says no, the message surfaces |
 | **Live updates** | endpoint returns 401 unauthenticated; `changedTypes` unit-tested | the SSE pump, reconnect, OAuth refresh on a stream that outlives its token | The stream opens and then dies quietly at the first token refresh. The 90s stale timer and the polling fallback are what should keep the list correct anyway — check that polling actually takes over rather than assuming the stream is fine |
 | **Rules (Sieve)** | script generation round-trips, 14 tests | `SieveScript/get`/`set`/`validate`, blob upload of a script, activation | Stalwart rejecting the generated Sieve. This is the good failure: `validate` runs *before* the script is stored, so the error surfaces as a message rather than a filter that silently stops working. Check `require` handling and `addflag` first |
 | **Attachment downloads** | endpoint returns 401 unauthenticated; URL encoding unit-tested | `downloadBlob` against a real blob, streaming a large file | Content type or disposition being wrong for one file kind, or a large file buffering where it should stream |
+| **Files** | shared-with-you roots and rights-gated buttons, search over two accounts, share / change / remove with the email, a 30 MB upload into a shared folder and back down, all against the fake | Stalwart's `FileNode/query` `text` filter, orphan roots under real ACLs, `shareWith` written whole, a file over 25 MB through the image's `BODY_SIZE_LIMIT` | Uploading into someone else's folder: the blob goes to *your* account (as 1.0's did) and the node is created in theirs. If Stalwart wants the blob in the node's account the create fails with `blobNotFound` — `uploadBlob` would need an account argument |
 | **Search** | UI exercised end to end on mock data; the parser is 1.0's, already in production there | `Email/query` with a parsed filter against Stalwart | An operator Stalwart's FTS treats differently from 1.0's usage — `before:`/`after:` are the likeliest, since dates go over as ISO strings |
 
 The settings sync is the exception: it runs on our own SQLite, so it **is**
@@ -1405,18 +1498,12 @@ one reviewer that has not seen it.
 
 Web Push, several accounts and the installable app have landed (§ above);
 their first real test is a phone with the app installed and two accounts
-signed in. After that:
-
-1. **Muting an account's notifications.** The store keeps `muted_accounts` per
-   device already (1.0 has the switch); nothing sets it yet.
-2. **Files, the rest of 1.0's.** Folders shared with you (they live in the
-   sharer's account), sharing your own, search, and files over 25 MB.
+signed in.
 
 ## What is still missing
 
 Measured against webmail 1.0 and against what Stalwart actually implements:
-the two items above, and push to the Android shell (1.0's FCM path for the
-Capacitor app).
+push to the Android shell (1.0's FCM path for the Capacitor app).
 
 Two smaller notes:
 
@@ -1457,6 +1544,15 @@ Two smaller notes:
   What is left there on load or reconnect is settled by `recoverLocalDrafts`:
   drafts closed offline go to Drafts, and drafts a reload interrupted come back
   to the dock. Typing in the last 1.5 s before the tab dies is not kept.
+- **Undo send** (Settings → *Undo send*: off, 5, 10 or 20 s, 5 by default; it
+  travels with the account) is the same queue: a send is written to the outbox
+  with `holdUntil` and the draft's server copy (`draftId`), the panel closes, and
+  a toast offers Undo until the timer releases it. Undo takes it back out and
+  reopens the panel. So a tab closed during the window still sends — on the next
+  load, like any queued message — where 1.0's in-memory hold lost it; while a
+  send is held the tab asks before it unloads. Drains and releases share a Web
+  Lock (`withOutboxLock`), so two tabs never send one entry twice. A scheduled
+  send is not held: it already has a later time.
 - **What lives in `@zaur/mail-core` rather than here:** anything a native client
   would need too — the JMAP client, the search query parser, and the rule model
   with its Sieve compiler (`sieve-rules.ts`). What stays in mail2 is the shell:

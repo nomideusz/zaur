@@ -5,9 +5,11 @@ import http from 'node:http';
 import { randomUUID } from 'node:crypto';
 import zlib from 'node:zlib';
 
-const PORT = 9911;
+// A second copy can run beside the shared one (FAKE_JMAP_PORT) while its own changes are tried.
+const PORT = Number(process.env.FAKE_JMAP_PORT) || 9911;
 const BASE = `http://127.0.0.1:${PORT}`;
 const ACC = 'acc1';
+const ANNA = 'acc-anna';
 const CORE = 'urn:ietf:params:jmap:core';
 const MAIL = 'urn:ietf:params:jmap:mail';
 const CONTACTS = 'urn:ietf:params:jmap:contacts';
@@ -16,6 +18,7 @@ const SIEVE = 'urn:ietf:params:jmap:sieve';
 const VACATION = 'urn:ietf:params:jmap:vacationresponse';
 const FILENODE = 'urn:ietf:params:jmap:filenode';
 const STALWART = 'urn:stalwart:jmap';
+const PRINCIPALS = 'urn:ietf:params:jmap:principals';
 
 const session = {
 	username: 'smoke@zaur.app',
@@ -25,24 +28,27 @@ const session = {
 	eventSourceUrl: `${BASE}/jmap/eventsource/?types={types}&closeafter={closeafter}&ping={ping}`,
 	state: 's1',
 	capabilities: {
-		[CORE]: { maxObjectsInGet: 500 },
+		[CORE]: { maxObjectsInGet: 500, maxSizeUpload: 50000000 },
 		[MAIL]: {},
 		[CONTACTS]: {},
 		[CALENDARS]: {},
 		[SIEVE]: { extensions: ['fileinto', 'imap4flags'] },
 		[VACATION]: {},
 		[FILENODE]: {},
-		[STALWART]: {}
+		[STALWART]: {},
+		[PRINCIPALS]: {}
 	},
 	accounts: {
 		[ACC]: {
 			name: 'smoke@zaur.app',
 			isPersonal: true,
 			isReadOnly: false,
-			accountCapabilities: { [MAIL]: {}, [CONTACTS]: {}, [CALENDARS]: {}, [SIEVE]: {}, [VACATION]: {}, [FILENODE]: {} }
-		}
+			accountCapabilities: { [MAIL]: {}, [CONTACTS]: {}, [CALENDARS]: {}, [SIEVE]: {}, [VACATION]: {}, [FILENODE]: {}, [PRINCIPALS]: { currentUserPrincipalId: 'principal-smoke' } }
+		},
+		// Anna's storage, of which she has shared a folder or two with you.
+		[ANNA]: { name: 'anna@zaur.app', isPersonal: false, isReadOnly: false, accountCapabilities: { [FILENODE]: {} } }
 	},
-	primaryAccounts: { [MAIL]: ACC, [CONTACTS]: ACC, [CALENDARS]: ACC, [SIEVE]: ACC, [FILENODE]: ACC }
+	primaryAccounts: { [MAIL]: ACC, [CONTACTS]: ACC, [CALENDARS]: ACC, [SIEVE]: ACC, [FILENODE]: ACC, [PRINCIPALS]: ACC }
 };
 
 const mailboxes = [
@@ -164,6 +170,17 @@ const fileNodes = [
 	fileNode('fn-dkim', 'fn-docs', 'dkim.txt', 'blob-3'),
 	fileNode('fn-photo', 'fn-contracts', 'studio.png', 'blob-photo')
 ];
+// What you can see of Anna's: two folders whose parent (her home) you cannot,
+// one to read and one to write into.
+const readOnly = { mayRead: true, mayAddChildren: false, mayRename: false, mayDelete: false, mayModifyContent: false, mayShare: false };
+const writable = { ...readOnly, mayAddChildren: true, mayRename: true, mayModifyContent: true };
+const annaFileNodes = [
+	{ ...fileNode('fa-handbook', 'fa-home', 'Team handbook'), myRights: readOnly },
+	{ ...fileNode('fa-onboarding', 'fa-handbook', 'onboarding.pdf', 'blob-2'), myRights: readOnly },
+	{ ...fileNode('fa-drafts', 'fa-home', 'Shared drafts'), myRights: writable },
+	{ ...fileNode('fa-notes', 'fa-drafts', 'meeting-notes.txt', 'blob-3'), myRights: writable }
+];
+const nodesOf = (accountId) => (accountId === ANNA ? annaFileNodes : fileNodes);
 
 /** Sample mail: every channel, a thread, an attachment, one of each state. */
 const emails = new Map(
@@ -319,6 +336,13 @@ const calendars = [
 	{ id: 'cal2', name: 'Work', color: '#16a34a', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 1, shareWith: { 'principal-anna': { mayReadItems: true, mayWriteAll: false, mayWriteOwn: false, mayRSVP: true, mayShare: false, mayDelete: false, mayReadFreeBusy: true, mayUpdatePrivate: false } }, myRights: { mayReadItems: true, mayWriteAll: true, mayWriteOwn: true, mayRSVP: true, mayShare: true, mayDelete: true, mayReadFreeBusy: true, mayUpdatePrivate: true } },
 	{ id: 'cal3', name: 'PL Holidays', color: '#d97706', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 2, myRights: { mayReadItems: true, mayWriteAll: false, mayWriteOwn: false, mayRSVP: false, mayShare: false, mayDelete: false, mayReadFreeBusy: true, mayUpdatePrivate: false } }
 ];
+// The people a calendar can be shared with (RFC 9670 Principals), you among them.
+const principals = [
+	{ id: 'principal-smoke', type: 'individual', name: 'Smoke Tester', email: 'smoke@zaur.app' },
+	{ id: 'principal-anna', type: 'individual', name: 'Anna Nowak', email: 'anna@zaur.app' },
+	{ id: 'principal-bob', type: 'individual', name: 'Bob Kowalski', email: 'bob@zaur.app' },
+	{ id: 'principal-bobby', type: 'individual', name: 'Bobby Tables', email: 'bobby@zaur.app' }
+];
 const today = new Date();
 const y = today.getFullYear();
 const m = String(today.getMonth() + 1).padStart(2, '0');
@@ -389,39 +413,44 @@ function handle([name, args, callId]) {
 			return ok({ oldState: 'm1', newState: 'm2', created, updated, notUpdated, destroyed, notDestroyed });
 		}
 		case 'FileNode/query': {
+			const nodes = nodesOf(args.accountId);
 			const f = args.filter ?? {};
-			const ids = fileNodes
+			const ids = nodes
 				.filter((n) => (f.isTopLevel ? n.parentId === null : true))
 				.filter((n) => ('parentId' in f ? n.parentId === f.parentId : true))
 				.filter((n) => (f.nodeType ? n.nodeType === f.nodeType : true))
+				.filter((n) => (f.text ? n.name.toLowerCase().includes(f.text.toLowerCase()) : true))
 				.map((n) => n.id);
 			return ok({ queryState: 'f1', ids, position: 0 });
 		}
 		case 'FileNode/get': {
-			const want = new Set(args.ids ?? fileNodes.map((n) => n.id));
+			const nodes = nodesOf(args.accountId);
+			const want = new Set(args.ids ?? nodes.map((n) => n.id));
 			if (args.fetchParents) {
 				for (const id of [...want]) {
-					for (let n = fileNodes.find((x) => x.id === id); n?.parentId; n = fileNodes.find((x) => x.id === n.parentId)) want.add(n.parentId);
+					for (let n = nodes.find((x) => x.id === id); n?.parentId; n = nodes.find((x) => x.id === n.parentId)) want.add(n.parentId);
 				}
 			}
-			const list = fileNodes.filter((n) => want.has(n.id));
+			const list = nodes.filter((n) => want.has(n.id));
 			return ok({ state: 'f1', list, notFound: [...want].filter((id) => !list.some((n) => n.id === id)) });
 		}
 		case 'FileNode/set': {
-			const clash = (parentId, name, self) => fileNodes.some((n) => n.parentId === parentId && n.name === name && n.id !== self);
+			const nodes = nodesOf(args.accountId);
+			const clash = (parentId, name, self) => nodes.some((n) => n.parentId === parentId && n.name === name && n.id !== self);
 			const created = {};
 			const notCreated = {};
 			for (const [key, data] of Object.entries(args.create ?? {})) {
+				if (nodes.find((n) => n.id === data.parentId)?.myRights.mayAddChildren === false) { notCreated[key] = { type: 'forbidden', description: 'You can only read this folder' }; continue; }
 				if (clash(data.parentId ?? null, data.name)) { notCreated[key] = { type: 'alreadyExists', description: `“${data.name}” is already here` }; continue; }
 				const node = { ...fileNode(`fn-${randomUUID().slice(0, 6)}`, data.parentId ?? null, data.name), nodeType: data.nodeType, blobId: data.blobId ?? null, type: data.type ?? null, size: data.blobId ? blobs[data.blobId]?.[1].length ?? 0 : null, modified: new Date().toISOString() };
-				fileNodes.push(node);
+				nodes.push(node);
 				created[key] = { id: node.id };
 				log('FileNode created', node.id, JSON.stringify(data));
 			}
 			const updated = {};
 			const notUpdated = {};
 			for (const [id, patch] of Object.entries(args.update ?? {})) {
-				const node = fileNodes.find((n) => n.id === id);
+				const node = nodes.find((n) => n.id === id);
 				if (!node) { notUpdated[id] = { type: 'notFound' }; continue; }
 				if (clash(patch.parentId === undefined ? node.parentId : patch.parentId, patch.name ?? node.name, id)) { notUpdated[id] = { type: 'alreadyExists', description: 'Something by that name is already there' }; continue; }
 				Object.assign(node, patch, { modified: new Date().toISOString() });
@@ -431,11 +460,11 @@ function handle([name, args, callId]) {
 			const destroyed = [];
 			const notDestroyed = {};
 			const drop = (id) => {
-				for (const child of fileNodes.filter((n) => n.parentId === id)) drop(child.id);
-				fileNodes.splice(fileNodes.findIndex((n) => n.id === id), 1);
+				for (const child of nodes.filter((n) => n.parentId === id)) drop(child.id);
+				nodes.splice(nodes.findIndex((n) => n.id === id), 1);
 			};
 			for (const id of args.destroy ?? []) {
-				if (!args.onDestroyRemoveChildren && fileNodes.some((n) => n.parentId === id)) { notDestroyed[id] = { type: 'nodeHasChildren' }; continue; }
+				if (!args.onDestroyRemoveChildren && nodes.some((n) => n.parentId === id)) { notDestroyed[id] = { type: 'nodeHasChildren' }; continue; }
 				drop(id);
 				destroyed.push(id);
 				log('FileNode destroyed', id, `onDestroyRemoveChildren=${args.onDestroyRemoveChildren}`);
@@ -612,15 +641,52 @@ function handle([name, args, callId]) {
 			const updated = {};
 			for (const [id, patch] of Object.entries(args.update ?? {})) {
 				const cal = calendars.find((c) => c.id === id);
-				if (cal) { Object.assign(cal, patch); updated[id] = null; }
+				if (!cal) continue;
+				for (const [key, value] of Object.entries(patch)) {
+					// `shareWith/<principal>` is a pointer into the map; null takes that person off.
+					if (key.startsWith('shareWith/')) {
+						const who = key.slice('shareWith/'.length).replaceAll('~1', '/').replaceAll('~0', '~');
+						const next = { ...(cal.shareWith ?? {}) };
+						if (value) next[who] = value; else delete next[who];
+						cal.shareWith = Object.keys(next).length ? next : null;
+					} else cal[key] = value;
+				}
+				updated[id] = null;
+				log('Calendar updated', id, JSON.stringify(patch).slice(0, 200));
 			}
+			const destroyed = [];
+			const notDestroyed = {};
+			for (const id of args.destroy ?? []) {
+				const index = calendars.findIndex((c) => c.id === id);
+				if (index < 0) { notDestroyed[id] = { type: 'notFound' }; continue; }
+				const filed = [...events.values()].filter((e) => e.calendarIds[id]);
+				if (filed.length && !args.onDestroyRemoveEvents) {
+					notDestroyed[id] = { type: 'calendarHasEvent', description: 'The calendar still has events.' };
+					continue;
+				}
+				for (const e of filed) events.delete(e.id);
+				calendars.splice(index, 1);
+				destroyed.push(id);
+			}
+			if (args.onSuccessSetIsDefault) for (const c of calendars) c.isDefault = c.id === args.onSuccessSetIsDefault;
 			const created = {};
 			for (const [key, cal] of Object.entries(args.create ?? {})) {
 				const id = `cal${randomUUID().slice(0, 4)}`;
 				calendars.push({ id, isVisible: true, isSubscribed: true, myRights: calendars[0].myRights, color: '#7c3aed', ...cal });
 				created[key] = { id };
 			}
-			return ok({ oldState: 'cal', newState: 'cal2', created, updated, destroyed: [] });
+			return ok({ oldState: 'cal', newState: 'cal2', created, updated, destroyed, notDestroyed });
+		}
+		case 'Principal/query': {
+			const needle = (args.filter?.email ?? args.filter?.text ?? '').toLowerCase();
+			const ids = principals
+				.filter((p) => (args.filter?.email ? p.email === needle : `${p.name} ${p.email}`.toLowerCase().includes(needle)))
+				.map((p) => p.id);
+			return ok({ queryState: 'pq', canCalculateChanges: false, position: 0, ids, total: ids.length });
+		}
+		case 'Principal/get': {
+			const ids = args.ids ?? principals.map((p) => p.id);
+			return ok({ state: 'p1', list: principals.filter((p) => ids.includes(p.id)), notFound: ids.filter((id) => !principals.some((p) => p.id === id)) });
 		}
 		case 'CalendarEvent/query': {
 			// No real expansion: hand back every event; the client filters by day anyway.

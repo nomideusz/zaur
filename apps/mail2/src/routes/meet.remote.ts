@@ -6,11 +6,11 @@
 import * as v from 'valibot';
 import { randomUUID } from 'node:crypto';
 import { error } from '@sveltejs/kit';
-import { command, getRequestEvent } from '$app/server';
+import { command, getRequestEvent, query } from '$app/server';
 import { checkRateLimitRow, getActiveAccount, getStoreDb, readSessionFull } from '@zaur/server-auth';
 import { MEET_GROUP_RE } from '@zaur/mail-core/utils/meet';
 import { getClientAddress } from '#lib/server/login';
-import { GUEST_PREFIX, cleanName, meetConfig, meetDisplayName, mintJoinToken } from '#lib/server/meet';
+import { GUEST_PREFIX, cleanName, meetConfig, meetDisplayName, mintJoinToken, participantNames } from '#lib/server/meet';
 import { reportError } from '#lib/server/report';
 
 export interface CallTicket {
@@ -48,3 +48,17 @@ export const joinCall = command(
 		}
 	}
 );
+
+/**
+ * Who is in the room now: the lobby asks again while you wait, as openly as
+ * it loaded (`participantNames`). Its own budget, roomy enough for a poll
+ * every ten seconds from a few tabs behind one address.
+ */
+export const whoIsHere = query(v.pipe(v.string(), v.regex(MEET_GROUP_RE)), async (room): Promise<string[]> => {
+	const config = meetConfig();
+	if (!config) return [];
+	const { request } = getRequestEvent();
+	const limit = checkRateLimitRow(getStoreDb(), `mail2-meet-here:${getClientAddress(request)}`, 360, 15 * 60_000);
+	if (!limit.allowed) error(429, `Too many requests. Try again in ${limit.retryAfterSec}s.`);
+	return participantNames(config, room);
+});

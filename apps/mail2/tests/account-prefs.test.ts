@@ -6,6 +6,7 @@ import {
 	DEFAULT_PREFS,
 	accountPrefsOf,
 	mergeAccountPrefs,
+	parsePrefs,
 	type Prefs
 } from '../src/lib/settings.ts';
 
@@ -23,6 +24,7 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 		'showAvatars',
 		'showPreview',
 		'showRemoteImages',
+		'undoSendSeconds',
 		'unseenByDefault'
 	]);
 });
@@ -37,7 +39,8 @@ test('accountPrefsOf: carries only the account keys, whatever else is set', () =
 		unseenByDefault: DEFAULT_PREFS.unseenByDefault,
 		showRemoteImages: false,
 		composePlain: DEFAULT_PREFS.composePlain,
-		aiCategories: DEFAULT_PREFS.aiCategories
+		aiCategories: DEFAULT_PREFS.aiCategories,
+		undoSendSeconds: DEFAULT_PREFS.undoSendSeconds
 	});
 });
 
@@ -81,4 +84,11 @@ test('mergeAccountPrefs: a device-shaped key smuggled in is ignored', () => {
 	const merged = mergeAccountPrefs(local, { listWidth: 760, sidebarOpen: false } as never);
 	assert.equal(merged.listWidth, 400);
 	assert.equal(merged.sidebarOpen, DEFAULT_PREFS.sidebarOpen);
+});
+
+test('undoSendSeconds: only the windows on offer, from the account or the device', () => {
+	assert.equal(mergeAccountPrefs({ ...DEFAULT_PREFS }, { undoSendSeconds: 20 }).undoSendSeconds, 20);
+	assert.equal(mergeAccountPrefs({ ...DEFAULT_PREFS }, { undoSendSeconds: 7 }).undoSendSeconds, DEFAULT_PREFS.undoSendSeconds);
+	assert.equal(parsePrefs('{"undoSendSeconds":3600}').undoSendSeconds, DEFAULT_PREFS.undoSendSeconds);
+	assert.equal(parsePrefs('{"undoSendSeconds":0}').undoSendSeconds, 0);
 });
