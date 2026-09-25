@@ -6,6 +6,16 @@
  * fill, and a solid for filled controls. Rails, chips, unread washes, folder
  * rows and toasts wear a channel. A channel is never a person.
  *
+ * One hue, one meaning, wherever it is drawn — a folder row, a label, a
+ * message row, the reader's sender card, a rule's action chip all agree:
+ *
+ *   correspondence  a person writing to you              Inbox, Archive, `cat.other`
+ *   needs           something is waiting on you          `$important`, Drafts
+ *   flagged         your own mark                        `$flagged`
+ *   confirmed       something went through               Sent, `cat.receipts`, `cat.transactions`
+ *   digest          bulk and automated, read when you like  `cat.newsletters`, `cat.notifications`, custom folders
+ *   discard         gone                                 Junk, Trash
+ *
  * **Identity** says who. Eight quieter tones, picked deterministically per
  * address, worn only by the avatar tile — in a list row, the reader's sender
  * card, a recipient chip, the account button. Teal is reserved for the brand.
@@ -14,6 +24,9 @@
  * identity — and identity is noise: two unrelated senders share a hue, and
  * the same colour means something different in every row.
  */
+
+import { CATEGORY_OTHER } from '@zaur/mail-core';
+import type { ListFilter } from './labels';
 
 export type ChannelKey =
 	| 'correspondence'
@@ -63,24 +76,50 @@ export function channelStyle(channel: Channel): string {
 }
 
 /**
- * Which channel a message row is: the folder decides for junk, trash, sent
- * and drafts; your own flag outranks the server's "important"; everything
- * else is correspondence. Derived from what JMAP already gives us — nothing
- * here is a new property of a message. The channel colours a row; only real
- * per-message state (flagged, important) earns a chip. Content kinds (receipts,
- * newsletters…) are undecided until Stalwart can classify at delivery.
+ * A content category's channel. Receipts and transactions are things that
+ * went through; newsletters and notifications are bulk and automated; "other"
+ * (a person, or nothing the classifier could place) is correspondence.
+ */
+export function categoryChannel(category: string | null | undefined): Channel {
+	switch (category) {
+		case 'receipts':
+		case 'transactions':
+			return CHANNELS.confirmed;
+		case 'newsletters':
+		case 'notifications':
+			return CHANNELS.digest;
+		default:
+			return CHANNELS.correspondence;
+	}
+}
+
+/**
+ * Which channel a message row is. Where it sits decides first for junk, trash,
+ * drafts and sent; then your own flag outranks the server's "important"; then
+ * what it is, by its category; a person's mail is correspondence. Derived from
+ * what JMAP already gives us — nothing here is a new property of a message.
  */
 export function messageChannel(input: {
 	mailboxKind?: string | null;
 	starred?: boolean;
 	important?: boolean;
+	category?: string | null;
 }): Channel {
 	const kind = input.mailboxKind ?? '';
 	if (kind === 'junk' || kind === 'trash') return CHANNELS.discard;
 	if (input.starred) return CHANNELS.flagged;
 	if (input.important) return CHANNELS.needs;
-	if (kind === 'sent') return CHANNELS.confirmed;
 	if (kind === 'drafts') return CHANNELS.needs;
+	if (kind === 'sent') return CHANNELS.confirmed;
+	if (input.category && input.category !== CATEGORY_OTHER) return categoryChannel(input.category);
+	return CHANNELS.correspondence;
+}
+
+/** A label wears the channel the rows it narrows to would: the sidebar's Labels, an empty label's tile. */
+export function labelChannel(filter: ListFilter | undefined): Channel {
+	if (filter === 'flagged') return CHANNELS.flagged;
+	if (filter === 'important') return CHANNELS.needs;
+	if (filter?.startsWith('cat:')) return categoryChannel(filter.slice(4));
 	return CHANNELS.correspondence;
 }
 

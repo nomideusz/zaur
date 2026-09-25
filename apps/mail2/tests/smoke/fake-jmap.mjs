@@ -233,14 +233,22 @@ const emails = new Map(
 			...text('1', 'Kept the thread so you have the history before Thursday.')
 		},
 		{
-			id: 'm4', threadId: 't4', mailboxIds: { inbox: true }, keywords: { $seen: true },
+			// A receipt: categorised at delivery, so the row wears the confirmed hue.
+			id: 'm11', threadId: 't11', mailboxIds: { inbox: true }, keywords: { $seen: true, 'cat.receipts': true },
+			from: [{ name: 'Acme Store', email: 'orders@acme.example' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'Your order has shipped', receivedAt: at(3), hasAttachment: false,
+			preview: 'Order #48213 is on its way. Tracking number 1Z 999 AA1 01 2345 6784.',
+			...text('1', 'Order #48213 is on its way.\nTracking number 1Z 999 AA1 01 2345 6784.')
+		},
+		{
+			id: 'm4', threadId: 't4', mailboxIds: { inbox: true }, keywords: { $seen: true, 'cat.notifications': true },
 			from: [{ name: 'Dokploy', email: 'deploys@dokploy.example' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
 			subject: 'Deployment succeeded — mail2', receivedAt: at(4), hasAttachment: false,
 			preview: 'Build 482 pushed to mail2.zaur.app in 2m 14s.',
 			...html('1', '<div style="font-family:Arial,sans-serif;max-width:560px"><h2 style="color:#1f2937;margin:0 0 8px">Deployment succeeded</h2><p style="color:#374151">Build <strong>482</strong> pushed to <a href="https://mail2.zaur.app">mail2.zaur.app</a> in 2m 14s.</p><table style="border-collapse:collapse;font-size:13px"><tr><td style="padding:4px 12px 4px 0;color:#6b7280">Commit</td><td><code>2030cba</code></td></tr><tr><td style="padding:4px 12px 4px 0;color:#6b7280">Duration</td><td>2m 14s</td></tr></table></div>')
 		},
 		{
-			id: 'm5', threadId: 't5', mailboxIds: { inbox: true }, keywords: { $seen: true },
+			id: 'm5', threadId: 't5', mailboxIds: { inbox: true }, keywords: { $seen: true, 'cat.notifications': true },
 			from: [{ name: 'GitHub', email: 'noreply@github.example' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
 			subject: 'All checks have passed on main', receivedAt: at(30), hasAttachment: false,
 			preview: '3 workflows completed successfully for commit 2030cba.',
@@ -262,7 +270,7 @@ const emails = new Map(
 		},
 		{
 			// A remote image (blocked until asked for) and an inline cid: one (always shown).
-			id: 'm8', threadId: 't8', mailboxIds: { inbox: true }, keywords: {},
+			id: 'm8', threadId: 't8', mailboxIds: { inbox: true }, keywords: { 'cat.newsletters': true },
 			from: [{ name: 'Newsletter', email: 'news@example.com' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
 			subject: 'This week at the studio', receivedAt: at(0.5), hasAttachment: true,
 			preview: 'Our logo, and a picture from somewhere else.',

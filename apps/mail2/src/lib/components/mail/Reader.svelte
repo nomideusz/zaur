@@ -146,7 +146,7 @@
 
 	/** The thread's channel — the sender card wears it, so list and reader read as one object. */
 	const channel = $derived(
-		messageChannel({ mailboxKind, starred, important })
+		messageChannel({ mailboxKind, starred, important, category: latest?.category })
 	);
 
 	/** A chip only for state the message carries — see `messageChannel`. */

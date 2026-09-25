@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import type { MailboxDTO, SharedMailboxDTO } from '#lib/mail/types';
-	import { CHANNELS, channelStyle, identityStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
+	import { channelStyle, identityStyle, labelChannel, mailboxChannel, type Channel } from '#lib/mail/colors';
 	import { LABEL_FILTERS, filterName, type ListFilter } from '#lib/mail/labels';
 	import { signOutAccount, switchAccount, whoami } from '../../../routes/session.remote';
 	import { logout } from '../../../routes/login.remote';
@@ -39,17 +39,6 @@
 		onNewMessage,
 		onClose
 	}: Props = $props();
-
-	/**
-	 * Your flag and the server's "important" wear the channels their chips do;
-	 * a category has no hue of its own, so it takes the one a custom folder
-	 * does — digest, what people file into them.
-	 */
-	function labelChannel(label: ListFilter): Channel {
-		if (label === 'flagged') return CHANNELS.flagged;
-		if (label === 'important') return CHANNELS.needs;
-		return CHANNELS.digest;
-	}
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);

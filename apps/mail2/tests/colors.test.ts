@@ -5,9 +5,11 @@ import {
 	CHANNELS,
 	IDENTITY_TONES,
 	attachmentBadge,
+	categoryChannel,
 	channelStyle,
 	identityStyle,
 	identityTone,
+	labelChannel,
 	mailboxChannel,
 	messageChannel
 } from '../src/lib/mail/colors.ts';
@@ -24,6 +26,26 @@ test('channels: a row is coloured by what it is, with the folder outranking flag
 	assert.equal(messageChannel({ mailboxKind: 'trash', starred: true }).key, 'discard');
 	assert.equal(messageChannel({ mailboxKind: 'junk', important: true }).key, 'discard');
 	assert.equal(messageChannel({}).key, 'correspondence');
+	// What it is, once nothing about where it sits or what you marked applies.
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'receipts' }).key, 'confirmed');
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'transactions' }).key, 'confirmed');
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'newsletters' }).key, 'digest');
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'notifications' }).key, 'digest');
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'other' }).key, 'correspondence');
+	// A mark still outranks the category, and the folder outranks both.
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'newsletters', starred: true }).key, 'flagged');
+	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'receipts', important: true }).key, 'needs');
+	assert.equal(messageChannel({ mailboxKind: 'trash', category: 'receipts' }).key, 'discard');
+});
+
+test('channels: a label and a rule action wear the hue the rows they name would', () => {
+	assert.equal(labelChannel('flagged').key, 'flagged');
+	assert.equal(labelChannel('important').key, 'needs');
+	assert.equal(labelChannel('cat:receipts').key, 'confirmed');
+	assert.equal(labelChannel('cat:newsletters').key, 'digest');
+	assert.equal(labelChannel('all').key, 'correspondence');
+	assert.equal(categoryChannel('transactions').key, categoryChannel('receipts').key);
+	assert.equal(categoryChannel(undefined).key, 'correspondence');
 });
 
 test('channels: folders take a channel, custom folders are digests', () => {

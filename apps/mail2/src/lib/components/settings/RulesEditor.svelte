@@ -13,7 +13,7 @@
 	} from '@zaur/mail-core';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
-	import { CHANNELS, channelStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
+	import { CHANNELS, categoryChannel, channelStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
 
 	interface Props {
 		/** Server-side state; `undefined` while it loads. `state` itself is a rune. */
@@ -94,7 +94,7 @@
 	 */
 	function actionChannel(action: RuleAction): Channel {
 		if (action.type === 'discard') return CHANNELS.discard;
-		if (action.type === 'categorize') return CHANNELS.digest;
+		if (action.type === 'categorize') return categoryChannel(action.category);
 		if (action.type === 'addFlag') {
 			if (action.flag === '$important') return CHANNELS.needs;
 			if (action.flag === '\\Flagged') return CHANNELS.flagged;

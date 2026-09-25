@@ -148,15 +148,15 @@
 
 	/**
 	 * A row's channel: the folder decides for junk, trash, sent and drafts, a
-	 * flag outranks the server's "important", and the rest is correspondence.
-	 * In search results a row's own mailbox is what counts, not the one the
-	 * search ran from.
+	 * flag outranks the server's "important", then the category says what it
+	 * is, and a person's mail is correspondence. In search results a row's own
+	 * mailbox is what counts, not the one the search ran from.
 	 */
 	function rowChannel(row: ListRow) {
 		const kind = searchQuery && searchAll
 			? (mailboxes ?? []).find((box) => box.id === row.mailboxId)?.kind
 			: mailbox?.kind;
-		return messageChannel({ mailboxKind: kind, starred: row.starred, important: row.important });
+		return messageChannel({ mailboxKind: kind, starred: row.starred, important: row.important, category: row.category });
 	}
 
 	const EMPTY_COPY: Record<string, { title: string; hint: string }> = {
@@ -572,7 +572,7 @@
 										<span class="truncate text-[13px] {row.unread ? 'font-bold text-[var(--z-ink)]' : 'font-medium text-[var(--z-muted)]'}">
 											{row.senderLabel}
 										</span>
-										<!-- A chip names state the message carries, never a kind nobody classified. -->
+										<!-- A chip names state the message carries, or the category a rule or the classifier gave it; the row's channel colours it. -->
 										{#if row.starred || row.important}
 											<span class="z-chip @max-[430px]:hidden">{row.starred ? 'Flagged' : 'Important'}</span>
 										{:else if row.category && row.category !== CATEGORY_OTHER}
