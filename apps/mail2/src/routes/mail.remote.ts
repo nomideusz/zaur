@@ -20,7 +20,7 @@ import type {
 import type { MailboxDTO, SharedMailboxDTO, ThreadListDTO } from '#lib/mail/types';
 import { connect, connectMail, refuse, requireAccount, requireAccountKey } from '#lib/server/account';
 import { pickPrincipal } from '#lib/share';
-import { aiCategoriesOn, categorizeInBackground } from '#lib/server/categorize';
+import { aiSettings, categorizeInBackground } from '#lib/server/categorize';
 import { LABEL_FILTERS, filterKeyword, type ListFilter } from '#lib/mail/labels';
 import { treeOrder } from '#lib/mail/folders';
 import { WEBMAIL_SETTINGS_SUBJECT } from '#lib/server/webmail-import';
@@ -69,8 +69,14 @@ export const sharedMailboxes = query(async (): Promise<SharedMailboxDTO[]> => {
 	);
 });
 
+/**
+ * The folders the sidebar shows. The server's Important folder is left out:
+ * mail2 marks important with the `$important` keyword and shows it as a label,
+ * and what 1.0 filed into the folder is still in its own folder as well.
+ */
 function folderList(list: JMAPMailbox[]): MailboxDTO[] {
 	const sorted = list
+		.filter((m) => resolveMailboxKind({ name: m.name, role: m.role ?? null }) !== 'important')
 		.map((m): Omit<MailboxDTO, 'depth'> => {
 			const kind = resolveMailboxKind({ name: m.name, role: m.role ?? null });
 			return {
@@ -189,8 +195,8 @@ export const threads = query(
 			})
 		);
 		// Someone else's mailbox is not yours to label.
-		if (!account && CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn(requireAccountKey())) {
-			categorizeInBackground(client, emails);
+		if (!account && CATEGORIZED_KINDS.includes(kind)) {
+			categorizeInBackground(client, emails, { ai: aiSettings(requireAccountKey()) });
 		}
 		return {
 			mailboxId,
@@ -329,14 +335,12 @@ export const bulk = command(
 				await client.toggleStar(ids, action === 'star');
 				break;
 			case 'important':
-			case 'unimportant': {
-				// As in 1.0: an Important folder, where the server has one, holds them too.
-				const folder = (await client.getMailboxes()).find(
-					(m) => resolveMailboxKind({ name: m.name, role: m.role ?? null }) === 'important'
-				);
-				await client.toggleImportant(ids, action === 'important', folder?.id);
+			case 'unimportant':
+				// A keyword only. 1.0 also filed them into the server's Important
+				// folder, which is what made a marked message seem to leave the inbox
+				// and gave the sidebar two things called Important.
+				await client.toggleImportant(ids, action === 'important');
 				break;
-			}
 			case 'move':
 				if (!mailboxId) error(400, 'No destination folder');
 				await cancelSends();

@@ -14,49 +14,39 @@ import {
 	messageChannel
 } from '../src/lib/mail/colors.ts';
 
-test('channels: a row is coloured by what it is, with the folder outranking flags', () => {
-	assert.equal(messageChannel({ mailboxKind: 'inbox' }).key, 'correspondence');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', starred: true }).key, 'flagged');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', important: true }).key, 'needs');
-	// Your own flag outranks the server's "important".
-	assert.equal(messageChannel({ mailboxKind: 'inbox', starred: true, important: true }).key, 'flagged');
-	assert.equal(messageChannel({ mailboxKind: 'sent' }).key, 'confirmed');
-	assert.equal(messageChannel({ mailboxKind: 'drafts' }).key, 'needs');
-	// Junk and trash discard whatever the message's own flags say.
-	assert.equal(messageChannel({ mailboxKind: 'trash', starred: true }).key, 'discard');
-	assert.equal(messageChannel({ mailboxKind: 'junk', important: true }).key, 'discard');
+test('channels: a row is coloured by the label it carries, never by where it sits', () => {
 	assert.equal(messageChannel({}).key, 'correspondence');
-	// What it is, once nothing about where it sits or what you marked applies.
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'receipts' }).key, 'confirmed');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'transactions' }).key, 'confirmed');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'newsletters' }).key, 'digest');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'notifications' }).key, 'digest');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'other' }).key, 'correspondence');
-	// A mark still outranks the category, and the folder outranks both.
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'newsletters', starred: true }).key, 'flagged');
-	assert.equal(messageChannel({ mailboxKind: 'inbox', category: 'receipts', important: true }).key, 'needs');
-	assert.equal(messageChannel({ mailboxKind: 'trash', category: 'receipts' }).key, 'discard');
+	assert.equal(messageChannel({ starred: true }).key, 'flagged');
+	assert.equal(messageChannel({ important: true }).key, 'needs');
+	// Your own flag outranks the server's "important".
+	assert.equal(messageChannel({ starred: true, important: true }).key, 'flagged');
+	// A category is a digest, whichever one; "other" is a person.
+	for (const category of ['receipts', 'transactions', 'newsletters', 'notifications']) {
+		assert.equal(messageChannel({ category }).key, 'digest', category);
+	}
+	assert.equal(messageChannel({ category: 'other' }).key, 'correspondence');
+	// A mark still outranks the category.
+	assert.equal(messageChannel({ category: 'newsletters', starred: true }).key, 'flagged');
+	assert.equal(messageChannel({ category: 'receipts', important: true }).key, 'needs');
 });
 
 test('channels: a label and a rule action wear the hue the rows they name would', () => {
 	assert.equal(labelChannel('flagged').key, 'flagged');
 	assert.equal(labelChannel('important').key, 'needs');
-	assert.equal(labelChannel('cat:receipts').key, 'confirmed');
+	assert.equal(labelChannel('cat:receipts').key, 'digest');
 	assert.equal(labelChannel('cat:newsletters').key, 'digest');
 	assert.equal(labelChannel('all').key, 'correspondence');
 	assert.equal(categoryChannel('transactions').key, categoryChannel('receipts').key);
 	assert.equal(categoryChannel(undefined).key, 'correspondence');
 });
 
-test('channels: folders take a channel, custom folders are digests', () => {
-	assert.equal(mailboxChannel('inbox').key, 'correspondence');
-	assert.equal(mailboxChannel('archive').key, 'correspondence');
-	assert.equal(mailboxChannel('sent').key, 'confirmed');
-	assert.equal(mailboxChannel('drafts').key, 'needs');
-	assert.equal(mailboxChannel('junk').key, 'discard');
-	assert.equal(mailboxChannel('trash').key, 'discard');
-	assert.equal(mailboxChannel('newsletters').key, 'digest');
-	assert.equal(mailboxChannel(undefined).key, 'digest');
+test('channels: a folder is a place, so every folder is the one neutral hue', () => {
+	for (const kind of ['inbox', 'archive', 'sent', 'drafts', 'junk', 'trash', 'custom', undefined]) {
+		assert.equal(mailboxChannel(kind).key, 'correspondence', String(kind));
+	}
+	// So no folder can share a hue with a label and mean something else by it.
+	assert.notEqual(mailboxChannel('drafts').key, labelChannel('important').key);
+	assert.notEqual(mailboxChannel('sent').key, labelChannel('cat:receipts').key);
 });
 
 test('channels: every part is a token reference, so a channel follows the theme', () => {

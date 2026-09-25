@@ -62,6 +62,8 @@ const mailboxes = [
 	{ id: 'junk', name: 'Junk', role: 'junk', totalEmails: 1, unreadEmails: 1, sortOrder: 4 },
 	{ id: 'trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 5 },
 	{ id: 'scheduled', name: 'Scheduled', role: 'scheduled', totalEmails: 1, unreadEmails: 0, sortOrder: 6 },
+	// Stalwart makes one of these; mail2 marks important with a keyword and does not list it.
+	{ id: 'important', name: 'Important', role: 'important', totalEmails: 0, unreadEmails: 0, sortOrder: 7 },
 	{ id: 'work', name: 'Work', role: null, parentId: null, totalEmails: 0, unreadEmails: 0, sortOrder: 10 },
 	{ id: 'receipts', name: 'Receipts', role: null, parentId: 'work', totalEmails: 0, unreadEmails: 0, sortOrder: 10 }
 ];

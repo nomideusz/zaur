@@ -14,8 +14,8 @@
 	 */
 	interface Props {
 		name:
-			| 'star'
-			| 'star-filled'
+			| 'flag'
+			| 'flag-filled'
 			| 'mail'
 			| 'mail-open'
 			| 'archive'
@@ -32,19 +32,23 @@
 	let { name, class: className = 'size-4', label }: Props = $props();
 </script>
 
-{#if name === 'star' || name === 'star-filled'}
+{#if name === 'flag' || name === 'flag-filled'}
+	<!-- A flag, because the mark is called Flagged everywhere it is named; a
+	     star drawn next to the word "flag" was two ideas for one thing. -->
 	<svg
 		class={className}
 		viewBox="0 0 16 16"
-		fill={name === 'star-filled' ? 'currentColor' : 'none'}
+		fill={name === 'flag-filled' ? 'currentColor' : 'none'}
 		stroke="currentColor"
-		stroke-width={name === 'star-filled' ? 0 : 1.3}
+		stroke-width="1.3"
 		stroke-linejoin="round"
+		stroke-linecap="round"
 		role={label ? 'img' : undefined}
 		aria-label={label}
 		aria-hidden={label ? undefined : 'true'}
 	>
-		<path d="M8 1.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.2l-3.8 2.1.7-4.3-3.1-3 4.3-.6z" />
+		<path d="M3.5 14.5V2.2" fill="none" />
+		<path d="M3.5 2.5h9.3l-2.4 3.2 2.4 3.2H3.5z" />
 	</svg>
 {:else if name === 'mail-open'}
 	<!-- An open envelope is the action that makes something read. -->

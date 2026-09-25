@@ -153,7 +153,7 @@
 				aria-label={allStarred ? 'Remove flag' : 'Flag'}
 				onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
 			>
-				<ActionIcon name={allStarred ? 'star-filled' : 'star'} class="size-[18px]" />
+				<ActionIcon name={allStarred ? 'flag-filled' : 'flag'} class="size-[18px]" />
 			</button>
 			<button
 				type="button"

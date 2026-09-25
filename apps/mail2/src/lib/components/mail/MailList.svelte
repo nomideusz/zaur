@@ -147,16 +147,12 @@
 	}
 
 	/**
-	 * A row's channel: the folder decides for junk, trash, sent and drafts, a
-	 * flag outranks the server's "important", then the category says what it
-	 * is, and a person's mail is correspondence. In search results a row's own
-	 * mailbox is what counts, not the one the search ran from.
+	 * A row's channel: a flag outranks the server's "important", then the
+	 * category says what it is, and a person's mail is correspondence. The
+	 * folder it sits in plays no part.
 	 */
 	function rowChannel(row: ListRow) {
-		const kind = searchQuery && searchAll
-			? (mailboxes ?? []).find((box) => box.id === row.mailboxId)?.kind
-			: mailbox?.kind;
-		return messageChannel({ mailboxKind: kind, starred: row.starred, important: row.important, category: row.category });
+		return messageChannel({ starred: row.starred, important: row.important, category: row.category });
 	}
 
 	const EMPTY_COPY: Record<string, { title: string; hint: string }> = {
@@ -295,7 +291,7 @@
 							title={allStarred ? 'Remove flag (s)' : 'Flag (s)'}
 							onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
 						>
-							<ActionIcon name={allStarred ? 'star-filled' : 'star'} class="size-[15px]" />
+							<ActionIcon name={allStarred ? 'flag-filled' : 'flag'} class="size-[15px]" />
 						</button>
 						<button
 							type="button"
@@ -627,7 +623,7 @@
 									title={row.starred ? 'Remove flag (s)' : 'Flag (s)'}
 									onclick={(event) => rowAction(event, row.threadId, row.starred ? 'unstar' : 'star')}
 								>
-									<ActionIcon name={row.starred ? 'star-filled' : 'star'} class="size-[15px]" />
+									<ActionIcon name={row.starred ? 'flag-filled' : 'flag'} class="size-[15px]" />
 								</button>
 								<button
 									type="button"

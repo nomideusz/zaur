@@ -3,18 +3,23 @@
  *
  * **Channels** say what kind of thing something is. Six fixed hues, each a
  * pastel fill, a saturated stroke that matches it, a dark ink for text on the
- * fill, and a solid for filled controls. Rails, chips, unread washes, folder
+ * fill, and a solid for filled controls. Rails, chips, unread washes, label
  * rows and toasts wear a channel. A channel is never a person.
  *
- * One hue, one meaning, wherever it is drawn — a folder row, a label, a
- * message row, the reader's sender card, a rule's action chip all agree:
+ * A hue is a *label* a message carries, never a place it sits. One hue, one
+ * meaning, wherever it is drawn — a label in the sidebar, a message row, the
+ * reader's sender card, a rule's action chip all agree:
  *
- *   correspondence  a person writing to you              Inbox, Archive, `cat.other`
- *   needs           something is waiting on you          `$important`, Drafts
- *   flagged         your own mark                        `$flagged`
- *   confirmed       something went through               Sent, `cat.receipts`, `cat.transactions`
- *   digest          bulk and automated, read when you like  `cat.newsletters`, `cat.notifications`, custom folders
- *   discard         gone                                 Junk, Trash
+ *   needs           Important — something is waiting on you   `$important`
+ *   flagged         Flagged — your own mark                    `$flagged`
+ *   digest          a category — automated, read when you like `cat.*` (receipts, transactions, newsletters, notifications)
+ *   correspondence  none of those: a person, or nothing yet    `cat.other`, unlabelled mail; also the open folder's tick
+ *   confirmed       something went through                     toasts and buttons, not mail
+ *   discard         gone                                       toasts and buttons, not mail
+ *
+ * Folders are places and wear no hue of their own: the design's v2 sidebar
+ * gave Drafts the Important amber and Sent the receipts green, and two things
+ * sharing a hue for different reasons was the confusion this replaces.
  *
  * **Identity** says who. Eight quieter tones, picked deterministically per
  * address, worn only by the avatar tile — in a list row, the reader's sender
@@ -76,43 +81,25 @@ export function channelStyle(channel: Channel): string {
 }
 
 /**
- * A content category's channel. Receipts and transactions are things that
- * went through; newsletters and notifications are bulk and automated; "other"
- * (a person, or nothing the classifier could place) is correspondence.
+ * A content category's channel: every category is a digest — automated mail,
+ * read when you like. "Other" (a person, or nothing the classifier could
+ * place) and no category at all are correspondence.
  */
 export function categoryChannel(category: string | null | undefined): Channel {
-	switch (category) {
-		case 'receipts':
-		case 'transactions':
-			return CHANNELS.confirmed;
-		case 'newsletters':
-		case 'notifications':
-			return CHANNELS.digest;
-		default:
-			return CHANNELS.correspondence;
-	}
+	return category && category !== CATEGORY_OTHER ? CHANNELS.digest : CHANNELS.correspondence;
 }
 
 /**
- * Which channel a message row is. Where it sits decides first for junk, trash,
- * drafts and sent; then your own flag outranks the server's "important"; then
- * what it is, by its category; a person's mail is correspondence. Derived from
- * what JMAP already gives us — nothing here is a new property of a message.
+ * Which channel a message row is: your own flag outranks the server's
+ * "important", which outranks the category; a person's mail is
+ * correspondence. Where the message sits plays no part — a row in Junk looks
+ * like a row anywhere, and the folder row above says where you are. Derived
+ * from what JMAP already gives us — nothing here is a new property of a message.
  */
-export function messageChannel(input: {
-	mailboxKind?: string | null;
-	starred?: boolean;
-	important?: boolean;
-	category?: string | null;
-}): Channel {
-	const kind = input.mailboxKind ?? '';
-	if (kind === 'junk' || kind === 'trash') return CHANNELS.discard;
+export function messageChannel(input: { starred?: boolean; important?: boolean; category?: string | null }): Channel {
 	if (input.starred) return CHANNELS.flagged;
 	if (input.important) return CHANNELS.needs;
-	if (kind === 'drafts') return CHANNELS.needs;
-	if (kind === 'sent') return CHANNELS.confirmed;
-	if (input.category && input.category !== CATEGORY_OTHER) return categoryChannel(input.category);
-	return CHANNELS.correspondence;
+	return categoryChannel(input.category);
 }
 
 /** A label wears the channel the rows it narrows to would: the sidebar's Labels, an empty label's tile. */
@@ -124,26 +111,13 @@ export function labelChannel(filter: ListFilter | undefined): Channel {
 }
 
 /**
- * A folder's channel — its checkbox and rail when it is the open one, and the
- * ink of its unread count. Inbox and Archive are correspondence; Sent is what
- * has been confirmed; Drafts need you; Junk and Trash discard. Anything else
- * (a custom folder) is a digest, because that is what people file into them.
+ * A folder's channel — its checkbox and rail when it is the open one, a
+ * Move-to tile, the ink of its unread count. Every folder is the same: a
+ * place is not a kind of mail, so it takes the neutral hue and only the
+ * labels carry colour. One function still, so the choice lives in one place.
  */
-export function mailboxChannel(kind: string | undefined | null): Channel {
-	switch (kind) {
-		case 'inbox':
-		case 'archive':
-			return CHANNELS.correspondence;
-		case 'sent':
-			return CHANNELS.confirmed;
-		case 'drafts':
-			return CHANNELS.needs;
-		case 'junk':
-		case 'trash':
-			return CHANNELS.discard;
-		default:
-			return CHANNELS.digest;
-	}
+export function mailboxChannel(_kind: string | undefined | null): Channel {
+	return CHANNELS.correspondence;
 }
 
 /* ── Identity ─────────────────────────────────────────────────────────── */
