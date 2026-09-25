@@ -74,15 +74,22 @@ function matchPattern(value: string, shape: 'prefix' | 'suffix'): string {
 	return shape === 'prefix' ? `${literal}*` : `*${literal}`;
 }
 
+/**
+ * `contains` reads the whole header, so a display name matches too. The
+ * anchored operators read the address alone (RFC 5228 §5.1 `address`): on the
+ * raw header `Ann <ann@example.com>`, "is ann@example.com" and "ends with
+ * @example.com" would otherwise never match.
+ */
 function conditionTest(condition: RuleCondition): string {
 	const header = quote(FIELD_HEADER[condition.field] ?? 'subject');
+	const test = condition.field === 'subject' ? 'header' : 'address';
 	switch (condition.operator) {
 		case 'is':
-			return `header :is ${header} ${quote(condition.value)}`;
+			return `${test} :is ${header} ${quote(condition.value)}`;
 		case 'startsWith':
-			return `header :matches ${header} ${quote(matchPattern(condition.value, 'prefix'))}`;
+			return `${test} :matches ${header} ${quote(matchPattern(condition.value, 'prefix'))}`;
 		case 'endsWith':
-			return `header :matches ${header} ${quote(matchPattern(condition.value, 'suffix'))}`;
+			return `${test} :matches ${header} ${quote(matchPattern(condition.value, 'suffix'))}`;
 		case 'contains':
 		default:
 			return `header :contains ${header} ${quote(condition.value)}`;

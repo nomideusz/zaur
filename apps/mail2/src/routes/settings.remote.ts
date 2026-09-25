@@ -3,7 +3,7 @@ import { query, command } from '$app/server';
 import { getAccountPrefs, getStoreDb, putAccountPrefs } from '@zaur/server-auth';
 import { connect, refuse, requireAccountKey } from '#lib/server/account';
 import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
-import { aiCategoriesAvailable } from '#lib/server/categorize';
+import { aiCategoriesAvailable, aiCategoriesOn, recheckOther } from '#lib/server/categorize';
 import { importWebmailSignature } from '#lib/server/webmail-import';
 
 function schema<T>() {
@@ -70,6 +70,18 @@ export const setAccountPrefs = command(
 
 /** Whether this server can categorise mail with AI at all (it needs a TypeSafe key). */
 export const aiCategoriesOffered = query(async (): Promise<boolean> => aiCategoriesAvailable());
+
+/**
+ * Give the mail the AI once marked Other another look. "Other" is otherwise
+ * final, so this is the one way better criteria reach old mail. Returns how
+ * many were queued; the keywords land in the background.
+ */
+export const recheckOtherCategories = command(async (): Promise<{ queued: number }> => {
+	if (!aiCategoriesAvailable() || !aiCategoriesOn(requireAccountKey())) {
+		error(409, 'Turn on AI categories first');
+	}
+	return { queued: await recheckOther(await connect()) };
+});
 
 export type IdentityDTO = { id: string; email: string; name: string; signature: string };
 

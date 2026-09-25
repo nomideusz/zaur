@@ -17,11 +17,10 @@ import type {
 	MessageDetail,
 	MessagePreview
 } from '@zaur/mail-core';
-import { getAccountPrefs, getStoreDb } from '@zaur/server-auth';
 import type { MailboxDTO, SharedMailboxDTO, ThreadListDTO } from '#lib/mail/types';
 import { connect, connectMail, refuse, requireAccount, requireAccountKey } from '#lib/server/account';
 import { pickPrincipal } from '#lib/share';
-import { categorizeInBackground } from '#lib/server/categorize';
+import { aiCategoriesOn, categorizeInBackground } from '#lib/server/categorize';
 import { LABEL_FILTERS, filterKeyword, type ListFilter } from '#lib/mail/labels';
 import { treeOrder } from '#lib/mail/folders';
 import { WEBMAIL_SETTINGS_SUBJECT } from '#lib/server/webmail-import';
@@ -151,14 +150,6 @@ export type { ListFilter };
 /** Folders whose mail is worth categorising: what arrived, not what you sent or threw away. */
 const CATEGORIZED_KINDS: (MailboxKind | null | undefined)[] = ['inbox', 'archive', 'important', 'custom'];
 
-function aiCategoriesOn(): boolean {
-	try {
-		return !!JSON.parse(getAccountPrefs(getStoreDb(), requireAccountKey()) ?? '{}').aiCategories;
-	} catch {
-		return false;
-	}
-}
-
 /**
  * A list longer than one `Email/get` may return (Stalwart's default cap is
  * 500) comes in pages of that size, back to back. "Load more" asks for a
@@ -198,7 +189,9 @@ export const threads = query(
 			})
 		);
 		// Someone else's mailbox is not yours to label.
-		if (!account && CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn()) categorizeInBackground(client, emails);
+		if (!account && CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn(requireAccountKey())) {
+			categorizeInBackground(client, emails);
+		}
 		return {
 			mailboxId,
 			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId)),

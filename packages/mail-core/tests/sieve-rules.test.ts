@@ -88,9 +88,29 @@ test('buildRuleScript: a literal asterisk survives a startsWith match', () => {
 
 test('buildRuleScript: endsWith anchors on the other side', () => {
 	const script = buildRuleScript([
-		rule({ conditions: [{ field: 'from', operator: 'endsWith', value: '@example.com' }] })
+		rule({ conditions: [{ field: 'subject', operator: 'endsWith', value: 'digest' }] })
 	]);
-	assert.match(script, /header :matches "from" "\*@example\.com"/);
+	assert.match(script, /header :matches "subject" "\*digest"/);
+});
+
+test('buildRuleScript: anchored tests on an address field read the address, not the header', () => {
+	// The raw header is `Ann <ann@example.com>`: `header :is` would compare the
+	// display name and brackets too, so "is"/"ends with" could never match.
+	const script = buildRuleScript([
+		rule({
+			conditions: [
+				{ field: 'from', operator: 'is', value: 'ann@example.com' },
+				{ field: 'to', operator: 'endsWith', value: '@example.com' },
+				{ field: 'cc', operator: 'startsWith', value: 'team' },
+				{ field: 'from', operator: 'contains', value: 'Ann' }
+			]
+		})
+	]);
+	assert.match(script, /address :is "from" "ann@example\.com"/);
+	assert.match(script, /address :matches "to" "\*@example\.com"/);
+	assert.match(script, /address :matches "cc" "team\*"/);
+	// …while `contains` keeps the whole header, so a display name still matches.
+	assert.match(script, /header :contains "from" "Ann"/);
 });
 
 test('buildRuleScript: disabled and unfinished rules compile to nothing', () => {
