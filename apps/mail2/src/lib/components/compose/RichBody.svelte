@@ -170,6 +170,21 @@
 		padding-left: 0.8em;
 		color: var(--z-soft);
 	}
+	:global(trix-editor.z-rich h1) {
+		margin: 0.4em 0 0.2em;
+		font-size: 1.25em;
+		font-weight: 600;
+		line-height: 1.3;
+	}
+	:global(trix-editor.z-rich pre) {
+		margin: 0.4em 0;
+		padding: 0.6em 0.8em;
+		border-radius: 6px;
+		background: var(--z-sunken);
+		font-family: var(--font-mail-mono);
+		font-size: 0.9em;
+		white-space: pre-wrap;
+	}
 	:global(trix-editor.z-rich a) {
 		color: var(--z-accent);
 		text-decoration: underline;

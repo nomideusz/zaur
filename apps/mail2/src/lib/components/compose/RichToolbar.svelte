@@ -62,6 +62,37 @@
 		</svg>
 	</button>
 
+	<button type="button" class="z-icon-btn shrink-0 text-[13px] {large ? '!size-11' : ''}" data-trix-attribute="heading1" title="Heading" aria-label="Heading" tabindex={-1}>
+		<span style="font-weight:700" aria-hidden="true">H</span>
+	</button>
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-attribute="code" title="Code block" aria-label="Code block" tabindex={-1}>
+		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<path d="M5.5 4.5 2 8l3.5 3.5M10.5 4.5 14 8l-3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+		</svg>
+	</button>
+	<!-- Trix's own picker: images go into the text, anything else is refused into the attachment strip. -->
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-action="attachFiles" title="Insert image" aria-label="Insert image" tabindex={-1}>
+		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<rect x="2" y="3" width="12" height="10" rx="1.5" stroke="currentColor" stroke-width="1.4" />
+			<circle cx="5.8" cy="6.3" r="1.1" fill="currentColor" />
+			<path d="m2.5 11.5 3.5-3 2.5 2 2-1.5 3 2.5" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" />
+		</svg>
+	</button>
+	<span class="{large ? 'h-6' : 'h-5'} mx-0.5 w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
+	<!-- Trix disables these when there is nothing to undo or redo. -->
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-action="undo" data-trix-key="z" title="Undo" aria-label="Undo" tabindex={-1}>
+		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<path d="M5 3.5 2.5 6 5 8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+			<path d="M2.5 6h6.75a3.75 3.75 0 0 1 0 7.5H7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+		</svg>
+	</button>
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-action="redo" data-trix-key="shift+z" title="Redo" aria-label="Redo" tabindex={-1}>
+		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<path d="M11 3.5 13.5 6 11 8.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+			<path d="M13.5 6H6.75a3.75 3.75 0 0 0 0 7.5H9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+		</svg>
+	</button>
+
 	<div data-trix-dialogs>
 		<div
 			class="z-menu absolute bottom-[calc(100%+6px)] left-3 z-10 w-[min(360px,calc(100%-24px))]"

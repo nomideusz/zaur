@@ -676,6 +676,13 @@ with one dependency, loaded on the client only. `RichToolbar.svelte` is Trix's t
 own buttons: Trix fills an *empty* `<trix-toolbar>` with its markup and sprite sheet, and given
 children it only reads their `data-trix-*` attributes. Trix's stylesheet is not imported.
 
+The toolbar has bold, italic, strike, link, bullets, numbers, quote, heading (`h1`), code block
+(`pre`), *Insert image* and undo/redo — all Trix's own `data-trix-attribute` / `data-trix-action`
+buttons, no handlers of ours. *Insert image* is Trix's `attachFiles` picker, so what it picks goes
+through the same path as a paste: images into the text, anything else to the attachment strip.
+The paperclip still attaches everything, images included. Trix disables undo/redo when there is
+nothing to undo, and block buttons inside a code block.
+
 A draft carries both `bodyHtml` (what the editor holds) and `body` (Trix's plain-text reading: the
 `text/plain` alternative, and what the rest of compose reasons about). `bodyHtml` stays empty until
 something is written, so an untouched reply is not an edit and does not autosave. With it the
@@ -708,8 +715,9 @@ account); a draft that was saved rich reopens rich regardless.
   `background-color: highlight` span). Changes carrying it are not reported; closing reports again.
 - Files dropped or pasted into the text that are not images are refused (`trix-file-accept`)
   and handed to the attachment strip.
-- Bare `<blockquote>` renders as a plain indent in most clients, so `outgoingHtml` inlines the
-  rule on send (not on save: Trix would strip it on reopen anyway).
+- Bare `<blockquote>` renders as a plain indent in most clients (and `<h1>` at 2em), so
+  `outgoingHtml` inlines the quote rule, heading size and code-block look on send (not on save:
+  Trix would strip them on reopen anyway).
 
 **Images in the text.** An image pasted, dropped or picked into the text stays there: Trix previews
 it at once, `compose.uploadInlineImage` uploads it (Trix's progress bar shows started/done), and the

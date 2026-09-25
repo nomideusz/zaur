@@ -208,9 +208,11 @@ test('autosave follows formatting too: the same words in bold are a different dr
 	);
 });
 
-test('outgoingHtml: quotes carry their own rule, since mail has no stylesheet', () => {
+test('outgoingHtml: quotes, headings and code carry their own look, since mail has no stylesheet', () => {
 	const html = outgoingHtml('<div>Hi</div><blockquote>Earlier</blockquote>');
 	assert.match(html, /<blockquote style="[^"]*border-left[^"]*">Earlier/);
+	assert.match(outgoingHtml('<h1>Title</h1>'), /^<h1 style="[^"]*font-size:1\.25em[^"]*">Title<\/h1>$/);
+	assert.match(outgoingHtml('<pre>let x</pre>'), /^<pre style="[^"]*monospace[^"]*">let x<\/pre>$/);
 	assert.equal(outgoingHtml('<div>Hi</div>'), '<div>Hi</div>');
 });
 
