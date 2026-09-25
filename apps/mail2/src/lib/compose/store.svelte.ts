@@ -289,10 +289,17 @@ class ComposeStore {
 		const draft = this.#find(id);
 		this.#removeInternal(id);
 		void removeLocalDraft(id).catch(() => {});
+		// Undo writes it again as a new draft: the saved copy is gone by then.
+		const kept = draft && { ...$state.snapshot(draft), jmapDraftId: null, sending: false, draftSaving: false };
+		const discarded = {
+			text: 'Draft discarded',
+			tone: 'info' as const,
+			...(kept && { actionLabel: 'Undo', action: () => this.#restoreDiscarded(kept) })
+		};
 		if (draft?.jmapDraftId) {
 			void this.#transport
 				?.deleteDraft(draft.jmapDraftId)
-				.then(() => this.pushToast({ text: 'Draft discarded', tone: 'info' }))
+				.then(() => this.pushToast(discarded))
 				.catch(() =>
 					this.pushToast({
 						text: 'Draft discarded — the saved copy could not be deleted',
@@ -300,8 +307,15 @@ class ComposeStore {
 					})
 				);
 		} else {
-			this.pushToast({ text: 'Draft discarded', tone: 'info' });
+			this.pushToast(discarded);
 		}
+	}
+
+	#restoreDiscarded(kept: Draft) {
+		const draft = this.#find(this.newDraft({ kind: kept.kind }));
+		if (!draft) return;
+		Object.assign(draft, kept, { id: draft.id, z: draft.z, focusTarget: null });
+		this.scheduleDraftSave(draft.id);
 	}
 
 	minimize(id: string) {

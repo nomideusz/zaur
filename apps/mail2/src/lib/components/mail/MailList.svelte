@@ -51,6 +51,8 @@
 		/** Results come from every folder, not only `mailbox`. */
 		searchAll?: boolean;
 		onSearchAll?: (all: boolean) => void;
+		/** Trash and Spam: delete everything in the folder. */
+		onEmpty?: () => void;
 	}
 
 	let {
@@ -77,7 +79,8 @@
 		hasMore = false,
 		onLoadMore,
 		searchAll = false,
-		onSearchAll
+		onSearchAll,
+		onEmpty
 	}: Props = $props();
 
 	/**
@@ -103,7 +106,7 @@
 	const allRead = $derived(selectedRows.length > 0 && selectedRows.every((row) => !row.unread));
 	const allStarred = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.starred));
 	const moveTargets = $derived(
-		(mailboxes ?? []).filter((box) => box.id !== mailbox?.id && box.kind !== 'drafts')
+		(mailboxes ?? []).filter((box) => box.id !== mailbox?.id && box.kind !== 'drafts' && box.kind !== 'scheduled')
 	);
 	/** Archive is the one move worth a button of its own on the row. */
 	const archiveTarget = $derived(
@@ -466,6 +469,19 @@
 				{/if}
 			</div>
 		{:else if groups}
+			{#if onEmpty && !searchQuery && (mailbox?.kind === 'trash' || mailbox?.kind === 'junk')}
+				<div class="mt-3 flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-1.5 pr-1.5 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+					<span class="min-w-0 flex-1">Empty {mailbox.name} to delete everything in it for good.</span>
+					<button
+						type="button"
+						class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px] hover:!text-[var(--z-ch-discard-ink)]"
+						disabled={busy}
+						onclick={onEmpty}
+					>
+						Empty {mailbox.name}
+					</button>
+				</div>
+			{/if}
 			{#if searchQuery && onSearchAll}
 				<div class="flex items-center gap-2 pt-3">
 					<span class="z-caption">Search in</span>

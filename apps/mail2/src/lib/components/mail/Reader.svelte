@@ -38,7 +38,7 @@
 		/** The same four actions a row runs, on the thread being read. */
 		onAction?: (action: BulkAction, mailboxId?: string) => void;
 		/** How the thread stands in the list, so the toolbar can flip its icons. */
-		threadState?: { starred: boolean; unread: boolean } | null;
+		threadState?: { starred: boolean; unread: boolean; important: boolean } | null;
 		/** The folder the thread was opened from — it decides the channel for junk, trash, sent. */
 		mailboxKind?: string | null;
 		/** Archive is the one move worth a button — absent inside Archive itself. */
@@ -49,6 +49,10 @@
 		currentMailboxId?: string | null;
 		/** In Trash, delete destroys; the bin says so by being red at rest. */
 		inTrash?: boolean;
+		/** In Scheduled: stop the send and take the message back as a draft. */
+		onCancelSend?: (message: MessageDetail) => void;
+		/** Set when the thread is in a mailbox someone shares with you. */
+		shared?: { id: string; name: string } | null;
 	}
 
 	let {
@@ -65,7 +69,9 @@
 		archiveTarget = null,
 		mailboxes,
 		currentMailboxId = null,
-		inTrash = false
+		inTrash = false,
+		onCancelSend,
+		shared = null
 	}: Props = $props();
 
 	let earlierExpanded = $state(false);
@@ -136,14 +142,15 @@
 
 	const starred = $derived(threadState?.starred ?? false);
 	const unread = $derived(threadState?.unread ?? false);
+	const important = $derived(threadState?.important ?? latest?.important ?? false);
 
 	/** The thread's channel — the sender card wears it, so list and reader read as one object. */
 	const channel = $derived(
-		messageChannel({ mailboxKind, starred, important: latest?.important ?? false })
+		messageChannel({ mailboxKind, starred, important })
 	);
 
 	/** A chip only for state the message carries — see `messageChannel`. */
-	const stateLabel = $derived(starred ? 'Flagged' : latest?.important ? 'Important' : null);
+	const stateLabel = $derived(starred ? 'Flagged' : important ? 'Important' : null);
 
 	function recipientsLabel(message: MessageDetail): string {
 		const others = [...message.to, ...message.cc].filter(
@@ -168,7 +175,7 @@
 	 * Everywhere else this thread could go. A folder is not a destination for
 	 * itself, and neither is one that already has a control of its own: Junk is
 	 * the shield, Trash is the bin, and received mail does not go to Drafts or
-	 * Sent. Archive is listed here rather than twice — it is a move like any
+	 * Sent, nor to Scheduled — nothing filed there is sent. Archive is listed here rather than twice — it is a move like any
 	 * other, it just also earns a button where the pane is wide enough.
 	 */
 	const moveTargets = $derived(
@@ -180,7 +187,7 @@
 		)
 	);
 
-	const MOVE_EXCLUDED = new Set(['drafts', 'sent', 'trash', 'junk']);
+	const MOVE_EXCLUDED = new Set(['drafts', 'sent', 'scheduled', 'trash', 'junk']);
 
 	let replyEl = $state<HTMLElement | null>(null);
 
@@ -189,10 +196,15 @@
 	 * menu is portalled out of the bar — so every way into compose is anchored on
 	 * the one control that opened it.
 	 */
-	function replyAnchor() {
-		const rect = replyEl?.getBoundingClientRect();
+	function replyAnchor(el: Element | null = replyEl) {
+		const rect = el?.getBoundingClientRect();
 		if (!rect) return null;
 		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+	}
+
+	/** An earlier message's reply menu, anchored on its own trigger. */
+	function composeTo(mode: 'reply' | 'replyAll' | 'forward', message: MessageDetail) {
+		onCompose(mode, message, replyAnchor(document.querySelector(`[data-reply-to="${CSS.escape(message.id)}"]`)));
 	}
 </script>
 
@@ -349,6 +361,9 @@
 										<Menu.Item value="seen" class="z-menu-item" onSelect={() => onAction(unread ? 'read' : 'unread')}>
 											{unread ? 'Mark read' : 'Mark unread'}
 										</Menu.Item>
+										<Menu.Item value="important" class="z-menu-item" onSelect={() => onAction(important ? 'unimportant' : 'important')}>
+											{important ? 'Not important' : 'Mark important'}
+										</Menu.Item>
 										{#if spamTarget}
 											<Menu.Item value="spam" class="z-menu-item" onSelect={() => onAction('move', spamTarget.id)}>
 												{inJunk ? 'Not spam' : 'Mark as spam'}
@@ -481,6 +496,21 @@
 					</div>
 				</div>
 
+				{#if mailboxKind === 'scheduled' && onCancelSend}
+					<div class="flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+						<span class="min-w-0 flex-1">Waiting to be sent. Cancel to take it back as a draft.</span>
+						<button type="button" class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px]" onclick={() => onCancelSend(latest)}>
+							Cancel send
+						</button>
+					</div>
+				{/if}
+
+				{#if shared}
+					<p class="rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] px-3.5 py-2 text-[12.5px] leading-snug text-[var(--z-muted)]">
+						In <span class="font-semibold text-[var(--z-strong)]">{shared.name}</span>, shared with you. Replies go from your own address.
+					</p>
+				{/if}
+
 				<!-- The count here and the count chip on the list row are the same
 				     number about the same thread, so they are the same chip. -->
 				{#if earlier.length > 0 && !earlierExpanded}
@@ -522,11 +552,36 @@
 								style:--z-rail={tone.stroke}
 								style:--z-rail-strength="0.34"
 							>
-								<div class="flex items-baseline justify-between gap-2">
+								<div class="flex items-center justify-between gap-2">
 									<span class="truncate text-[13px] font-semibold text-[var(--z-body)]">{message.from.name || message.from.email}</span>
-									<time class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]" datetime={message.receivedAt}>
-										{formatReaderTime(message.receivedAt)}
-									</time>
+									<span class="flex shrink-0 items-center gap-1.5">
+										<time class="z-mono text-[10.5px] text-[var(--z-soft)]" datetime={message.receivedAt}>
+											{formatReaderTime(message.receivedAt)}
+										</time>
+										<!-- Answering an earlier message quotes that one, not the latest. -->
+										<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
+											<Menu.Trigger
+												class="z-icon-btn !size-6 max-md:!size-9"
+												data-reply-to={message.id}
+												aria-label="Reply to this message"
+												title="Reply to this message"
+											>
+												<svg class="size-3 max-md:size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+													<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+													<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+												</svg>
+											</Menu.Trigger>
+											<Portal>
+												<Menu.Positioner>
+													<Menu.Content class="z-menu z-40 w-44">
+														<Menu.Item value="reply" class="z-menu-item" onSelect={() => composeTo('reply', message)}>Reply</Menu.Item>
+														<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => composeTo('replyAll', message)}>Reply all</Menu.Item>
+														<Menu.Item value="forward" class="z-menu-item" onSelect={() => composeTo('forward', message)}>Forward</Menu.Item>
+													</Menu.Content>
+												</Menu.Positioner>
+											</Portal>
+										</Menu.Root>
+									</span>
 								</div>
 								<div class="mt-1.5 text-[13px] leading-[1.6] text-[var(--z-strong)]">
 									<EmailHtmlFrame html={item.html} plain={!item.isHtml} />
@@ -570,7 +625,7 @@
 		</div>
 
 		{#if previewAt !== null && previewable.length > 0}
-			<AttachmentPreview items={previewable} bind:index={previewAt} onClose={() => (previewAt = null)} />
+			<AttachmentPreview items={previewable} account={shared?.id} bind:index={previewAt} onClose={() => (previewAt = null)} />
 		{/if}
 	{:else}
 		<div class="flex flex-1 items-center justify-center p-6 text-center">
@@ -594,7 +649,7 @@
 	<div class="flex flex-wrap gap-[9px]">
 		{#each attachments as attachment (attachment.blobId)}
 			{@const badge = attachmentBadge(attachment.type)}
-			{@const url = attachmentUrl(attachment.blobId, attachment.name, attachment.type)}
+			{@const url = attachmentUrl(attachment.blobId, attachment.name, attachment.type, shared?.id)}
 			{@const at = previewable.indexOf(attachment)}
 			{#snippet chip()}
 				<!-- An image is its own badge, up to a size worth fetching for 22px. -->

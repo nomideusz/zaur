@@ -16,12 +16,19 @@
 	let {
 		items,
 		index = $bindable(),
-		onClose
-	}: { items: MessageAttachment[]; index: number; onClose: () => void } = $props();
+		onClose,
+		account = null
+	}: {
+		items: MessageAttachment[];
+		index: number;
+		onClose: () => void;
+		/** A mailbox shared with you, whose attachments these are. */
+		account?: string | null;
+	} = $props();
 
 	const current = $derived(items[index]);
 	const kind = $derived(current ? previewKind(current) : null);
-	const url = $derived(current ? attachmentUrl(current.blobId, current.name, current.type) : '');
+	const url = $derived(current ? attachmentUrl(current.blobId, current.name, current.type, account) : '');
 	const badge = $derived(attachmentBadge(current?.type ?? ''));
 
 	/** Keyed by blob, not the object: a list refresh hands in new objects for the same file. */

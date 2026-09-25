@@ -379,6 +379,12 @@ there is nothing to go back from and the open thread stays plain state. The
 back button outlives the message it acts on: it renders in the reader toolbar
 whatever the pane is doing, because a failed load is exactly when you need it.
 
+Either way the open thread is in the URL (`?thread=<id>`, next to `?folder=`), so
+a reload or a copied link reopens it. On a phone the parameter rides on the
+shallow entry, so Back drops it with the reader. `patchQuery` writes every query
+change in turn, each from the URL the last one left — a folder switch that also
+closes the reader is two writes, and in parallel each would undo the other.
+
 ### A screen gets one bar
 
 Reading a thread on a phone used to stack two bars: the shell's, with the
@@ -957,6 +963,22 @@ with one thread's ids: `runBulk` takes an optional `threadIds`, and only the
 selection-wide call clears the selection afterwards. A shortcut prefers the
 selection when there is one, and falls back to the row under the cursor.
 
+- **Every move can be undone** — Archive, Move to, Spam, Delete-to-Trash: the
+  toast's Undo files each message back into the folder it came from (across
+  folders, each row's own). Delete forever and Empty cannot be. Neither can a move
+  out of Scheduled, and the toast says "not sent":
+- **A message that leaves Scheduled stops being sent.** `bulk` cancels any
+  pending submission (`cancelPendingSends`) before a move or a delete; left alone,
+  Stalwart sends it at its time from Trash. Scheduled is not offered as a
+  destination either: nothing filed there is sent. The reader shows a scheduled
+  message with **Cancel send**, which takes it back to Drafts and opens it.
+- **Important** is in the reader's menu (`$important`, and the Important folder
+  too where the server has one, as in 1.0).
+- **Trash and Spam can be emptied** from a bar at the top of their list
+  (`emptyFolder`, which refuses any other folder).
+- A **discarded draft** can be had back from its toast: Undo writes it again as a
+  new draft, since the saved copy is already gone.
+
 ## Rules
 
 Rules run on the **server**, through JMAP for Sieve (RFC 9661). That is the
@@ -1355,6 +1377,45 @@ the page URL — and opens the thread in the inbox.
   five failed attempts that delete a message), and `send` refuses a mismatch
   with a 409 — which also covers a stale tab after a switch.
 
+## Shared mailboxes
+
+A mailbox shared with you shows under its owner's address in the sidebar: just
+its Inbox until you open it, then every folder you were given. This is
+Stalwart's own ACL sharing (RFC 9670 `shareWith` on each Mailbox), not a second
+sign-in, so it also works across domains — anyone in the same Stalwart directory.
+
+- **Sharing** is the owner's to do, in *Settings → Sharing*: an address, looked up
+  with `Principal/query` (`pickPrincipal`, as for calendars and files), and every
+  folder gets `shareWith/<principal>` in one `Mailbox/set`. The rights are read,
+  file, flag and delete — no renaming or removing the owner's folders. Stalwart
+  shares per folder, so a folder made later is shared the next time you press
+  Share. *Stop sharing* sends `null` for the same pointer on every folder.
+- **Seeing it**: the share puts the owner's account into the grantee's JMAP
+  session (`isPersonal: false`). `sharedMailboxes` lists every session account
+  with the mail capability besides your own, with its folders.
+  `JMAPClient.forAccount(id)` is the same connection acting in that account —
+  every mail method then works there — and `connectMail(account)` refuses an id
+  the session does not list. A password sign-in keeps its session cached in the
+  server for up to 15 minutes, so a new share can take that long to appear;
+  OAuth sign-ins fetch the session on every request.
+- **The page** keeps it as `?shared=<account id>` next to `?folder=` and
+  `?thread=`. Every mail query and command takes that `account`: list, search,
+  labels, the thread, bulk actions and their Undo, Empty Trash. The folder name
+  reads "Inbox · team@example.com" wherever it shows. A share that has gone
+  (or a stale link) drops back to your own inbox.
+- **Sending stays yours.** Stalwart only lets an account's owner submit from
+  it (`Identity/get` and `EmailSubmission/set` answer `forbidden`), so the
+  reader says replies go from your own address, and the Scheduled bits
+  (cancelling a pending send) are skipped there. A forward's attachments are
+  copied into your account first (`Blob/copy`), since a message can only
+  attach its own account's blobs. Someone else's draft opens in the reader, not
+  in your compose.
+- **Downloads** carry `&account=`: attachments through `attachmentUrl`, inline
+  images by rewriting the thread's `/api/jmap/download?` URLs on the server.
+- Not done: new-mail notifications for a shared mailbox (the push watcher
+  watches your own account), and AI categories there (someone else's mail is
+  not yours to label).
+
 ## Smoke-testing without a mailbox
 
 The `(app)` routes sit behind the session gate, and there is no test mailbox.
@@ -1478,6 +1539,8 @@ Treat the first run of each as a test. In the order they are likely to bite:
 | **Rules (Sieve)** | script generation round-trips, 14 tests | `SieveScript/get`/`set`/`validate`, blob upload of a script, activation | Stalwart rejecting the generated Sieve. This is the good failure: `validate` runs *before* the script is stored, so the error surfaces as a message rather than a filter that silently stops working. Check `require` handling and `addflag` first |
 | **Attachment downloads** | endpoint returns 401 unauthenticated; URL encoding unit-tested | `downloadBlob` against a real blob, streaming a large file | Content type or disposition being wrong for one file kind, or a large file buffering where it should stream |
 | **Files** | shared-with-you roots and rights-gated buttons, search over two accounts, share / change / remove with the email, a 30 MB upload into a shared folder and back down, all against the fake | Stalwart's `FileNode/query` `text` filter, orphan roots under real ACLs, `shareWith` written whole, a file over 25 MB through the image's `BODY_SIZE_LIMIT` | Uploading into someone else's folder: the blob goes to *your* account (as 1.0's did) and the node is created in theirs. If Stalwart wants the blob in the node's account the create fails with `blobNotFound` — `uploadBlob` would need an account argument |
+| **Leaving Scheduled** | cancel on move/delete, Cancel send, delete-from-Scheduled against the fake (which now tracks `holdfor` sends) | `EmailSubmission/query` filtered on several `emailIds` *and* `undoStatus` at once; cancelling a send Stalwart has already started | Stalwart ignoring `undoStatus` in the filter and returning final submissions too — then the cancel's `set` fails with `cannotUnsend` and the move is refused with that message rather than going through |
+| **Shared mailboxes** | list, reader, attachment download and preview, archive + Undo, delete to their Trash, forward with `Blob/copy`, share / stop sharing, all against the fake's second (team) account, which refuses submission as Stalwart does | Stalwart accepting the `shareWith/<id>` patch with these rights keys; `Blob/copy` from a shared account; the 15-minute session cache on password sign-ins | Stalwart wanting the whole `shareWith` object rather than a pointer patch, or refusing `mayShare`/`maySubmit: false` in it — the error surfaces in Settings. Reading, moving and deleting in a shared mailbox were tried on the live server in June 2026 and worked |
 | **Search** | UI exercised end to end on mock data; the parser is 1.0's, already in production there | `Email/query` with a parsed filter against Stalwart | An operator Stalwart's FTS treats differently from 1.0's usage — `before:`/`after:` are the likeliest, since dates go over as ISO strings |
 
 The settings sync is the exception: it runs on our own SQLite, so it **is**

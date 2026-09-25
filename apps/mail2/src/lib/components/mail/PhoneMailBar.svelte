@@ -68,7 +68,7 @@
 	const allRead = $derived(selectedRows.length > 0 && selectedRows.every((row) => !row.unread));
 	const allStarred = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.starred));
 	const moveTargets = $derived(
-		(mailboxes ?? []).filter((box) => box.id !== activeMailbox?.id && box.kind !== 'drafts')
+		(mailboxes ?? []).filter((box) => box.id !== activeMailbox?.id && box.kind !== 'drafts' && box.kind !== 'scheduled')
 	);
 	const archiveTarget = $derived(
 		(mailboxes ?? []).find((box) => box.kind === 'archive' && box.id !== activeMailbox?.id)

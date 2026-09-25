@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { goto, replaceState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resyncPush } from '#lib/push';
 	import { makeRecipient } from '#lib/compose/recipients';
 	import { isMeetGroupId, meetingJoinPath } from '@zaur/mail-core/utils/meet';
 	import { switchAccount, whoami } from '../session.remote';
-	import { mailboxes, threads, thread, quota, bulk, labelCounts, type BulkAction, type ListFilter,
-		search as searchRemote
+	import { mailboxes, sharedMailboxes, threads, thread, quota, bulk, emptyFolder, labelCounts, copyAttachments,
+		type BulkAction, type ListFilter, search as searchRemote
 	} from '../mail.remote';
 	import {
 		send as sendRemote,
@@ -29,7 +29,7 @@
 	import ComposeDock from '#lib/components/compose/ComposeDock.svelte';
 	import Toasts from '#lib/components/compose/Toasts.svelte';
 	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
-	import { readerThread } from '#lib/mail/reader-thread.svelte.ts';
+	import { patchQuery, readerThread } from '#lib/mail/reader-thread.svelte.ts';
 	import { LiveUpdates } from '#lib/mail/live';
 	import {
 		prefs,
@@ -50,6 +50,8 @@
 	import type { ThreadListDTO } from '#lib/mail/types';
 
 	let selectedMailboxId = $state<string | null>(null);
+	/** A mailbox someone shares with you (`?shared=`, its JMAP account), or null for yours. */
+	let mailAccount = $state<string | null>(page.url.searchParams.get('shared'));
 	/** '' means "showing a folder"; anything else means the list shows results. */
 	let searchQuery = $state('');
 	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
@@ -79,8 +81,9 @@
 	/** Search the open folder, or every folder. It stays as picked until the page reloads. */
 	let searchAll = $state(false);
 
-	function selectMailbox(id: string) {
+	function selectMailbox(id: string, account: string | null = mailAccount) {
 		selectedMailboxId = id;
+		mailAccount = account;
 		folderToUrl(id);
 		drawerOpen = false;
 		reader.close();
@@ -130,7 +133,7 @@
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
-		if (who.ready && !who.current) goto('/login', { replaceState: true });
+		if (who.ready && !who.current) goto('/login', { replace: true });
 	});
 
 	/**
@@ -173,12 +176,28 @@
 			url.searchParams.delete('account');
 			const known = session.accounts.some((account) => account.key === key);
 			if (known && key !== session.key) void useAccount(key, url.pathname + url.search);
-			else void goto(url, { replaceState: true, reset: false });
+			else void goto(url, { replace: true, reset: false });
 		});
 	});
 
 	const mailboxesResource = $derived(session ? mailboxes() : undefined);
-	const mailboxList = $derived(mailboxesResource?.current ?? undefined);
+	const sharedResource = $derived(session ? sharedMailboxes() : undefined);
+	const sharedList = $derived(sharedResource?.current);
+	const activeShared = $derived(mailAccount ? (sharedList?.find((one) => one.id === mailAccount) ?? null) : null);
+	/** The folders of the mailbox being shown: yours, or the shared one's. */
+	const mailboxList = $derived(mailAccount ? activeShared?.mailboxes : (mailboxesResource?.current ?? undefined));
+	/** Whichever folder list is on screen — what a move or a read changes. */
+	const foldersResource = $derived(mailAccount ? sharedResource : mailboxesResource);
+
+	// A share that was taken back (or a stale link) falls back to your own inbox.
+	$effect(() => {
+		if (!mailAccount || !sharedList || activeShared) return;
+		untrack(() => {
+			mailAccount = null;
+			selectedMailboxId = null;
+			patchQuery({ shared: null, folder: null });
+		});
+	});
 
 	/**
 	 * `?folder=<mailbox id>` is the open folder — a reload or a shared link lands
@@ -194,17 +213,17 @@
 	});
 
 	function folderToUrl(id: string | null) {
-		// Not `page.url`: a shallow replaceState leaves it at the URL the page loaded on.
-		const url = new URL(location.href);
 		const inbox = mailboxList?.find((mailbox) => mailbox.kind === 'inbox');
-		if (id && id !== inbox?.id) url.searchParams.set('folder', id);
-		else url.searchParams.delete('folder');
-		if (url.href !== location.href) replaceState(url, page.state);
+		patchQuery({ folder: id && id !== inbox?.id ? id : null, shared: mailAccount });
 	}
 
-	const activeMailbox = $derived(
-		mailboxList?.find((mailbox) => mailbox.id === selectedMailboxId) ?? null
-	);
+	const activeMailbox = $derived.by(() => {
+		const box = mailboxList?.find((mailbox) => mailbox.id === selectedMailboxId) ?? null;
+		// Whose Inbox it is goes wherever its name is shown.
+		return box && activeShared ? { ...box, name: `${box.name} · ${activeShared.name}` } : box;
+	});
+	/** Every mail query and action takes this: absent for your own mailbox. */
+	const account = $derived(mailAccount ?? undefined);
 
 	function stepMailbox(delta: number) {
 		if (!mailboxList || mailboxList.length === 0) return;
@@ -220,7 +239,7 @@
 	 * "Load more" asks for a longer list of the same view; any other view
 	 * starts again at one page.
 	 */
-	const listKey = $derived(`${activeMailbox?.id}|${listFilter}|${searchQuery}|${searchAll}`);
+	const listKey = $derived(`${mailAccount}|${activeMailbox?.id}|${listFilter}|${searchQuery}|${searchAll}`);
 	let longer = $state({ key: '', limit: 0 });
 	const listLimit = $derived(longer.key === listKey ? longer.limit : prefs.pageSize);
 
@@ -230,7 +249,7 @@
 
 	const threadsResource = $derived(
 		session && activeMailbox && !searching
-			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: listLimit, kind: activeMailbox.kind })
+			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: listLimit, kind: activeMailbox.kind, account })
 			: undefined
 	);
 
@@ -243,13 +262,14 @@
 			? searchRemote({
 					query: searchQuery,
 					mailboxId: searchAll ? undefined : activeMailbox?.id,
-					limit: listLimit
+					limit: listLimit,
+					account
 				})
 			: undefined
 	);
 
 	const labelCountsResource = $derived(
-		session && activeMailbox ? labelCounts({ mailboxId: activeMailbox.id }) : undefined
+		session && activeMailbox ? labelCounts({ mailboxId: activeMailbox.id, account }) : undefined
 	);
 	// Whatever moves a folder's unread count moves its labels' too, and every
 	// path that changes one (push, a read, a move) refreshes the folder list.
@@ -273,7 +293,7 @@
 		listResource?.current ?? (shownList?.key === listKey ? shownList.data : undefined)
 	);
 	const threadResource = $derived(
-		session && openThreadId ? thread({ threadId: openThreadId }) : undefined
+		session && openThreadId ? thread({ threadId: openThreadId, account }) : undefined
 	);
 	const quotaResource = $derived(session ? quota() : undefined);
 	const accountPrefsResource = $derived(session ? accountPrefs() : undefined);
@@ -388,7 +408,10 @@
 		const live = new LiveUpdates();
 		live.start(({ email, mailbox, contact }) => {
 			if (email) void listResource?.refresh();
-			if (mailbox) void mailboxesResource?.refresh();
+			if (mailbox) {
+				void mailboxesResource?.refresh();
+				void sharedResource?.refresh();
+			}
 			if (contact) void contactsResource?.refresh();
 		});
 		return () => live.stop();
@@ -480,24 +503,31 @@
 				focusTarget: 'to'
 			});
 		}
-		const url = new URL(page.url.href);
-		url.searchParams.delete('to');
-		url.searchParams.delete('invite');
-		replaceState(url, page.state);
+		patchQuery({ to: null, invite: null });
 	});
 
-	function openReply(
+	async function openReply(
 		mode: 'reply' | 'replyAll' | 'forward',
 		message: MessageDetail,
 		anchor: AnchorRect | null
 	) {
-		compose.reply(
-			message,
-			threadResource?.current ?? [message],
-			myEmails,
-			mode,
-			panelPosition(anchor)
-		);
+		const position = panelPosition(anchor);
+		const thread = threadResource?.current ?? [message];
+		// A forward is sent from your mailbox, so a shared one's files are copied into it first.
+		if (mailAccount && mode === 'forward' && message.attachments.length > 0) {
+			const copied = await copyAttachments({
+				account: mailAccount,
+				blobIds: message.attachments.map((part) => part.blobId)
+			}).catch(() => ({}) as Record<string, string>);
+			const attachments = message.attachments
+				.filter((part) => copied[part.blobId])
+				.map((part) => ({ ...part, blobId: copied[part.blobId]! }));
+			if (attachments.length < message.attachments.length) {
+				compose.pushToast({ text: 'Some attachments could not be brought along', tone: 'error' });
+			}
+			message = { ...message, attachments };
+		}
+		compose.reply(message, thread, myEmails, mode, position);
 	}
 
 	const selectedIds = $derived(selectedEmailIds(listData?.rows, selection));
@@ -507,10 +537,10 @@
 			(id) => listData?.rows.find((row) => row.id === id)?.unread
 		);
 		if (ids.length === 0) return;
-		return bulk({ action: 'read', emailIds: ids })
+		return bulk({ action: 'read', emailIds: ids, account })
 			.then(() => {
 				void listResource?.refresh();
-				void mailboxesResource?.refresh();
+				void foldersResource?.refresh();
 			})
 			.catch(() => {});
 	}
@@ -531,7 +561,7 @@
 		if (emailIds.length === 0 || bulkBusy) return;
 		// Results from every folder have no one folder to leave: a move replaces
 		// where each message lives, and a delete only ever goes to Trash.
-		let payload = { action, emailIds, mailboxId, sourceMailboxId: acrossFolders ? undefined : activeMailbox?.id };
+		let payload = { action, emailIds, mailboxId, sourceMailboxId: acrossFolders ? undefined : activeMailbox?.id, account };
 		if (action === 'delete' && (acrossFolders || activeMailbox?.kind !== 'trash')) {
 			const trash = mailboxList?.find((box) => box.kind === 'trash');
 			if (trash) payload = { ...payload, action: 'move', mailboxId: trash.id };
@@ -543,17 +573,36 @@
 		const leavesFolder = payload.action === 'move' || payload.action === 'delete';
 		// Marking spam *is* a move to Junk — the toast should say what was meant,
 		// not how it was carried out.
-		const toJunk =
-			payload.action === 'move' &&
-			mailboxList?.find((box) => box.id === payload.mailboxId)?.kind === 'junk';
+		const destinationKind =
+			payload.action === 'move' ? mailboxList?.find((box) => box.id === payload.mailboxId)?.kind : undefined;
+		const verbs: Partial<Record<BulkAction, string>> = {
+			delete: 'deleted',
+			move: 'moved',
+			important: 'marked important',
+			unimportant: 'marked not important'
+		};
 		const verb =
-			payload.action === 'delete'
-				? 'deleted'
-				: toJunk
-					? 'marked as spam'
-					: payload.action === 'move'
-						? 'moved'
-						: 'updated';
+			destinationKind === 'junk'
+				? 'marked as spam'
+				: destinationKind === 'trash'
+					? 'moved to Trash'
+					: (verbs[payload.action] ?? 'updated');
+		// Where each moved message came from, so Undo can put it back: the folder,
+		// or across folders each row's own.
+		const origins = new Map<string, string[]>();
+		if (payload.action === 'move') {
+			for (const id of emailIds) {
+				const from = acrossFolders
+					? listData?.rows.find((row) => row.id === id)?.mailboxId
+					: activeMailbox?.id;
+				if (from && from !== payload.mailboxId) origins.set(from, [...(origins.get(from) ?? []), id]);
+			}
+		}
+		// Leaving Scheduled cancels the send (see `bulk`), which moving back would not restore.
+		const unscheduled = [...origins.keys()].some(
+			(id) => mailboxList?.find((box) => box.id === id)?.kind === 'scheduled'
+		);
+		const undoable = origins.size > 0 && !unscheduled;
 		bulkBusy = true;
 		try {
 			const { count } = await bulk(payload);
@@ -561,7 +610,7 @@
 			if (leavesFolder && openThreadId && scope.has(openThreadId)) reader.close();
 			if (!threadIds) selection = new Set();
 			void listResource?.refresh();
-			void mailboxesResource?.refresh();
+			void foldersResource?.refresh();
 			// The folder that just received these keeps a cached list of its own, so
 			// without this, opening it straight after a move shows it as it was
 			// before — which reads as a move that did not happen.
@@ -570,12 +619,19 @@
 					mailboxId: payload.mailboxId,
 					filter: listFilter,
 					limit: prefs.pageSize,
-					kind: mailboxList?.find((box) => box.id === payload.mailboxId)?.kind
+					kind: mailboxList?.find((box) => box.id === payload.mailboxId)?.kind,
+					account
 				})
 					.refresh()
 					.catch(() => {});
 			}
-			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}`, tone: 'success' });
+			const text = `${count} ${count === 1 ? 'message' : 'messages'} ${verb}${unscheduled ? ' — not sent' : ''}`;
+			const destination = payload.mailboxId!;
+			compose.pushToast(
+				undoable
+					? { text, tone: 'success', actionLabel: 'Undo', action: () => void undoMove(origins, destination, payload.account) }
+					: { text, tone: 'success' }
+			);
 		} catch (cause) {
 			compose.pushToast({
 				text: cause instanceof Error ? cause.message : 'Action failed',
@@ -583,6 +639,65 @@
 			});
 		} finally {
 			bulkBusy = false;
+		}
+	}
+
+	/** Trash and Spam: every message in the folder, gone for good. */
+	async function emptyOpenFolder() {
+		const box = activeMailbox;
+		if (!box || bulkBusy) return;
+		const n = box.total;
+		if (!confirm(`Delete ${n === 1 ? 'the message' : `all ${n} messages`} in ${box.name} forever? This can't be undone.`)) return;
+		bulkBusy = true;
+		try {
+			const { count } = await emptyFolder({ mailboxId: box.id, account });
+			reader.close();
+			selection = new Set();
+			void listResource?.refresh();
+			compose.pushToast({ text: `${box.name} emptied — ${count} ${count === 1 ? 'message' : 'messages'} deleted`, tone: 'success' });
+		} catch (cause) {
+			compose.pushToast({
+				text: cause instanceof Error ? cause.message : `Could not empty ${box.name}`,
+				tone: 'error'
+			});
+		} finally {
+			bulkBusy = false;
+		}
+	}
+
+	/** Stops a scheduled send; the message, now back in Drafts, opens to be edited. */
+	async function cancelSend(message: MessageDetail) {
+		try {
+			await cancelScheduled({ emailId: message.id });
+		} catch (cause) {
+			compose.pushToast({
+				text: cause instanceof Error ? cause.message : 'Could not cancel the send',
+				tone: 'error'
+			});
+			return;
+		}
+		reader.close();
+		compose.reopenDraft(draftSeed(message), panelPosition());
+		void listResource?.refresh();
+		void mailboxesResource?.refresh();
+		compose.pushToast({ text: 'Send cancelled — it is a draft again', tone: 'info' });
+	}
+
+	/** A move's Undo: each message back to the folder it came from. */
+	async function undoMove(origins: Map<string, string[]>, from: string, account: string | undefined) {
+		try {
+			await Promise.all(
+				[...origins].map(([mailboxId, emailIds]) =>
+					bulk({ action: 'move', emailIds, mailboxId, sourceMailboxId: from, account })
+				)
+			);
+			void listResource?.refresh();
+			void foldersResource?.refresh();
+		} catch (cause) {
+			compose.pushToast({
+				text: cause instanceof Error ? cause.message : 'Could not undo the move',
+				tone: 'error'
+			});
 		}
 	}
 
@@ -605,8 +720,9 @@
 
 	/**
 	 * `/?thread=<id>` opens that thread, in `?folder=`'s folder or the inbox:
-	 * where a new-mail notification points. Taken off the URL before the reader opens, so Back
-	 * returns to the plain inbox and a reload does not reopen it.
+	 * where a new-mail notification points, and what a reload with a thread open
+	 * lands on. Taken off the URL before the reader opens, which puts it back —
+	 * on a phone as its own entry, so Back returns to the plain list.
 	 */
 	let threadLinkHandled = false;
 	$effect(() => {
@@ -622,7 +738,7 @@
 		untrack(() => {
 			const url = new URL(location.href);
 			url.searchParams.delete('thread');
-			void goto(url, { replaceState: true, reset: false }).then(() => openRow(threadId));
+			void goto(url, { replace: true, reset: false }).then(() => openRow(threadId));
 		});
 	});
 
@@ -639,7 +755,8 @@
 		const kind = acrossFolders
 			? mailboxList?.find((mailbox) => mailbox.id === rowMailbox)?.kind
 			: activeMailbox?.kind;
-		if (kind !== 'drafts') {
+		// Someone else's draft is read, not picked up: it is theirs to finish.
+		if (kind !== 'drafts' || mailAccount) {
 			reader.open(threadId);
 			if (prefs.markReadOnOpen) void markThreadRead(threadId);
 			return;
@@ -846,7 +963,9 @@
 				class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
 			>
 				<Sidebar
-					mailboxes={mailboxList}
+					mailboxes={mailboxesResource?.current ?? undefined}
+					shared={sharedList}
+					activeAccount={mailAccount}
 					activeMailboxId={selectedMailboxId}
 					onSelectMailbox={selectMailbox}
 					filter={listFilter}
@@ -886,6 +1005,7 @@
 			busy={bulkBusy}
 			onRetry={() => listResource?.refresh()}
 			onNewMessage={(anchor) => openCompose(anchor)}
+			onEmpty={() => void emptyOpenFolder()}
 		/>
 
 		<Splitter width={prefs.listWidth} onResize={setListWidth} onReset={resetListWidth} />
@@ -906,6 +1026,8 @@
 			mailboxes={mailboxList}
 			currentMailboxId={activeMailbox?.id ?? null}
 			inTrash={activeMailbox?.kind === 'trash'}
+			onCancelSend={mailAccount ? undefined : (message) => void cancelSend(message)}
+			shared={activeShared}
 		/>
 	</main>
 

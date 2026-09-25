@@ -19,3 +19,11 @@ export type ThreadListDTO = {
 	/** There is older mail than the list holds: "Load more" asks for a longer list. */
 	hasMore?: boolean;
 };
+
+/** A mailbox someone shares with you: their JMAP account, and the folders you see. */
+export type SharedMailboxDTO = {
+	id: string;
+	/** What the server calls the account — the owner's address, on Stalwart. */
+	name: string;
+	mailboxes: MailboxDTO[];
+};

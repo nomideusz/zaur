@@ -44,6 +44,20 @@ export interface JMAPMailbox {
 	sortOrder?: number;
 }
 
+/** RFC 8621 §2 MailboxRights, plus RFC 9670's `mayShare`. */
+export interface JMAPMailboxRights {
+	mayReadItems: boolean;
+	mayAddItems: boolean;
+	mayRemoveItems: boolean;
+	maySetSeen: boolean;
+	maySetKeywords: boolean;
+	mayCreateChild: boolean;
+	mayRename: boolean;
+	mayDelete: boolean;
+	maySubmit: boolean;
+	mayShare?: boolean;
+}
+
 export interface JMAPEmailAddress {
 	name?: string;
 	email: string;

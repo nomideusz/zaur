@@ -21,10 +21,14 @@ export const GET: RequestHandler = async ({ url }) => {
 	const name = url.searchParams.get('name') ?? 'attachment';
 	const type = url.searchParams.get('type') || 'application/octet-stream';
 
+	// A mailbox shared with you keeps its blobs in its own account.
+	const shared = url.searchParams.get('account');
+
 	let upstream: Response;
 	try {
-		const client = await createConnectedClient(account);
-		upstream = await client.downloadBlob(blobId, name, type);
+		const own = await createConnectedClient(account);
+		const client = shared ? own.forAccount(shared) : own;
+		upstream = client ? await client.downloadBlob(blobId, name, type) : new Response(null, { status: 404 });
 	} catch (cause) {
 		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
 		console.error('[api/download] Upstream download failed:', cause);

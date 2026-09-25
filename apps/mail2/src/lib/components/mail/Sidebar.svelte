@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import type { MailboxDTO } from '#lib/mail/types';
+	import type { MailboxDTO, SharedMailboxDTO } from '#lib/mail/types';
 	import { CHANNELS, channelStyle, identityStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
 	import { LABEL_FILTERS, filterName, type ListFilter } from '#lib/mail/labels';
 	import { signOutAccount, switchAccount, whoami } from '../../../routes/session.remote';
@@ -11,8 +11,12 @@
 
 	interface Props {
 		mailboxes: MailboxDTO[] | undefined;
+		/** Mailboxes other people share with you, each its own group. */
+		shared?: SharedMailboxDTO[];
+		/** Which of those is open; null for your own. */
+		activeAccount?: string | null;
 		activeMailboxId: string | null;
-		onSelectMailbox: (id: string) => void;
+		onSelectMailbox: (id: string, account: string | null) => void;
 		/** The list's filter; the Labels group sets it. */
 		filter: ListFilter;
 		onFilter: (value: ListFilter) => void;
@@ -25,6 +29,8 @@
 
 	let {
 		mailboxes,
+		shared = [],
+		activeAccount = null,
 		activeMailboxId,
 		onSelectMailbox,
 		filter,
@@ -184,10 +190,10 @@
 		<ul class="flex flex-col gap-[3px]" role="list">
 			{#if mailboxes}
 				{#each mailboxes as mailbox (mailbox.id)}
-					{@const isSelected = mailbox.id === activeMailboxId}
+					{@const isSelected = !activeAccount && mailbox.id === activeMailboxId}
 					<li>
 						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
-							onSelectMailbox(mailbox.id), false, mailbox.depth
+							onSelectMailbox(mailbox.id, null), false, mailbox.depth
 						)}
 					</li>
 				{/each}
@@ -197,6 +203,24 @@
 				{/each}
 			{/if}
 		</ul>
+
+		<!--
+			A mailbox shared with you is a group of its own, under its owner's
+			address: just its Inbox until you open it, then every folder you can see.
+		-->
+		{#each shared as box (box.id)}
+			{@const open = box.id === activeAccount}
+			<h2 class="z-caption mt-5 mb-[9px] truncate px-1.5" title="Shared with you by {box.name}">{box.name}</h2>
+			<ul class="flex flex-col gap-[3px]" role="list">
+				{#each open ? box.mailboxes : box.mailboxes.filter((mailbox) => mailbox.kind === 'inbox') as mailbox (mailbox.id)}
+					<li>
+						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), open && mailbox.id === activeMailboxId, mailbox.unread, () =>
+							onSelectMailbox(mailbox.id, box.id), false, open ? mailbox.depth : 0
+						)}
+					</li>
+				{/each}
+			</ul>
+		{/each}
 
 		<!--
 			Labels narrow the open folder to what a message carries — your flag, the

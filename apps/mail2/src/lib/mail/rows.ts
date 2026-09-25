@@ -133,8 +133,9 @@ export function formatBytes(size: number): string {
  * endpoint rather than Stalwart's `downloadUrl` because that one wants the
  * account's credentials, which stay on the server.
  */
-export function attachmentUrl(blobId: string, name: string, type: string): string {
+export function attachmentUrl(blobId: string, name: string, type: string, account?: string | null): string {
 	const params = new URLSearchParams({ blobId, name, type });
+	if (account) params.set('account', account);
 	return `/api/download?${params}`;
 }
 

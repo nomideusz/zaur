@@ -2,6 +2,7 @@ import type {
 	JMAPChangesResult,
 	JMAPIdentity,
 	JMAPMailbox,
+	JMAPMailboxRights,
 	JMAPMethodCall,
 	JMAPResponse,
 	JMAPSession,
@@ -107,6 +108,8 @@ const FILENODE_USING = ['urn:ietf:params:jmap:core', FILENODE_URN] as const;
 const PRINCIPALS_URN = 'urn:ietf:params:jmap:principals';
 const PRINCIPALS_OWNER_URN = 'urn:ietf:params:jmap:principals:owner';
 const PRINCIPAL_USING = ['urn:ietf:params:jmap:core', PRINCIPALS_URN] as const;
+const MAIL_URN = 'urn:ietf:params:jmap:mail';
+const MAILBOX_SHARE_USING = ['urn:ietf:params:jmap:core', MAIL_URN, PRINCIPALS_URN];
 const QUOTA_URN = 'urn:ietf:params:jmap:quota';
 const QUOTA_USING = ['urn:ietf:params:jmap:core', QUOTA_URN] as const;
 const VACATION_URN = 'urn:ietf:params:jmap:vacationresponse';
@@ -261,6 +264,31 @@ export class JMAPClient {
 
 	getAccountId(): string {
 		return this.accountId;
+	}
+
+	/**
+	 * The same connection acting in another mail account the session lists — a
+	 * mailbox someone shared with you. Every mail method then works on that
+	 * account; session and credentials stay this client's, a refreshed token
+	 * included. Null when the session has no such mail account.
+	 */
+	forAccount(accountId: string): JMAPClient | null {
+		if (accountId === this.accountId) return this;
+		if (!this.session?.accounts?.[accountId]?.accountCapabilities?.[MAIL_URN]) return null;
+		const view = Object.create(this) as JMAPClient;
+		view.accountId = accountId;
+		Object.defineProperty(view, 'authHeader', {
+			get: () => this.authHeader,
+			set: (value: string) => (this.authHeader = value)
+		});
+		return view;
+	}
+
+	/** Mail accounts shared with you: every one the session lists besides your own. */
+	getSharedMailAccounts(): { id: string; name: string }[] {
+		return Object.entries(this.session?.accounts ?? {})
+			.filter(([id, account]) => id !== this.accountId && account.accountCapabilities?.[MAIL_URN])
+			.map(([id, account]) => ({ id, name: account.name || id }));
 	}
 
 	hasCalendars(): boolean {
@@ -1998,6 +2026,51 @@ export class JMAPClient {
 		this.throwOnSetErrors(response, 'Could not change folder');
 	}
 
+	/** Who each folder is shared with, by principal id (RFC 9670 `shareWith`). */
+	async getMailboxShares(): Promise<{ id: string; shareWith: Record<string, JMAPMailboxRights> }[]> {
+		const response = await this.request(
+			[['Mailbox/get', { accountId: this.accountId, properties: ['id', 'shareWith'] }, 'mbs']],
+			MAILBOX_SHARE_USING
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'Mailbox/get') throw new Error('Could not load who the mailbox is shared with');
+		return ((first[1].list as { id: string; shareWith?: Record<string, JMAPMailboxRights> | null }[]) ?? []).map(
+			(box) => ({ id: box.id, shareWith: box.shareWith ?? {} })
+		);
+	}
+
+	/**
+	 * Share every folder with a person, or with `rights: null` take them off.
+	 * Stalwart shares per folder, so a whole mailbox is every folder at once;
+	 * one made afterwards is not shared until this runs again.
+	 */
+	async shareMailboxes(principalId: string, rights: JMAPMailboxRights | null): Promise<void> {
+		const boxes = await this.getMailboxes();
+		const update = Object.fromEntries(boxes.map((box) => [box.id, { [`shareWith/${principalId}`]: rights }]));
+		const response = await this.request(
+			[['Mailbox/set', { accountId: this.accountId, update }, 'mbs']],
+			MAILBOX_SHARE_USING
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') throw new Error(String(first[1].description ?? first[1].type ?? 'Sharing failed'));
+		this.throwOnSetErrors(response, 'Could not change who the mailbox is shared with');
+	}
+
+	/**
+	 * Copy blobs from another account into this one (RFC 8620 §6.3) — an
+	 * attachment forwarded out of a shared mailbox has to be yours to send.
+	 * Returns old id → new id for the ones that copied.
+	 */
+	async copyBlobs(fromAccountId: string, blobIds: string[]): Promise<Record<string, string>> {
+		if (!blobIds.length) return {};
+		const response = await this.request([
+			['Blob/copy', { fromAccountId, accountId: this.accountId, blobIds }, 'bc']
+		]);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'Blob/copy') throw new Error('Could not copy the attachments');
+		return (first[1].copied as Record<string, string> | null) ?? {};
+	}
+
 	async createMailbox(name: string, parentId?: string | null): Promise<string> {
 		const trimmed = name.trim();
 		if (!trimmed) throw new Error('Folder name cannot be empty');
@@ -2767,13 +2840,17 @@ export class JMAPClient {
 		return true;
 	}
 
-	/** Cancel a pending delayed send and move the message back to Drafts. */
-	async cancelScheduledSend(emailId: string): Promise<void> {
+	/**
+	 * Cancel whatever sends are still pending for these messages. Returns how
+	 * many were cancelled — 0 when none was scheduled, or all have gone out.
+	 */
+	async cancelPendingSends(emailIds: string[]): Promise<number> {
+		if (!emailIds.length) return 0;
 		const response = await this.request(
 			[
 				[
 					'EmailSubmission/query',
-					{ accountId: this.accountId, filter: { emailIds: [emailId], undoStatus: 'pending' } },
+					{ accountId: this.accountId, filter: { emailIds, undoStatus: 'pending' } },
 					'q'
 				]
 			],
@@ -2782,9 +2859,7 @@ export class JMAPClient {
 		const queryResult = response.methodResponses?.[0];
 		const submissionIds =
 			queryResult?.[0] === 'EmailSubmission/query' ? ((queryResult[1].ids as string[]) ?? []) : [];
-		if (!submissionIds.length) {
-			throw new Error('This message is no longer scheduled — it may already be sent.');
-		}
+		if (!submissionIds.length) return 0;
 
 		const cancelResponse = await this.request(
 			[
@@ -2800,6 +2875,14 @@ export class JMAPClient {
 			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
 		);
 		this.throwOnSetErrors(cancelResponse, 'Could not cancel the scheduled send');
+		return submissionIds.length;
+	}
+
+	/** Cancel a pending delayed send and move the message back to Drafts. */
+	async cancelScheduledSend(emailId: string): Promise<void> {
+		if (!(await this.cancelPendingSends([emailId]))) {
+			throw new Error('This message is no longer scheduled — it may already be sent.');
+		}
 
 		const mailboxes = await this.getMailboxes();
 		const scheduled = mailboxes.find((mb) => mb.role === 'scheduled');

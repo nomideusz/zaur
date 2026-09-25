@@ -43,6 +43,16 @@ export async function connect(account = requireAccount()): Promise<JMAPClient> {
 }
 
 /**
+ * The client for one mail account: yours with no `account`, or a mailbox
+ * someone shared with you, which the session has to list.
+ */
+export async function connectMail(account?: string | null): Promise<JMAPClient> {
+	const client = await connect();
+	if (!account) return client;
+	return client.forAccount(String(account)) ?? error(404, 'That mailbox is not shared with you');
+}
+
+/**
  * A JMAP refusal (a subfolder in the way, a name already taken) is for the
  * person to read, so it goes back as a 400 with the server's words. Remote
  * functions hide the message of anything thrown that is not an `error()`.

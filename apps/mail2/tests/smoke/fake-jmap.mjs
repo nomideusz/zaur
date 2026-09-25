@@ -10,6 +10,8 @@ const PORT = Number(process.env.FAKE_JMAP_PORT) || 9911;
 const BASE = `http://127.0.0.1:${PORT}`;
 const ACC = 'acc1';
 const ANNA = 'acc-anna';
+// A team mailbox shared with you: its mail shows beside yours, but only its owner sends from it.
+const TEAM = 'acc-team';
 const CORE = 'urn:ietf:params:jmap:core';
 const MAIL = 'urn:ietf:params:jmap:mail';
 const CONTACTS = 'urn:ietf:params:jmap:contacts';
@@ -46,7 +48,8 @@ const session = {
 			accountCapabilities: { [MAIL]: {}, [CONTACTS]: {}, [CALENDARS]: {}, [SIEVE]: {}, [VACATION]: {}, [FILENODE]: {}, [PRINCIPALS]: { currentUserPrincipalId: 'principal-smoke' } }
 		},
 		// Anna's storage, of which she has shared a folder or two with you.
-		[ANNA]: { name: 'anna@zaur.app', isPersonal: false, isReadOnly: false, accountCapabilities: { [FILENODE]: {} } }
+		[ANNA]: { name: 'anna@zaur.app', isPersonal: false, isReadOnly: false, accountCapabilities: { [FILENODE]: {} } },
+		[TEAM]: { name: 'team@zaur.app', isPersonal: false, isReadOnly: false, accountCapabilities: { [MAIL]: {} } }
 	},
 	primaryAccounts: { [MAIL]: ACC, [CONTACTS]: ACC, [CALENDARS]: ACC, [SIEVE]: ACC, [FILENODE]: ACC, [PRINCIPALS]: ACC }
 };
@@ -151,8 +154,11 @@ const blobs = {
 	'blob-2': ['application/pdf', makePdf(['Rotation plan', 'Timeline', 'Rollback'])],
 	'blob-3': ['text/plain', 'selector: zaur2026\nalgorithm: rsa-sha256\nkey-length: 2048\n\np=MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA…\n'],
 	'blob-photo': ['image/png', makePng(960, 640)],
-	'blob-voice': ['audio/wav', makeWav()]
+	'blob-voice': ['audio/wav', makeWav()],
+	'blob-team-invoice': ['text/plain', 'Invoice 2026/09/14\nYoga mats x 12\nTotal: 1 440 PLN\n']
 };
+/** Blobs of the team mailbox: downloadable, and attachable, only as that account's. */
+const teamBlobs = new Set(['blob-team-invoice']);
 
 /** File storage: two folders (one nested), files at the top and inside. */
 const fileNode = (id, parentId, name, blobId = null) => ({
@@ -182,6 +188,11 @@ const annaFileNodes = [
 ];
 const nodesOf = (accountId) => (accountId === ANNA ? annaFileNodes : fileNodes);
 
+/**
+ * Delayed sends (created with a `holdfor`) still waiting to go out. m10, the
+ * sample in Scheduled, is not one: it has gone out and waits to be filed to Sent.
+ */
+const pendingSends = new Set();
 /** Sample mail: every channel, a thread, an attachment, one of each state. */
 const emails = new Map(
 	[
@@ -336,6 +347,38 @@ const calendars = [
 	{ id: 'cal2', name: 'Work', color: '#16a34a', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 1, shareWith: { 'principal-anna': { mayReadItems: true, mayWriteAll: false, mayWriteOwn: false, mayRSVP: true, mayShare: false, mayDelete: false, mayReadFreeBusy: true, mayUpdatePrivate: false } }, myRights: { mayReadItems: true, mayWriteAll: true, mayWriteOwn: true, mayRSVP: true, mayShare: true, mayDelete: true, mayReadFreeBusy: true, mayUpdatePrivate: true } },
 	{ id: 'cal3', name: 'PL Holidays', color: '#d97706', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 2, myRights: { mayReadItems: true, mayWriteAll: false, mayWriteOwn: false, mayRSVP: false, mayShare: false, mayDelete: false, mayReadFreeBusy: true, mayUpdatePrivate: false } }
 ];
+const teamMailboxes = [
+	{ id: 'team-inbox', name: 'Inbox', role: 'inbox', totalEmails: 2, unreadEmails: 1, sortOrder: 0 },
+	{ id: 'team-sent', name: 'Sent', role: 'sent', totalEmails: 0, unreadEmails: 0, sortOrder: 2 },
+	{ id: 'team-archive', name: 'Archive', role: 'archive', totalEmails: 0, unreadEmails: 0, sortOrder: 3 },
+	{ id: 'team-trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 5 }
+];
+const teamEmails = new Map(
+	[
+		{
+			id: 'tm1', threadId: 'tt1', mailboxIds: { 'team-inbox': true }, keywords: {},
+			from: [{ name: 'Ola Nowak', email: 'ola@example.com' }], to: [{ name: '', email: 'team@zaur.app' }],
+			subject: 'Invoice for the September mats', receivedAt: at(0.5), hasAttachment: true,
+			preview: 'Hello, the invoice for the yoga mats is attached.',
+			...text('1', 'Hello, the invoice for the yoga mats is attached. Could you confirm the delivery address?\n\nOla'),
+			bodyStructure: {
+				type: 'multipart/mixed',
+				subParts: [
+					{ partId: '1', type: 'text/plain' },
+					{ partId: '2', blobId: 'blob-team-invoice', type: 'text/plain', name: 'invoice.txt', size: blobs['blob-team-invoice'][1].length, disposition: 'attachment' }
+				]
+			}
+		},
+		{
+			id: 'tm2', threadId: 'tt2', mailboxIds: { 'team-inbox': true }, keywords: { $seen: true },
+			from: [{ name: 'Studio Kraków', email: 'studio@example.org' }], to: [{ name: '', email: 'team@zaur.app' }],
+			subject: 'Saturday class moved to 10:00', receivedAt: at(5), hasAttachment: false,
+			preview: 'The Saturday class starts an hour later this week.',
+			...text('1', 'The Saturday class starts an hour later this week.')
+		}
+	].map((email) => [email.id, email])
+);
+
 // The people a calendar can be shared with (RFC 9670 Principals), you among them.
 const principals = [
 	{ id: 'principal-smoke', type: 'individual', name: 'Smoke Tester', email: 'smoke@zaur.app' },
@@ -379,10 +422,29 @@ const streams = new Set();
 // The refresh token the fake currently honours: rt-0 is what an OAuth smoke session is seeded with.
 let refreshGeneration = 0;
 
+const ownMailboxes = mailboxes;
+const ownEmails = emails;
+
 function handle([name, args, callId]) {
-	const ok = (data) => [name, { accountId: ACC, ...data }, callId];
+	const ok = (data) => [name, { accountId: args.accountId ?? ACC, ...data }, callId];
 	const fail = (type, description) => ['error', { type, description }, callId];
+	// Mail calls act in whichever account they name: yours, or the team's.
+	const team = args.accountId === TEAM;
+	const mailboxes = team ? teamMailboxes : ownMailboxes;
+	const emails = team ? teamEmails : ownEmails;
+	// As Stalwart: only an account's owner sends from it or sees its identities.
+	if (team && /^(EmailSubmission|Identity)\//.test(name)) return fail('forbidden', `You are not an owner of account ${TEAM}`);
 	switch (name) {
+		case 'Blob/copy': {
+			const copied = {};
+			for (const id of args.blobIds ?? []) {
+				if (!blobs[id] || !teamBlobs.has(id) || args.fromAccountId !== TEAM) continue;
+				blobs[`copy-${id}`] = blobs[id];
+				copied[id] = `copy-${id}`;
+			}
+			log('Blob/copy', JSON.stringify(copied));
+			return [name, { fromAccountId: args.fromAccountId, accountId: args.accountId, copied, notCopied: null }, callId];
+		}
 		case 'Mailbox/set': {
 			const created = {};
 			for (const [key, data] of Object.entries(args.create ?? {})) {
@@ -396,6 +458,13 @@ function handle([name, args, callId]) {
 			for (const [id, patch] of Object.entries(args.update ?? {})) {
 				const mb = mailboxes.find((m) => m.id === id);
 				if (!mb) { notUpdated[id] = { type: 'notFound' }; continue; }
+				for (const [key, value] of Object.entries(patch)) {
+					if (!key.startsWith('shareWith/')) continue;
+					const principal = key.slice('shareWith/'.length);
+					mb.shareWith = { ...mb.shareWith };
+					if (value) mb.shareWith[principal] = value; else delete mb.shareWith[principal];
+					delete patch[key];
+				}
 				Object.assign(mb, patch);
 				updated[id] = null;
 				log('Mailbox updated', id, JSON.stringify(patch));
@@ -494,10 +563,17 @@ function handle([name, args, callId]) {
 				const email = emails.get(sub.emailId);
 				log('EmailSubmission created', JSON.stringify({ identityId: sub.identityId, from: email?.from, subject: email?.subject, body: email && Object.values(email.bodyValues ?? {})[0]?.value }));
 				created[key] = { id: `sub-${sub.emailId}` };
+				if (sub.envelope?.mailFrom?.parameters?.holdfor) pendingSends.add(`sub-${sub.emailId}`);
 				const patch = args.onSuccessUpdateEmail?.[`#${key}`];
 				if (email && patch?.mailboxIds) email.mailboxIds = { ...patch.mailboxIds };
 			}
-			return ok({ oldState: 'sub1', newState: 'sub2', created });
+			const updated = {};
+			for (const [id, patch] of Object.entries(args.update ?? {})) {
+				if (patch.undoStatus === 'canceled') pendingSends.delete(id);
+				log('EmailSubmission updated', id, JSON.stringify(patch));
+				updated[id] = null;
+			}
+			return ok({ oldState: 'sub1', newState: 'sub2', created, updated });
 		}
 		case 'Mailbox/get':
 			return ok({ state: 'm1', list: args.ids ? mailboxes.filter((mb) => args.ids.includes(mb.id)) : mailboxes, notFound: [] });
@@ -589,10 +665,11 @@ function handle([name, args, callId]) {
 		}
 		case 'EmailSubmission/query': {
 			const wanted = args.filter?.emailIds ?? [];
-			return ok({ queryState: 'sq1', ids: wanted.filter((id) => emails.get(id)?.mailboxIds.scheduled).map((id) => `sub-${id}`) });
+			const ids = wanted.filter((id) => emails.get(id)?.mailboxIds.scheduled).map((id) => `sub-${id}`);
+			return ok({ queryState: 'sq1', ids: args.filter?.undoStatus === 'pending' ? ids.filter((id) => pendingSends.has(id)) : ids });
 		}
 		case 'EmailSubmission/get':
-			return ok({ state: 'sub1', list: (args.ids ?? []).map((id) => ({ id, emailId: id.slice(4), undoStatus: 'final' })), notFound: [] });
+			return ok({ state: 'sub1', list: (args.ids ?? []).map((id) => ({ id, emailId: id.slice(4), undoStatus: pendingSends.has(id) ? 'pending' : 'final' })), notFound: [] });
 		case 'Identity/get':
 			return ok({ state: 'i1', list: identities, notFound: [] });
 		case 'Quota/get':
@@ -889,7 +966,9 @@ http
 			return;
 		}
 		if (req.method === 'GET' && req.url.startsWith('/jmap/download/')) {
-			const blob = blobs[decodeURIComponent(req.url.split('/')[4] ?? '')];
+			const [, , , accountId, rawBlobId] = req.url.split('/');
+			const blobId = decodeURIComponent(rawBlobId ?? '');
+			const blob = teamBlobs.has(blobId) === (accountId === TEAM) ? blobs[blobId] : undefined;
 			if (!blob) {
 				res.writeHead(404);
 				return res.end('no such blob');

@@ -7,7 +7,17 @@
 	import { whoami } from '../../session.remote';
 	import { identities, updateIdentity, vacation as vacationQuery, saveVacation, type VacationDTO } from '../../settings.remote';
 	import { logout } from '../../login.remote';
-	import { createFolder, deleteFolder, mailboxes, quota, updateFolder } from '../../mail.remote';
+	import {
+		createFolder,
+		deleteFolder,
+		mailboxes,
+		mailboxSharing,
+		quota,
+		shareMailbox,
+		unshareMailbox,
+		updateFolder,
+		type MailboxShareDTO
+	} from '../../mail.remote';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import { withoutBranch } from '#lib/mail/folders';
 	import { rules as rulesQuery, saveRules } from '../../rules.remote';
@@ -121,6 +131,39 @@
 			status = { text: messageOf(cause, 'Could not save the auto-reply'), error: true };
 		} finally {
 			savingAway = false;
+		}
+	}
+
+	// Sharing: who else can read this mailbox from their own.
+	const sharingResource = $derived(session ? mailboxSharing() : undefined);
+	let shareTo = $state('');
+	let shareBusy = $state(false);
+
+	async function share() {
+		shareBusy = true;
+		status = null;
+		try {
+			const { name } = await shareMailbox({ email: shareTo });
+			shareTo = '';
+			status = { text: `Shared with ${name}` };
+		} catch (cause) {
+			status = { text: messageOf(cause, 'Could not share the mailbox'), error: true };
+		} finally {
+			shareBusy = false;
+		}
+	}
+
+	async function unshare(person: MailboxShareDTO) {
+		if (!confirm(`Stop sharing this mailbox with ${person.email || person.name || 'them'}?`)) return;
+		shareBusy = true;
+		status = null;
+		try {
+			await unshareMailbox({ principalId: person.id });
+			status = { text: 'No longer shared' };
+		} catch (cause) {
+			status = { text: messageOf(cause, 'Could not stop sharing'), error: true };
+		} finally {
+			shareBusy = false;
 		}
 	}
 
@@ -464,6 +507,56 @@
 				/>
 				{@render parentSelect(newFolder.parentId, null, (next) => (newFolder.parentId = next))}
 				<button type="button" class="btn-tactile !h-[30px] {newFolder.name.trim() ? 'btn-primary' : ''}" disabled={folderBusy || !newFolder.name.trim()} onclick={addFolder}>Create</button>
+			</div>
+		{/if}
+	</div>
+</section>
+
+<section class="z-card" id="sharing">
+	<h2 class="z-card-head">Sharing</h2>
+	<div class="z-card-body">
+		<p class={blurb}>
+			Let someone on this server see this mailbox next to their own — a shared inbox. They can read, file,
+			flag and delete its mail; what they write goes from their own address. Folders you add later join
+			when you share again.
+		</p>
+		{#if sharingResource?.error}
+			<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load who this mailbox is shared with.</p>
+		{:else if !sharingResource?.current}
+			<div class="z-skeleton mt-3 h-[34px] rounded-[8px] bg-[var(--z-sunken)]" aria-hidden="true"></div>
+		{:else}
+			<ul class="mt-3 flex flex-col" role="list">
+				{#each sharingResource.current as person (person.id)}
+					<li class="flex items-center justify-between gap-3 border-t border-[var(--z-sunken)] py-2">
+						<span class="min-w-0">
+							<span class="block truncate {rowLabel}">{person.name || person.email || person.id}</span>
+							{#if person.name && person.email}
+								<span class="z-mono block truncate text-[11px] text-[var(--z-soft)]">{person.email}</span>
+							{/if}
+						</span>
+						<button type="button" class="btn-tactile !h-7 shrink-0 !text-[12px]" disabled={shareBusy} onclick={() => void unshare(person)}>
+							Stop sharing
+						</button>
+					</li>
+				{:else}
+					<li class="border-t border-[var(--z-sunken)] py-2 text-[12.5px] text-[var(--z-muted)]">Not shared with anyone.</li>
+				{/each}
+			</ul>
+			<div class="flex flex-wrap items-center gap-2 border-t border-[var(--z-sunken)] pt-3">
+				<input
+					type="email"
+					bind:value={shareTo}
+					placeholder="Their address"
+					aria-label="Share with"
+					autocomplete="off"
+					class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+					onkeydown={(event) => {
+						if (event.key === 'Enter' && shareTo.trim()) void share();
+					}}
+				/>
+				<button type="button" class="btn-tactile !h-[30px] {shareTo.trim() ? 'btn-primary' : ''}" disabled={shareBusy || !shareTo.trim()} onclick={share}>
+					Share
+				</button>
 			</div>
 		{/if}
 	</div>

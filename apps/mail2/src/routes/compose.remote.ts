@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { command } from '$app/server';
 import { accountKey } from '@zaur/server-auth';
 import { resolveSendFrom, type JMAPClient } from '@zaur/mail-core';
-import { connect, requireAccount } from '#lib/server/account';
+import { connect, refuse, requireAccount } from '#lib/server/account';
 import { inlineImages } from '#lib/server/inline-images';
 
 function schema<T>() {
@@ -69,12 +69,15 @@ function cleanRecipients(list: string[] | undefined): string[] {
  */
 async function sender(client: JMAPClient, from: string | undefined) {
 	const wanted = String(from ?? '').trim();
-	const resolved = resolveSendFrom(wanted, client.getUsername(), await client.getIdentities());
+	const identities = await client.getIdentities();
+	const resolved = resolveSendFrom(wanted, client.getUsername(), identities);
 	if (wanted && !resolved.identity) error(400, `You can't send from ${wanted}`);
+	// An alias with no name of its own goes out under the account's name.
+	const primary = resolveSendFrom('', client.getUsername(), identities).identity;
 	return {
 		identityId: resolved.identity?.id,
 		fromEmail: resolved.email,
-		fromName: resolved.identity?.name?.trim() || undefined
+		fromName: resolved.identity?.name?.trim() || primary?.name?.trim() || undefined
 	};
 }
 
@@ -134,7 +137,7 @@ export const cancelScheduled = command(
 	schema<{ emailId: string }>(),
 	async ({ emailId }: { emailId: string }): Promise<{ ok: true }> => {
 		const client = await connect();
-		await client.cancelScheduledSend(emailId);
+		await client.cancelScheduledSend(String(emailId)).catch(refuse);
 		return { ok: true };
 	}
 );
