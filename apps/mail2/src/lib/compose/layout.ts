@@ -41,9 +41,10 @@ export function bodyHeightPx(draft: Draft): 84 | 112 | 340 {
 
 /**
  * Panel height while `auto` is on, computed by hand so it can animate
- * (a CSS transition to `height: auto` never runs).
+ * (a CSS transition to `height: auto` never runs). The attachment strip wraps
+ * by chip width, so the panel passes its measured height (one row is 54).
  */
-export function computeAutoHeight(draft: Draft): number {
+export function computeAutoHeight(draft: Draft, stripH = 54): number {
 	// Chips wrap about two to a line, and every address row grows the same way.
 	const chipRows = (list: { length: number }) => Math.ceil(list.length / 2) * 32;
 	return (
@@ -53,7 +54,7 @@ export function computeAutoHeight(draft: Draft): number {
 		bodyHeightPx(draft) +
 		(draft.ccShown ? 44 + chipRows(draft.cc) : 0) +
 		(draft.bccShown ? 44 + chipRows(draft.bcc) : 0) +
-		(draft.attachments.length > 0 ? 54 : 0) +
+		(draft.attachments.length > 0 ? stripH : 0) +
 		(draft.sendError ? 34 : 0) +
 		53 // action bar
 	);

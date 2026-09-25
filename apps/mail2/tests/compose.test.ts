@@ -249,6 +249,10 @@ test('computeAutoHeight matches the spec formula', () => {
 		),
 		45 + 44 + 32 + 45 + 340 + 44 + 32 + 53
 	);
+	// Attachments add the strip: one row until the panel has measured it, then as drawn.
+	const attached = draft({ to: [chip('a@x.com')], subject: 'Hi', attachments: [{ id: 'a', name: 'a.pdf', type: 'application/pdf', size: 1, blobId: 'b', status: 'ready' }] });
+	assert.equal(computeAutoHeight(attached), 45 + 44 + 32 + 45 + 340 + 54 + 53);
+	assert.equal(computeAutoHeight(attached, 92), 45 + 44 + 32 + 45 + 340 + 92 + 53);
 });
 
 test('maximizedRect: fills the pane between the top bar and the status line', () => {

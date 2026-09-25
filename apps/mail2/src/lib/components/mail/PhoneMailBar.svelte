@@ -301,7 +301,7 @@
 				{#if activeMailbox && activeMailbox.unread > 0}
 					<!-- The count lives in the drawer too; on a very narrow phone the name wins. -->
 					<span
-						class="z-count !h-[18px] !min-w-[18px] !px-1 !text-[11px] max-[359px]:hidden"
+						class="z-count [--z-count-h:18px] !px-1 !text-[11px] max-[359px]:hidden"
 						style:--z-stroke={COUNT_BADGE.border}
 						style:--z-ink-on={COUNT_BADGE.text}
 						style:background-color={COUNT_BADGE.bg}

@@ -148,7 +148,7 @@
 							<span class="min-w-0 truncate">{activeMailbox?.name ?? 'Folder'}</span>
 							{#if activeMailbox && activeMailbox.unread > 0}
 								<span
-									class="z-count !h-[17px] !min-w-[17px] !px-1 !text-[10px]"
+									class="z-count [--z-count-h:17px] !px-1 !text-[10px]"
 									style:--z-stroke={COUNT_BADGE.border}
 									style:--z-ink-on={COUNT_BADGE.text}
 									style:background-color={COUNT_BADGE.bg}

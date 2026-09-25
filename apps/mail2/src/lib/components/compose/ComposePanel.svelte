@@ -68,11 +68,13 @@
 	const rect = $derived(
 		maximized ? maximizedRect(rootW, rootH) : { x: draft.x, y: draft.y, w: draft.w, h: draft.h }
 	);
+	/** The attachment strip's height as drawn: its chips wrap into as many rows as they need. */
+	let stripH = $state(0);
 	// An auto height never runs off a short shell: the field column scrolls instead.
 	const height = $derived(
 		maximized || !draft.auto
 			? rect.h
-			: Math.max(PANEL_MIN_H, Math.min(computeAutoHeight(draft), rootH - draft.y - EDGE))
+			: Math.max(PANEL_MIN_H, Math.min(computeAutoHeight(draft, stripH || undefined), rootH - draft.y - EDGE))
 	);
 	const step = $derived(computeStep(draft));
 	const bodyHeight = $derived(bodyHeightPx(draft));
@@ -856,7 +858,11 @@
 
 	<!-- Attachment strip -->
 	{#if draft.attachments.length > 0}
-		<div class="flex max-h-[66px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4">
+		<!-- Up to three rows of chips before it scrolls; the panel grows to hold them. -->
+		<div
+			bind:offsetHeight={stripH}
+			class="flex max-h-[130px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4 [scrollbar-width:thin]"
+		>
 			{#each draft.attachments as attachment (attachment.id)}
 				{@const badge = attachmentBadge(attachment.type)}
 				{@const failed = attachment.status === 'error'}

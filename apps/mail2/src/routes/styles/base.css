@@ -434,14 +434,15 @@
 		background: var(--z-fill, var(--z-surface));
 	}
 
-	/* A count: mono, 19px, on a white ground with the channel's stroke. */
+	/* A count: mono, 19px (`--z-count-h`), on a white ground with the channel's stroke. */
 	.z-count {
+		--z-count-h: 19px;
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		height: 19px;
-		min-width: 19px;
+		height: var(--z-count-h);
+		min-width: var(--z-count-h);
 		padding: 0 5px;
 		border-radius: 5px;
 		border: 1px solid var(--z-stroke, var(--z-line));
@@ -451,6 +452,30 @@
 		font-weight: 600;
 		font-variant-numeric: tabular-nums;
 		color: var(--z-ink-on, var(--z-muted));
+	}
+
+	/*
+	 * A line box centres the font's ascent and descent, not its caps: Ioskeley
+	 * has less room above its caps than it keeps below the baseline, so the
+	 * text of a chip or count sat about half a pixel high. Where the browser
+	 * can trim the line box to the caps, these become block boxes trimmed that
+	 * way — `text-box` does nothing to a flex container — and the padding makes
+	 * up the same outer height. Both only ever hold text.
+	 */
+	@supports (text-box: trim-both cap alphabetic) {
+		.z-chip,
+		.z-count {
+			display: inline-block;
+			text-box: trim-both cap alphabetic;
+		}
+		.z-chip {
+			/* As tall as line-height 1.5 plus the 1px each side it had. */
+			padding-block: calc((1.5em - 1cap) / 2 + 1px);
+		}
+		.z-count {
+			padding-block: calc((var(--z-count-h) - 2px - 1cap) / 2);
+			text-align: center;
+		}
 	}
 
 	/*
