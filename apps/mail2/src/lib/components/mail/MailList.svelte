@@ -105,6 +105,7 @@
 	/** Toggles act on the majority state: all-read selection → "Mark unread". */
 	const allRead = $derived(selectedRows.length > 0 && selectedRows.every((row) => !row.unread));
 	const allStarred = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.starred));
+	const allImportant = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.important));
 	const moveTargets = $derived(
 		(mailboxes ?? []).filter((box) => box.id !== mailbox?.id && box.kind !== 'drafts' && box.kind !== 'scheduled')
 	);
@@ -148,11 +149,15 @@
 
 	/**
 	 * A row's channel: a flag outranks the server's "important", then the
-	 * category says what it is, and a person's mail is correspondence. The
-	 * folder it sits in plays no part.
+	 * category says what it is, then the folder — mail you wrote, mail that is
+	 * gone. In search results a row's own mailbox is what counts, not the one
+	 * the search ran from.
 	 */
 	function rowChannel(row: ListRow) {
-		return messageChannel({ starred: row.starred, important: row.important, category: row.category });
+		const kind = searchQuery && searchAll
+			? (mailboxes ?? []).find((box) => box.id === row.mailboxId)?.kind
+			: mailbox?.kind;
+		return messageChannel({ mailboxKind: kind, starred: row.starred, important: row.important, category: row.category });
 	}
 
 	const EMPTY_COPY: Record<string, { title: string; hint: string }> = {
@@ -292,6 +297,16 @@
 							onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
 						>
 							<ActionIcon name={allStarred ? 'flag-filled' : 'flag'} class="size-[15px]" />
+						</button>
+						<button
+							type="button"
+							class="z-icon-btn {allImportant ? '!text-[var(--z-ch-needs-solid)] hover:!bg-[var(--z-ch-needs-fill)]' : ''}"
+							disabled={busy}
+							aria-label={allImportant ? 'Not important' : 'Mark important'}
+							title={allImportant ? 'Not important (i)' : 'Mark important (i)'}
+							onclick={() => onBulk(allImportant ? 'unimportant' : 'important')}
+						>
+							<ActionIcon name={allImportant ? 'important-filled' : 'important'} class="size-[15px]" />
 						</button>
 						<button
 							type="button"
@@ -494,7 +509,7 @@
 			{#each groups as group (group.label)}
 				<!-- Group divider: stays put while its own rows scroll under it. -->
 				<div
-					class="sticky top-0 z-[5] -mx-3.5 flex items-center gap-2.5 bg-[color-mix(in_oklab,var(--z-surface)_95%,transparent)] px-3.5 pt-3 pb-2 backdrop-blur max-md:-mx-3 max-md:px-3"
+					class="sticky top-0 z-[5] -mx-3.5 flex items-center gap-2.5 bg-[color-mix(in_oklab,var(--z-surface)_95%,transparent)] px-3.5 pt-3 pb-[7px] backdrop-blur max-md:-mx-3 max-md:px-3"
 					role="separator"
 					aria-label={group.label}
 				>
@@ -503,7 +518,8 @@
 					<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)]">{group.rows.length}</span>
 				</div>
 
-				<div class="flex flex-col gap-2 pb-2">
+				<!-- The pixel above is for a selected first row's ring, which the divider would otherwise cover. -->
+				<div class="flex flex-col gap-2 pt-px pb-2">
 					{#each group.rows as row (row.threadId)}
 						{@const isCursor = row.threadId === cursorId}
 						{@const isOpen = row.threadId === openThreadId}
@@ -624,6 +640,17 @@
 									onclick={(event) => rowAction(event, row.threadId, row.starred ? 'unstar' : 'star')}
 								>
 									<ActionIcon name={row.starred ? 'flag-filled' : 'flag'} class="size-[15px]" />
+								</button>
+								<button
+									type="button"
+									tabindex="-1"
+									class="z-icon-btn {row.important ? '!text-[var(--z-ch-needs-solid)] hover:!bg-[var(--z-ch-needs-fill)]' : ''}"
+									aria-label={row.important ? 'Not important' : 'Mark important'}
+									aria-pressed={row.important}
+									title={row.important ? 'Not important (i)' : 'Mark important (i)'}
+									onclick={(event) => rowAction(event, row.threadId, row.important ? 'unimportant' : 'important')}
+								>
+									<ActionIcon name={row.important ? 'important-filled' : 'important'} class="size-[15px]" />
 								</button>
 								<button
 									type="button"

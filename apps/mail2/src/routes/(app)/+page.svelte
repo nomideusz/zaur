@@ -865,6 +865,14 @@
 				runRowShortcut(starred ? 'unstar' : 'star');
 				break;
 			}
+			case 'i': {
+				event.preventDefault();
+				const important = selection.size > 0
+					? flatRows.filter((row) => selection.has(row.threadId)).every((row) => row.important)
+					: (cursorRow?.important ?? false);
+				runRowShortcut(important ? 'unimportant' : 'important');
+				break;
+			}
 			case 'e':
 				event.preventDefault();
 				if (archiveTarget) runRowShortcut('move', archiveTarget.id);

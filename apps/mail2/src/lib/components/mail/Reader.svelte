@@ -146,7 +146,7 @@
 
 	/** The thread's channel — the sender card wears it, so list and reader read as one object. */
 	const channel = $derived(
-		messageChannel({ starred, important, category: latest?.category })
+		messageChannel({ mailboxKind, starred, important, category: latest?.category })
 	);
 
 	/** A chip only for state the message carries — see `messageChannel`. */
@@ -267,6 +267,16 @@
 						onclick={() => onAction(starred ? 'unstar' : 'star')}
 					>
 						<ActionIcon name={starred ? 'flag-filled' : 'flag'} class="size-[15px] max-md:size-[17px]" />
+					</button>
+					<button
+						type="button"
+						class="z-icon-btn @max-md:hidden {important ? '!bg-[var(--z-ch-needs-fill)] !text-[var(--z-ch-needs-solid)]' : ''}"
+						aria-label={important ? 'Not important' : 'Mark important'}
+						aria-pressed={important}
+						title={important ? 'Not important (i)' : 'Mark important (i)'}
+						onclick={() => onAction(important ? 'unimportant' : 'important')}
+					>
+						<ActionIcon name={important ? 'important-filled' : 'important'} class="size-[15px]" />
 					</button>
 					<button type="button" class="z-icon-btn @max-md:hidden" aria-label={unread ? 'Mark read' : 'Mark unread'} title={unread ? 'Mark read' : 'Mark unread'} onclick={() => onAction(unread ? 'read' : 'unread')}>
 						<ActionIcon name={unread ? 'mail-open' : 'mail'} class="size-[15px]" />

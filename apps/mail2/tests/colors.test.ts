@@ -14,8 +14,9 @@ import {
 	messageChannel
 } from '../src/lib/mail/colors.ts';
 
-test('channels: a row is coloured by the label it carries, never by where it sits', () => {
+test('channels: a row is coloured by what it carries, then by where it is', () => {
 	assert.equal(messageChannel({}).key, 'correspondence');
+	assert.equal(messageChannel({ mailboxKind: 'inbox' }).key, 'correspondence');
 	assert.equal(messageChannel({ starred: true }).key, 'flagged');
 	assert.equal(messageChannel({ important: true }).key, 'needs');
 	// Your own flag outranks the server's "important".
@@ -28,6 +29,14 @@ test('channels: a row is coloured by the label it carries, never by where it sit
 	// A mark still outranks the category.
 	assert.equal(messageChannel({ category: 'newsletters', starred: true }).key, 'flagged');
 	assert.equal(messageChannel({ category: 'receipts', important: true }).key, 'needs');
+	// Then the place: what you wrote, what is gone.
+	assert.equal(messageChannel({ mailboxKind: 'sent' }).key, 'confirmed');
+	assert.equal(messageChannel({ mailboxKind: 'drafts' }).key, 'confirmed');
+	assert.equal(messageChannel({ mailboxKind: 'junk' }).key, 'discard');
+	assert.equal(messageChannel({ mailboxKind: 'trash' }).key, 'discard');
+	// A label still wins over the place.
+	assert.equal(messageChannel({ mailboxKind: 'trash', starred: true }).key, 'flagged');
+	assert.equal(messageChannel({ mailboxKind: 'sent', category: 'receipts' }).key, 'digest');
 });
 
 test('channels: a label and a rule action wear the hue the rows they name would', () => {
@@ -40,13 +49,19 @@ test('channels: a label and a rule action wear the hue the rows they name would'
 	assert.equal(categoryChannel(undefined).key, 'correspondence');
 });
 
-test('channels: a folder is a place, so every folder is the one neutral hue', () => {
-	for (const kind of ['inbox', 'archive', 'sent', 'drafts', 'junk', 'trash', 'custom', undefined]) {
-		assert.equal(mailboxChannel(kind).key, 'correspondence', String(kind));
-	}
-	// So no folder can share a hue with a label and mean something else by it.
-	assert.notEqual(mailboxChannel('drafts').key, labelChannel('important').key);
-	assert.notEqual(mailboxChannel('sent').key, labelChannel('cat:receipts').key);
+test('channels: folders take a hue no label uses', () => {
+	assert.equal(mailboxChannel('inbox').key, 'correspondence');
+	assert.equal(mailboxChannel('archive').key, 'correspondence');
+	assert.equal(mailboxChannel('custom').key, 'correspondence');
+	assert.equal(mailboxChannel(undefined).key, 'correspondence');
+	assert.equal(mailboxChannel('drafts').key, 'confirmed');
+	assert.equal(mailboxChannel('sent').key, 'confirmed');
+	assert.equal(mailboxChannel('scheduled').key, 'confirmed');
+	assert.equal(mailboxChannel('junk').key, 'discard');
+	assert.equal(mailboxChannel('trash').key, 'discard');
+	// The sharing that confused: Drafts is not Important's amber, Sent is not a category's violet.
+	const labelHues = new Set(['flagged', 'important', 'cat:receipts'].map((f) => labelChannel(f as never).key));
+	for (const kind of ['drafts', 'sent', 'junk', 'trash']) assert.ok(!labelHues.has(mailboxChannel(kind).key), kind);
 });
 
 test('channels: every part is a token reference, so a channel follows the theme', () => {

@@ -16,6 +16,8 @@
 		name:
 			| 'flag'
 			| 'flag-filled'
+			| 'important'
+			| 'important-filled'
 			| 'mail'
 			| 'mail-open'
 			| 'archive'
@@ -49,6 +51,21 @@
 	>
 		<path d="M3.5 14.5V2.2" fill="none" />
 		<path d="M3.5 2.5h9.3l-2.4 3.2 2.4 3.2H3.5z" />
+	</svg>
+{:else if name === 'important' || name === 'important-filled'}
+	<!-- The importance marker: a pointer, filled once it is set. -->
+	<svg
+		class={className}
+		viewBox="0 0 16 16"
+		fill={name === 'important-filled' ? 'currentColor' : 'none'}
+		stroke="currentColor"
+		stroke-width="1.3"
+		stroke-linejoin="round"
+		role={label ? 'img' : undefined}
+		aria-label={label}
+		aria-hidden={label ? undefined : 'true'}
+	>
+		<path d="M2.5 3.2h6.2L13.5 8l-4.8 4.8H2.5L6.6 8z" />
 	</svg>
 {:else if name === 'mail-open'}
 	<!-- An open envelope is the action that makes something read. -->

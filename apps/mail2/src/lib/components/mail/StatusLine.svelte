@@ -48,6 +48,7 @@
 				<kbd class="z-kbd">↵</kbd> open
 				<kbd class="z-kbd">x</kbd> select
 				<kbd class="z-kbd">s</kbd> flag
+				<kbd class="z-kbd">i</kbd> important
 				<kbd class="z-kbd">e</kbd> archive
 			</div>
 		{:else}
