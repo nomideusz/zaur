@@ -325,9 +325,10 @@
 
 	// --- compose ---
 
-	function afterMailMutation() {
+	/** A draft save touches only Drafts; a send (or its undo) lands anywhere — Sent, Scheduled, the thread you replied in. */
+	function afterMailMutation(anyList = false) {
 		void mailboxesResource?.refresh();
-		if (activeMailbox?.kind === 'drafts') void listResource?.refresh();
+		if (anyList || activeMailbox?.kind === 'drafts') void listResource?.refresh();
 	}
 
 	compose.setTransport({
@@ -336,10 +337,14 @@
 		},
 		send: async (payload) => {
 			const result = await sendRemote(payload);
-			afterMailMutation();
+			afterMailMutation(true);
 			return result;
 		},
-		cancelScheduled: (emailId) => cancelScheduled({ emailId }),
+		cancelScheduled: async (emailId) => {
+			const result = await cancelScheduled({ emailId });
+			afterMailMutation(true);
+			return result;
+		},
 		uploadAttachment: uploadFile,
 		saveDraft: async (input) => {
 			const result = await saveDraftRemote(input);
