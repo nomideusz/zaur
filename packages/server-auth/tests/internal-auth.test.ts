@@ -2,8 +2,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { createHash, createHmac } from 'node:crypto';
 import { DatabaseSync } from 'node:sqlite';
-import { safeNextPath, verifyInternalSignature } from '../src/lib/server/internal-auth.ts';
-import { consumeOneTimeCode, createOneTimeCode } from '../src/lib/server/oidc/core.ts';
+import { safeNextPath, verifyInternalSignature } from '../src/internal-auth.ts';
+import { consumeOneTimeCode, createOneTimeCode } from '../src/oidc.ts';
 
 // Signature exactly as apps/register/lib/webmail-handoff.js produces it.
 function registerSign(secret: string, ts: string, nonce: string, method: string, path: string, body: string) {

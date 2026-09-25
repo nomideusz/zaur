@@ -1,7 +1,7 @@
 import type { PageServerLoad } from './$types';
 import { isPasswordResetEnabled } from '$lib/server/register-api';
 import { allOidcRedirectUris, findOidcClient, findOidcClientByOrigin } from '$lib/server/oidc';
-import { postLogoutTarget } from '$lib/server/oidc/core';
+import { postLogoutTarget } from '@zaur/server-auth/oidc';
 
 // Resolve the sign-in config during SSR so the form is in the initial HTML. Mobile users
 // arriving from registration must never wait on client-side JS just to see the inputs.

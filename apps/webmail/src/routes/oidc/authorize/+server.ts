@@ -1,7 +1,7 @@
 import { error, redirect, type RequestHandler } from '@sveltejs/kit';
 import { readSession } from '$lib/server/session';
 import { findOidcClient, oidcProviderEnabled, resolveOidcIdentity } from '$lib/server/oidc';
-import { createAuthCode } from '$lib/server/oidc/core';
+import { createAuthCode } from '@zaur/server-auth/oidc';
 import { getStoreDb } from '$lib/server/store-instance';
 import { log } from '$lib/server/log';
 

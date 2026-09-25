@@ -1,6 +1,6 @@
 import { redirect, type RequestHandler } from '@sveltejs/kit';
 import { allOidcRedirectUris } from '$lib/server/oidc';
-import { postLogoutTarget } from '$lib/server/oidc/core';
+import { postLogoutTarget } from '@zaur/server-auth/oidc';
 
 /* Same-origin hop back to a relying party (only registered client origins),
  * so the login page can use a plain relative `next` to send someone who

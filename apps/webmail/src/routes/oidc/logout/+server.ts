@@ -1,6 +1,6 @@
 import { redirect, type RequestHandler } from '@sveltejs/kit';
 import { allOidcRedirectUris } from '$lib/server/oidc';
-import { postLogoutTarget } from '$lib/server/oidc/core';
+import { postLogoutTarget } from '@zaur/server-auth/oidc';
 import { removePushSubscriptionsForSession } from '$lib/server/push-subscriptions';
 import { pushWatcher } from '$lib/server/push-watcher';
 import { clearSession, COOKIE_NAME } from '$lib/server/session';

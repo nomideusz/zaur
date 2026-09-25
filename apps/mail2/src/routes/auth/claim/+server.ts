@@ -1,19 +1,19 @@
 import { createHash } from 'node:crypto';
 import { redirect, type RequestHandler } from '@sveltejs/kit';
+import { getStoreDb, recordSessionDevice, unsealSession, writeSession, type SessionData } from '@zaur/server-auth';
 import { consumeOneTimeCode } from '@zaur/server-auth/oidc';
-import { recordSessionDevice, unsealSession, writeSession, type SessionData } from '$lib/server/session';
-import { getStoreDb } from '$lib/server/store-instance';
-import { getClientAddress } from '$lib/server/rate-limit';
 import type { HandoffPayload } from '@zaur/server-auth/internal-auth';
+import { getClientAddress } from '#lib/server/login';
 
-/* Second half of the signup handoff: turn the one-time token minted by
- * /api/internal/handoff into a session cookie, then continue to `next` (the
- * OIDC authorize URL when signup started in another app) or the inbox. */
+/* Second half of the signup handoff: the one-time token from
+ * /api/internal/handoff becomes the session cookie, then on to `next` (the
+ * OIDC authorize URL when signup began in another app) or the inbox. A used
+ * or expired token is just a sign-in, with a welcome. */
 export const GET: RequestHandler = ({ url, cookies, request }) => {
 	const token = url.searchParams.get('token') ?? '';
 	const payload = token ? consumeOneTimeCode<HandoffPayload>(getStoreDb(), token) : null;
 	const data = payload ? (unsealSession(payload.sealed) as SessionData | null) : null;
-	if (!data) redirect(303, '/login');
+	if (!data) redirect(303, '/login?welcome=1');
 
 	writeSession(cookies, data, { remember: false });
 	recordSessionDevice(

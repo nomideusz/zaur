@@ -44,7 +44,9 @@ theme only** for now. Files is built from the shell's own parts (no design of it
   [New-mail notifications](#new-mail-notifications-web-push) §
 - [x] Several accounts in one session: add, switch, sign out of one — see
   [Several accounts](#several-accounts) §
-- [ ] OIDC provider flows (mail2 as an identity provider) — post-cutover
+- [x] What 1.0 did around sign-in: forgotten password, the signup handoff from
+  register, mail as the OIDC sign-in for Bartube, CSP and security headers —
+  see [Sign-in](#sign-in) §
 
 † **Written and tested, but never run against a live Stalwart.** See
 [Not yet proven against a server](#not-yet-proven-against-a-server).
@@ -89,6 +91,32 @@ The credential flow reuses webmail 1.0's exactly, via the shared
 Because both apps share the store/cookie/secret, a webmail 1.0 login still
 lands you in mail2 and vice versa — sharing is now a feature, not a
 dependency. Signing out in either app revokes the shared session record.
+
+The rest of what 1.0 did around sign-in, so mail2 can take over its hostname:
+
+- **Forgotten password** (`/forgot-password`, `/forgot-password/reset`):
+  register holds the recovery addresses and sends the link, which lands here
+  (`src/routes/reset.remote.ts`). Register rate-limits by IP, and every call
+  comes from this server, so the person's own address rides along, signed with
+  `REGISTER_INTERNAL_SECRET`. The token is checked before the form is shown.
+- **Signup handoff**: after creating an account, register signs a POST to
+  `/api/internal/handoff` with the new credentials; mail2 builds the session
+  as `/login` would and parks it behind a one-time `/auth/claim?token=` URL.
+  The browser follows it and arrives signed in. An old or used link is a
+  sign-in with a welcome (`/login?welcome=1`).
+- **OIDC provider** for our own apps (`/oidc/authorize|token|jwks|logout`,
+  `/.well-known/openid-configuration`, clients from `OIDC_PROVIDER_CLIENTS`):
+  code flow with PKCE, RS256 id_tokens whose claims pass Stalwart's userinfo
+  through, plus name and roles from register. The protocol core is shared
+  with 1.0 (`@zaur/server-auth/oidc`), and so is the signing key: it lives in
+  the session store, so the JWKS does not change at the cutover. Signing out
+  of Bartube lands on `/login?signed_out=1`, whose sign-in returns there via
+  `/auth/return`. `/oidc/token` is the one form POST exempt from the
+  cross-site check: `csrf.trustedOrigins: ['*']` turns Kit's off and
+  `hooks.server.ts` does the same check with that one exception.
+- **Headers**: a nonce-based CSP (`csp` in `vite.config.ts`),
+  `X-Frame-Options: DENY`, `nosniff`, a referrer policy, and a
+  Permissions-Policy that allows camera and microphone on `/meet/` only.
 
 ## Running
 
@@ -1201,6 +1229,11 @@ Remote **commands and forms** need `pnpm dev:mail2` locally, not `node build`:
 adapter-node 6 no longer reads `ORIGIN` and assumes `https`, so over plain
 `http://127.0.0.1` every POST is refused as cross-site (403). Queries still work.
 
+It also answers register's `/api/forgot-password/*` (point `REGISTER_API_URL`
+at it; `smoke-token` is the one good token). `tests/smoke/oidc-rp.mjs` plays
+Bartube and register against the dev server: authorize, token, handoff, claim,
+logout. Its header has the env to start the dev server with.
+
 It is a fake: it proves the plumbing, not Stalwart's acceptance of it. The
 first run against the real server is still a test — see the table below.
 
@@ -1314,9 +1347,8 @@ signed in. After that:
 ## What is still missing
 
 Measured against webmail 1.0 and against what Stalwart actually implements:
-the two items above, and — post-cutover by ADR-0005 — mail2 acting as an OIDC
-provider. Stalwart itself is one (`/.well-known/openid-configuration`,
-`/auth/userinfo`), which is worth knowing before building another.
+the two items above, and push to the Android shell (1.0's FCM path for the
+Capacitor app).
 
 Two smaller notes:
 

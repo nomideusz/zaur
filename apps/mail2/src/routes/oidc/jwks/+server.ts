@@ -1,8 +1,8 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { oidcKeypair, oidcProviderEnabled } from '$lib/server/oidc';
 import { publicJwks } from '@zaur/server-auth/oidc';
+import { oidcClients, oidcKeypair } from '#lib/server/oidc';
 
 export const GET: RequestHandler = () => {
-	if (!oidcProviderEnabled()) error(404, 'Not found');
+	if (!oidcClients().length) error(404, 'Not found');
 	return json(publicJwks(oidcKeypair()));
 };

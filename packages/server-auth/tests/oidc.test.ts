@@ -14,7 +14,7 @@ import {
 	type AuthCodeData,
 	postLogoutTarget,
 	parseOidcClients
-} from '../src/lib/server/oidc/core.ts';
+} from '../src/oidc.ts';
 
 const CLAIMS = { sub: '125', preferred_username: 'user@zaur.app', email: 'user@zaur.app' };
 const CODE_DATA: AuthCodeData = {

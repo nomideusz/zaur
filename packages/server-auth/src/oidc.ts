@@ -2,8 +2,9 @@
  * Minimal OIDC provider core: RS256 keypair, id_token signing, one-time
  * authorization codes, and PKCE verification. Pure node (no SvelteKit imports)
  * so `node --test` can exercise it against an in-memory DatabaseSync — the
- * same split as `store-db.ts`. Env wiring and the Stalwart identity lookup
- * live in `./index.ts`; the HTTP surface lives in `src/routes/oidc/*`.
+ * same split as `store-db.ts`. Shared by webmail and mail2, which keep the env
+ * wiring, the Stalwart identity lookup and the `/oidc/*` routes; both use the
+ * same `oidc_*` tables, so whichever serves the issuer signs with one key.
  *
  * Deliberately supports exactly what our relying parties need: authorization
  * code flow with mandatory PKCE (S256), one static client, RS256 id_tokens.

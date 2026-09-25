@@ -7,8 +7,8 @@ import {
 	safeNextPath,
 	verifyInternalSignature,
 	type HandoffPayload
-} from '$lib/server/internal-auth';
-import { createOneTimeCode } from '$lib/server/oidc/core';
+} from '@zaur/server-auth/internal-auth';
+import { createOneTimeCode } from '@zaur/server-auth/oidc';
 import { sealSession } from '$lib/server/session';
 import { getStoreDb } from '$lib/server/store-instance';
 import { log } from '$lib/server/log';

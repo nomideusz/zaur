@@ -13,7 +13,7 @@ import { getStalwartOauthIssuer } from '$lib/server/oauth-config';
 import { getStoreDb } from '$lib/server/store-instance';
 import { getAccountProfile } from '$lib/server/recovery-service';
 import { log } from '$lib/server/log';
-import { getOrCreateKeypair, parseOidcClients, type OidcClient, type OidcKeypair } from './core';
+import { getOrCreateKeypair, parseOidcClients, type OidcClient, type OidcKeypair } from '@zaur/server-auth/oidc';
 
 export type OidcProviderClient = OidcClient;
 

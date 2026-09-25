@@ -751,6 +751,28 @@ http
 			});
 			return;
 		}
+		// Register's password-reset API (REGISTER_API_URL=http://127.0.0.1:9911):
+		// the one good token is `smoke-token`, and the reset logs the request.
+		if (req.url.startsWith('/api/forgot-password/')) {
+			const route = new URL(req.url, BASE);
+			let body = '';
+			req.on('data', (chunk) => (body += chunk));
+			req.on('end', () => {
+				const input = req.method === 'GET' ? Object.fromEntries(route.searchParams) : JSON.parse(body || '{}');
+				const valid = input.token === 'smoke-token';
+				const answer = route.pathname.endsWith('/request')
+					? [200, { ok: true, message: 'If an account exists for that address, we sent reset instructions to its recovery email.' }]
+					: !valid
+						? [400, { valid: false, error: 'This reset link is invalid or has expired.' }]
+						: route.pathname.endsWith('/verify')
+							? [200, { valid: true, mailboxEmail: input.email }]
+							: [200, { success: true, mailboxEmail: input.email }];
+				log('register', route.pathname, input.email, req.headers['x-zaur-client-ip'] ?? '(no client ip)');
+				res.writeHead(answer[0], { 'Content-Type': 'application/json' });
+				res.end(JSON.stringify(answer[1]));
+			});
+			return;
+		}
 		if (req.method === 'POST' && req.url === '/smoke/deliver') {
 			let body = '';
 			req.on('data', (chunk) => (body += chunk));

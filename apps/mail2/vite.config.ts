@@ -25,6 +25,38 @@ export default defineConfig({
 					async: true
 				}
 			},
+			// Kit's form origin check, redone in hooks.server.ts so /oidc/token can skip it.
+			csrf: { trustedOrigins: ['*'] },
+			// Kit nonces its own inline scripts and app.html's (`%sveltekit.nonce%`);
+			// styles keep 'unsafe-inline' — Svelte, Trix and mail bodies all use inline style.
+			csp: {
+				mode: 'auto',
+				directives: {
+					'default-src': ['self'],
+					'script-src': ['self'],
+					'style-src': ['self', 'unsafe-inline'],
+					// Remote images in mail (behind the Show images banner), previews as blob:.
+					'img-src': ['self', 'data:', 'blob:', 'https:'],
+					'font-src': ['self'],
+					// Attachment previews are blob: URLs; Meet's camera tiles are mediastream:.
+					'media-src': ['self', 'blob:', 'mediastream:'],
+					// Traceway takes the browser's error reports; Meet talks to LiveKit
+					// Cloud (signal over wss, region lookup over https, TURN relays).
+					'connect-src': [
+						'self',
+						'https://traceway.zaur.app',
+						'https://*.livekit.cloud',
+						'wss://*.livekit.cloud',
+						'https://*.turn.livekit.cloud',
+						'wss://*.turn.livekit.cloud'
+					],
+					'worker-src': ['self', 'blob:'],
+					'frame-ancestors': ['none'],
+					'base-uri': ['self'],
+					'form-action': ['self'],
+					'object-src': ['none']
+				}
+			},
 			experimental: {
 				remoteFunctions: true
 			},
