@@ -11,6 +11,7 @@
 import { CATEGORIES, CATEGORY_OTHER, categoryKeyword, categoryOf } from '@zaur/mail-core';
 import type { JMAPClient, JMAPEmail } from '@zaur/mail-core';
 import { getAccountPrefs, getStoreDb } from '@zaur/server-auth';
+import { AI_CONFIDENCE_FLOOR, parsePrefs } from '#lib/settings';
 
 const ENDPOINT = 'https://api.typesafe.ai/v1/systemone';
 const MAX_PER_LIST = 25;
@@ -27,6 +28,7 @@ const BULK_HEADERS = ['List-Id', 'List-Unsubscribe', 'Precedence', 'Auto-Submitt
 const CLASSIFY_PROPERTIES = [
 	'id',
 	'keywords',
+	'mailboxIds',
 	'from',
 	'subject',
 	'preview',
@@ -37,12 +39,29 @@ const CLASSIFY_PROPERTIES = [
 
 export const aiCategoriesAvailable = () => !!process.env.TYPESAFE_API_KEY;
 
-/** The account's own switch; the list query and the push watcher both ask. */
-export function aiCategoriesOn(accountKey: string): boolean {
+/** What the account asked for in Settings → Rules & categories. */
+export interface AiSettings {
+	on: boolean;
+	/** Choice confidence below which the answer is Other. */
+	floor: number;
+	/** Sender, subject and list headers only — no text leaves the server. */
+	headersOnly: boolean;
+	/** Newsletters the AI finds in the inbox go to Archive. */
+	archiveNewsletters: boolean;
+}
+
+/** The account's own settings; the list query, the push watcher and the re-check all ask. */
+export function aiSettings(accountKey: string): AiSettings {
 	try {
-		return !!JSON.parse(getAccountPrefs(getStoreDb(), accountKey) ?? '{}').aiCategories;
+		const prefs = parsePrefs(getAccountPrefs(getStoreDb(), accountKey));
+		return {
+			on: prefs.aiCategories,
+			floor: AI_CONFIDENCE_FLOOR[prefs.aiConfidence],
+			headersOnly: prefs.aiHeadersOnly,
+			archiveNewsletters: prefs.aiArchiveNewsletters
+		};
 	} catch {
-		return false;
+		return { on: false, floor: 1, headersOnly: true, archiveNewsletters: false };
 	}
 }
 
@@ -58,9 +77,9 @@ let pausedUntil = 0;
 export function categorizeInBackground(
 	client: JMAPClient,
 	emails: Pick<JMAPEmail, 'id' | 'keywords'>[],
-	opts: { recheck?: boolean; limit?: number } = {}
+	opts: { ai: AiSettings; recheck?: boolean; limit?: number }
 ): number {
-	if (!aiCategoriesAvailable() || Date.now() < pausedUntil) return 0;
+	if (!aiCategoriesAvailable() || !opts.ai.on || Date.now() < pausedUntil) return 0;
 	const account = client.getAccountId();
 	const wanted = (email: Pick<JMAPEmail, 'keywords'>) =>
 		opts.recheck ? categoryOf(email.keywords) === CATEGORY_OTHER : !categoryOf(email.keywords);
@@ -69,28 +88,41 @@ export function categorizeInBackground(
 		.slice(0, opts.limit ?? MAX_PER_LIST);
 	if (todo.length === 0) return 0;
 	for (const email of todo) inFlight.add(`${account}:${email.id}`);
-	void run(client, todo.map((email) => email.id))
+	void run(client, todo.map((email) => email.id), opts.ai)
 		.catch((cause) => console.warn('[categorize]', cause))
 		.finally(() => todo.forEach((email) => inFlight.delete(`${account}:${email.id}`)));
 	return todo.length;
 }
 
-async function run(client: JMAPClient, ids: string[]): Promise<void> {
+async function run(client: JMAPClient, ids: string[], ai: AiSettings): Promise<void> {
 	const emails = await fetchForClassifier(client, ids);
-	const answers = await Promise.all(emails.map((email) => classify(email).catch(() => undefined)));
+	const answers = await Promise.all(emails.map((email) => classify(email, ai).catch(() => undefined)));
 	const patches: Record<string, Record<string, true | null>> = {};
+	const newsletters: ClassifierEmail[] = [];
 	emails.forEach((email, i) => {
 		const next = answers[i];
+		if (next === 'newsletters') newsletters.push(email);
 		const was = categoryOf(email.keywords);
 		if (!next || next === was) return;
 		patches[email.id] = { [categoryKeyword(next)]: true };
 		if (was) patches[email.id]![categoryKeyword(was)] = null;
 	});
 	await client.patchKeywords(patches);
+	if (ai.archiveNewsletters && newsletters.length > 0) await archive(client, newsletters);
+}
+
+/** Inbox → Archive for what the model called a newsletter; anything filed elsewhere is left where it is. */
+async function archive(client: JMAPClient, emails: ClassifierEmail[]): Promise<void> {
+	const boxes = await client.getMailboxes();
+	const inbox = boxes.find((box) => box.role === 'inbox')?.id;
+	const archive = boxes.find((box) => box.role === 'archive')?.id;
+	if (!inbox || !archive) return;
+	const ids = emails.filter((email) => email.mailboxIds?.[inbox]).map((email) => email.id);
+	await client.moveEmailsToMailbox(ids, archive, inbox);
 }
 
 /** `Email/get` shaped for the classifier: the list's fields plus headers and a slice of body. */
-export type ClassifierEmail = Pick<JMAPEmail, 'id' | 'keywords' | 'from' | 'subject' | 'preview' | 'textBody' | 'bodyValues'> &
+export type ClassifierEmail = Pick<JMAPEmail, 'id' | 'keywords' | 'mailboxIds' | 'from' | 'subject' | 'preview' | 'textBody' | 'bodyValues'> &
 	Partial<Record<`header:${(typeof BULK_HEADERS)[number]}:asText`, string | null>>;
 
 async function fetchForClassifier(client: JMAPClient, ids: string[]): Promise<ClassifierEmail[]> {
@@ -118,9 +150,10 @@ async function fetchForClassifier(client: JMAPClient, ids: string[]): Promise<Cl
 /**
  * What the model is shown, as named fields rather than one flattened string.
  * The body is the plain-text part when there is one; an HTML-only message
- * falls back to the server's preview rather than sending markup.
+ * falls back to the server's preview rather than sending markup. With
+ * `headersOnly` there is no body at all — not even the preview, which is text.
  */
-export function classifierState(email: ClassifierEmail) {
+export function classifierState(email: ClassifierEmail, headersOnly = false) {
 	const sender = email.from?.[0];
 	const bulk: Record<string, string> = {};
 	for (const name of BULK_HEADERS) {
@@ -136,7 +169,7 @@ export function classifierState(email: ClassifierEmail) {
 		from: { name: sender?.name ?? '', email: sender?.email ?? '' },
 		subject: email.subject ?? '',
 		...(Object.keys(bulk).length > 0 ? { bulk_headers: bulk } : {}),
-		body: (text || email.preview || '').slice(0, BODY_BYTES)
+		...(headersOnly ? {} : { body: (text || email.preview || '').slice(0, BODY_BYTES) })
 	};
 }
 
@@ -156,7 +189,7 @@ export function classifierQuestions() {
 		cat: {
 			type: 'choice',
 			instructions:
-				'What kind of email is this? `bulk_headers`, when present, are the mailing-list and automation headers the message carries; `body` is the start of its text.',
+				'What kind of email is this? `bulk_headers`, when present, are the mailing-list and automation headers the message carries; `body`, when present, is the start of its text.',
 			criteria
 		}
 	};
@@ -164,7 +197,10 @@ export function classifierQuestions() {
 
 const CRITERIA_IDS = new Set([...CATEGORIES.map((category) => category.id), CATEGORY_OTHER]);
 
-export async function classify(email: ClassifierEmail): Promise<string> {
+export async function classify(
+	email: ClassifierEmail,
+	opts: Pick<AiSettings, 'floor' | 'headersOnly'> = { floor: 0.5, headersOnly: false }
+): Promise<string> {
 	const controller = new AbortController();
 	const timer = setTimeout(() => controller.abort(), 8000);
 	try {
@@ -178,7 +214,7 @@ export async function classify(email: ClassifierEmail): Promise<string> {
 				},
 				body: JSON.stringify({
 					model: 'jev-latest',
-					state: classifierState(email),
+					state: classifierState(email, opts.headersOnly),
 					questions: classifierQuestions()
 				}),
 				signal: controller.signal
@@ -198,7 +234,7 @@ export async function classify(email: ClassifierEmail): Promise<string> {
 		};
 		const answer = data.answers?.cat;
 		if (!answer?.choice || !CRITERIA_IDS.has(answer.choice)) throw new Error('no answer');
-		return (answer.confidence ?? 0) < 0.5 ? CATEGORY_OTHER : answer.choice;
+		return (answer.confidence ?? 0) < opts.floor ? CATEGORY_OTHER : answer.choice;
 	} finally {
 		clearTimeout(timer);
 	}
@@ -216,7 +252,7 @@ const RECHECK_LIMIT = 200;
  * Give the messages the model marked Other another look, newest first. They
  * are the AI's alone: a rule can categorise, but never as Other.
  */
-export async function recheckOther(client: JMAPClient): Promise<number> {
+export async function recheckOther(client: JMAPClient, ai: AiSettings): Promise<number> {
 	const response = await client.request([
 		[
 			'Email/query',
@@ -244,5 +280,5 @@ export async function recheckOther(client: JMAPClient): Promise<number> {
 		throw new Error(failure?.description ?? failure?.type ?? 'Email/query failed');
 	}
 	const emails = ((got[1] as { list?: Pick<JMAPEmail, 'id' | 'keywords'>[] }).list ?? []).filter(Boolean);
-	return categorizeInBackground(client, emails, { recheck: true, limit: RECHECK_LIMIT });
+	return categorizeInBackground(client, emails, { ai, recheck: true, limit: RECHECK_LIMIT });
 }

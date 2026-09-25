@@ -26,7 +26,7 @@ import {
 	type SessionData
 } from '@zaur/server-auth';
 import type { JMAPClient, JMAPEmail } from '@zaur/mail-core';
-import { aiCategoriesOn, categorizeInBackground } from '#lib/server/categorize';
+import { aiSettings, categorizeInBackground } from '#lib/server/categorize';
 import { createConnectedClient } from '#lib/server/jmap';
 import { pushPublicKey, sendPush, type PushMessage } from '#lib/server/push';
 
@@ -301,7 +301,7 @@ class AccountWatcher {
 		const arrived = (await client.getEmailsByIds(created)).filter((email) => email.mailboxIds?.[inboxId]);
 		// Categorise as mail lands rather than when a list is next opened, so the
 		// chip and the label counts are right on first paint. Rules already ran.
-		if (aiCategoriesOn(this.key)) categorizeInBackground(client, arrived);
+		categorizeInBackground(client, arrived, { ai: aiSettings(this.key) });
 		const incoming = arrived.filter((email) => !email.keywords?.$seen);
 		if (incoming.length === 0) return;
 

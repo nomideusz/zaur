@@ -7,8 +7,11 @@ import {
 	classifierQuestions,
 	classifierState,
 	resetClassifierPause,
+	type AiSettings,
 	type ClassifierEmail
 } from '../src/lib/server/categorize.ts';
+
+const ai: AiSettings = { on: true, floor: 0.5, headersOnly: false, archiveNewsletters: false };
 
 const realFetch = globalThis.fetch;
 afterEach(() => {
@@ -20,6 +23,7 @@ afterEach(() => {
 const email = (over: Partial<ClassifierEmail> = {}): ClassifierEmail => ({
 	id: 'm1',
 	keywords: {},
+	mailboxIds: { inbox: true },
 	from: [{ name: 'Acme Store', email: 'orders@acme.example' }],
 	subject: 'Your order has shipped',
 	preview: 'Preview text',
@@ -58,6 +62,13 @@ test('classifierState: an HTML-only message falls back to the preview, not marku
 	assert.equal('bulk_headers' in classifierState(email({ 'header:List-Unsubscribe:asText': null, 'header:Precedence:asText': '' })), false);
 });
 
+test('classifierState: headers only leaves out the text and the preview both', () => {
+	const state = classifierState(email(), true);
+	assert.equal('body' in state, false);
+	assert.equal(state.subject, 'Your order has shipped');
+	assert.ok(state.bulk_headers);
+});
+
 test('classifierQuestions: one choice, every category with its contrast, plus other', () => {
 	const { cat } = classifierQuestions();
 	assert.equal(cat.type, 'choice');
@@ -81,6 +92,9 @@ test('classify: sends jev-latest with structured state, honours the confidence f
 
 	fakeFetch(200, { answers: { cat: { choice: 'receipts', confidence: 0.3 } } });
 	assert.equal(await classify(email()), 'other');
+	assert.equal(await classify(email(), { floor: 0.3, headersOnly: false }), 'receipts', 'eager takes it');
+	fakeFetch(200, { answers: { cat: { choice: 'receipts', confidence: 0.6 } } });
+	assert.equal(await classify(email(), { floor: 0.7, headersOnly: false }), 'other', 'cautious leaves it');
 
 	fakeFetch(200, { answers: { cat: { choice: 'spam', confidence: 0.9 } } });
 	await assert.rejects(classify(email()), /no answer/);
@@ -94,11 +108,11 @@ test('categorizeInBackground: a failed call pauses the next batch instead of re-
 		request: async () => ({ methodResponses: [['Email/get', { list: [email()] }, 'c']] }),
 		patchKeywords: async () => {}
 	} as never;
-	assert.equal(categorizeInBackground(client, [{ id: 'm1', keywords: {} }]), 1);
+	assert.equal(categorizeInBackground(client, [{ id: 'm1', keywords: {} }], { ai }), 1);
 	await new Promise((resolve) => setTimeout(resolve, 10));
 	assert.equal(seen.calls, 1);
 	// Same message, right after: paused, nothing queued, nothing sent.
-	assert.equal(categorizeInBackground(client, [{ id: 'm1', keywords: {} }]), 0);
+	assert.equal(categorizeInBackground(client, [{ id: 'm1', keywords: {} }], { ai }), 0);
 	assert.equal(seen.calls, 1);
 });
 
@@ -115,10 +129,37 @@ test('categorizeInBackground: already categorised mail is skipped, Other only on
 	} as never;
 	const done = { id: 'd1', keywords: { 'cat.receipts': true } };
 	const other = { id: 'o1', keywords: { 'cat.other': true } };
-	assert.equal(categorizeInBackground(client, [done, other]), 0);
-	assert.equal(categorizeInBackground(client, [done, other], { recheck: true }), 1);
+	assert.equal(categorizeInBackground(client, [done, other], { ai }), 0);
+	assert.equal(categorizeInBackground(client, [done, other], { ai: { ...ai, on: false }, recheck: true }), 0, 'off');
+	assert.equal(categorizeInBackground(client, [done, other], { ai, recheck: true }), 1);
 	await new Promise((resolve) => setTimeout(resolve, 10));
 	assert.equal(seen.calls, 1);
 	// The new keyword goes on and the old one comes off in the same patch.
 	assert.deepEqual(patched, [{ o1: { 'cat.newsletters': true, 'cat.other': null } }]);
+});
+
+test('categorizeInBackground: archive newsletters moves inbox hits only, after the label lands', async () => {
+	process.env.TYPESAFE_API_KEY = 'k';
+	fakeFetch(200, { answers: { cat: { choice: 'newsletters', confidence: 0.9 } } });
+	const moved: unknown[] = [];
+	const patched: unknown[] = [];
+	const client = {
+		getAccountId: () => 'a',
+		request: async () => ({
+			methodResponses: [
+				['Email/get', { list: [email({ id: 'in' }), email({ id: 'filed', mailboxIds: { work: true } })] }, 'c']
+			]
+		}),
+		patchKeywords: async (patches: unknown) => void patched.push(patches),
+		getMailboxes: async () => [
+			{ id: 'inbox', role: 'inbox' },
+			{ id: 'archive', role: 'archive' }
+		],
+		moveEmailsToMailbox: async (...args: unknown[]) => void moved.push(args)
+	} as never;
+	const rows = [{ id: 'in', keywords: {} }, { id: 'filed', keywords: {} }];
+	assert.equal(categorizeInBackground(client, rows, { ai: { ...ai, archiveNewsletters: true } }), 2);
+	await new Promise((resolve) => setTimeout(resolve, 10));
+	assert.equal(patched.length, 1);
+	assert.deepEqual(moved, [[['in'], 'archive', 'inbox']]);
 });

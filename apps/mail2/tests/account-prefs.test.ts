@@ -17,7 +17,10 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 	assert.equal(ACCOUNT_PREF_KEYS.includes('listWidth' as never), false);
 	assert.equal(ACCOUNT_PREF_KEYS.includes('sidebarOpen' as never), false);
 	assert.deepEqual([...ACCOUNT_PREF_KEYS].sort(), [
+		'aiArchiveNewsletters',
 		'aiCategories',
+		'aiConfidence',
+		'aiHeadersOnly',
 		'composePlain',
 		'markReadOnOpen',
 		'pageSize',
@@ -40,8 +43,16 @@ test('accountPrefsOf: carries only the account keys, whatever else is set', () =
 		showRemoteImages: false,
 		composePlain: DEFAULT_PREFS.composePlain,
 		aiCategories: DEFAULT_PREFS.aiCategories,
+		aiConfidence: DEFAULT_PREFS.aiConfidence,
+		aiHeadersOnly: DEFAULT_PREFS.aiHeadersOnly,
+		aiArchiveNewsletters: DEFAULT_PREFS.aiArchiveNewsletters,
 		undoSendSeconds: DEFAULT_PREFS.undoSendSeconds
 	});
+});
+
+test('aiConfidence: a level the app does not know falls back to balanced', () => {
+	assert.equal(mergeAccountPrefs({ ...DEFAULT_PREFS }, { aiConfidence: 'reckless' as never }).aiConfidence, 'balanced');
+	assert.equal(mergeAccountPrefs({ ...DEFAULT_PREFS }, { aiConfidence: 'eager' }).aiConfidence, 'eager');
 });
 
 test('showAvatars: off unless the person says otherwise, and it travels', () => {

@@ -3,7 +3,7 @@ import { query, command } from '$app/server';
 import { getAccountPrefs, getStoreDb, putAccountPrefs } from '@zaur/server-auth';
 import { connect, refuse, requireAccountKey } from '#lib/server/account';
 import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
-import { aiCategoriesAvailable, aiCategoriesOn, recheckOther } from '#lib/server/categorize';
+import { aiCategoriesAvailable, aiSettings, recheckOther } from '#lib/server/categorize';
 import { importWebmailSignature } from '#lib/server/webmail-import';
 
 function schema<T>() {
@@ -77,10 +77,9 @@ export const aiCategoriesOffered = query(async (): Promise<boolean> => aiCategor
  * many were queued; the keywords land in the background.
  */
 export const recheckOtherCategories = command(async (): Promise<{ queued: number }> => {
-	if (!aiCategoriesAvailable() || !aiCategoriesOn(requireAccountKey())) {
-		error(409, 'Turn on AI categories first');
-	}
-	return { queued: await recheckOther(await connect()) };
+	const ai = aiSettings(requireAccountKey());
+	if (!aiCategoriesAvailable() || !ai.on) error(409, 'Turn on AI categories first');
+	return { queued: await recheckOther(await connect(), ai) };
 });
 
 export type IdentityDTO = { id: string; email: string; name: string; signature: string };

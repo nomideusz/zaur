@@ -14,10 +14,10 @@
 		}
 	];
 
-	/** Only what this page shows goes back to its default; the theme and widths are Appearance's. */
+	/** Only what this page shows goes back to its default; the theme and widths are Appearance's, the AI's are Rules'. */
 	function reset() {
 		for (const key of ACCOUNT_PREF_KEYS as readonly (keyof Prefs)[]) {
-			if (key === 'aiCategories') continue;
+			if (key.startsWith('ai')) continue;
 			setPref(key, DEFAULT_PREFS[key] as never);
 		}
 	}
