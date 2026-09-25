@@ -17,8 +17,13 @@ test('legacy links: 1.0 mail URLs land in the inbox, threads open', () => {
 
 test('legacy links: settings, search pages and /register', () => {
 	assert.equal(go('/settings/contacts'), '/contacts');
-	assert.equal(go('/settings/writing'), '/settings');
-	assert.equal(go('/settings/security'), null);
+	assert.equal(go('/settings/writing'), '/settings/reading');
+	assert.equal(go('/settings/general'), '/settings');
+	assert.equal(go('/settings/display'), '/settings/appearance');
+	// mail2's own pages, some of which share 1.0's names, stay put.
+	for (const own of ['/settings/security', '/settings/reading', '/settings/appearance', '/settings/addresses', '/settings/folders', '/settings/app-passwords']) {
+		assert.equal(go(own), null, own);
+	}
 	assert.equal(go('/calendar/search'), '/calendar');
 	assert.equal(go('/files/search?q=x'), '/files');
 	assert.equal(go('/register?invite=abc', 'https://register.zaur.app'), 'https://register.zaur.app/?invite=abc');

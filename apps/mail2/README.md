@@ -229,7 +229,9 @@ What 1.0 left behind is handled here:
   - `/mail/<folder>/<thread>` goes to `/?thread=`;
   - `/mail/compose?to=` goes to `/?to=`;
   - the folder and search pages go to the inbox;
-  - `/settings/contacts` goes to `/contacts`, and other settings pages to `/settings`;
+  - `/settings/contacts` goes to `/contacts`, and each other 1.0 settings page to its
+    nearest mail2 one (`general` → Account, `compose` → Reading & writing, `display` →
+    Appearance); `reading`, `appearance` and `security` are mail2 pages too and stay;
   - `/register` goes to the register service.
 
   They are 302s, so pointing the domain back at webmail undoes them.
@@ -278,10 +280,21 @@ Kit 3 changes the layout from Kit 2:
 
 ## Settings
 
-`/settings` (inside the `(app)` gate) is two pages under one layout — **General**
-here, and [Security](#security) — and has **three** owners, not two; which one a
-setting belongs to is a real decision rather than an accident of where it was
-easiest to put:
+`/settings` (inside the `(app)` gate) is a page per topic under one layout, listed
+in `#lib/settings/sections.ts`: **Account** (`/settings` itself), Addresses, Password
+& sign-in, App passwords, Devices; Reading & writing, Auto-reply, Folders, Rules &
+categories, Sharing; Appearance and Notifications for this device. From `md` the
+list is a side column like mail's folder list; on a phone `/settings` is the
+profile card with the list under it, and each page has a back button. The heading
+and one-line description of each page come from the same table.
+
+Addresses is a list, one line per address (name and signature's first line), with
+one open for editing at a time and *Use on all N addresses* for aliases that want
+the primary's name and signature. The password window the security pages share
+is `ConfirmIdentity.svelte`.
+
+Settings has **three** owners, not two; which one a setting belongs to is a real
+decision rather than an accident of where it was easiest to put:
 
 - **The mail account (Stalwart).** The send-as display name per identity,
   through `settings.remote.ts` (`Identity/get` + `Identity/set`), plus the
@@ -1078,8 +1091,8 @@ before its page, so there is nothing to hand up yet. The account tile keeps its
 
 `/settings/security` is the last thing that genuinely blocked retiring 1.0: you
 cannot ask people to move to a client where they cannot manage their own 2FA.
-Settings is two pages now, **General** and **Security**, under one layout with
-the same header.
+It is three settings pages now: Password & sign-in, App passwords (and API keys)
+and Devices, each with the shared *Confirm it's you* card.
 
 **Stalwart 0.16 removed its REST management API.** Everything self-service is
 JMAP under the `urn:stalwart:jmap` capability, on `x:`-prefixed objects:

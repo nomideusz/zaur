@@ -185,7 +185,7 @@
 	<div class="flex-1 overflow-y-auto px-3 py-4">
 		<h2 class="z-caption mb-[9px] flex items-center justify-between px-1.5">
 			Mailboxes
-			<a href="/settings#folders" class="font-medium text-[var(--z-soft)] hover:text-[var(--z-accent)]" onclick={onClose}>Edit</a>
+			<a href="/settings/folders" class="font-medium text-[var(--z-soft)] hover:text-[var(--z-accent)]" onclick={onClose}>Edit</a>
 		</h2>
 		<ul class="flex flex-col gap-[3px]" role="list">
 			{#if mailboxes}

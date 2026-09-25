@@ -6,6 +6,23 @@
  * `?thread=`. Search has no URL in mail2, so it lands on the inbox. Null = not
  * a 1.0 URL.
  */
+const LEGACY_SETTINGS: Record<string, string> = {
+	contacts: '/contacts',
+	account: '/settings',
+	general: '/settings',
+	data: '/settings',
+	calendar: '/settings',
+	shortcuts: '/settings',
+	compose: '/settings/reading',
+	writing: '/settings/reading',
+	mail: '/settings/reading',
+	inbox: '/settings/reading',
+	display: '/settings/appearance',
+	layout: '/settings/appearance',
+	sidebar: '/settings/appearance',
+	workspace: '/settings/appearance'
+};
+
 export function legacyRedirect(url: URL, registerUrl?: string | null): string | null {
 	const path = url.pathname.replace(/\/+$/, '') || '/';
 	const account = url.searchParams.get('account');
@@ -25,8 +42,9 @@ export function legacyRedirect(url: URL, registerUrl?: string | null): string | 
 		return home(params);
 	}
 
-	if (path === '/settings/contacts') return '/contacts';
-	if (path.startsWith('/settings/') && path !== '/settings/security') return '/settings';
+	// 1.0's settings pages; `reading`, `appearance` and `security` are mail2's too.
+	const setting = /^\/settings\/([^/]+)$/.exec(path)?.[1];
+	if (setting && setting in LEGACY_SETTINGS) return LEGACY_SETTINGS[setting]!;
 	const search = /^\/(calendar|contacts|files)\/search$/.exec(path);
 	if (search) return `/${search[1]}`;
 
