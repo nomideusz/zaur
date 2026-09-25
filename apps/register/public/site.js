@@ -12,16 +12,18 @@
     });
   }
 
-  function initTheme() {
-    const seed = window.ZaurCircadianSeed;
-    if (!seed) return;
-    const mode = seed.readMode();
-    if (mode === 'circadian') {
-      seed.tickCircadian();
-      seed.startCircadianLoop();
-      return;
-    }
-    seed.applyFixed(document.documentElement, mode);
+  // The eye on a password field: <button data-reveal="<input id>" aria-pressed>.
+  function initReveal() {
+    document.querySelectorAll('[data-reveal]').forEach((button) => {
+      const input = document.getElementById(button.dataset.reveal);
+      button.addEventListener('click', () => {
+        const show = input.type === 'password';
+        input.type = show ? 'text' : 'password';
+        button.setAttribute('aria-pressed', String(show));
+        button.setAttribute('aria-label', show ? 'Hide password' : 'Show password');
+        input.focus();
+      });
+    });
   }
 
   function getConfig() {
@@ -32,7 +34,7 @@
   }
 
   async function init() {
-    initTheme();
+    initReveal();
     const cfg = window.ZAUR_SITE || (await getConfig());
     if (cfg) {
       window.ZAUR_SITE = cfg;

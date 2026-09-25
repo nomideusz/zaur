@@ -3,222 +3,225 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin · ZAUR Register</title>
+  <title>Admin · Zaur Register</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/traceway.js"></script>
-  <script src="/circadian-seed.js"></script>
-  <link rel="stylesheet" href="/zaur.css">
+  <link rel="stylesheet" href="/app.css">
 </head>
-<body class="z-site-shell">
-  <header class="z-site-header z-panel">
-    <div class="z-site-header__inner">
-      <a href="/" class="z-type-brand">ZAUR</a>
-      <nav class="z-site-nav" aria-label="Tools">
-        <a href="/" class="z-site-nav__link">Register</a>
-        <a href="/admin" class="z-site-nav__link z-site-nav__link--active" aria-current="page">Admin</a>
-        <a href="#" data-webmail-link class="z-site-nav__link">Mail</a>
-        <a href="#" id="logout-btn" class="z-site-nav__link z-hidden">Logout</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="z-site-main">
-  <div id="login-container" class="z-auth-page z-auth-page--in-shell">
-    <div class="z-auth-card">
-      <div class="z-auth-hero z-auth-hero--compact">
-        <div class="z-auth-sprite" aria-hidden="true">
-          <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+<body class="bg-[var(--z-canvas)] text-[var(--z-ink)]">
+  <main id="login-container" class="flex min-h-svh w-full flex-col items-center justify-center gap-5 px-4 py-10 sm:px-6">
+    <div class="r-card max-w-[380px]">
+      <div class="px-[22px] pt-6 pb-[22px]">
+        <div class="flex items-center gap-[9px]">
+          <span class="text-[17px] font-bold tracking-[-0.025em]">Zaur</span>
+          <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
         </div>
-        <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-        <p class="z-auth-tagline">Register admin</p>
-      </div>
+        <h1 class="mt-3.5 text-[22px] leading-[1.15] font-bold tracking-[-0.025em]">Register admin</h1>
+        <p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">Invitations, mailboxes and provisioning.</p>
 
-      <div class="z-form-stack">
-        <div class="z-alert z-alert--error" id="login-error" role="alert"></div>
-        <form id="login-form" class="z-form-stack">
-          <div class="z-label-input z-label-input--primary z-label-input--password">
+        <div class="r-alert z-railed tone-discard" id="login-error" role="alert"></div>
+
+        <form id="login-form" class="mt-[18px] flex flex-col gap-2.5">
+          <label class="r-field">
+            <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
+              <path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+            </svg>
             <input
               type="password"
               id="admin-password"
               name="password"
-              class="z-label-input__field"
+              class="r-input"
               autocomplete="current-password"
+              placeholder="Admin password"
+              aria-label="Admin password"
               required
               autofocus
             >
-            <label for="admin-password" class="z-label-input__label">Admin password</label>
-          </div>
-          <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="login-submit">Sign in</button>
+            <button type="button" class="r-eye group" data-reveal="admin-password" aria-label="Show password" aria-pressed="false">
+              <svg class="group-aria-pressed:hidden" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3" /></svg>
+              <svg class="hidden group-aria-pressed:block" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><path d="M2.5 2.5l11 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+            </button>
+          </label>
+          <button type="submit" class="btn-tactile btn-primary mt-1 h-[42px] w-full !text-[14px]" id="login-submit">
+            Sign in
+            <kbd class="z-kbd z-kbd-inverse" aria-hidden="true">↵</kbd>
+          </button>
         </form>
       </div>
-
-      <p class="z-auth-aside">
-        <a href="/" class="z-link">Back to register</a>
-      </p>
-
     </div>
-  </div>
 
-  <div id="dashboard-container" class="z-admin-shell z-admin-shell--wide z-dashboard z-hidden">
-
-    <div class="z-admin-content z-stack-lg">
-      <div class="z-page-intro">
-        <h1 class="z-type-title">Register admin</h1>
-        <p class="z-type-lead">Invitations, mailboxes, and provisioning for ZAUR registration.</p>
-      </div>
-
-      <section class="z-admin-section">
-        <div id="overview-status" class="z-status-pills" aria-live="polite"></div>
-        <div class="z-stat-grid">
-          <div class="z-stat-card">
-            <span class="z-type-label">Mailboxes</span>
-            <span class="z-stat-card__value" id="stat-mailboxes">—</span>
-          </div>
-          <div class="z-stat-card">
-            <span class="z-type-label">Domains</span>
-            <span class="z-stat-card__value" id="stat-domains">—</span>
-          </div>
-          <div class="z-stat-card">
-            <span class="z-type-label">Invitations pending</span>
-            <span class="z-stat-card__value z-stat-card__value--success" id="stat-invites-pending">—</span>
-          </div>
-          <div class="z-stat-card">
-            <span class="z-type-label">Invitations total</span>
-            <span class="z-stat-card__value" id="stat-invites-total">—</span>
-          </div>
-        </div>
-      </section>
-
-      <div class="z-admin-split">
-        <section class="z-admin-section">
-          <h2 class="z-auth-brand z-section-title">Send invitation</h2>
-          <p class="z-type-lead z-mb-4 z-lead-sm" id="invite-email-hint">Enter a personal email to send a registration magic link.</p>
-          <div class="z-alert z-alert--error" id="generate-error" role="alert"></div>
-          <div class="z-alert z-alert--success" id="generate-success" role="alert"></div>
-          <form id="generate-form" class="z-stack">
-            <div>
-              <label for="invite-email" class="z-field-label">Recovery email</label>
-              <input type="email" id="invite-email" name="email" class="z-input" placeholder="user@gmail.com" autocomplete="email" required>
-            </div>
-            <details class="z-details">
-              <summary>Advanced options</summary>
-              <label for="invite-expires" class="z-field-label">Link valid for (hours)</label>
-              <input type="number" id="invite-expires" name="expiresInHours" class="z-input" min="1" max="720" value="72">
-            </details>
-            <button type="submit" class="z-btn-primary z-btn-block" id="generate-submit">Send invitation</button>
-          </form>
-        </section>
-
-        <section class="z-admin-section">
-          <h2 class="z-auth-brand z-section-title">Account lookup</h2>
-          <p class="z-type-lead z-mb-4 z-lead-sm">Find a mailbox in Stalwart, then delete if needed.</p>
-          <div class="z-alert z-alert--error" id="lookup-error" role="alert"></div>
-          <form id="lookup-form" class="z-stack">
-            <div>
-              <label for="lookup-email" class="z-field-label">Mailbox email</label>
-              <input type="email" id="lookup-email" name="email" class="z-input" placeholder="user@zaur.app" autocomplete="off" required>
-            </div>
-            <button type="submit" class="z-btn-primary z-btn-block" id="lookup-submit">Look up</button>
-          </form>
-          <div id="lookup-result" class="z-account-lookup-result z-hidden"></div>
-        </section>
-      </div>
-
-      <section class="z-admin-section">
-        <div class="z-section-head z-mb-4">
-          <div>
-            <h2 class="z-auth-brand z-section-title">Mailboxes</h2>
-            <p class="z-type-lead z-lead-sm">All Stalwart accounts on enabled registration domains.</p>
-          </div>
-          <button type="button" class="z-btn-ghost" id="refresh-mailboxes-btn">Refresh</button>
-        </div>
-        <div class="z-alert z-alert--error" id="mailboxes-error" role="alert"></div>
-        <div class="z-field">
-          <input type="text" id="mailboxes-filter" class="z-input" placeholder="Filter by email…" autocomplete="off">
-        </div>
-        <div class="z-table-scroll">
-          <table class="z-table" id="mailboxes-table">
-            <thead>
-              <tr>
-                <th>Email</th>
-                <th>Domain</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="mailboxes-table-body">
-              <tr>
-                <td colspan="3" class="z-text-center z-text-muted z-table-empty">Loading mailboxes…</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="z-admin-section">
-        <h2 class="z-auth-brand z-mb-4 z-section-title">Sent invitations</h2>
-        <div class="z-stat-grid z-stat-grid--compact">
-          <div class="z-stat-card">
-            <span class="z-type-label">Pending</span>
-            <span class="z-stat-card__value z-stat-card__value--success" id="stat-unused">0</span>
-          </div>
-          <div class="z-stat-card">
-            <span class="z-type-label">Registered</span>
-            <span class="z-stat-card__value z-stat-card__value--warning" id="stat-used">0</span>
-          </div>
-          <div class="z-stat-card">
-            <span class="z-type-label">Expired / revoked</span>
-            <span class="z-stat-card__value z-stat-card__value--danger" id="stat-revoked">0</span>
-          </div>
-        </div>
-        <div class="z-field">
-          <input type="text" id="table-filter" class="z-input" placeholder="Filter by recovery or mailbox email…" autocomplete="off">
-        </div>
-        <div class="z-table-scroll">
-          <table class="z-table" id="invites-table">
-            <thead>
-              <tr>
-                <th>Recovery email</th>
-                <th>Status</th>
-                <th>Sent</th>
-                <th>Mailbox</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="invites-table-body">
-              <tr>
-                <td colspan="5" class="z-text-center z-text-muted z-table-empty">Loading invitations…</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-
-      <section class="z-admin-section">
-        <div class="z-section-head z-mb-4">
-          <div>
-            <h2 class="z-auth-brand z-section-title">Provisioning audit</h2>
-            <p class="z-type-lead z-lead-sm">Review provisioned Stalwart mailboxes.</p>
-          </div>
-          <button type="button" class="z-btn-ghost" id="run-audit-btn">Run audit</button>
-        </div>
-        <div class="z-alert z-alert--error" id="audit-error" role="alert"></div>
-        <div class="z-alert z-alert--success" id="audit-success" role="alert"></div>
-        <div id="audit-summary" class="z-audit-grid"></div>
-        <div id="audit-results" class="z-audit-results"></div>
-      </section>
-    </div>
-  </div>
+    <p class="text-[13px] text-[var(--z-muted)]"><a href="/" class="r-link">Back to register</a></p>
   </main>
 
-  <footer class="z-site-footer">
-    <div class="z-site-footer__inner">
-      <span>&copy; 2026 ZAUR</span>
-    </div>
-  </footer>
+  <div id="dashboard-container" class="z-hidden">
+    <header class="sticky top-0 z-10 border-b border-[var(--z-hairline)] bg-[var(--z-surface)]">
+      <div class="mx-auto flex h-12 max-w-[960px] items-center gap-2.5 px-4">
+        <a href="/" class="text-[15px] font-bold tracking-[-0.025em]">Zaur</a>
+        <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
+        <span class="h-4 w-px bg-[var(--z-hairline)]" aria-hidden="true"></span>
+        <span class="text-[13px] text-[var(--z-muted)]">Admin</span>
+        <nav class="ml-auto flex items-center gap-3" aria-label="Tools">
+          <a href="https://webmail.zaur.app/login" data-webmail-link class="text-[13px] font-medium text-[var(--z-muted)] hover:text-[var(--z-ink)]">Mail</a>
+          <button type="button" id="logout-btn" class="btn-tactile z-hidden">Log out</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="mx-auto flex max-w-[960px] flex-col gap-4 px-4 pt-6 pb-12">
+      <div>
+        <h1 class="text-[22px] leading-[1.15] font-bold tracking-[-0.025em]">Register admin</h1>
+        <p class="mt-1.5 text-[12.5px] text-[var(--z-muted)]">Invitations, mailboxes and provisioning for Zaur registration.</p>
+      </div>
+
+      <section class="flex flex-col gap-2.5" aria-label="Overview">
+        <div id="overview-status" class="flex flex-wrap gap-1.5" aria-live="polite"></div>
+        <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+          <div class="z-card r-stat">
+            <span class="z-caption">Mailboxes</span>
+            <span class="r-stat-value" id="stat-mailboxes">—</span>
+          </div>
+          <div class="z-card r-stat">
+            <span class="z-caption">Domains</span>
+            <span class="r-stat-value" id="stat-domains">—</span>
+          </div>
+          <div class="z-card r-stat tone-correspondence">
+            <span class="z-caption">Invitations pending</span>
+            <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-invites-pending">—</span>
+          </div>
+          <div class="z-card r-stat">
+            <span class="z-caption">Invitations total</span>
+            <span class="r-stat-value" id="stat-invites-total">—</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="grid gap-4 md:grid-cols-2">
+        <section class="z-card">
+          <h2 class="z-card-head">Send invitation</h2>
+          <div class="z-card-body">
+            <p class="text-[12.5px] leading-normal text-[var(--z-muted)]" id="invite-email-hint">Enter a personal email to send a registration magic link.</p>
+            <div class="r-alert z-railed tone-discard" id="generate-error" role="alert"></div>
+            <div class="r-alert z-railed tone-confirmed [&_code]:font-mono [&_code]:text-[11px] [&_code]:wrap-anywhere" id="generate-success" role="alert"></div>
+            <form id="generate-form" class="mt-3 flex flex-col gap-3">
+              <div>
+                <label for="invite-email" class="z-caption mb-1.5 block">Recovery email</label>
+                <input type="email" id="invite-email" name="email" class="z-field w-full" placeholder="user@gmail.com" autocomplete="email" required>
+              </div>
+              <details>
+                <summary class="cursor-pointer text-[12.5px] text-[var(--z-soft)] select-none hover:text-[var(--z-ink)]">Advanced options</summary>
+                <label for="invite-expires" class="z-caption mt-2.5 mb-1.5 block">Link valid for (hours)</label>
+                <input type="number" id="invite-expires" name="expiresInHours" class="z-field w-28 font-mono" min="1" max="720" value="72">
+              </details>
+              <button type="submit" class="btn-tactile btn-primary h-[34px] w-full" id="generate-submit">Send invitation</button>
+            </form>
+          </div>
+        </section>
+
+        <section class="z-card">
+          <h2 class="z-card-head">Account lookup</h2>
+          <div class="z-card-body">
+            <p class="text-[12.5px] leading-normal text-[var(--z-muted)]">Find a mailbox in Stalwart, then delete it if needed.</p>
+            <div class="r-alert z-railed tone-discard" id="lookup-error" role="alert"></div>
+            <form id="lookup-form" class="mt-3 flex flex-col gap-3">
+              <div>
+                <label for="lookup-email" class="z-caption mb-1.5 block">Mailbox email</label>
+                <input type="email" id="lookup-email" name="email" class="z-field w-full" placeholder="user@zaur.app" autocomplete="off" required>
+              </div>
+              <button type="submit" class="btn-tactile btn-primary h-[34px] w-full" id="lookup-submit">Look up</button>
+            </form>
+            <div id="lookup-result" class="mt-3 z-hidden"></div>
+          </div>
+        </section>
+      </div>
+
+      <section class="z-card">
+        <div class="z-card-head">
+          <h2>Mailboxes</h2>
+          <button type="button" class="btn-tactile r-btn-sm ml-auto" id="refresh-mailboxes-btn">Refresh</button>
+        </div>
+        <div class="z-card-body">
+          <p class="text-[12.5px] text-[var(--z-muted)]">All Stalwart accounts on enabled registration domains.</p>
+          <div class="r-alert z-railed tone-discard" id="mailboxes-error" role="alert"></div>
+          <input type="text" id="mailboxes-filter" class="z-field mt-3 w-full" placeholder="Filter by email…" aria-label="Filter mailboxes" autocomplete="off">
+          <div class="mt-2 overflow-x-auto">
+            <table class="r-table min-w-[480px]" id="mailboxes-table">
+              <thead>
+                <tr>
+                  <th>Email</th>
+                  <th>Domain</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="mailboxes-table-body">
+                <tr>
+                  <td colspan="3" class="r-table-empty">Loading mailboxes…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="z-card">
+        <h2 class="z-card-head">Sent invitations</h2>
+        <div class="z-card-body">
+          <div class="grid grid-cols-3 gap-2.5">
+            <div class="z-card r-stat tone-correspondence">
+              <span class="z-caption">Pending</span>
+              <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-unused">0</span>
+            </div>
+            <div class="z-card r-stat tone-confirmed">
+              <span class="z-caption">Registered</span>
+              <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-used">0</span>
+            </div>
+            <div class="z-card r-stat tone-discard">
+              <span class="z-caption">Expired / revoked</span>
+              <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-revoked">0</span>
+            </div>
+          </div>
+          <input type="text" id="table-filter" class="z-field mt-3 w-full" placeholder="Filter by recovery or mailbox email…" aria-label="Filter invitations" autocomplete="off">
+          <div class="mt-2 overflow-x-auto">
+            <table class="r-table min-w-[680px]" id="invites-table">
+              <thead>
+                <tr>
+                  <th>Recovery email</th>
+                  <th>Status</th>
+                  <th>Sent</th>
+                  <th>Mailbox</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invites-table-body">
+                <tr>
+                  <td colspan="5" class="r-table-empty">Loading invitations…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <section class="z-card">
+        <div class="z-card-head">
+          <h2>Provisioning audit</h2>
+          <button type="button" class="btn-tactile r-btn-sm ml-auto" id="run-audit-btn">Run audit</button>
+        </div>
+        <div class="z-card-body">
+          <p class="text-[12.5px] text-[var(--z-muted)]">Review provisioned Stalwart mailboxes.</p>
+          <div class="r-alert z-railed tone-discard" id="audit-error" role="alert"></div>
+          <div class="r-alert z-railed tone-confirmed" id="audit-success" role="alert"></div>
+          <div id="audit-summary" class="mt-3 grid grid-cols-2 gap-2.5 empty:hidden"></div>
+          <div id="audit-results" class="mt-3 empty:hidden"></div>
+        </div>
+      </section>
+    </main>
+  </div>
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
-  <script src="/sprite-blink.js"></script>
-  <script src="/label-input.js"></script>
   <script src="/admin.js"></script>
 </body>
 </html>

@@ -159,6 +159,7 @@ document.addEventListener('DOMContentLoaded', () => {
         pills.push({
           label: `SMTP: ${detail.length > 100 ? `${detail.slice(0, 100)}…` : detail}`,
           warn: true,
+          wide: true,
         });
       }
       pills.push({
@@ -171,13 +172,16 @@ document.addEventListener('DOMContentLoaded', () => {
         pills.push({
           label: `Domains: ${data.domains.map((d) => `@${d.name}`).join(', ')}`,
           ok: true,
+          wide: true,
         });
       }
 
       overviewStatus.innerHTML = pills
         .map((pill) => {
-          const cls = pill.ok ? 'is-ok' : pill.warn ? 'is-warn' : pill.off ? 'is-off' : '';
-          return `<span class="z-status-pill ${cls}">${escapeHtml(pill.label)}</span>`;
+          const tone = pill.ok ? 'tone-confirmed' : pill.warn ? 'tone-needs' : '';
+          // Long ones (domain list, SMTP error) wrap and keep their case.
+          const wide = pill.wide ? 'max-w-full !whitespace-normal normal-case tracking-normal' : '';
+          return `<span class="z-chip z-chip-filled ${tone} ${wide}">${escapeHtml(pill.label)}</span>`;
         })
         .join('');
     } catch (err) {
@@ -202,7 +206,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error(err);
       invitesTableBody.innerHTML =
-        '<tr><td colspan="5" class="z-text-center z-text-muted z-table-empty--lg">Error loading invitations.</td></tr>';
+        '<tr><td colspan="5" class="r-table-empty">Error loading invitations.</td></tr>';
     }
   }
 
@@ -219,7 +223,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadMailboxes() {
     hideAlert(mailboxesError);
     mailboxesTableBody.innerHTML =
-      '<tr><td colspan="3" class="z-text-center z-text-muted z-table-empty">Loading mailboxes…</td></tr>';
+      '<tr><td colspan="3" class="r-table-empty">Loading mailboxes…</td></tr>';
 
     try {
       const res = await fetch('/api/admin/accounts');
@@ -237,14 +241,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       showError(err.message || 'Failed to load mailboxes.', mailboxesError);
       mailboxesTableBody.innerHTML =
-        '<tr><td colspan="3" class="z-text-center z-text-muted z-table-empty--lg">Error loading mailboxes.</td></tr>';
+        '<tr><td colspan="3" class="r-table-empty">Error loading mailboxes.</td></tr>';
     }
   }
 
   function renderMailboxes(list) {
     if (list.length === 0) {
       mailboxesTableBody.innerHTML =
-        '<tr><td colspan="3" class="z-text-center z-text-muted z-table-empty--lg">No mailboxes found.</td></tr>';
+        '<tr><td colspan="3" class="r-table-empty">No mailboxes found.</td></tr>';
       return;
     }
 
@@ -252,11 +256,13 @@ document.addEventListener('DOMContentLoaded', () => {
       .map(
         (account) => `
       <tr>
-        <td class="z-td-code"><span class="z-code-text">${escapeHtml(account.email)}</span></td>
-        <td>@${escapeHtml(account.domain || '—')}</td>
+        <td class="font-mono text-[12px] whitespace-nowrap">${escapeHtml(account.email)}</td>
+        <td class="font-mono text-[12px] whitespace-nowrap text-[var(--z-soft)]">@${escapeHtml(account.domain || '—')}</td>
         <td>
-          <button type="button" class="z-btn-ghost z-btn-sm" data-lookup-email="${escapeHtml(account.email)}">Look up</button>
-          <button type="button" class="z-btn-danger z-btn-sm" data-delete-email="${escapeHtml(account.email)}">Delete all</button>
+          <div class="flex gap-1.5">
+            <button type="button" class="btn-tactile r-btn-sm" data-lookup-email="${escapeHtml(account.email)}">Look up</button>
+            <button type="button" class="btn-tactile btn-danger r-btn-sm" data-delete-email="${escapeHtml(account.email)}">Delete all</button>
+          </div>
         </td>
       </tr>`,
       )
@@ -305,21 +311,17 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(data.error || 'Lookup failed.');
 
       lookupResult.innerHTML = `
-        <div class="z-account-lookup-row">
-          <span class="z-account-lookup-label">Stalwart</span>
-          <span>${data.stalwart ? escapeHtml(email) : 'Not found'}</span>
-        </div>
-        <div class="z-account-lookup-row">
-          <span class="z-account-lookup-label">Recovery</span>
-          <span>${data.recoveryEmail ? escapeHtml(data.recoveryEmail) : '—'}</span>
-        </div>
-        <div class="z-inline-actions">
-          ${
-            data.stalwart
-              ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="stalwart">Delete Stalwart</button>'
-              : ''
-          }
-        </div>`;
+        <dl class="r-settings">
+          <dt>Stalwart</dt>
+          <dd>${data.stalwart ? escapeHtml(email) : 'Not found'}</dd>
+          <dt>Recovery</dt>
+          <dd>${data.recoveryEmail ? escapeHtml(data.recoveryEmail) : '—'}</dd>
+        </dl>
+        ${
+          data.stalwart
+            ? '<button type="button" class="btn-tactile btn-danger r-btn-sm mt-2.5" data-cleanup="stalwart">Delete Stalwart</button>'
+            : ''
+        }`;
 
       lookupResult.querySelectorAll('[data-cleanup]').forEach((btn) => {
         btn.addEventListener('click', () => deleteAccount(email, btn.dataset.cleanup));
@@ -360,7 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTable(list) {
     if (list.length === 0) {
       invitesTableBody.innerHTML =
-        '<tr><td colspan="5" class="z-text-center z-text-muted z-table-empty--lg">No invitations found.</td></tr>';
+        '<tr><td colspan="5" class="r-table-empty">No invitations found.</td></tr>';
       return;
     }
 
@@ -371,56 +373,60 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
 
       const tdEmail = document.createElement('td');
-      tdEmail.className = 'z-td-code';
+      tdEmail.className = 'font-mono text-[12px] whitespace-nowrap';
       // Raw tokens are no longer stored — the magic link is only available at
       // creation time. Legacy rows that still carry a token keep the button.
       const copyButton = invite.token
-        ? `<button class="z-btn-copy" title="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
-          <svg class="z-icon-copy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
+        ? `<button class="z-btn-copy z-icon-btn inline-flex align-middle [&.is-copied]:text-[var(--z-ch-confirmed-ink)]" title="Copy magic link" aria-label="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
+          <svg class="size-[14px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
         </button>`
         : '';
       tdEmail.innerHTML = `
-        <span class="z-code-text">${escapeHtml(invite.recoveryEmail)}</span>
+        <span class="align-middle">${escapeHtml(invite.recoveryEmail)}</span>
         ${copyButton}
       `;
 
       const tdStatus = document.createElement('td');
-      const statusClass = {
-        sent: 'z-badge--success',
-        opened: 'z-badge--pending',
-        registered: 'z-badge--warning',
-        expired: 'z-badge--danger',
-        revoked: 'z-badge--danger',
-      }[invite.status] || 'z-badge--success';
-      tdStatus.innerHTML = `<span class="z-badge ${statusClass}">${escapeHtml(invite.status)}</span>`;
+      const tone = {
+        sent: 'tone-correspondence',
+        opened: 'tone-needs',
+        registered: 'tone-confirmed',
+        expired: 'tone-discard',
+        revoked: 'tone-discard',
+      }[invite.status] || 'tone-correspondence';
+      tdStatus.innerHTML = `<span class="z-chip z-chip-filled ${tone}">${escapeHtml(invite.status)}</span>`;
 
       const tdCreated = document.createElement('td');
+      tdCreated.className = 'font-mono text-[11.5px] whitespace-nowrap';
       tdCreated.innerHTML = `
         <div>${formatDate(invite.createdAt)}</div>
-        <div class="z-used-meta">Expires ${formatDate(invite.expiresAt)}</div>
+        <div class="text-[var(--z-soft)]">Expires ${formatDate(invite.expiresAt)}</div>
       `;
 
       const tdMailbox = document.createElement('td');
       if (invite.mailboxEmail) {
+        tdMailbox.className = 'font-mono text-[11.5px] whitespace-nowrap';
         tdMailbox.innerHTML = `
-          <div>${escapeHtml(invite.mailboxEmail)}</div>
-          <div class="z-used-meta">${formatDate(invite.consumedAt)}</div>
+          <div class="text-[12px]">${escapeHtml(invite.mailboxEmail)}</div>
+          <div class="text-[var(--z-soft)]">${formatDate(invite.consumedAt)}</div>
         `;
       } else {
         tdMailbox.textContent = '—';
-        tdMailbox.className = 'z-text-muted';
+        tdMailbox.className = 'text-[var(--z-faint)]';
       }
 
       const tdActions = document.createElement('td');
       if (invite.status === 'sent' || invite.status === 'opened') {
         const revokeBtn = document.createElement('button');
-        revokeBtn.className = 'z-btn-danger z-btn-sm';
+        revokeBtn.type = 'button';
+        revokeBtn.className = 'btn-tactile btn-danger r-btn-sm';
         revokeBtn.textContent = 'Revoke';
         revokeBtn.addEventListener('click', () => revokeInvitation(invite.id));
         tdActions.appendChild(revokeBtn);
       } else if (invite.mailboxEmail) {
         const lookupBtn = document.createElement('button');
-        lookupBtn.className = 'z-btn-ghost z-btn-sm';
+        lookupBtn.type = 'button';
+        lookupBtn.className = 'btn-tactile r-btn-sm';
         lookupBtn.textContent = 'Look up';
         lookupBtn.addEventListener('click', () => {
           document.getElementById('lookup-email').value = invite.mailboxEmail;
@@ -430,7 +436,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tdActions.appendChild(lookupBtn);
       } else {
         tdActions.textContent = '—';
-        tdActions.className = 'z-text-muted';
+        tdActions.className = 'text-[var(--z-faint)]';
       }
 
       tr.appendChild(tdEmail);
@@ -488,8 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(data.error || 'Audit failed.');
 
       auditSummary.innerHTML = `
-        <div class="z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
+        <div class="z-card r-stat"><span class="z-caption">Stalwart</span><strong class="r-stat-value">${data.counts.stalwartAccounts}</strong></div>
+        <div class="z-card r-stat"><span class="z-caption">Stalwart only</span><strong class="r-stat-value">${data.counts.stalwartOnly}</strong></div>
       `;
 
       auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
@@ -508,25 +514,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderAuditGroup(title, rows, cleanupTarget) {
     const section = document.createElement('section');
-    section.innerHTML = `<h4 class="z-type-title z-admin-subtitle">${escapeHtml(title)}</h4>`;
+    section.innerHTML = `<h3 class="z-rule"><span class="z-caption">${escapeHtml(title)}</span></h3>`;
 
     if (!rows.length) {
       const empty = document.createElement('p');
-      empty.className = 'z-audit-empty';
+      empty.className = 'mt-2 text-[12.5px] text-[var(--z-muted)]';
       empty.textContent = 'No mismatches.';
       section.appendChild(empty);
       return section;
     }
 
     const list = document.createElement('div');
-    list.className = 'z-domain-list z-audit-list';
+    list.className = 'mt-1';
     rows.forEach((row) => {
       const email = row.email || row.username;
       const item = document.createElement('div');
-      item.className = 'z-audit-row';
+      item.className = 'flex items-center justify-between gap-3 border-t border-[var(--z-hairline)] py-2 first:border-t-0';
       item.innerHTML = `
-        <span>${escapeHtml(email)}</span>
-        <button type="button" class="z-btn-danger z-btn-sm">Delete from ${cleanupTarget}</button>
+        <span class="min-w-0 truncate font-mono text-[12px]">${escapeHtml(email)}</span>
+        <button type="button" class="btn-tactile btn-danger r-btn-sm shrink-0 whitespace-nowrap">Delete from ${cleanupTarget}</button>
       `;
       item.querySelector('button').addEventListener('click', () => cleanupAccount(email, cleanupTarget));
       list.appendChild(item);

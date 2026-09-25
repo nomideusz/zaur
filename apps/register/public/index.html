@@ -3,241 +3,228 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Register · ZAUR</title>
+  <title>Create your address · Zaur Mail</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/traceway.js"></script>
-  <script src="/circadian-seed.js"></script>
-  <link rel="stylesheet" href="/zaur.css">
+  <link rel="stylesheet" href="/app.css">
 </head>
-<body class="z-site-shell">
-  <header class="z-site-header z-panel">
-    <div class="z-site-header__inner">
-      <a href="/" class="z-type-brand">ZAUR</a>
-      <nav class="z-site-nav" aria-label="Tools">
-        <a href="/" class="z-site-nav__link z-site-nav__link--active" aria-current="page">Register</a>
-        <a href="#" data-webmail-link class="z-site-nav__link">Mail</a>
-      </nav>
-    </div>
-  </header>
+<body class="bg-[var(--z-canvas)]">
+  <main class="flex min-h-svh w-full flex-col items-center justify-center gap-5 px-4 py-10 text-[var(--z-ink)] sm:px-6">
+    <div class="r-card max-w-[420px]" id="auth-card">
+      <div class="px-[22px] pt-6 pb-[22px]">
+        <div class="flex items-center gap-[9px]">
+          <span class="text-[17px] font-bold tracking-[-0.025em]">Zaur</span>
+          <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
+        </div>
 
-  <main class="z-site-main">
-    <div class="z-auth-page z-auth-page--in-shell z-auth-page--register" id="main-content">
-      <div class="z-auth-card z-auth-card--register" id="auth-card">
         <div class="z-hidden" id="register-content">
-          <div class="z-auth-hero z-auth-hero--compact z-auth-hero--register">
-            <div class="z-auth-hero__row">
-              <div class="z-auth-sprite" aria-hidden="true">
-                <img src="/zaur-sprite-happy.svg" width="72" height="65" alt="">
-              </div>
-              <div class="z-auth-hero__copy">
-                <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-                <p class="z-auth-tagline" id="register-tagline">Claim your address</p>
-              </div>
-            </div>
-          </div>
-
-          <div class="z-invite-status z-hidden" id="invitation-banner" role="status"></div>
-
-          <div class="z-callout z-hidden" id="apply-intro">
-            <span class="z-callout__title">Invite only</span>
-            <p class="z-text-muted z-callout__body">
-              Registration is currently invite-only. Browse available addresses below, then apply for
-              the one you want — we'll review it and email you an invitation.
-            </p>
-          </div>
-
-          <div class="z-register-flow">
-            <div class="z-register-split" id="register-split">
-              <section class="z-register-pick" aria-labelledby="register-pick-heading">
-                <h2 class="sr-only" id="register-pick-heading">Choose your address</h2>
-                <div class="z-label-input z-label-input--primary">
-                  <input
-                    type="text"
-                    id="username-input"
-                    class="z-label-input__field"
-                    autocomplete="off"
-                    spellcheck="false"
-                    autofocus
-                  >
-                  <label for="username-input" class="z-label-input__label">Username</label>
-                </div>
-                <div class="z-validation-hint" id="validation-hint"></div>
-                <div id="results-container"></div>
-              </section>
-
-              <section class="z-register-create z-panel-collapsible" id="register-panel" aria-labelledby="register-create-heading">
-                <h2 class="z-register-create__heading" id="register-create-heading">Set password</h2>
-                <p class="z-register-create__idle" id="register-panel-idle" aria-hidden="true"></p>
-
-                <div class="z-register-create__body">
-                  <div class="z-selected-address">
-                    <p class="z-selected-address__email" id="selected-email-label">—</p>
-                  </div>
-
-                  <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
-
-                  <form id="register-form" class="z-form-stack" method="post">
-                    <input type="hidden" id="selected-domain-id" name="domainId">
-                    <input type="hidden" id="invite-token" name="inviteToken">
-                    <input type="hidden" id="invite-email" name="inviteEmail">
-                    <input type="hidden" id="next-path" name="next">
-                    <input
-                      type="email"
-                      id="login-email"
-                      name="username"
-                      class="sr-only"
-                      autocomplete="username"
-                      tabindex="-1"
-                      aria-hidden="true"
-                      readonly
-                    >
-
-                    <div class="z-field-stack">
-                      <div class="z-label-input z-label-input--primary z-label-input--password">
-                        <input
-                          type="password"
-                          id="new-password"
-                          name="password"
-                          class="z-label-input__field"
-                          autocomplete="new-password"
-                          required
-                        >
-                        <label for="new-password" class="z-label-input__label">Mailbox password</label>
-                      </div>
-                      <div class="z-strength-bar">
-                        <div class="z-strength-fill" id="strength-fill" data-score="0"></div>
-                      </div>
-                      <div class="z-strength-label" id="strength-label"></div>
-                    </div>
-
-                    <div class="z-label-input z-label-input--primary z-label-input--password">
-                      <input
-                        type="password"
-                        id="confirm-password"
-                        name="confirmPassword"
-                        class="z-label-input__field"
-                        autocomplete="new-password"
-                        required
-                      >
-                      <label for="confirm-password" class="z-label-input__label">Confirm password</label>
-                    </div>
-
-                    <div class="z-field-stack" id="captcha-section">
-                      <div class="z-captcha-row">
-                        <span class="z-captcha-question" id="captcha-question">Loading…</span>
-                        <div class="z-label-input z-label-input--primary z-label-input--compact">
-                          <input
-                            type="number"
-                            id="captcha-answer"
-                            name="captchaAnswer"
-                            class="z-label-input__field"
-                            inputmode="numeric"
-                            required
-                          >
-                          <label for="captcha-answer" class="z-label-input__label">Answer</label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="submit-btn">Create account</button>
-                  </form>
-                </div>
-              </section>
-
-              <section class="z-register-create z-panel-collapsible z-hidden" id="apply-panel" aria-labelledby="apply-create-heading">
-                <h2 class="z-register-create__heading" id="apply-create-heading">Apply for this address</h2>
-                <p class="z-register-create__idle" id="apply-panel-idle" aria-hidden="true"></p>
-
-                <div class="z-register-create__body">
-                  <div class="z-selected-address">
-                    <p class="z-selected-address__email" id="apply-selected-email">—</p>
-                  </div>
-
-                  <div class="z-alert z-alert--error" id="apply-error" role="alert"></div>
-                  <div class="z-alert z-alert--success z-hidden" id="apply-success" role="status"></div>
-
-                  <form id="apply-form" class="z-form-stack">
-                    <div class="z-label-input z-label-input--primary">
-                      <input
-                        type="text"
-                        id="apply-name"
-                        name="name"
-                        class="z-label-input__field"
-                        autocomplete="name"
-                        maxlength="100"
-                        required
-                      >
-                      <label for="apply-name" class="z-label-input__label">Your name</label>
-                    </div>
-
-                    <div class="z-label-input z-label-input--primary">
-                      <input
-                        type="email"
-                        id="apply-contact"
-                        name="contactEmail"
-                        class="z-label-input__field"
-                        autocomplete="email"
-                        required
-                      >
-                      <label for="apply-contact" class="z-label-input__label">Contact email</label>
-                    </div>
-
-                    <div class="z-label-input z-label-input--primary z-label-input--area">
-                      <textarea
-                        id="apply-message"
-                        name="message"
-                        class="z-label-input__field"
-                        rows="3"
-                        maxlength="2000"
-                      ></textarea>
-                      <label for="apply-message" class="z-label-input__label">Why this address? (optional)</label>
-                    </div>
-
-                    <div class="z-field-stack" id="apply-captcha-section">
-                      <div class="z-captcha-row">
-                        <span class="z-captcha-question" id="apply-captcha-question">Loading…</span>
-                        <div class="z-label-input z-label-input--primary z-label-input--compact">
-                          <input
-                            type="number"
-                            id="apply-captcha-answer"
-                            name="captchaAnswer"
-                            class="z-label-input__field"
-                            inputmode="numeric"
-                            required
-                          >
-                          <label for="apply-captcha-answer" class="z-label-input__label">Answer</label>
-                        </div>
-                      </div>
-                    </div>
-
-                    <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="apply-submit-btn">Send application</button>
-                  </form>
-                </div>
-              </section>
-            </div>
-          </div>
-
-          <p class="z-auth-aside">
-            Already have an address?
-            <a data-webmail-link class="z-link">Sign in</a>
+          <h1 class="mt-3.5 text-[22px] leading-[1.15] font-bold tracking-[-0.025em]" id="register-tagline">Create your address</h1>
+          <p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">
+            One address for Zaur Mail, Calendar, Files and Meet.
           </p>
+
+          <div class="r-alert z-railed tone-confirmed z-hidden" id="invitation-banner" role="status"></div>
+
+          <div class="r-alert z-railed tone-correspondence z-hidden" id="apply-intro">
+            <span class="r-alert-title">Invite only</span>
+            <span class="mt-0.5 block" id="apply-intro-body">
+              Registration is currently invite-only. Pick the address you want and apply for it — we'll
+              review it and email you an invitation.
+            </span>
+          </div>
+
+          <section aria-labelledby="register-pick-heading">
+            <div class="z-rule mt-[18px]"><h2 class="z-caption" id="register-pick-heading">Address</h2></div>
+            <label class="r-field mt-3">
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="8" cy="8" r="2.6" stroke="currentColor" stroke-width="1.3" />
+                <path d="M10.6 5.6v3.1c0 1.1.7 1.8 1.6 1.8s1.6-.9 1.6-2.5A5.8 5.8 0 1 0 11.3 12.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+              </svg>
+              <input
+                type="text"
+                id="username-input"
+                class="r-input"
+                autocomplete="off"
+                autocapitalize="none"
+                autocorrect="off"
+                spellcheck="false"
+                placeholder="Your name, e.g. anna"
+                aria-label="Username"
+                aria-describedby="validation-hint"
+                autofocus
+              >
+            </label>
+            <p class="mt-1.5 text-[12px] leading-normal text-[var(--z-ch-discard-ink)] empty:hidden" id="validation-hint"></p>
+            <div class="mt-3" id="results-container"></div>
+          </section>
+
+          <section class="r-panel" id="register-panel" aria-labelledby="register-create-heading">
+            <div class="z-rule mt-[18px]"><h2 class="z-caption" id="register-create-heading">Password</h2></div>
+            <p class="mt-2 text-[12.5px] text-[var(--z-muted)]">
+              For <span class="font-mono text-[11.5px] text-[var(--z-strong)]" id="selected-email-label">—</span>
+            </p>
+
+            <div class="r-alert z-railed tone-discard" id="form-error" role="alert"></div>
+
+            <form id="register-form" class="mt-3 flex flex-col gap-2.5" method="post">
+              <input type="hidden" id="selected-domain-id" name="domainId">
+              <input type="hidden" id="invite-token" name="inviteToken">
+              <input type="hidden" id="invite-email" name="inviteEmail">
+              <input type="hidden" id="next-path" name="next">
+              <input
+                type="email"
+                id="login-email"
+                name="username"
+                class="sr-only"
+                autocomplete="username"
+                tabindex="-1"
+                aria-hidden="true"
+                readonly
+              >
+
+              <div>
+                <label class="r-field">
+                  <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
+                    <path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                  </svg>
+                  <input
+                    type="password"
+                    id="new-password"
+                    name="password"
+                    class="r-input"
+                    autocomplete="new-password"
+                    placeholder="Password"
+                    aria-label="Password"
+                    aria-describedby="strength-label"
+                    required
+                  >
+                  <button type="button" class="r-eye group" data-reveal="new-password" aria-label="Show password" aria-pressed="false">
+                    <svg class="group-aria-pressed:hidden" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3" /></svg>
+                    <svg class="hidden group-aria-pressed:block" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><path d="M2.5 2.5l11 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+                  </button>
+                </label>
+                <div class="z-strength-bar" id="strength-fill" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+                <p class="mt-1 font-mono text-[10.5px] text-[var(--z-soft)] empty:hidden" id="strength-label"></p>
+              </div>
+
+              <label class="r-field">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
+                  <path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  name="confirmPassword"
+                  class="r-input"
+                  autocomplete="new-password"
+                  placeholder="Confirm password"
+                  aria-label="Confirm password"
+                  required
+                >
+                <button type="button" class="r-eye group" data-reveal="confirm-password" aria-label="Show password" aria-pressed="false">
+                  <svg class="group-aria-pressed:hidden" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><circle cx="8" cy="8" r="2" stroke="currentColor" stroke-width="1.3" /></svg>
+                  <svg class="hidden group-aria-pressed:block" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M1.5 8S4 3.5 8 3.5 14.5 8 14.5 8 12 12.5 8 12.5 1.5 8 1.5 8Z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" /><path d="M2.5 2.5l11 11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" /></svg>
+                </button>
+              </label>
+
+              <label class="r-field" id="captcha-section">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                  <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                <span class="flex-1 font-mono text-[12.5px] text-[var(--z-strong)]" id="captcha-question">Loading…</span>
+                <input
+                  type="number"
+                  id="captcha-answer"
+                  name="captchaAnswer"
+                  class="r-input w-16 flex-none text-right font-mono"
+                  inputmode="numeric"
+                  placeholder="Answer"
+                  aria-labelledby="captcha-question"
+                  required
+                >
+              </label>
+
+              <button type="submit" class="btn-tactile btn-primary mt-1 h-[42px] w-full !text-[14px]" id="submit-btn">
+                <span>Create account</span>
+                <kbd class="z-kbd z-kbd-inverse" aria-hidden="true">↵</kbd>
+              </button>
+            </form>
+          </section>
+
+          <section class="r-panel z-hidden" id="apply-panel" aria-labelledby="apply-create-heading">
+            <div class="z-rule mt-[18px]"><h2 class="z-caption" id="apply-create-heading">Apply</h2></div>
+            <p class="mt-2 text-[12.5px] text-[var(--z-muted)]">
+              For <span class="font-mono text-[11.5px] text-[var(--z-strong)]" id="apply-selected-email">—</span>
+            </p>
+
+            <div class="r-alert z-railed tone-discard" id="apply-error" role="alert"></div>
+            <div class="r-alert z-railed tone-confirmed z-hidden" id="apply-success" role="status"></div>
+
+            <form id="apply-form" class="mt-3 flex flex-col gap-2.5">
+              <label class="r-field">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.3" />
+                  <path d="M3 13.5c.6-2.3 2.6-3.7 5-3.7s4.4 1.4 5 3.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                <input type="text" id="apply-name" name="name" class="r-input" autocomplete="name" maxlength="100" placeholder="Your name" aria-label="Your name" required>
+              </label>
+
+              <label class="r-field">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <rect x="2" y="3.5" width="12" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3" />
+                  <path d="M2.4 4.6L8 8.8l5.6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                </svg>
+                <input type="email" id="apply-contact" name="contactEmail" class="r-input" autocomplete="email" placeholder="Where we can reach you" aria-label="Contact email" required>
+              </label>
+
+              <label class="r-field items-start">
+                <svg class="mt-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+                </svg>
+                <textarea id="apply-message" name="message" class="r-input" rows="3" maxlength="2000" placeholder="Why this address? (optional)" aria-label="Why this address? (optional)"></textarea>
+              </label>
+
+              <label class="r-field" id="apply-captcha-section">
+                <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                  <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
+                  <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+                </svg>
+                <span class="flex-1 font-mono text-[12.5px] text-[var(--z-strong)]" id="apply-captcha-question">Loading…</span>
+                <input
+                  type="number"
+                  id="apply-captcha-answer"
+                  name="captchaAnswer"
+                  class="r-input w-16 flex-none text-right font-mono"
+                  inputmode="numeric"
+                  placeholder="Answer"
+                  aria-labelledby="apply-captcha-question"
+                  required
+                >
+              </label>
+
+              <button type="submit" class="btn-tactile btn-primary mt-1 h-[42px] w-full !text-[14px]" id="apply-submit-btn">
+                <span>Send application</span>
+                <kbd class="z-kbd z-kbd-inverse" aria-hidden="true">↵</kbd>
+              </button>
+            </form>
+          </section>
         </div>
       </div>
     </div>
-  </main>
 
-  <footer class="z-site-footer">
-    <div class="z-site-footer__inner">
-      <span>&copy; 2026 ZAUR</span>
-      <span>
-        <a data-webmail-link class="z-link-muted">Sign in to mail</a>
-      </span>
-    </div>
-  </footer>
+    <p class="text-[13px] text-[var(--z-muted)]">
+      Already have an address?
+      <a href="https://webmail.zaur.app/login" data-webmail-link class="r-link">Sign in</a>
+    </p>
+  </main>
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
-  <script src="/sprite-blink.js"></script>
-  <script src="/label-input.js"></script>
   <script src="/script.js"></script>
 </body>
 </html>

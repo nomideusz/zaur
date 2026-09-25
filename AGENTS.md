@@ -15,7 +15,7 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
 | `@zaur/web` (landing) | `pnpm dev:web` | 5173 | Fully standalone; no backend needed |
 | `@zaur/webmail` | `pnpm dev:webmail` | 5173 | SvelteKit/Vite; needs a JMAP backend for real login |
 | `@zaur/mail2` | `pnpm dev:mail2` | 5175 | Mail 2.0 rebuild ([ADR-0005](docs/decisions/0005-mail-2.0.md)); remote functions + light tokens; own `/login` (Stalwart OAuth in prod, password fallback in dev) via `@zaur/server-auth`; 1.0 session sharing remains as a fallback |
-| `@zaur/register` | `pnpm dev:register` | 3000 | Express; needs Stalwart admin creds for real signups |
+| `@zaur/register` | `pnpm dev:register` | 3000 | Express; needs Stalwart admin creds for real signups. Styled with mail2's design system: `src/app.css` imports mail2's `tokens.css`/`base.css`, built to the committed `public/app.css` by `pnpm --filter @zaur/register build:css` (no build step in Docker, so rebuild and commit after touching either side) |
 
 - **Port collision:** `web` and `webmail` both default to Vite port **5173**. To run them at the
   same time, override one, e.g. `pnpm dev:webmail --port 5174`.

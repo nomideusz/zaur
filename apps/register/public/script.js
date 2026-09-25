@@ -14,9 +14,9 @@ const confirmPasswordInput = document.getElementById('confirm-password');
 const strengthFill = document.getElementById('strength-fill');
 const strengthLabel = document.getElementById('strength-label');
 const submitBtn = document.getElementById('submit-btn');
+const submitLabel = submitBtn.querySelector('span');
 const loginEmailInput = document.getElementById('login-email');
 
-const registerSplit = document.getElementById('register-split');
 const registerContent = document.getElementById('register-content');
 const invitationBanner = document.getElementById('invitation-banner');
 const inviteTokenInput = document.getElementById('invite-token');
@@ -32,6 +32,7 @@ const applyError = document.getElementById('apply-error');
 const applySuccess = document.getElementById('apply-success');
 const applyCaptchaQuestion = document.getElementById('apply-captcha-question');
 const applySubmitBtn = document.getElementById('apply-submit-btn');
+const applySubmitLabel = applySubmitBtn.querySelector('span');
 
 let requiresInvitation = false;
 let applicationsEnabled = false;
@@ -72,7 +73,7 @@ function getPasswordStrength(password) {
 
 function updateStrengthBar() {
   const { score, label } = getPasswordStrength(passwordInput.value);
-  strengthFill.dataset.score = passwordInput.value ? String(score) : '0';
+  strengthFill.dataset.score = passwordInput.value ? String(score) : '';
   strengthLabel.textContent = passwordInput.value ? label : '';
 }
 
@@ -106,7 +107,7 @@ function validateLocalUsername(value) {
 
 function renderStatus(status, isSelected) {
   if (status === 'checking') {
-    return '<span class="z-result-status"><span class="z-spinner" aria-hidden="true"></span></span>';
+    return '<span class="z-result-status" aria-label="Checking"><span class="z-spinner" aria-hidden="true"></span></span>';
   }
   if (status === 'available') {
     return `<span class="z-result-status available">${isSelected ? 'Selected' : 'Available'}</span>`;
@@ -126,8 +127,8 @@ function updateDomainPickLabel(statuses) {
   if (!label) return;
   const availableCount = cachedDomains.filter((d) => statuses.get(d.id) === 'available').length;
   label.textContent = availableCount
-    ? `Addresses · ${availableCount} available`
-    : 'Addresses';
+    ? `${availableCount} of ${cachedDomains.length} free`
+    : 'Checking which are free…';
 }
 
 function domainOptionMarkup(d, query, status, isSelected) {
@@ -205,7 +206,7 @@ function updateDomainOptionElement(option, query, status, isSelected) {
 function mountDomainList(query, statuses) {
   const domains = sortedDomains();
   resultsContainer.innerHTML = `
-    <p class="z-type-label z-domain-pick-label"></p>
+    <p class="z-caption z-domain-pick-label mb-1.5"></p>
     <div class="z-domain-pick-grid z-domain-pick" role="listbox" aria-label="Available addresses">${domains
       .map((d) => {
         const status = statuses.get(d.id) || 'pending';
@@ -239,21 +240,21 @@ function patchDomainList(query, statuses) {
 function renderExtensionList() {
   mountedListUsername = '';
   if (!cachedDomains.length) {
-    resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
+    resultsContainer.innerHTML = '<p class="z-caption">No domains available.</p>';
     return;
   }
 
   resultsContainer.innerHTML = `
-    <p class="z-type-label z-domain-pick-label">Domains</p>
-    <ul class="z-domain-teaser__list">${cachedDomains
-      .map((d) => `<li class="z-domain-teaser__item">@${escapeHtml(d.name)}</li>`)
+    <p class="z-caption mb-1.5">Type a name to see where it's free</p>
+    <ul class="flex flex-wrap gap-1.5">${sortedDomains()
+      .map((d) => `<li class="rounded-[6px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] px-2 py-0.5 font-mono text-[11px] text-[var(--z-soft)]">@${escapeHtml(d.name)}</li>`)
       .join('')}</ul>`;
 }
 
 function renderSearchResults(query, statuses) {
   if (!cachedDomains.length) {
     mountedListUsername = '';
-    resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
+    resultsContainer.innerHTML = '<p class="z-caption">No domains available.</p>';
     return;
   }
 
@@ -268,8 +269,6 @@ function renderSearchResults(query, statuses) {
 
 function applyInvitationUi() {
   if (hasMagicLinkInvitation) {
-    registerContent.classList.add('has-invitation');
-    if (registerTagline) registerTagline.classList.add('z-hidden');
     if (captchaSection) captchaSection.classList.add('z-hidden');
     const captchaInput = document.getElementById('captcha-answer');
     if (captchaInput) captchaInput.required = false;
@@ -315,7 +314,7 @@ function selectDomain(row) {
     applySuccess.classList.add('z-hidden');
     applyForm.classList.remove('z-hidden');
     applySubmitBtn.disabled = false;
-    applySubmitBtn.textContent = 'Send application';
+    applySubmitLabel.textContent = 'Send application';
     loadApplyCaptcha();
   } else {
     hideFormError();
@@ -324,9 +323,6 @@ function selectDomain(row) {
     }
     applyInvitationUi();
   }
-
-  window.ZaurLabelInput?.init(panel);
-  window.ZaurLabelInput?.syncAll(panel);
 
   if (currentUsername) {
     const statuses = new Map(
@@ -345,10 +341,6 @@ function selectDomain(row) {
   }
 }
 
-function syncSplitState(hasUsername) {
-  registerSplit?.classList.toggle('has-username', hasUsername);
-}
-
 function updateView() {
   const { valid, hint, username } = validateLocalUsername(usernameInput.value);
   validationHint.textContent = hint;
@@ -358,13 +350,11 @@ function updateView() {
     selectedResult = null;
     availabilityMap.clear();
     mountedListUsername = '';
-    syncSplitState(false);
     renderExtensionList();
     return;
   }
 
   currentUsername = username;
-  syncSplitState(valid);
   if (selectedResult) syncSelectedEmail();
 
   const statuses = new Map();
@@ -470,7 +460,7 @@ registerForm.addEventListener('submit', async (e) => {
   }
 
   submitBtn.disabled = true;
-  submitBtn.textContent = 'Creating account…';
+  submitLabel.textContent = 'Creating account…';
 
   try {
     const res = await fetch('/api/register', {
@@ -498,7 +488,7 @@ registerForm.addEventListener('submit', async (e) => {
         loadCaptcha();
       }
       submitBtn.disabled = false;
-      submitBtn.textContent = 'Create account';
+      submitLabel.textContent = 'Create account';
       return;
     }
 
@@ -530,7 +520,7 @@ registerForm.addEventListener('submit', async (e) => {
   } catch {
     showFormError('Network error. Please try again.');
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Create account';
+    submitLabel.textContent = 'Create account';
   }
 });
 
@@ -549,7 +539,7 @@ applyForm?.addEventListener('submit', async (e) => {
   const captchaAnswer = document.getElementById('apply-captcha-answer').value;
 
   applySubmitBtn.disabled = true;
-  applySubmitBtn.textContent = 'Sending…';
+  applySubmitLabel.textContent = 'Sending…';
 
   try {
     const res = await fetch('/api/apply', {
@@ -576,7 +566,7 @@ applyForm?.addEventListener('submit', async (e) => {
       }
       document.getElementById('apply-captcha-answer').value = '';
       applySubmitBtn.disabled = false;
-      applySubmitBtn.textContent = 'Send application';
+      applySubmitLabel.textContent = 'Send application';
       return;
     }
 
@@ -587,7 +577,7 @@ applyForm?.addEventListener('submit', async (e) => {
   } catch {
     showApplyError('Network error. Please try again.');
     applySubmitBtn.disabled = false;
-    applySubmitBtn.textContent = 'Send application';
+    applySubmitLabel.textContent = 'Send application';
   }
 });
 
@@ -606,10 +596,10 @@ function enterApplyMode() {
   if (registerTagline) registerTagline.textContent = 'Find your address';
   if (applyIntro) {
     if (!applicationsEnabled) {
-      const body = applyIntro.querySelector('.z-callout__body');
+      const body = document.getElementById('apply-intro-body');
       if (body) {
         body.textContent =
-          'Registration is currently invite-only. Browse available addresses below — applications are temporarily closed, so check back soon.';
+          'Registration is currently invite-only and applications are closed for now — check back soon.';
       }
     }
     applyIntro.classList.remove('z-hidden');
@@ -658,7 +648,7 @@ async function initInvitation() {
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
-    invitationBanner.innerHTML = `<span class="z-invite-status__badge">Invited</span><span class="z-invite-status__email">${escapeHtml(inviteEmail)}</span>`;
+    invitationBanner.innerHTML = `<span class="r-alert-title">You're invited</span><span class="mt-0.5 block">Pick any free address. The invitation went to <span class="font-mono text-[11.5px]">${escapeHtml(inviteEmail)}</span>.</span>`;
     showRegisterFlow();
     applyInvitationUi();
   } catch {
@@ -674,7 +664,7 @@ async function init() {
     return;
   }
 
-  resultsContainer.innerHTML = '<div class="z-results-empty">Loading domains…</div>';
+  resultsContainer.innerHTML = '<p class="z-caption">Loading domains…</p>';
 
   try {
     const domainsRes = await fetch('/api/domains');
@@ -686,12 +676,11 @@ async function init() {
     if (q) {
       usernameInput.value = q;
       updateView();
-      window.ZaurLabelInput?.syncAll();
     } else {
       renderExtensionList();
     }
   } catch {
-    resultsContainer.innerHTML = '<div class="z-results-empty">Unable to load domains.</div>';
+    resultsContainer.innerHTML = '<p class="z-caption">Unable to load domains.</p>';
   }
 }
 

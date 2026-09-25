@@ -3,102 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Account created · ZAUR</title>
+  <title>Account created · Zaur Mail</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon.png" type="image/png" sizes="48x48">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <script src="/traceway.js"></script>
-  <script src="/circadian-seed.js"></script>
-  <link rel="stylesheet" href="/zaur.css">
+  <link rel="stylesheet" href="/app.css">
 </head>
-<body class="z-site-shell">
-  <header class="z-site-header z-panel">
-    <div class="z-site-header__inner">
-      <a href="/" class="z-type-brand">ZAUR</a>
-      <nav class="z-site-nav" aria-label="Tools">
-        <a href="/" class="z-site-nav__link">Register</a>
-        <a href="#" data-webmail-link class="z-site-nav__link z-site-nav__link--active" aria-current="page">Mail</a>
-      </nav>
-    </div>
-  </header>
-
-  <main class="z-site-main">
-    <div class="z-auth-page z-auth-page--in-shell">
-      <div class="z-auth-card">
-        <div class="z-auth-hero">
-          <div class="z-auth-sprite" aria-hidden="true">
-            <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
-          </div>
-          <h1 class="z-type-brand z-auth-brand">Welcome aboard</h1>
-          <p class="z-auth-tagline">Your new email address is ready</p>
-          <p class="z-success-email" id="success-email">—</p>
-          <p class="z-type-lead" id="redirect-status"></p>
+<body class="bg-[var(--z-canvas)]">
+  <main class="flex min-h-svh w-full flex-col items-center justify-center gap-5 px-4 py-10 text-[var(--z-ink)] sm:px-6">
+    <div class="r-card max-w-[420px]">
+      <div class="px-[22px] pt-6 pb-[22px]">
+        <div class="flex items-center gap-[9px]">
+          <span class="text-[17px] font-bold tracking-[-0.025em]">Zaur</span>
+          <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
         </div>
+        <h1 class="mt-3.5 text-[22px] leading-[1.15] font-bold tracking-[-0.025em]">Welcome aboard</h1>
+        <p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">Your new address is ready.</p>
+        <p class="mt-3 rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] px-3 py-2.5 font-mono text-[13px] font-semibold break-all" id="success-email">—</p>
 
-        <section class="z-section z-hidden" id="passkey-section">
-          <p class="z-type-label">Webmail sign-in</p>
-          <h2 class="z-auth-brand">Create a passkey</h2>
-          <p class="z-type-lead">
-            Use Face ID, Touch ID, or your device PIN to open webmail — no password needed next time.
+        <div class="r-alert z-railed tone-confirmed" id="redirect-status" role="status"></div>
+
+        <a href="#" id="webmail-btn" class="btn-tactile btn-primary mt-3.5 h-[42px] w-full !text-[14px]">Open mail</a>
+
+        <section class="z-hidden" id="passkey-section">
+          <div class="z-rule mt-[18px]"><h2 class="z-caption">Passkey</h2></div>
+          <p class="mt-2 text-[12.5px] leading-normal text-[var(--z-muted)]">
+            Use Face ID, Touch ID or your device PIN to open mail — no password needed next time.
           </p>
-          <div class="z-action-row">
-            <a href="#" id="passkey-btn" class="z-btn-primary">Create passkey</a>
-            <a href="#" id="skip-btn" class="z-btn-ghost">Skip for now</a>
+          <div class="mt-3 flex gap-2">
+            <a href="#" id="passkey-btn" class="btn-tactile btn-primary h-[38px] flex-1 !text-[13.5px]">Create passkey</a>
+            <a href="#" id="skip-btn" class="btn-tactile h-[38px] flex-1 !text-[13.5px]">Skip for now</a>
           </div>
         </section>
 
-        <section class="z-section">
-          <p class="z-type-label">Mail client settings</p>
-          <h2 class="z-auth-brand">Connect your apps</h2>
-          <table class="z-table z-settings-table">
-            <tr>
-              <td>Webmail</td>
-              <td><a href="#" id="webmail-url" class="z-link" target="_blank" rel="noopener">—</a></td>
-            </tr>
-            <tr>
-              <td>IMAP server</td>
-              <td id="imap-host">—</td>
-            </tr>
-            <tr>
-              <td>IMAP port</td>
-              <td>993 (SSL/TLS)</td>
-            </tr>
-            <tr>
-              <td>SMTP server</td>
-              <td id="smtp-host">—</td>
-            </tr>
-            <tr>
-              <td>SMTP port</td>
-              <td>465 (SSL/TLS) or 587 (STARTTLS)</td>
-            </tr>
-            <tr>
-              <td>Username</td>
-              <td id="settings-username">—</td>
-            </tr>
-            <tr>
-              <td>Password</td>
-              <td>Your chosen password</td>
-            </tr>
-          </table>
+        <section>
+          <div class="z-rule mt-[18px]"><h2 class="z-caption">Other mail apps</h2></div>
+          <dl class="r-settings mt-3">
+            <dt>Webmail</dt>
+            <dd><a href="#" id="webmail-url" class="r-link font-medium" target="_blank" rel="noopener">—</a></dd>
+            <dt>IMAP server</dt>
+            <dd id="imap-host">—</dd>
+            <dt>IMAP port</dt>
+            <dd>993 (SSL/TLS)</dd>
+            <dt>SMTP server</dt>
+            <dd id="smtp-host">—</dd>
+            <dt>SMTP port</dt>
+            <dd>465 (SSL/TLS) or 587 (STARTTLS)</dd>
+            <dt>Username</dt>
+            <dd id="settings-username">—</dd>
+            <dt>Password</dt>
+            <dd class="font-sans text-[12.5px]">The one you just chose</dd>
+          </dl>
         </section>
 
-        <div class="z-action-row">
-          <a href="#" id="webmail-btn" class="z-btn-primary">Open mail</a>
-        </div>
-
-        <p class="z-auth-aside">
-          <a href="#" id="forgot-password-link" class="z-link">Forgot your new password?</a>
-        </p>
+        <a href="#" id="forgot-password-link" class="r-link mt-3.5 block text-center text-[12.5px]">Forgot your new password?</a>
       </div>
     </div>
   </main>
 
-  <footer class="z-site-footer">
-    <div class="z-site-footer__inner">
-      <span>&copy; 2026 ZAUR</span>
-    </div>
-  </footer>
-
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
-  <script src="/sprite-blink.js"></script>
   <script src="/success.js"></script>
 </body>
 </html>

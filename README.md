@@ -30,7 +30,7 @@ stack on Contabo (`infra/meet/`) can be stopped.
 | Package | Purpose |
 |---------|---------|
 | `@zaur/sprite` | Zaur pixel sprite frames + SVG renderer (shared by web and webmail) |
-| `@zaur/ui` | Shared design tokens, components CSS, and utilities (webmail + register) |
+| `@zaur/ui` | Shared design tokens, components CSS, and utilities (webmail + web) |
 
 ## Native mobile
 

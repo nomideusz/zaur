@@ -1,0 +1,227 @@
+/*
+ * Register's stylesheet: mail2's design system (tokens + base primitives),
+ * so signing up looks like the rest of Zaur Mail. Built into public/app.css
+ * by scripts/build-css.mjs — the source of truth for every token and shared
+ * class is apps/mail2/src/routes/styles.
+ *
+ * The CSP has no 'unsafe-inline', so nothing here may rely on a style=""
+ * attribute: channel colours come from the .tone-* classes below.
+ */
+@import 'tailwindcss' source('../public');
+
+@import '../../mail2/src/routes/styles/tokens.css';
+@import '../../mail2/src/routes/styles/base.css';
+
+@layer components {
+	/* mail2's AuthCard: the signed-out screens' card. */
+	.r-card {
+		@apply relative w-full overflow-hidden rounded-[12px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-window)];
+	}
+	.r-card::before {
+		content: '';
+		@apply absolute inset-x-0 top-0 h-[3px] bg-[var(--z-accent)];
+	}
+
+	/* A field row: icon + input in one bordered box (AuthCard's fieldClass). */
+	.r-field {
+		@apply flex min-h-10 items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] focus-within:border-[var(--z-accent)] focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.18)];
+	}
+	.r-field > svg {
+		@apply size-[15px] shrink-0 text-[var(--z-faint)];
+	}
+	.r-input {
+		@apply min-w-0 flex-1 border-0 bg-transparent text-[14px] text-[var(--z-ink)] outline-none placeholder:text-[var(--z-faint)] disabled:opacity-60 max-md:text-base;
+	}
+	input[type='number'].r-input {
+		appearance: textfield;
+	}
+	input[type='number'].r-input::-webkit-inner-spin-button {
+		appearance: none;
+		margin: 0;
+	}
+	textarea.r-input {
+		@apply resize-y py-2.5;
+	}
+	.r-link {
+		@apply font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)];
+	}
+
+	/* The eye on a password field. */
+	.r-eye {
+		@apply -mr-1.5 grid size-7 shrink-0 place-items-center rounded-[6px] text-[var(--z-soft)] hover:bg-[var(--z-hover)] hover:text-[var(--z-ink)];
+	}
+	.r-eye svg {
+		@apply size-[15px];
+	}
+
+	/* Channel colours for chips and railed notices. */
+	.tone-confirmed {
+		--z-fill: var(--z-ch-confirmed-fill);
+		--z-stroke: var(--z-ch-confirmed-solid);
+		--z-ink-on: var(--z-ch-confirmed-ink);
+		--z-rail: var(--z-ch-confirmed-solid);
+		--z-edge: var(--z-ch-confirmed-stroke);
+	}
+	.tone-discard {
+		--z-fill: var(--z-ch-discard-fill);
+		--z-stroke: var(--z-ch-discard-solid);
+		--z-ink-on: var(--z-ch-discard-ink);
+		--z-rail: var(--z-ch-discard-solid);
+		--z-edge: var(--z-ch-discard-stroke);
+	}
+	.tone-needs {
+		--z-fill: var(--z-ch-needs-fill);
+		--z-stroke: var(--z-ch-needs-solid);
+		--z-ink-on: var(--z-ch-needs-ink);
+		--z-rail: var(--z-ch-needs-solid);
+		--z-edge: var(--z-ch-needs-stroke);
+	}
+	.tone-correspondence {
+		--z-fill: var(--z-ch-correspondence-fill);
+		--z-stroke: var(--z-ch-correspondence-solid);
+		--z-ink-on: var(--z-ch-correspondence-ink);
+		--z-rail: var(--z-ch-correspondence-solid);
+		--z-edge: var(--z-ch-correspondence-stroke);
+	}
+
+	/* mail2's AuthAlert: a railed notice in its channel (with .z-railed .tone-*). */
+	.r-alert {
+		@apply mt-2.5 rounded-[8px] border border-[var(--z-edge)] bg-[var(--z-fill)] py-[9px] pr-[11px] pl-[18px] text-[12.5px] leading-normal text-[var(--z-ink-on)];
+		--z-rail-inset: 8px;
+	}
+	.r-alert-title {
+		@apply block text-[13px] font-semibold;
+	}
+	.r-alert:empty,
+	#form-error:not(.is-visible),
+	#apply-error:not(.is-visible) {
+		display: none;
+	}
+
+	/* ── The address picker ─────────────────────────────────────────── */
+
+	.z-domain-pick {
+		@apply overflow-hidden rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)];
+	}
+	.z-domain-option {
+		@apply flex h-[38px] w-full items-center gap-3 border-t border-[var(--z-hairline)] px-[11px] text-left text-[13.5px] first:border-t-0;
+	}
+	button.z-domain-option {
+		@apply cursor-pointer hover:bg-[var(--z-hover)];
+	}
+	.z-domain-option__addr {
+		@apply font-mono tabular-nums min-w-0 flex-1 truncate text-[12.5px];
+	}
+	.z-result-name {
+		@apply font-medium text-[var(--z-ink)];
+	}
+	.z-result-tld {
+		@apply text-[var(--z-soft)];
+	}
+	.z-domain-option.taken .z-domain-option__addr {
+		@apply text-[var(--z-faint)] line-through;
+	}
+	.z-domain-option.taken .z-result-name,
+	.z-domain-option.taken .z-result-tld {
+		@apply text-[var(--z-faint)];
+	}
+	.z-domain-option.selected {
+		@apply bg-[var(--z-accent-tint)] hover:bg-[var(--z-accent-tint)];
+	}
+	.z-domain-option.selected .z-result-name {
+		@apply text-[var(--z-accent-ink)];
+	}
+	.z-result-status {
+		@apply font-mono tabular-nums text-[10.5px] tracking-[0.04em] text-[var(--z-soft)] uppercase;
+	}
+	.z-result-status.available {
+		@apply text-[var(--z-ch-confirmed-ink)];
+	}
+	.z-domain-option.selected .z-result-status {
+		@apply text-[var(--z-accent-ink)];
+	}
+	.z-spinner {
+		@apply block size-3 animate-spin rounded-full border-[1.5px] border-[var(--z-line)] border-t-[var(--z-accent)];
+	}
+
+	/* Four segments that fill with the password's strength. */
+	.z-strength-bar {
+		@apply mt-1.5 grid grid-cols-4 gap-1;
+	}
+	.z-strength-bar > span {
+		@apply h-[3px] rounded-full bg-[var(--z-hairline)];
+	}
+	#strength-fill[data-score='0'] > span:first-child {
+		@apply bg-[var(--z-ch-discard-solid)];
+	}
+	#strength-fill[data-score='1'] > span:first-child,
+	#strength-fill[data-score='2'] > span:nth-child(-n + 2) {
+		@apply bg-[var(--z-ch-needs-solid)];
+	}
+	#strength-fill[data-score='3'] > span:nth-child(-n + 3),
+	#strength-fill[data-score='4'] > span {
+		@apply bg-[var(--z-ch-confirmed-solid)];
+	}
+
+	/* Panels open once an address is picked. */
+	.r-panel:not(.is-visible) {
+		display: none;
+	}
+
+	/* The success page's settings: label on the left, value in mono. */
+	.r-settings {
+		@apply grid grid-cols-[auto_1fr] gap-x-4 rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-3 py-1;
+	}
+	.r-settings > dt,
+	.r-settings > dd {
+		@apply m-0 border-t border-[var(--z-hairline)] py-2 text-[12.5px];
+	}
+	.r-settings > :is(dt, dd):nth-child(-n + 2) {
+		@apply border-t-0;
+	}
+	.r-settings > dt {
+		@apply text-[var(--z-soft)];
+	}
+	.r-settings > dd {
+		@apply font-mono tabular-nums min-w-0 text-[11.5px] wrap-anywhere text-[var(--z-strong)];
+	}
+
+	/* ── Admin ──────────────────────────────────────────────────────── */
+
+	/* A stat tile (with .z-card): caption over a mono number. */
+	.r-stat {
+		@apply flex min-w-0 flex-col gap-1 px-3.5 py-3;
+	}
+	.r-stat-value {
+		@apply font-mono text-[20px] leading-none font-semibold tabular-nums;
+	}
+
+	/* A small tactile button, for table rows and card heads. */
+	.r-btn-sm {
+		@apply h-[28px] px-2.5 text-[12px];
+	}
+
+	/* A table with hairline rows. */
+	.r-table {
+		@apply w-full border-collapse text-left text-[13px];
+	}
+	.r-table th {
+		@apply border-b border-[var(--z-hairline)] px-2.5 py-2 text-[12px] font-normal whitespace-nowrap text-[var(--z-soft)];
+	}
+	.r-table td {
+		@apply border-b border-[var(--z-hairline)] px-2.5 py-2 align-middle text-[var(--z-body)];
+	}
+	.r-table :is(th, td):first-child {
+		@apply pl-0;
+	}
+	.r-table tbody tr:last-child td {
+		@apply border-b-0;
+	}
+	.r-table td.r-table-empty {
+		@apply py-6 pl-2.5 text-center text-[12.5px] text-[var(--z-muted)];
+	}
+}
+
+.z-hidden {
+	display: none !important;
+}
