@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import PhoneTabBar from '#lib/components/mail/PhoneTabBar.svelte';
 	import ShellHeader from '#lib/components/mail/ShellHeader.svelte';
 	import { provideShell } from '#lib/shell.svelte.ts';
 	import { prefs } from '#lib/settings.svelte.ts';
@@ -22,12 +23,15 @@
      makes it guess from a snapshot instead of reading the top bar's. -->
 <div class="z-screen flex w-full flex-col items-center justify-center overflow-hidden text-[var(--z-ink)]">
 	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
-	     end stays within reach of the content in the middle. -->
+	     end stays within reach of the content in the middle. `--z-tabbar-h` lifts
+	     what floats on a phone's bottom edge (the dock, notices) above the tabs. -->
 	<div
 		bind:this={shell.frame}
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]"
+		style:--z-tabbar-h={shell.tabs ? '56px' : '0px'}
 	>
 		<ShellHeader bar={shell.bar} class={shell.barClass} />
 		{@render children()}
+		{#if shell.tabs}<PhoneTabBar />{/if}
 	</div>
 </div>

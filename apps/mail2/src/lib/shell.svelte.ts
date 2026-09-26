@@ -12,6 +12,8 @@ export class Shell {
 	bar = $state.raw<Snippet>();
 	/** Classes for the whole header: Mail steps it out on a phone reading a thread. */
 	barClass = $state('');
+	/** Whether a phone shows the section tabs: Mail leaves them out while it reads a thread. */
+	tabs = $state(true);
 	/** The app column, for whoever positions floating things against it. */
 	frame = $state<HTMLElement | null>(null);
 	/**

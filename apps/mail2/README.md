@@ -370,6 +370,13 @@ iPad in portrait with a 280px reader. Below 1024 the sidebar leaves the grid
 panes with a scrim. It sits *under* the top bar rather than over it, so the
 button that opened it is still there to close it.
 
+A phone gives each kind of navigation one home. Sections are a tab row along
+the bottom (`PhoneTabBar`) on every screen, gone while a thread is open and
+while the keyboard is up. The drawer holds your mailboxes and labels and nothing
+else. Accounts (switch, add, sign out) are Settings → Account, and the Settings
+tab wears the signed-in account's tile. The shell header keeps only the
+section's own controls; the mark, the tabs and the avatar come back from 768px.
+
 Which of the two panes a phone shows is not a third state: the page hands
 whichever one is not wanted a `max-md:hidden`. There is no phone-only list
 component and no route for the reader.

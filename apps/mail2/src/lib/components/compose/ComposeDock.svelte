@@ -60,7 +60,7 @@
 {#if minimized.length > 0}
 	<div
 		bind:this={dockEl}
-		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5 max-md:right-3 max-md:bottom-3 max-md:left-3 max-md:max-w-none max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto"
+		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5 max-md:right-3 max-md:bottom-[calc(var(--z-tabbar-h,0px)+12px)] max-md:left-3 max-md:max-w-none max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto"
 	>
 		{#each minimized as draft (draft.id)}
 			<!-- A dock chip: 44px, the menu's shadow, a status dot ringed in the

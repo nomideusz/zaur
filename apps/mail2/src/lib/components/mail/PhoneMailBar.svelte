@@ -13,10 +13,10 @@
 	 * The phone's one bar. The shell header and the list header would otherwise
 	 * stack, and a selection would stack a third idea under them. This row wears
 	 * whichever of the three the screen is in, at 44px targets: browsing (folder,
-	 * filter, search, compose), searching, or acting on a selection. Accounts and
-	 * sections live in the folder drawer, so the bar carries no avatar. It sits
-	 * above the panes, so the folder drawer cannot cover the control that
-	 * dismisses it.
+	 * filter, search, compose), searching, or acting on a selection. Sections are
+	 * the tab row along the bottom and accounts live in Settings, so the bar
+	 * carries no avatar. It sits above the panes, so the folder drawer cannot
+	 * cover the control that dismisses it.
 	 */
 	interface Props {
 		class?: string;

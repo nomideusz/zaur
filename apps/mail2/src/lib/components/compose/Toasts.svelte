@@ -90,13 +90,13 @@
 			left: 12px;
 			right: 12px;
 			transform: none;
-			bottom: 12px;
+			bottom: calc(var(--z-tabbar-h, 0px) + 12px);
 			z-index: 80;
 			align-items: stretch;
 		}
 
 		.z-toasts[data-docked='true'] {
-			bottom: 68px;
+			bottom: calc(var(--z-tabbar-h, 0px) + 68px);
 		}
 	}
 </style>

@@ -18,11 +18,11 @@
 
 {#snippet bar()}
 	<!--
-		A phone header has to hold the section's controls, the tabs' stand-in
-		and the account tile; mail's carries no title either, and the screen
-		says what it is. Kept for screen readers, which have no width limit.
+		A narrow phone header gives the width to the section's controls, and the
+		tab row says where you are; kept for screen readers, which have no width
+		limit. With no controls the title has the bar to itself.
 	-->
-	<h1 class="text-[13px] font-semibold text-[var(--z-body)] max-sm:sr-only">{title}</h1>
+	<h1 class="text-[13px] font-semibold text-[var(--z-body)] {controls ? 'max-sm:sr-only' : 'max-md:pl-1.5 max-md:text-[15px]'}">{title}</h1>
 
 	<div class="ml-auto flex min-w-0 items-center gap-2.5">
 		{@render controls?.()}

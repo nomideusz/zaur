@@ -78,6 +78,12 @@
 	const reader = readerThread();
 	const openThreadId = $derived(reader.id);
 
+	// A thread on a phone is a screen with its own way back; the section tabs step out with the list.
+	$effect(() => {
+		shell.tabs = !openThreadId;
+		return () => (shell.tabs = true);
+	});
+
 	/** Search the open folder, or every folder. It stays as picked until the page reloads. */
 	let searchAll = $state(false);
 
