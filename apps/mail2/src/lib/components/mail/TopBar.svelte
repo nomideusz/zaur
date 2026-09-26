@@ -5,7 +5,6 @@
 	import { COUNT_BADGE, channelStyle, mailboxChannel } from '#lib/mail/colors';
 	import { getShell, useShellBar } from '#lib/shell.svelte.ts';
 	import ActionIcon from './ActionIcon.svelte';
-	import ShellHeader from './ShellHeader.svelte';
 
 	interface Props {
 		/** The page hides the whole bar on a phone while a thread is being read. */
@@ -35,12 +34,10 @@
 		onSearch
 	}: Props = $props();
 
-	// Mail's stretch of the shell's header. Inside the app it goes into the
-	// layout's bar; `/prototype` has no shell, so there it draws the header itself.
-	const shell = getShell();
+	// Mail's stretch of the shell's header: it goes into the layout's bar.
 	// On a phone Mail draws PhoneMailBar instead, so this header would be a
 	// second row. Other sections never mount TopBar, and keep the shell header.
-	if (shell) useShellBar(shell, bar, () => `max-md:hidden ${className}`.trim());
+	useShellBar(getShell()!, bar, () => `max-md:hidden ${className}`.trim());
 
 	let searchEl = $state<HTMLInputElement | null>(null);
 	/** What is typed, which is only the committed query once Enter says so. */
@@ -275,7 +272,3 @@
 		</button>
 	{/if}
 {/snippet}
-
-{#if !shell}
-	<ShellHeader {bar} class="max-md:hidden {className}" />
-{/if}

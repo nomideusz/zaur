@@ -331,10 +331,6 @@ the blob through the server, mirroring `/api/upload`, because Stalwart's
 the RFC 5987 `filename*` form and a stripped plain one, so a name with an em
 dash in it survives.
 
-`/prototype` is still the fake-data design reference (and the only page that
-renders the shell without a session, which is what makes it useful for visual
-checks). It is outside the `(app)` gate, so it is publicly reachable.
-
 ## Shell layout
 
 The app is edge to edge, not a Mac-style window floated on a grey ground. The
@@ -1071,8 +1067,7 @@ What a section adds to the bar is still its own. It hands the layout a
 **snippet** through context (`#lib/shell.svelte.ts`, `useShellBar`): a snippet
 closes over the component that declares it, so Mail's search field lives in the
 layout's header and still belongs to `TopBar`'s state. `SectionShell` is now
-just that registration — a title and a `controls` snippet — and
-`/prototype`, which has no layout, lets `TopBar` draw the header itself. The
+just that registration — a title and a `controls` snippet. The
 layout also exposes the app column (`shell.frame`), which Mail's floating
 compose panels are placed against.
 

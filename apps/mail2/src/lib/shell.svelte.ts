@@ -31,7 +31,7 @@ export function provideShell(): Shell {
 	return setContext(KEY, new Shell());
 }
 
-/** Undefined outside the `(app)` layout — `/prototype` draws its own header. */
+/** Undefined outside the `(app)` layout. */
 export function getShell(): Shell | undefined {
 	return getContext<Shell | undefined>(KEY);
 }
