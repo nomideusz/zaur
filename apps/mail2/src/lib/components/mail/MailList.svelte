@@ -526,9 +526,9 @@
 						{@const isSelected = selection.has(row.threadId)}
 						{@const channel = rowChannel(row)}
 						<!--
-							Four states, in rank: ticked and open both mean "you picked this" and
-							wear the correspondence selection; the keyboard cursor is a whisper of
-							the same blue; rest is the channel's own colour.
+							Four states, in rank: ticked wears the correspondence selection; open
+							wears its channel's wash with a ring; the keyboard cursor is a whisper
+							of blue; rest is the channel's own colour.
 						-->
 						<div
 							data-row-id={row.threadId}
@@ -697,8 +697,8 @@
 	/*
 	 * A row is a card wearing its channel: the rail is the channel's solid, and
 	 * unread adds the channel's fill and stroke. Read rows go white with the
-	 * rail at a third strength; selection is the correspondence solid whatever
-	 * the channel, because "you picked this" is one idea across the shell.
+	 * rail at a third strength. A ticked row is the correspondence solid whatever
+	 * the channel; the open row wears its own channel, as the design's does.
 	 */
 	.z-row {
 		transition:
@@ -731,11 +731,19 @@
 		border-color: var(--z-accent-line);
 	}
 
-	.z-row[data-state='selected'],
-	.z-row[data-state='open'] {
+	.z-row[data-state='selected'] {
 		background: var(--z-accent-tint);
 		border-color: var(--z-accent);
 		box-shadow: 0 0 0 1px var(--z-accent);
+	}
+
+	/* The open thread keeps its colour: the channel's wash, a full rail and a
+	   ring in its own stroke, so row and reader card read as one hue. */
+	.z-row[data-state='open'] {
+		--z-rail-strength: 1;
+		background: var(--z-fill);
+		border-color: var(--z-stroke);
+		box-shadow: 0 0 0 1px var(--z-stroke);
 	}
 
 	.z-row-actions {
