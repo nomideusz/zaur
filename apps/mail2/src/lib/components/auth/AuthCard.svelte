@@ -12,7 +12,7 @@
 
 	/**
 	 * The signed-out screens' card: sign in, forgotten password, new password.
-	 * A top edge in the accent, the wordmark with its Beta chip, the title, then
+	 * A top edge in the accent, the mark and wordmark with its Beta chip, the title, then
 	 * the page's own content. The one screen with no channels on it, so the
 	 * accent is the only colour. `below` sits under the card.
 	 */
@@ -25,6 +25,7 @@
 
 		<div class="px-[22px] pt-6 pb-[22px]">
 			<div class="flex items-center gap-[9px]">
+				<img src="/favicon.svg" alt="" class="size-6" />
 				<span class="text-[17px] font-bold tracking-[-0.025em] text-[var(--z-ink)]">Zaur</span>
 				<span class="z-chip z-chip-filled !tracking-[0.06em]" style="--z-fill:var(--z-ch-needs-fill);--z-stroke:var(--z-ch-needs-solid);--z-ink-on:var(--z-ch-needs-ink)">Beta</span>
 			</div>

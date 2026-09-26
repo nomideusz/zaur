@@ -40,6 +40,8 @@ export type Prefs = {
 	aiArchiveNewsletters: boolean;
 	/** How long a sent message waits, with an Undo, before it goes. 0 sends at once. */
 	undoSendSeconds: number;
+	/** The unread count on the installed app's icon. Off, new mail still notifies; the icon stays bare. */
+	appBadge: boolean;
 };
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -65,7 +67,8 @@ export const DEFAULT_PREFS: Prefs = {
 	aiConfidence: 'balanced',
 	aiHeadersOnly: false,
 	aiArchiveNewsletters: false,
-	undoSendSeconds: 5
+	undoSendSeconds: 5,
+	appBadge: true
 };
 
 /**
@@ -92,7 +95,8 @@ export const ACCOUNT_PREF_KEYS = [
 	'aiConfidence',
 	'aiHeadersOnly',
 	'aiArchiveNewsletters',
-	'undoSendSeconds'
+	'undoSendSeconds',
+	'appBadge'
 ] as const satisfies readonly (keyof Prefs)[];
 
 export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
@@ -110,7 +114,8 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		aiConfidence: prefs.aiConfidence,
 		aiHeadersOnly: prefs.aiHeadersOnly,
 		aiArchiveNewsletters: prefs.aiArchiveNewsletters,
-		undoSendSeconds: prefs.undoSendSeconds
+		undoSendSeconds: prefs.undoSendSeconds,
+		appBadge: prefs.appBadge
 	};
 }
 

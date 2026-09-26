@@ -2,10 +2,18 @@
 	import type { Snippet } from 'svelte';
 	import ShellHeader from '#lib/components/mail/ShellHeader.svelte';
 	import { provideShell } from '#lib/shell.svelte.ts';
+	import { prefs } from '#lib/settings.svelte.ts';
 
 	let { children }: { children: Snippet } = $props();
 
 	const shell = provideShell();
+
+	// The server stops sending a count once the badge is off; this clears one that
+	// is already on the icon, here and on each device as it next opens the app.
+	$effect(() => {
+		if (prefs.appBadge) return;
+		(navigator as Navigator & { clearAppBadge?: () => Promise<void> }).clearAppBadge?.().catch(() => {});
+	});
 </script>
 
 <!-- Past the 1780px ceiling the body's ground shows either side of the app

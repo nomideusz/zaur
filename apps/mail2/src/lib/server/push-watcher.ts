@@ -17,6 +17,7 @@
  */
 import {
 	accountKey,
+	getAccountPrefs,
 	getStoreDb,
 	deletePushSubscription,
 	listPushSubscriptions,
@@ -27,6 +28,7 @@ import {
 } from '@zaur/server-auth';
 import type { JMAPClient, JMAPEmail } from '@zaur/mail-core';
 import { aiSettings, categorizeInBackground } from '#lib/server/categorize';
+import { parsePrefs } from '#lib/settings';
 import { createConnectedClient } from '#lib/server/jmap';
 import { pushPublicKey, sendPush, type PushMessage } from '#lib/server/push';
 
@@ -305,8 +307,11 @@ class AccountWatcher {
 		const incoming = arrived.filter((email) => !email.keywords?.$seen);
 		if (incoming.length === 0) return;
 
-		const unreadCount = (await client.getMailboxes().catch(() => [])).find((box) => box.id === inboxId)
-			?.unreadEmails;
+		// With the badge turned off the count goes out as 0, which the worker reads as
+		// "clear the icon" — so a badge set before the switch goes on the next mail.
+		const unreadCount = parsePrefs(getAccountPrefs(getStoreDb(), this.key)).appBadge
+			? (await client.getMailboxes().catch(() => [])).find((box) => box.id === inboxId)?.unreadEmails
+			: 0;
 		const result = await sendPush(
 			this.row,
 			incomingMailMessage(incoming, {

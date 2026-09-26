@@ -1,7 +1,7 @@
 {
 	"id": "/",
 	"name": "Zaur Mail",
-	"short_name": "Zaur",
+	"short_name": "Zaur Mail",
 	"description": "Mail for your Zaur account.",
 	"start_url": "/",
 	"scope": "/",

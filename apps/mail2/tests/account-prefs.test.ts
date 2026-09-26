@@ -21,6 +21,7 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 		'aiCategories',
 		'aiConfidence',
 		'aiHeadersOnly',
+		'appBadge',
 		'composePlain',
 		'markReadOnOpen',
 		'pageSize',
@@ -46,8 +47,14 @@ test('accountPrefsOf: carries only the account keys, whatever else is set', () =
 		aiConfidence: DEFAULT_PREFS.aiConfidence,
 		aiHeadersOnly: DEFAULT_PREFS.aiHeadersOnly,
 		aiArchiveNewsletters: DEFAULT_PREFS.aiArchiveNewsletters,
-		undoSendSeconds: DEFAULT_PREFS.undoSendSeconds
+		undoSendSeconds: DEFAULT_PREFS.undoSendSeconds,
+		appBadge: DEFAULT_PREFS.appBadge
 	});
+});
+
+test('appBadge: on unless the person turns it off, and it travels', () => {
+	assert.equal(DEFAULT_PREFS.appBadge, true);
+	assert.equal(mergeAccountPrefs({ ...DEFAULT_PREFS }, { appBadge: false }).appBadge, false);
 });
 
 test('aiConfidence: a level the app does not know falls back to balanced', () => {

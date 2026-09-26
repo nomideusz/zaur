@@ -2,6 +2,7 @@
 	import { messageOf } from '#lib/errors';
 	import { onMount } from 'svelte';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
+	import { prefs, setPref } from '#lib/settings.svelte.ts';
 	import { disablePush, enablePush, pushEndpoint, pushStatus, type PushStatus } from '#lib/push';
 	import { pushMutes, setPushMutes } from '../../../push.remote';
 	import { whoami } from '../../../session.remote';
@@ -66,7 +67,7 @@
 	const note: Record<PushStatus, string> = {
 		unconfigured: 'Not set up on this server',
 		unsupported: 'This browser cannot show notifications',
-		install: 'Add Zaur to your Home Screen (Share → Add to Home Screen) and open it from there',
+		install: 'Add Zaur Mail to your Home Screen (Share → Add to Home Screen) and open it from there',
 		denied: 'Blocked in your browser settings for this site',
 		off: 'Off on this device',
 		on: 'On for this device'
@@ -87,6 +88,14 @@
 			</button>
 		{/if}
 	</div>
+	<!-- The count rides on each notification, so it only ever appears with them on; the setting follows the account. -->
+	<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-hairline)] px-4 py-3">
+		<span class="min-w-0">
+			<span class="block text-[13.5px] font-medium text-[var(--z-body)]">Unread count on the app icon</span>
+			<span class="mt-[1px] block text-[12px] leading-[1.4] text-[var(--z-soft)]">Off, new mail still notifies, and the icon stays bare.</span>
+		</span>
+		<input type="checkbox" class="z-check" checked={prefs.appBadge} onchange={(event) => setPref('appBadge', event.currentTarget.checked)} />
+	</label>
 	{#if session && muted}
 		<h2 class="z-card-head border-t border-[var(--z-hairline)]">Accounts on this device</h2>
 		<div class="divide-y divide-[var(--z-hairline)] border-t border-[var(--z-hairline)]">
