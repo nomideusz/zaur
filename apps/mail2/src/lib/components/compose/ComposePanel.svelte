@@ -11,6 +11,7 @@
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import { flushSync } from 'svelte';
 	import {
 		buildSchedulePresets,
 		customSendTimeMin,
@@ -91,6 +92,34 @@
 			draft: 'Draft'
 		}[draft.kind]
 	);
+	/**
+	 * On a sheet, writing the message folds From, To, Cc and Bcc into one line:
+	 * with the keyboard up, three open address rows left the text a sliver.
+	 * Focus decides it — the message folds them, any address field unfolds
+	 * them, and Subject leaves them as they are.
+	 */
+	let writing = $state(false);
+	const folded = $derived(sheet && writing);
+	const foldedRows = $derived(
+		(['to', 'cc', 'bcc'] as const)
+			.map((field) => ({
+				label: { to: 'To', cc: 'Cc', bcc: 'Bcc' }[field],
+				names: draft[field].map((person) => person.name || person.email).join(', ')
+			}))
+			.filter((row) => row.names)
+	);
+
+	function onFieldsFocus(event: FocusEvent) {
+		const target = event.target as HTMLElement;
+		if (target.id !== subjectId) writing = !!target.closest(`#${CSS.escape(bodyId)}`);
+	}
+
+	/** Synchronous, so the To field is focused inside the tap and the keyboard stays up. */
+	function unfold() {
+		flushSync(() => (writing = false));
+		focusField('to');
+	}
+
 	const subjectDim = $derived(draft.to.length === 0 ? 'opacity-68' : 'opacity-100');
 	/** Schedule picker state — transient UI, so local state rather than the draft record. */
 	let scheduleOpen = $state(false);
@@ -139,6 +168,7 @@
 		const target = draft.focusTarget;
 		if (!target) return;
 		compose.consumeFocus(draft.id);
+		if (target !== 'body') writing = false;
 		const id = target === 'to' ? fieldId('to') : target === 'subject' ? subjectId : bodyId;
 		requestAnimationFrame(() => document.getElementById(id)?.focus());
 	});
@@ -758,7 +788,7 @@
 	</div>
 
 	<!-- Fields -->
-	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-4">
+	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-4" onfocusin={onFieldsFocus}>
 		<!--
 			To, Cc and Bcc are one row drawn three times. Each is a chip list with
 			completion over the same address book, so a wrong address in Cc is
@@ -770,7 +800,27 @@
 			fifth of the screen spent saying "To".
 		-->
 		<!-- Only an account with aliases has a choice to make, so only then is there a row. -->
-		{#if compose.identities.length > 1}
+		{#if folded}
+			<button
+				type="button"
+				class="flex h-[54px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] text-left text-base"
+				aria-label="Edit recipients"
+				onclick={unfold}
+			>
+				{@render stepDot(draft.to.length > 0)}
+				<span class="min-w-0 flex-1 truncate text-[var(--z-ink)]">
+					{#each foldedRows as row, index (row.label)}
+						{#if index > 0}<span class="mx-1.5 text-[var(--z-faint)]">·</span>{/if}
+						<span class="text-[var(--z-faint)]">{row.label}</span> {row.names}
+					{:else}
+						<span class="text-[var(--z-faint)]">To</span>
+					{/each}
+				</span>
+				<svg class="size-4 shrink-0 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</button>
+		{:else if compose.identities.length > 1}
 			<label class="flex h-[45px] items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px]">
 				{@render stepDot(true)}
 				<span class="shrink-0 text-sm text-[var(--z-faint)]">From</span>
@@ -787,9 +837,11 @@
 				</select>
 			</label>
 		{/if}
-		{@render addressRow('to', 'To')}
-		{#if draft.ccShown}{@render addressRow('cc', 'Cc')}{/if}
-		{#if draft.bccShown}{@render addressRow('bcc', 'Bcc')}{/if}
+		{#if !folded}
+			{@render addressRow('to', 'To')}
+			{#if draft.ccShown}{@render addressRow('cc', 'Cc')}{/if}
+			{#if draft.bccShown}{@render addressRow('bcc', 'Bcc')}{/if}
+		{/if}
 
 		<!-- Subject -->
 		<div class="flex h-[45px] items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px] {subjectDim} transition-opacity duration-[160ms]">
