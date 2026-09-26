@@ -27,19 +27,23 @@ export const load: PageServerLoad = ({ cookies, url }) => {
 	const session = readSessionFull(cookies);
 	const active = session ? getActiveAccount(session) : undefined;
 	const adding = url.searchParams.get('mode') === 'add' && Boolean(active);
-	if (active && !adding) redirect(303, safeNext(url.searchParams.get('next')));
 
 	const rawNext = url.searchParams.get('next');
-	const continueTo = rawNext?.startsWith('/oidc/authorize')
-		? findOidcClient(new URL(rawNext, url).searchParams.get('client_id'))?.name
-		: undefined;
 	const signedOut = url.searchParams.get('signed_out') === '1';
 	const returnTo = signedOut
 		? postLogoutTarget(url.searchParams.get('return_to'), null, allOidcRedirectUris())
 		: null;
+	const next = rawNext ? safeNext(rawNext) : returnTo ? `/auth/return?to=${encodeURIComponent(returnTo)}` : '/';
+	// Also where a sign-in lands: the form's success re-runs this load, and its
+	// redirect beats the page's own goto — so it must know about `return_to` too.
+	if (active && !adding) redirect(303, next);
+
+	const continueTo = rawNext?.startsWith('/oidc/authorize')
+		? findOidcClient(new URL(rawNext, url).searchParams.get('client_id'))?.name
+		: undefined;
 	const returnName = returnTo ? (findOidcClientByOrigin(returnTo)?.name ?? 'the app') : null;
 	return {
-		next: rawNext ? safeNext(rawNext) : returnTo ? `/auth/return?to=${encodeURIComponent(returnTo)}` : '/',
+		next,
 		continueTo,
 		signedOut,
 		returnName,
