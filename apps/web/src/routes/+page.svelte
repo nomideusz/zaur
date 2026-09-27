@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Plane Community',
+			desc: 'Plane project tracker: issues, cycles, modules and pages for your team, uploads in a Railway bucket, and the admin created on first boot.',
+			deploy: 'https://railway.com/deploy/plane-community',
+			source: 'https://github.com/nomideusz/plane-railway'
+		},
+		{
 			name: 'Zammad 7',
 			desc: 'Zammad 7 helpdesk: email, chat and phone tickets in one inbox, full-text search on Elasticsearch, and the admin created on first boot.',
 			deploy: 'https://railway.com/deploy/zammad-7',
