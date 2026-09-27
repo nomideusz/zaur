@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
-import type { AddJob } from '#lib/types';
+import type { AddJob, YouTubeResult } from '#lib/types';
 import { adminSub } from '#lib/server/navidrome';
 
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
@@ -162,8 +162,7 @@ async function findInLibrary(videoId: string): Promise<string | null> {
 }
 
 function download(job: Job, work: string): Promise<VideoInfo> {
-	const yattee = process.env.YATTEE_URL?.trim().replace(/\/+$/, '');
-	if (yattee) return downloadViaYattee(job, work, yattee);
+	if (yatteeUrl()) return downloadViaYattee(job, work);
 	const args = [
 		'--no-playlist',
 		'--js-runtimes', 'node',
@@ -202,18 +201,34 @@ interface YatteeVideo {
 	adaptiveFormats?: { type: string; url: string; bitrate?: number | string; clen?: string }[];
 }
 
+const yatteeUrl = () => process.env.YATTEE_URL?.trim().replace(/\/+$/, '');
+
+async function yattee<T>(path: string, timeoutMs = 120_000): Promise<T> {
+	const login = Buffer.from(`${process.env.YATTEE_USER}:${process.env.YATTEE_PASSWORD}`).toString('base64');
+	const response = await fetch(`${yatteeUrl()}${path}`, {
+		headers: { authorization: `Basic ${login}` },
+		signal: AbortSignal.timeout(timeoutMs)
+	});
+	if (!response.ok) throw new Error(`Yattee: ${response.status} ${(await response.text()).slice(0, 200)}`);
+	return (await response.json()) as T;
+}
+
+/** YouTube's videos for a search, through Yattee. Shorts and live streams aren't songs. */
+export async function searchYouTube(query: string): Promise<YouTubeResult[]> {
+	if (!yatteeUrl()) throw new Error('Searching YouTube needs Yattee (YATTEE_URL).');
+	type Hit = YouTubeResult & { type: string; lengthSeconds: number; isShort?: boolean; liveNow?: boolean };
+	const hits = await yattee<Hit[]>(`/api/v1/search?${new URLSearchParams({ q: query, type: 'video' })}`, 30_000);
+	return hits
+		.filter((hit) => hit.type === 'video' && !hit.isShort && !hit.liveNow && hit.lengthSeconds > 0)
+		.map(({ videoId, title, author, lengthSeconds }) => ({ videoId, title, author, seconds: lengthSeconds }));
+}
+
 /**
  * proxy_mode=download makes Yattee's stream URLs /proxy/fast/ ones: yt-dlp
  * fetches on Yattee's host and streams the file here, a token in the URL.
  */
-async function downloadViaYattee(job: Job, work: string, base: string): Promise<VideoInfo> {
-	const login = Buffer.from(`${process.env.YATTEE_USER}:${process.env.YATTEE_PASSWORD}`).toString('base64');
-	const response = await fetch(`${base}/api/v1/videos/${job.videoId}?proxy=true&proxy_mode=download`, {
-		headers: { authorization: `Basic ${login}` },
-		signal: AbortSignal.timeout(120_000)
-	});
-	if (!response.ok) throw new Error(`Yattee: ${response.status} ${(await response.text()).slice(0, 200)}`);
-	const video = (await response.json()) as YatteeVideo;
+async function downloadViaYattee(job: Job, work: string): Promise<VideoInfo> {
+	const video = await yattee<YatteeVideo>(`/api/v1/videos/${job.videoId}?proxy=true&proxy_mode=download`);
 	// AAC first: it goes into the .m4a without re-encoding.
 	const aac = (type: string) => Number(type.startsWith('audio/mp4'));
 	const audio = video.adaptiveFormats

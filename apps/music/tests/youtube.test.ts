@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { tagsFor, videoIdFrom } from '../src/lib/server/youtube.ts';
+import { searchYouTube, tagsFor, videoIdFrom } from '../src/lib/server/youtube.ts';
 
 test('videoIdFrom finds the video in YouTube and Bartube links', () => {
 	const id = 'dQw4w9WgXcQ';
@@ -36,4 +36,22 @@ test('tagsFor reads artist and title from a music upload', () => {
 	});
 	// No "Artist - Title": the channel is the artist.
 	assert.equal(tagsFor({ id: 'x', title: 'Live at home', channel: 'Some Band - Topic' }).artist, 'Some Band');
+});
+
+test('searchYouTube keeps songs: no shorts, live streams or channels', async (t) => {
+	process.env.YATTEE_URL = 'https://yattee.test/';
+	const video = { type: 'video', videoId: 'dQw4w9WgXcQ', title: 'Never Gonna Give You Up', author: 'Rick Astley', lengthSeconds: 213 };
+	const fetch = t.mock.method(globalThis, 'fetch', async () =>
+		Response.json([
+			video,
+			{ ...video, videoId: 'short000000', isShort: true },
+			{ ...video, videoId: 'live0000000', liveNow: true, lengthSeconds: 0 },
+			{ type: 'channel', author: 'Rick Astley' }
+		])
+	);
+	assert.deepEqual(await searchYouTube('rick astley'), [
+		{ videoId: 'dQw4w9WgXcQ', title: 'Never Gonna Give You Up', author: 'Rick Astley', seconds: 213 }
+	]);
+	assert.equal(String(fetch.mock.calls[0].arguments[0]), 'https://yattee.test/api/v1/search?q=rick+astley&type=video');
+	delete process.env.YATTEE_URL;
 });

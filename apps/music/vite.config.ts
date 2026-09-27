@@ -19,7 +19,8 @@ export default defineConfig({
 					'default-src': ['self'],
 					'script-src': ['self'],
 					'style-src': ['self', 'unsafe-inline'],
-					'img-src': ['self', 'data:', 'blob:'],
+					// i.ytimg.com: thumbnails of the Add page's YouTube search results.
+					'img-src': ['self', 'data:', 'blob:', 'https://i.ytimg.com'],
 					'font-src': ['self'],
 					'media-src': ['self', 'blob:'],
 					'connect-src': ['self'],

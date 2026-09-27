@@ -53,6 +53,14 @@ export interface Playlist {
 }
 
 /** One "Add from YouTube" request, as the add page shows it. */
+/** A YouTube search hit on the Add page. */
+export interface YouTubeResult {
+	videoId: string;
+	title: string;
+	author: string;
+	seconds: number;
+}
+
 export interface AddJob {
 	id: string;
 	videoId: string;

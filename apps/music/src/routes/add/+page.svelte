@@ -3,19 +3,40 @@
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import Icon from '#lib/components/Icon.svelte';
-	import type { AddJob } from '#lib/types';
+	import { formatTime } from '#lib/player.svelte';
+	import type { AddJob, YouTubeResult } from '#lib/types';
 
-	let link = $state('');
+	let query = $state('');
 	let jobs = $state<AddJob[]>([]);
+	let results = $state<YouTubeResult[] | null>(null);
 	let problem = $state('');
 	let sending = $state(false);
+
+	const isLink = (text: string) => /https?:\/\/\S/.test(text);
+	// jobs is newest first: the newest job for a video wins.
+	const jobFor = $derived(new Map(jobs.toReversed().map((job) => [job.videoId, job])));
 
 	async function refresh() {
 		const response = await fetch('/api/add');
 		if (response.ok) jobs = await response.json();
 	}
 
-	async function add(input: string) {
+	async function search(words: string) {
+		problem = '';
+		sending = true;
+		try {
+			const response = await fetch(`/api/add/search?${new URLSearchParams({ q: words })}`);
+			if (!response.ok) {
+				problem = (await response.json().catch(() => null))?.message ?? 'Search did not work. Try again?';
+				return;
+			}
+			results = await response.json();
+		} finally {
+			sending = false;
+		}
+	}
+
+	async function add(input: string): Promise<boolean> {
 		problem = '';
 		sending = true;
 		try {
@@ -26,10 +47,10 @@
 			});
 			if (!response.ok) {
 				problem = (await response.json().catch(() => null))?.message ?? 'That did not work. Try again?';
-				return;
+				return false;
 			}
-			link = '';
 			await refresh();
+			return true;
 		} finally {
 			sending = false;
 		}
@@ -63,28 +84,57 @@
 		class="add"
 		onsubmit={(event) => {
 			event.preventDefault();
-			if (link.trim()) add(link);
+			if (!query.trim()) return;
+			if (isLink(query)) add(query).then((added) => added && (query = ''));
+			else search(query.trim());
 		}}
 	>
 		<input
 			class="z-field"
-			type="url"
-			inputmode="url"
-			placeholder="https://youtube.com/watch?v=… or a Bartube link"
-			aria-label="Video link"
+			type="search"
+			enterkeyhint="search"
+			placeholder="Search YouTube, or paste a link"
+			aria-label="Search YouTube, or paste a video link"
 			autocomplete="off"
-			bind:value={link}
+			bind:value={query}
 		/>
-		<button class="btn-tactile btn-primary tall" type="submit" disabled={sending || !link.trim()}>
-			<Icon name="add" /> Add
+		<button class="btn-tactile btn-primary tall" type="submit" disabled={sending || !query.trim()}>
+			{#if isLink(query)}<Icon name="add" /> Add{:else}<Icon name="search" /> Search{/if}
 		</button>
 	</form>
 	{#if problem}<p class="problem"><Icon name="alert" /> {problem}</p>{/if}
 	<p class="z-caption hint">
-		A YouTube, YouTube Music or Bartube link. The song's audio goes into the library, which everyone on Zaur Music
+		Search words, or a YouTube, YouTube Music or Bartube link. The song's audio goes into the library, which everyone on Zaur Music
 		shares, with the video's thumbnail as its cover. On Android, install Zaur Music and share from the YouTube app
 		straight to it.
 	</p>
+
+	{#if results}
+		<section class="section">
+			<div class="section-head"><h2>{results.length ? 'On YouTube' : 'Nothing found on YouTube'}</h2></div>
+			<ul class="jobs">
+				{#each results as result (result.videoId)}
+					{@const job = jobFor.get(result.videoId)}
+					<li class="job">
+						<img class="thumb" src="https://i.ytimg.com/vi/{result.videoId}/mqdefault.jpg" alt="" loading="lazy" />
+						<span class="text">
+							<span class="title">{result.title}</span>
+							<span class="meta">{result.author} · {formatTime(result.seconds)}</span>
+						</span>
+						{#if job?.status === 'done'}
+							<span class="state done" title="Added"><Icon name="check" /></span>
+						{:else if job && job.status !== 'failed'}
+							<span class="z-caption">{job.status === 'queued' ? 'Waiting…' : `${job.progress ?? 0}%`}</span>
+						{:else}
+							<button class="btn-tactile" type="button" disabled={sending} onclick={() => add(result.videoId)}>
+								{job ? 'Retry' : 'Add'}
+							</button>
+						{/if}
+					</li>
+				{/each}
+			</ul>
+		</section>
+	{/if}
 
 	{#if jobs.length}
 		<section class="section">
@@ -153,6 +203,14 @@
 		gap: 12px;
 		padding: 10px 8px;
 		border-bottom: 1px solid var(--z-hairline);
+	}
+	.thumb {
+		width: 64px;
+		height: 36px;
+		flex-shrink: 0;
+		border-radius: 4px;
+		background: var(--z-sunken);
+		object-fit: cover;
 	}
 	.state {
 		display: grid;
