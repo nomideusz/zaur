@@ -1,0 +1,31 @@
+{
+	"name": "@zaur/music",
+	"private": true,
+	"license": "AGPL-3.0-only",
+	"version": "0.0.1",
+	"type": "module",
+	"imports": {
+		"#lib/*": "./src/lib/*"
+	},
+	"scripts": {
+		"dev": "node --env-file-if-exists=.env node_modules/vite/bin/vite.js dev --port 5176",
+		"build": "vite build",
+		"preview": "vite preview",
+		"prepare": "svelte-kit sync || echo ''",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"test": "node --import tsx --test tests/*.test.ts"
+	},
+	"devDependencies": {
+		"@sveltejs/adapter-node": "6.0.0-next.12",
+		"@sveltejs/kit": "3.0.0-next.27",
+		"@sveltejs/vite-plugin-svelte": "^7.3.0",
+		"@tailwindcss/vite": "^4.3.3",
+		"@types/node": "^25.9.1",
+		"svelte": "^5.57.0",
+		"svelte-check": "^4.7.6",
+		"tailwindcss": "^4.3.3",
+		"tsx": "^4.23.13",
+		"typescript": "^6.0.2",
+		"vite": "^8.3.0"
+	}
+}

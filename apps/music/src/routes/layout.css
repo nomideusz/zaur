@@ -1,0 +1,99 @@
+/*
+ * Zaur Music wears mail2's design system: its tokens and primitives, imported
+ * as register does. Music's own shared page pieces follow.
+ */
+@import 'tailwindcss';
+
+@import '../../../mail2/src/routes/styles/tokens.css';
+@import '../../../mail2/src/routes/styles/base.css';
+
+@layer components {
+	.page {
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: calc(16px + env(safe-area-inset-top)) 16px 32px;
+	}
+	@media (min-width: 768px) {
+		.page {
+			padding: 28px 32px 48px;
+		}
+	}
+	.page-head {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		margin-bottom: 18px;
+	}
+	.page-head h1 {
+		margin: 0;
+		color: var(--z-ink);
+		font-size: 24px;
+		font-weight: 700;
+		letter-spacing: -0.01em;
+	}
+	.actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+	}
+	.section {
+		margin-top: 28px;
+	}
+	.section-head {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		margin-bottom: 10px;
+	}
+	.section-head h2 {
+		margin: 0;
+		color: var(--z-ink);
+		font-size: 16px;
+		font-weight: 650;
+	}
+	.section-head a,
+	.link {
+		color: var(--z-accent-ink);
+		font-size: 13px;
+		font-weight: 600;
+		text-decoration: none;
+	}
+	.section-head a:hover,
+	.link:hover {
+		text-decoration: underline;
+	}
+	.album-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		gap: 20px 16px;
+	}
+	@media (max-width: 480px) {
+		.album-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 16px 12px;
+		}
+	}
+	.album-row {
+		display: grid;
+		grid-auto-columns: minmax(136px, 164px);
+		grid-auto-flow: column;
+		gap: 16px;
+		padding-bottom: 6px;
+		overflow-x: auto;
+		scroll-snap-type: x proximity;
+		scrollbar-width: thin;
+	}
+	.album-row > * {
+		scroll-snap-align: start;
+	}
+	.empty-note {
+		padding: 24px 0;
+		color: var(--z-soft);
+	}
+	.btn-tactile.tall {
+		height: 36px;
+		padding: 0 14px;
+	}
+}

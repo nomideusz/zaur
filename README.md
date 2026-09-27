@@ -17,6 +17,7 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 | **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app) | CapRover |
 | **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | Dokploy |
 | **Mail 2.0** (beta, own login) | `@zaur/mail2` | [mail2.zaur.app](https://mail2.zaur.app) | Dokploy |
+| **Music** | `@zaur/music` | [music.zaur.app](https://music.zaur.app) | Dokploy |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | Dokploy |
 | **Native Mail** (planned) | `apps/mobile` | iOS + Android | App Store + Google Play |
 
@@ -54,6 +55,7 @@ pnpm install
 pnpm dev:web           # http://localhost:5173 (landing site)
 pnpm dev:webmail       # http://localhost:5173
 pnpm dev:mail2         # http://localhost:5175 (Mail 2.0 rebuild, shares the 1.0 session)
+pnpm dev:music         # http://localhost:5176 (Zaur Music, over Navidrome)
 pnpm dev:register       # http://localhost:3000
 ```
 
@@ -75,6 +77,7 @@ apps/
   web/           SvelteKit static landing site (zaur.app)
   webmail/       SvelteKit JMAP client (1.0, frozen to bugfixes during the 2.0 rebuild)
   mail2/         SvelteKit JMAP client (2.0 rebuild — see docs/decisions/0005-mail-2.0.md)
+  music/         Zaur Music PWA over Navidrome, with Add from YouTube
   register/      Stalwart account registration portal
   mobile/        Planned KMP core + native SwiftUI and Compose clients
 packages/
