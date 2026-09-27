@@ -86,6 +86,8 @@
 <style>
 	.shell {
 		display: grid;
+		/* minmax(0, …): an auto column grows to the playing title's full width. */
+		grid-template-columns: minmax(0, 1fr);
 		grid-template-rows: minmax(0, 1fr) auto;
 		grid-template-areas: 'main' 'dock';
 		height: 100dvh;

@@ -140,6 +140,7 @@
 	.body {
 		display: grid;
 		flex: 1;
+		grid-template-columns: minmax(0, 1fr);
 		gap: 24px;
 		min-height: 0;
 		padding: 8px 24px 24px;
