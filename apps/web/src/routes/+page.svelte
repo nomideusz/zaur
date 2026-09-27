@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Langfuse 4',
+			desc: 'Langfuse v4 (web, worker, ClickHouse, Postgres, Redis) with traces in a Railway bucket and your API keys ready on first boot.',
+			deploy: 'https://railway.com/deploy/langfuse-4',
+			source: 'https://github.com/nomideusz/langfuse-railway'
+		},
+		{
 			name: 'Invoice Ninja 5',
 			desc: 'Invoice Ninja 5 on MariaDB with PDF rendering, queue worker and scheduler running from the first boot, your admin account created before the site goes public, and nightly backups to a Railway bucket.',
 			deploy: 'https://railway.com/deploy/invoice-ninja-5',
