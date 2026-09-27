@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Dependency-Track 5',
+			desc: 'OWASP Dependency-Track 5: upload SBOMs from CI and track known vulnerabilities, licenses and policy violations across every project, with the admin set on first boot.',
+			deploy: 'https://railway.com/deploy/dependency-track',
+			source: 'https://github.com/nomideusz/dependency-track-railway'
+		},
+		{
 			name: 'EspoCRM',
 			desc: 'EspoCRM 10: contacts, accounts, leads, deals and email in one CRM, live updates over WebSocket, and the admin created on first boot.',
 			deploy: 'https://railway.com/deploy/crm',
