@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'EspoCRM',
+			desc: 'EspoCRM 10: contacts, accounts, leads, deals and email in one CRM, live updates over WebSocket, and the admin created on first boot.',
+			deploy: 'https://railway.com/deploy/crm',
+			source: 'https://github.com/nomideusz/espocrm-railway'
+		},
+		{
 			name: 'Plane Community',
 			desc: 'Plane project tracker: issues, cycles, modules and pages for your team, uploads in a Railway bucket, and the admin created on first boot.',
 			deploy: 'https://railway.com/deploy/plane-community',
