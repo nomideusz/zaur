@@ -6,12 +6,19 @@
  * YouTube/ is in the library folder's Syncthing .stignore on the server: that
  * folder is receive-only, and Syncthing would otherwise count these files as
  * local changes, and reverting those deletes them.
+ *
+ * With YATTEE_URL set, Yattee Server does the YouTube part instead: its yt-dlp
+ * runs signed in on another host, past the bot check this server's IP gets.
  */
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
+import { createWriteStream } from 'node:fs';
 import { copyFile, mkdir, mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
+import type { ReadableStream } from 'node:stream/web';
 import type { AddJob } from '#lib/types';
 import { adminSub } from '#lib/server/navidrome';
 
@@ -155,6 +162,8 @@ async function findInLibrary(videoId: string): Promise<string | null> {
 }
 
 function download(job: Job, work: string): Promise<VideoInfo> {
+	const yattee = process.env.YATTEE_URL?.trim().replace(/\/+$/, '');
+	if (yattee) return downloadViaYattee(job, work, yattee);
 	const args = [
 		'--no-playlist',
 		'--js-runtimes', 'node',
@@ -181,6 +190,50 @@ function download(job: Job, work: string): Promise<VideoInfo> {
 		if (!info) throw new Error('yt-dlp gave no video info');
 		return info;
 	});
+}
+
+/** Yattee's Invidious-shaped video, the fields we read. */
+interface YatteeVideo {
+	videoId: string;
+	title: string;
+	author: string;
+	published?: number;
+	videoThumbnails?: { url: string; width?: number }[];
+	adaptiveFormats?: { type: string; url: string; bitrate?: number | string; clen?: string }[];
+}
+
+/**
+ * proxy_mode=download makes Yattee's stream URLs /proxy/fast/ ones: yt-dlp
+ * fetches on Yattee's host and streams the file here, a token in the URL.
+ */
+async function downloadViaYattee(job: Job, work: string, base: string): Promise<VideoInfo> {
+	const login = Buffer.from(`${process.env.YATTEE_USER}:${process.env.YATTEE_PASSWORD}`).toString('base64');
+	const response = await fetch(`${base}/api/v1/videos/${job.videoId}?proxy=true&proxy_mode=download`, {
+		headers: { authorization: `Basic ${login}` },
+		signal: AbortSignal.timeout(120_000)
+	});
+	if (!response.ok) throw new Error(`Yattee: ${response.status} ${(await response.text()).slice(0, 200)}`);
+	const video = (await response.json()) as YatteeVideo;
+	// AAC first: it goes into the .m4a without re-encoding.
+	const aac = (type: string) => Number(type.startsWith('audio/mp4'));
+	const audio = video.adaptiveFormats
+		?.filter((f) => f.type.startsWith('audio/'))
+		.sort((a, b) => aac(b.type) - aac(a.type) || Number(b.bitrate ?? 0) - Number(a.bitrate ?? 0))[0];
+	if (!audio) throw new Error('Yattee found no audio for this video');
+	await save(audio.url, join(work, aac(audio.type) ? 'audio.m4a' : 'audio.webm'), job, Number(audio.clen));
+	const thumb = video.videoThumbnails?.toSorted((a, b) => (b.width ?? 0) - (a.width ?? 0))[0];
+	if (thumb) await save(thumb.url, join(work, 'audio.jpg')).catch((error) => console.warn('[add] no thumbnail', error));
+	const uploaded = video.published ? new Date(video.published * 1000).toISOString().slice(0, 10).replaceAll('-', '') : undefined;
+	return { id: video.videoId, title: video.title, channel: video.author, upload_date: uploaded };
+}
+
+async function save(url: string, file: string, job?: Job, size = 0): Promise<void> {
+	const response = await fetch(url, { signal: AbortSignal.timeout(10 * 60_000) });
+	if (!response.ok || !response.body) throw new Error(`Download failed (${response.status})`);
+	const body = Readable.fromWeb(response.body as ReadableStream);
+	let got = 0;
+	if (job && size) body.on('data', (chunk: Buffer) => (job.progress = Math.round(((got += chunk.length) / size) * 100)));
+	await pipeline(body, createWriteStream(file));
 }
 
 const ffmpeg = (args: string[]) => tool('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], 120_000);
