@@ -139,7 +139,10 @@ async function run(job: Job): Promise<void> {
 	} catch (error) {
 		console.error('[add] failed', job.videoId, error);
 		job.status = 'failed';
-		job.error = error instanceof Error ? error.message.split('\n').at(-1)?.slice(0, 300) : 'Failed';
+		const message = error instanceof Error ? error.message.split('\n').at(-1) ?? '' : '';
+		job.error = /not a bot|Sign in to confirm/.test(message)
+			? 'YouTube wants this server to sign in first. Adding needs YouTube cookies set up (YTDLP_COOKIES).'
+			: message.slice(0, 300) || 'Failed';
 	} finally {
 		await rm(work, { recursive: true, force: true });
 	}
@@ -165,6 +168,10 @@ function download(job: Job, work: string): Promise<VideoInfo> {
 		'--progress-template', 'download:progress %(progress._percent_str)s',
 		`https://www.youtube.com/watch?v=${job.videoId}`
 	];
+	// YouTube asks datacenter IPs to sign in: a cookies.txt from a signed-in
+	// browser gets past that. yt-dlp saves the refreshed cookies back to it.
+	const cookies = process.env.YTDLP_COOKIES?.trim();
+	if (cookies) args.unshift('--cookies', cookies);
 	let info: VideoInfo | undefined;
 	return tool(process.env.YTDLP_BIN || 'yt-dlp', args, 10 * 60_000, (line) => {
 		if (line.startsWith('{')) info = JSON.parse(line) as VideoInfo;
