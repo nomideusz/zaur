@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Zammad 7',
+			desc: 'Zammad 7 helpdesk: email, chat and phone tickets in one inbox, full-text search on Elasticsearch, and the admin created on first boot.',
+			deploy: 'https://railway.com/deploy/zammad-7',
+			source: 'https://github.com/nomideusz/zammad-railway'
+		},
+		{
 			name: 'Langfuse 4',
 			desc: 'Langfuse v4 (web, worker, ClickHouse, Postgres, Redis) with traces in a Railway bucket and your API keys ready on first boot.',
 			deploy: 'https://railway.com/deploy/langfuse-4',
