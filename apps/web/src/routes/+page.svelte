@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'OpenCode',
+			desc: 'Open-source AI coding agent with a browser UI, free built-in models, a real terminal and SSH.',
+			deploy: 'https://railway.com/deploy/opencode-cloud',
+			source: 'https://github.com/nomideusz/opencode-railway'
+		},
+		{
 			name: 'Hermes Agent',
 			desc: 'Hermes Agent by Nous Research on the official image: password-protected web dashboard with in-browser chat, the Telegram/Discord/Slack gateway and cron, memory and skills on a volume.',
 			deploy: 'https://railway.com/deploy/hermes-agent-dashboard',
