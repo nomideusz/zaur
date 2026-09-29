@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Hermes Agent',
+			desc: 'Hermes Agent by Nous Research on the official image: password-protected web dashboard with in-browser chat, the Telegram/Discord/Slack gateway and cron, memory and skills on a volume.',
+			deploy: 'https://railway.com/deploy/hermes-agent-dashboard',
+			source: 'https://github.com/nomideusz/hermes-railway'
+		},
+		{
 			name: 'Dependency-Track 5',
 			desc: 'OWASP Dependency-Track 5: upload SBOMs from CI and track known vulnerabilities, licenses and policy violations across every project, with the admin set on first boot.',
 			deploy: 'https://railway.com/deploy/dependency-track',
