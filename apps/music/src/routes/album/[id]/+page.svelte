@@ -56,7 +56,7 @@
 		</div>
 	</header>
 
-	<TrackList {songs} numbered albumArtist={album.artist} />
+	<TrackList {songs} numbered by={album.artist} />
 </div>
 <PlaylistPicker bind:this={picker} />
 

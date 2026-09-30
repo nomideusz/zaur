@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Codewhale',
+			desc: 'Codewhale coding agent, git, gh, Node, Python. Browser terminal + SSH.',
+			deploy: 'https://railway.com/deploy/codewhale',
+			source: 'https://github.com/nomideusz/codewhale-railway'
+		},
+		{
 			name: 'AionUi',
 			desc: 'AionUi WebUI: a password-protected cowork app for AI agents with any model',
 			deploy: 'https://railway.com/deploy/aionui',

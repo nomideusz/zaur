@@ -8,26 +8,29 @@
 	/**
 	 * Songs as rows. Tapping one plays the list from there; the heart
 	 * favourites, the dots open the row's menu (queue, playlist, album, artist).
-	 * `numbered` is the album view: track numbers, a caption between discs, and
-	 * the artist only on the rows where it differs from `albumArtist`.
-	 * `onremove` is for a playlist you own (see SongMenu).
+	 * `numbered` is the album view: track numbers, a caption between discs, no
+	 * album under the title. `by` is the artist the page is already about: rows
+	 * name an artist only when it is someone else. `limit` shows the first few
+	 * (a row still plays on through the whole list). `onremove` is for a
+	 * playlist you own (see SongMenu).
 	 */
 	let {
 		songs,
 		numbered = false,
-		albumArtist,
+		by,
+		limit,
 		onremove
-	}: { songs: Song[]; numbered?: boolean; albumArtist?: string; onremove?: (index: number) => void } = $props();
+	}: { songs: Song[]; numbered?: boolean; by?: string; limit?: number; onremove?: (index: number) => void } = $props();
 
 	let menu: SongMenu;
 	const discs = $derived(numbered && new Set(songs.map((song) => song.discNumber ?? 1)).size > 1);
 </script>
 
 <ol class="tracks">
-	{#each songs as song, i (`${song.id}-${i}`)}
+	{#each limit ? songs.slice(0, limit) : songs as song, i (`${song.id}-${i}`)}
 		{@const current = player.current?.id === song.id}
 		{@const starred = isStarred(song)}
-		{@const meta = numbered ? (song.artist === albumArtist ? '' : song.artist) : [song.artist, song.album].filter(Boolean).join(' · ')}
+		{@const meta = [song.artist !== by && song.artist, !numbered && song.album].filter(Boolean).join(' · ')}
 		{#if discs && song.discNumber !== songs[i - 1]?.discNumber}
 			<li class="disc z-caption">Disc {song.discNumber ?? 1}</li>
 		{/if}

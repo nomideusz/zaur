@@ -10,10 +10,9 @@
 	const albums = $derived(artist.album ?? []);
 	const songs = $derived(data.songs);
 
-	// A long discography starts folded, so the albums stay within reach.
+	// A long list starts folded, so the albums stay within reach.
 	const FOLD = 8;
 	let all = $state(false);
-	const shown = $derived(all ? songs : songs.slice(0, FOLD));
 </script>
 
 <svelte:head><title>{artist.name} · Zaur Music</title></svelte:head>
@@ -48,8 +47,7 @@
 					</button>
 				{/if}
 			</div>
-			<!-- The whole list plays on from a row, folded or not. -->
-			<TrackList songs={all ? songs : shown} />
+			<TrackList {songs} by={artist.name} limit={all ? undefined : FOLD} />
 		</section>
 	{/if}
 
