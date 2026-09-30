@@ -2,9 +2,11 @@
 	import { formatTime, isStarred, player, toggleStar } from '#lib/player.svelte';
 	import Cover from '#lib/components/Cover.svelte';
 	import Icon from '#lib/components/Icon.svelte';
+	import PlaylistPicker from '#lib/components/PlaylistPicker.svelte';
 	import TrackList from '#lib/components/TrackList.svelte';
 
 	let { data } = $props();
+	let picker: PlaylistPicker;
 	const album = $derived(data.album);
 	const songs = $derived(album.song ?? []);
 </script>
@@ -24,8 +26,12 @@
 				</span>
 			</p>
 			<div class="actions">
-				<button class="btn-tactile btn-primary tall" type="button" onclick={() => player.play(songs)}><Icon name="play" /> Play</button>
-				<button class="btn-tactile tall" type="button" onclick={() => player.shuffle(songs)}><Icon name="shuffle" /> Shuffle</button>
+				<button class="btn-tactile btn-primary tall" type="button" disabled={!songs.length} onclick={() => player.play(songs)}>
+					<Icon name="play" /> Play
+				</button>
+				<button class="btn-tactile tall" type="button" disabled={!songs.length} onclick={() => player.shuffle(songs)}>
+					<Icon name="shuffle" /> Shuffle
+				</button>
 				<button
 					class="btn-tactile tall"
 					class:starred={isStarred(album)}
@@ -36,12 +42,23 @@
 				>
 					<Icon name={isStarred(album) ? 'heart-filled' : 'heart'} />
 				</button>
+				<button
+					class="btn-tactile tall"
+					type="button"
+					aria-label="Add album to a playlist"
+					title="Add to playlist…"
+					disabled={!songs.length}
+					onclick={() => picker.open(songs)}
+				>
+					<Icon name="playlist" />
+				</button>
 			</div>
 		</div>
 	</header>
 
-	<TrackList {songs} numbered />
+	<TrackList {songs} numbered albumArtist={album.artist} />
 </div>
+<PlaylistPicker bind:this={picker} />
 
 <style>
 	.hero {

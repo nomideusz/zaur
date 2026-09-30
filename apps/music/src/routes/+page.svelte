@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { api } from '#lib/api';
+	import { notify } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
 	import Cover from '#lib/components/Cover.svelte';
@@ -8,9 +10,14 @@
 
 	let { data } = $props();
 
+	let shuffling = $state(false);
 	async function shuffleAll() {
-		const response = await fetch('/api/shuffle');
-		if (response.ok) player.play((await response.json()) as Song[]);
+		shuffling = true;
+		const response = await api('/api/shuffle').catch(() => null);
+		const songs = response?.ok ? ((await response.json()) as Song[]) : null;
+		shuffling = false;
+		if (songs?.length) player.play(songs);
+		else notify(songs ? 'The library is empty.' : 'Could not load songs to shuffle. Try again?');
 	}
 </script>
 
@@ -20,10 +27,13 @@
 	<header class="page-head">
 		<h1>Home</h1>
 		<div class="actions">
-			<button class="btn-tactile btn-primary tall" type="button" onclick={shuffleAll}>
+			<button class="btn-tactile btn-primary tall" type="button" onclick={shuffleAll} disabled={shuffling}>
 				<Icon name="shuffle" /> Shuffle all
 			</button>
-			<a class="btn-tactile tall" href="/add"><Icon name="add" /> Add from YouTube</a>
+			<!-- The phone's tab row has Add but no room for these two; the sidebar has all three. -->
+			<a class="btn-tactile tall md:!hidden" href="/playlists"><Icon name="playlist" /> Playlists</a>
+			<a class="btn-tactile tall md:!hidden" href="/favourites"><Icon name="heart" /> Favourites</a>
+			<a class="btn-tactile tall max-md:!hidden" href="/add"><Icon name="add" /> Add from YouTube</a>
 		</div>
 	</header>
 

@@ -1,7 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { searchYouTube, tagsFor, videoIdFrom } from '../src/lib/server/youtube.ts';
+import { setTimeout as sleep } from 'node:timers/promises';
+
+import { addJob, jobsFor, removeJob, searchYouTube, tagsFor, videoIdFrom } from '../src/lib/server/youtube.ts';
 
 test('videoIdFrom finds the video in YouTube and Bartube links', () => {
 	const id = 'dQw4w9WgXcQ';
@@ -54,4 +56,32 @@ test('searchYouTube keeps songs: no shorts, live streams or channels', async (t)
 	]);
 	assert.equal(String(fetch.mock.calls[0].arguments[0]), 'https://yattee.test/api/v1/search?q=rick+astley&type=video');
 	delete process.env.YATTEE_URL;
+});
+
+test('a failed add says why in plain words, and a retry replaces its row', async (t) => {
+	process.env.YATTEE_URL = 'https://yattee.test/';
+	process.env.MUSIC_DIR = '/nonexistent-music-dir';
+	t.mock.method(globalThis, 'fetch', async () => Response.json({ error: 'This video is unavailable' }, { status: 500 }));
+	t.mock.method(console, 'error', () => {});
+	const me = 'retry@zaur.test';
+	const failed = async () => {
+		while (jobsFor(me)[0].status !== 'failed') await sleep(5);
+		return jobsFor(me);
+	};
+
+	addJob('dQw4w9WgXcQ', me);
+	const [first] = await failed();
+	assert.equal(first.error, 'This video is unavailable');
+
+	addJob('dQw4w9WgXcQ', me);
+	const again = await failed();
+	assert.equal(again.length, 1);
+	assert.notEqual(again[0].id, first.id);
+
+	removeJob(again[0].id, 'someone-else@zaur.test');
+	assert.equal(jobsFor(me).length, 1);
+	removeJob(again[0].id, me);
+	assert.equal(jobsFor(me).length, 0);
+	delete process.env.YATTEE_URL;
+	delete process.env.MUSIC_DIR;
 });

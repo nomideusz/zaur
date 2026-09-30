@@ -5,6 +5,7 @@
  * from the address with NAVIDROME_USER_KEY, so nothing per user is stored here.
  */
 import { createHash, createHmac, randomBytes } from 'node:crypto';
+import { error } from '@sveltejs/kit';
 import type { User } from '#lib/types';
 
 type Params = Record<string, string | number | boolean | undefined>;
@@ -55,15 +56,30 @@ async function call<T>(url: string): Promise<T> {
 	return reply as T;
 }
 
-/** Subsonic as the signed-in person; their Navidrome user is made on first use. */
-export async function sub<T = Record<string, never>>(user: User, method: string, params: Params = {}): Promise<T> {
+async function asUser<T>(user: User, method: string, params: Params): Promise<T> {
 	try {
 		return await call<T>(restUrl(user.email, passwordFor(user.email), method, params));
-	} catch (error) {
+	} catch (cause) {
 		// 40: wrong username or password — no such user yet.
-		if (!(error instanceof SubsonicError) || error.code !== 40) throw error;
+		if (!(cause instanceof SubsonicError) || cause.code !== 40) throw cause;
 		await ensureUser(user);
 		return call<T>(restUrl(user.email, passwordFor(user.email), method, params));
+	}
+}
+
+/**
+ * Subsonic as the signed-in person; their Navidrome user is made on first use.
+ * What goes wrong becomes a page the person can read: not found, or a library
+ * that is not answering (down, slow, misconfigured — the log has which).
+ */
+export async function sub<T = Record<string, never>>(user: User, method: string, params: Params = {}): Promise<T> {
+	try {
+		return await asUser<T>(user, method, params);
+	} catch (cause) {
+		// 70: the requested data was not found.
+		if (cause instanceof SubsonicError && cause.code === 70) error(404, 'That is not in the library.');
+		console.error(`[navidrome] ${method} failed`, cause);
+		error(502, 'The music library is not answering.');
 	}
 }
 

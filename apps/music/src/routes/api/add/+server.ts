@@ -1,6 +1,6 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { apiUser } from '#lib/server/auth';
-import { addJob, jobsFor, videoIdFrom } from '#lib/server/youtube';
+import { addJob, jobsFor, removeJob, videoIdFrom } from '#lib/server/youtube';
 
 export const GET: RequestHandler = ({ locals }) => json(jobsFor(apiUser(locals).email));
 
@@ -10,4 +10,10 @@ export const POST: RequestHandler = async ({ request, locals }) => {
 	const videoId = typeof url === 'string' ? videoIdFrom(url) : null;
 	if (!videoId) error(400, 'That does not look like a YouTube or Bartube video link.');
 	return json(addJob(videoId, apiUser(locals).email));
+};
+
+/** ?id= — dismiss a finished row from the list. */
+export const DELETE: RequestHandler = ({ url, locals }) => {
+	removeJob(url.searchParams.get('id') ?? '', apiUser(locals).email);
+	return json(jobsFor(apiUser(locals).email));
 };

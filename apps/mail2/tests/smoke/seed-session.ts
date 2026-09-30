@@ -26,7 +26,8 @@ import {
 const db = openStoreDb(process.env.STORE_DB_PATH ?? '.data/store.sqlite');
 const serverUrl = process.env.SMOKE_JMAP_URL ?? 'http://127.0.0.1:9911';
 
-const id = 'smoke-session-id-0000000000000000000000000000000000000000000';
+// SMOKE_SESSION_ID seeds a second session (say, one per fake on its own FAKE_JMAP_PORT).
+const id = process.env.SMOKE_SESSION_ID ?? 'smoke-session-id-0000000000000000000000000000000000000000000';
 const now = Date.now();
 // SMOKE_OAUTH=1 seeds an OAuth account whose access token has already expired,
 // so the first request refreshes it against the fake's rotating token endpoint.

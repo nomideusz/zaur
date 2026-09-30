@@ -6,12 +6,21 @@
 	/** The mini player along the bottom; tapping the song opens Now playing. */
 	const song = $derived(player.current);
 	const progress = $derived(player.duration ? (player.time / player.duration) * 100 : 0);
+	// While the thumb is held the slider shows where it is; the audio seeks once, on release.
+	let drag = $state<number>();
+	const shown = $derived(drag ?? player.time);
+	const repeatLabel = $derived(`Repeat: ${{ off: 'off', all: 'all', one: 'this song' }[player.repeat]}`);
 </script>
 
 {#if song}
 	<div class="bar">
 		<span class="line" style="width: {progress}%"></span>
-		<button class="now" type="button" onclick={() => (player.open = true)} aria-label="Open Now playing">
+		<button
+			class="now"
+			type="button"
+			onclick={() => (player.open = true)}
+			aria-label="Now playing: {song.title}{song.artist ? ` — ${song.artist}` : ''}. Open player"
+		>
 			<Cover id={song.coverArt} size={96} class="w-11 shrink-0 !rounded-md" />
 			<span class="text">
 				<span class="title">{song.title}</span>
@@ -20,29 +29,87 @@
 		</button>
 
 		<div class="transport">
-			<button class="z-icon-btn !size-9 wide" type="button" aria-label="Previous" onclick={() => player.prev()}>
+			<button
+				class="z-icon-btn !size-9 wide"
+				class:on={player.shuffling}
+				type="button"
+				aria-label="Shuffle"
+				aria-pressed={player.shuffling}
+				title="Shuffle what's next"
+				onclick={() => player.toggleShuffle()}
+			>
+				<Icon name="shuffle" />
+			</button>
+			<button class="z-icon-btn !size-9 wide" type="button" aria-label="Previous" onclick={() => player.previous()}>
 				<Icon name="prev" />
 			</button>
-			<button class="play" type="button" aria-label={player.playing ? 'Pause' : 'Play'} onclick={() => player.toggle()}>
+			<button
+				class="play"
+				class:waiting={player.waiting}
+				type="button"
+				aria-label={player.playing ? 'Pause' : 'Play'}
+				aria-busy={player.waiting}
+				onclick={() => player.toggle()}
+			>
 				<Icon name={player.playing ? 'pause' : 'play'} class="size-4" />
 			</button>
-			<button class="z-icon-btn !size-9" type="button" aria-label="Next" onclick={() => player.next()}>
+			<button class="z-icon-btn !size-9" type="button" aria-label="Next" disabled={!player.hasNext} onclick={() => player.next()}>
 				<Icon name="next" />
+			</button>
+			<button
+				class="z-icon-btn !size-9 wide"
+				class:on={player.repeat !== 'off'}
+				type="button"
+				aria-label={repeatLabel}
+				title={repeatLabel}
+				onclick={() => player.cycleRepeat()}
+			>
+				<Icon name={player.repeat === 'one' ? 'repeat-one' : 'repeat'} />
 			</button>
 		</div>
 
 		<div class="scrub wide">
-			<span class="z-mono">{formatTime(player.time)}</span>
+			<span class="z-mono">{formatTime(shown)}</span>
 			<input
 				type="range"
 				min="0"
 				max={player.duration || 0}
 				step="1"
-				value={player.time}
+				value={shown}
 				aria-label="Position"
-				oninput={(event) => player.seek(Number(event.currentTarget.value))}
+				aria-valuetext="{formatTime(shown)} of {formatTime(player.duration)}"
+				oninput={(event) => (drag = Number(event.currentTarget.value))}
+				onchange={(event) => {
+					player.seek(Number(event.currentTarget.value));
+					drag = undefined;
+				}}
+				onpointerup={() => setTimeout(() => (drag = undefined))}
 			/>
 			<span class="z-mono">{formatTime(player.duration)}</span>
+		</div>
+
+		<!-- Loudness is the hardware keys' job on a phone (and iOS ignores it), so this is for a mouse. -->
+		<div class="vol wide">
+			<button
+				class="z-icon-btn !size-9"
+				type="button"
+				aria-label="Mute"
+				aria-pressed={player.muted}
+				title={player.muted ? 'Unmute' : 'Mute'}
+				onclick={() => player.toggleMute()}
+			>
+				<Icon name={player.muted || !player.volume ? 'mute' : 'volume'} />
+			</button>
+			<input
+				type="range"
+				min="0"
+				max="1"
+				step="0.05"
+				value={player.muted ? 0 : player.volume}
+				aria-label="Volume"
+				aria-valuetext="{Math.round((player.muted ? 0 : player.volume) * 100)}%"
+				oninput={(event) => player.setVolume(Number(event.currentTarget.value))}
+			/>
 		</div>
 
 		<button class="z-icon-btn !size-9 wide" type="button" aria-label="Queue" title="Queue" onclick={() => (player.open = true)}>
@@ -106,6 +173,7 @@
 		gap: 4px;
 	}
 	.play {
+		position: relative;
 		display: grid;
 		place-items: center;
 		width: 40px;
@@ -117,6 +185,29 @@
 		box-shadow: var(--z-shadow-primary);
 		cursor: pointer;
 	}
+	/* Loading or buffering: a ring turns around the button (after a beat, so a quick start shows nothing). */
+	.play::after {
+		content: '';
+		position: absolute;
+		inset: -5px;
+		border: 2px solid transparent;
+		border-top-color: var(--z-accent);
+		border-radius: inherit;
+		opacity: 0;
+	}
+	.play.waiting::after {
+		opacity: 1;
+		transition: opacity 0.2s 0.3s;
+		animation: turn 0.8s linear infinite;
+	}
+	@keyframes turn {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+	.on {
+		color: var(--z-accent-ink);
+	}
 	.scrub {
 		display: flex;
 		flex: 1.4;
@@ -127,7 +218,21 @@
 	}
 	.scrub input {
 		flex: 1;
+		min-width: 0;
 		accent-color: var(--z-accent);
+	}
+	.vol {
+		display: flex;
+		align-items: center;
+	}
+	.vol input {
+		width: 84px;
+		accent-color: var(--z-accent);
+	}
+	@media (pointer: coarse) {
+		.vol {
+			display: none;
+		}
 	}
 	@media (max-width: 767px) {
 		.wide {

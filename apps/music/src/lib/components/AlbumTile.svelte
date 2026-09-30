@@ -1,41 +1,49 @@
 <script lang="ts">
+	import { api } from '#lib/api';
+	import { notify } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
 	import type { Album, Song } from '#lib/types';
 	import Cover from './Cover.svelte';
 	import Icon from './Icon.svelte';
 
-	let { album }: { album: Album } = $props();
+	/** `artist` is off on the artist's own page, where every tile would repeat it. */
+	let { album, artist = true }: { album: Album; artist?: boolean } = $props();
 
-	async function play(event: MouseEvent) {
-		event.preventDefault();
-		const response = await fetch(`/api/album/${encodeURIComponent(album.id)}`);
-		if (response.ok) player.play((await response.json()) as Song[]);
+	async function play() {
+		const response = await api(`/api/album/${encodeURIComponent(album.id)}`).catch(() => null);
+		if (response?.ok) player.play((await response.json()) as Song[]);
+		else notify(`Could not play ${album.name}.`);
 	}
 </script>
 
-<a class="tile" href="/album/{album.id}">
-	<span class="art">
-		<Cover id={album.coverArt} />
+<div class="tile">
+	<a href="/album/{album.id}">
+		<Cover id={album.coverArt} class="mb-1.5" />
+		<span class="name">{album.name}</span>
+		<span class="by">
+			{#if artist && album.artist}<span class="who">{album.artist}</span>{/if}
+			{#if album.year}<span class="year">{album.year}</span>{/if}
+		</span>
+	</a>
+	<!-- Beside the link, not in it: a button inside a link is read out as part of the link. -->
+	<span class="over">
 		<button class="play" type="button" aria-label="Play {album.name}" onclick={play}>
 			<Icon name="play" class="size-4" />
 		</button>
 	</span>
-	<span class="name">{album.name}</span>
-	<span class="by">{album.artist ?? ''}{album.year ? ` · ${album.year}` : ''}</span>
-</a>
+</div>
 
 <style>
 	.tile {
+		position: relative;
+		min-width: 0;
+	}
+	a {
 		display: flex;
 		flex-direction: column;
 		gap: 2px;
-		min-width: 0;
 		color: inherit;
 		text-decoration: none;
-	}
-	.art {
-		position: relative;
-		margin-bottom: 6px;
 	}
 	.name {
 		overflow: hidden;
@@ -45,12 +53,28 @@
 		white-space: nowrap;
 		text-overflow: ellipsis;
 	}
+	/* muted, not soft: this sits on the canvas, where soft falls under 4.5:1. */
 	.by {
-		overflow: hidden;
-		color: var(--z-soft);
+		display: flex;
+		color: var(--z-muted);
 		font-size: 12.5px;
 		white-space: nowrap;
+	}
+	/* A long artist gives way; the year stays. */
+	.who {
+		overflow: hidden;
 		text-overflow: ellipsis;
+	}
+	.who + .year::before {
+		content: '·';
+		margin: 0 0.35em;
+	}
+	/* The cover's square, for the play button to sit in its corner. */
+	.over {
+		position: absolute;
+		inset: 0 0 auto;
+		aspect-ratio: 1;
+		pointer-events: none;
 	}
 	.play {
 		position: absolute;
@@ -70,6 +94,7 @@
 		transition:
 			opacity 140ms ease,
 			transform 140ms ease;
+		pointer-events: auto;
 		cursor: pointer;
 	}
 	.tile:hover .play,

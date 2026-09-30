@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!-- What the service worker answers a page load with when there is no network. Self-contained: nothing here may need a request. -->
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)" />
+		<title>Offline · Zaur Music</title>
+		<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+		<style>
+			:root {
+				color-scheme: light dark;
+				--canvas: #f6f7f9;
+				--surface: #ffffff;
+				--ink: #0b1220;
+				--muted: #475569;
+				--line: #cbd5e1;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--canvas: #0f141a;
+					--surface: #161d26;
+					--ink: #e8eef6;
+					--muted: #a3b1c2;
+					--line: #2c3949;
+				}
+			}
+			body {
+				display: grid;
+				place-items: center;
+				min-height: 100dvh;
+				margin: 0;
+				padding: 24px;
+				box-sizing: border-box;
+				background: var(--canvas);
+				color: var(--muted);
+				font:
+					14px/1.5 system-ui,
+					-apple-system,
+					'Segoe UI',
+					sans-serif;
+				text-align: center;
+			}
+			h1 {
+				margin: 18px 0 6px;
+				color: var(--ink);
+				font-size: 22px;
+				letter-spacing: -0.01em;
+			}
+			p {
+				max-width: 30ch;
+				margin: 0 auto 20px;
+			}
+			a {
+				display: inline-flex;
+				align-items: center;
+				height: 36px;
+				padding: 0 14px;
+				border: 1px solid var(--line);
+				border-radius: 8px;
+				background: var(--surface);
+				color: var(--ink);
+				font-size: 13px;
+				font-weight: 500;
+				text-decoration: none;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<img src="/favicon.svg" width="56" height="56" alt="" />
+			<h1>You're offline</h1>
+			<p>Zaur Music plays from the library, so it needs a connection. Your queue is kept.</p>
+			<!-- An empty href is this same address: the page that was asked for. -->
+			<a href="">Try again</a>
+		</main>
+		<script>
+			addEventListener('online', () => location.reload());
+		</script>
+	</body>
+</html>

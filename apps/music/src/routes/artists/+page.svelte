@@ -1,12 +1,15 @@
 <script lang="ts">
 	import Cover from '#lib/components/Cover.svelte';
+	import SearchField from '#lib/components/SearchField.svelte';
 
 	let { data } = $props();
 	let filter = $state('');
-	const needle = $derived(filter.trim().toLowerCase());
+	// "laki" finds Łąki Łan: accents come off (ł has no accent to take off, so by hand).
+	const fold = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '').replace(/ł/gi, 'l').toLowerCase();
+	const needle = $derived(fold(filter.trim()));
 	const groups = $derived(
 		data.index
-			.map((group) => ({ ...group, artist: group.artist.filter((a) => a.name.toLowerCase().includes(needle)) }))
+			.map((group) => ({ ...group, artist: group.artist.filter((a) => fold(a.name).includes(needle)) }))
 			.filter((group) => group.artist.length)
 	);
 </script>
@@ -16,7 +19,7 @@
 <div class="page">
 	<header class="page-head">
 		<h1>Artists</h1>
-		<input class="z-field filter" type="search" placeholder="Filter artists" bind:value={filter} aria-label="Filter artists" />
+		<SearchField class="w-[min(280px,100%)]" placeholder="Filter artists" aria-label="Filter artists" bind:value={filter} />
 	</header>
 
 	{#each groups as group (group.name)}
@@ -40,10 +43,6 @@
 </div>
 
 <style>
-	.filter {
-		width: min(280px, 100%);
-		height: 34px;
-	}
 	.group {
 		margin-bottom: 18px;
 	}

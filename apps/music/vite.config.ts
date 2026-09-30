@@ -3,8 +3,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import tailwindcss from '@tailwindcss/vite';
 import { defineConfig } from 'vite';
 
+// Sign-out posts to /auth/logout, which answers with a redirect to mail's end-session page, and
+// Chromium holds a form's redirects to form-action too. Read when this file is: at build time.
+const issuer = new URL(process.env.OIDC_ISSUER?.trim() || 'https://webmail.zaur.app').origin as `${string}.${string}`;
+
 // SvelteKit 3: configuration lives here, as in mail2.
 export default defineConfig({
+	// The design tokens and fonts are mail2's (layout.css imports them); the dev server has to be allowed to serve them.
+	server: { fs: { allow: ['../mail2/src/routes/styles'] } },
 	plugins: [
 		tailwindcss(),
 		sveltekit({
@@ -26,7 +32,7 @@ export default defineConfig({
 					'connect-src': ['self'],
 					'frame-ancestors': ['none'],
 					'base-uri': ['self'],
-					'form-action': ['self'],
+					'form-action': ['self', issuer],
 					'object-src': ['none']
 				}
 			}

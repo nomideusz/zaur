@@ -88,6 +88,13 @@
 	.album-row > * {
 		scroll-snap-align: start;
 	}
+	/* On the narrowest phones two tiles fill the row exactly; smaller ones let a third peek, so the shelf reads as one. */
+	@media (max-width: 359px) {
+		.album-row {
+			grid-auto-columns: 116px;
+			gap: 12px;
+		}
+	}
 	.empty-note {
 		padding: 24px 0;
 		color: var(--z-soft);

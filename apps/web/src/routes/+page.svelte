@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'AionUi',
+			desc: 'AionUi WebUI: a password-protected cowork app for AI agents with any model',
+			deploy: 'https://railway.com/deploy/aionui',
+			source: 'https://github.com/nomideusz/aionui-railway'
+		},
+		{
 			name: 'OpenCode',
 			desc: 'Open-source AI coding agent with a browser UI, free built-in models, a real terminal and SSH.',
 			deploy: 'https://railway.com/deploy/opencode-cloud',

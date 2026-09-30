@@ -65,7 +65,7 @@
 				</div>
 
 				<div class="transport">
-					<button class="z-icon-btn !size-12" type="button" aria-label="Previous" onclick={() => player.prev()}>
+					<button class="z-icon-btn !size-12" type="button" aria-label="Previous" onclick={() => player.previous()}>
 						<Icon name="prev" class="size-5" />
 					</button>
 					<button class="play" type="button" aria-label={player.playing ? 'Pause' : 'Play'} onclick={() => player.toggle()}>

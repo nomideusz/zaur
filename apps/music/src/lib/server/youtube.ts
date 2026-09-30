@@ -86,8 +86,12 @@ const jobs: Job[] = [];
 let queue: Promise<void> = Promise.resolve();
 
 export function addJob(videoId: string, email: string): AddJob {
-	const running = jobs.find((j) => j.videoId === videoId && j.by === email && j.status !== 'failed');
-	if (running) return strip(running);
+	const earlier = jobs.findIndex((j) => j.videoId === videoId && j.by === email);
+	if (earlier >= 0) {
+		if (jobs[earlier].status !== 'failed') return strip(jobs[earlier]);
+		// A retry takes the failed attempt's place rather than adding a row.
+		jobs.splice(earlier, 1);
+	}
 	const job: Job = { id: randomUUID(), videoId, by: email, status: 'queued', at: Date.now() };
 	jobs.unshift(job);
 	jobs.splice(200);
@@ -96,6 +100,12 @@ export function addJob(videoId: string, email: string): AddJob {
 }
 
 export const jobsFor = (email: string): AddJob[] => jobs.filter((j) => j.by === email).map(strip);
+
+/** Take a finished row off this person's list (a file it added stays in the library). */
+export function removeJob(id: string, email: string): void {
+	const at = jobs.findIndex((j) => j.id === id && j.by === email && (j.status === 'failed' || j.status === 'done'));
+	if (at >= 0) jobs.splice(at, 1);
+}
 
 function strip({ by: _, ...job }: Job): AddJob {
 	return job;
@@ -209,7 +219,17 @@ async function yattee<T>(path: string, timeoutMs = 120_000): Promise<T> {
 		headers: { authorization: `Basic ${login}` },
 		signal: AbortSignal.timeout(timeoutMs)
 	});
-	if (!response.ok) throw new Error(`Yattee: ${response.status} ${(await response.text()).slice(0, 200)}`);
+	if (!response.ok) {
+		const text = await response.text();
+		// Yattee explains itself in JSON ({"error": "This video is unavailable"}): say that, not the envelope.
+		let reason: unknown;
+		try {
+			reason = JSON.parse(text).error;
+		} catch {
+			// Not JSON: a proxy's error page.
+		}
+		throw new Error(typeof reason === 'string' && reason ? reason : `Yattee: ${response.status} ${text.slice(0, 200)}`);
+	}
 	return (await response.json()) as T;
 }
 
@@ -251,7 +271,11 @@ async function save(url: string, file: string, job?: Job, size = 0): Promise<voi
 	await pipeline(body, createWriteStream(file));
 }
 
-const ffmpeg = (args: string[]) => tool('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], 120_000);
+// ffmpeg's own words ("Error opening output files: Invalid argument") go to the log as the cause.
+const ffmpeg = (args: string[]) =>
+	tool('ffmpeg', ['-hide_banner', '-loglevel', 'error', '-y', ...args], 120_000).catch((cause) => {
+		throw new Error('Could not convert the audio.', { cause });
+	});
 
 /** Run a tool; resolves on exit 0, rejects with the tail of stderr otherwise. */
 function tool(command: string, args: string[], timeoutMs: number, onLine?: (line: string) => void): Promise<void> {

@@ -7,6 +7,8 @@ declare global {
 		interface PageState {
 			/** Thread open in the reader. A history entry on phones, so Back closes it. */
 			reader?: string;
+			/** A full-screen layer open over the page (`#lib/back-layer.svelte.ts`), so Back closes it. */
+			layer?: string;
 		}
 		// interface Platform {}
 	}

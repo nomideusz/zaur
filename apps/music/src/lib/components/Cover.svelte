@@ -4,13 +4,14 @@
 
 	/** Artwork, square, with a note glyph when there is none (or it fails). */
 	let { id, size = 300, class: className = '' }: { id?: string; size?: number; class?: string } = $props();
-	let failed = $state(false);
-	const src = $derived(failed ? undefined : coverUrl(id, size));
+	// Which id failed, not a flag: the next song's cover gets its own try.
+	let failedId = $state<string>();
+	const src = $derived(id === failedId ? undefined : coverUrl(id, size));
 </script>
 
 <span class="cover {className}">
 	{#if src}
-		<img {src} alt="" loading="lazy" decoding="async" onerror={() => (failed = true)} />
+		<img {src} alt="" loading="lazy" decoding="async" onerror={() => (failedId = id)} />
 	{:else}
 		<Icon name="note" class="size-[40%] text-[var(--z-faint)]" />
 	{/if}
