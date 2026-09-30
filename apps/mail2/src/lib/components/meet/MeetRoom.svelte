@@ -13,7 +13,7 @@
 	import type { LocalAudioTrack, LocalVideoTrack, Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
-	import { captureMessage } from '@tracewayapp/frontend';
+	import { captureMessage, flush } from '@tracewayapp/frontend';
 	import { isSafariUserAgent } from '@zaur/mail-core/utils/meet';
 	import { identityStyle } from '#lib/mail/colors';
 	import { initials } from '#lib/mail/rows';
@@ -182,14 +182,22 @@
 	async function audioHealth(room: Room): Promise<string> {
 		const lines: string[] = [];
 		for (const person of room.remoteParticipants.values())
-			for (const publication of person.audioTrackPublications.values())
-				(await publication.audioTrack?.getRTCStatsReport())?.forEach((stat) => {
-					if (stat.type !== 'inbound-rtp') return;
-					const concealed = stat.totalSamplesReceived ? (100 * (stat.concealedSamples ?? 0)) / stat.totalSamplesReceived : 0;
-					lines.push(
-						`lost ${stat.packetsLost ?? '?'}/${stat.packetsReceived ?? '?'}, concealed ${concealed.toFixed(1)}%, jitter ${Math.round((stat.jitter ?? 0) * 1000)} ms`
-					);
-				});
+			for (const publication of person.audioTrackPublications.values()) {
+				const report = await publication.audioTrack?.getRTCStatsReport();
+				if (!report) continue;
+				const all = [...report.values()];
+				const inbound = all.find((stat) => stat.type === 'inbound-rtp');
+				if (!inbound) continue;
+				const concealed = inbound.totalSamplesReceived ? (100 * (inbound.concealedSamples ?? 0)) / inbound.totalSamplesReceived : 0;
+				// How this device reaches the server: a relay over TCP or TLS suffers most on a lossy network.
+				const pair = all.find((stat) => stat.type === 'candidate-pair' && stat.nominated && stat.state === 'succeeded');
+				const local = pair && report.get(pair.localCandidateId);
+				lines.push(
+					`lost ${inbound.packetsLost ?? '?'}/${inbound.packetsReceived ?? '?'}, concealed ${concealed.toFixed(1)}%, ` +
+						`jitter ${Math.round((inbound.jitter ?? 0) * 1000)} ms, rtt ${pair ? Math.round((pair.currentRoundTripTime ?? 0) * 1000) : '?'} ms, ` +
+						`via ${local ? `${local.candidateType}/${local.relayProtocol ?? local.protocol}` : '?'}`
+				);
+			}
 		return lines.join('; ');
 	}
 
@@ -197,6 +205,17 @@
 		const tick = setInterval(() => (now = Date.now()), 1000);
 		// The last reading is sent when the call ends (reading then would race the hang-up).
 		let health = '';
+		// Also when the app is closed mid-call, which skips the teardown below.
+		const report = () => {
+			if (!health) return;
+			// An Android's agent says Linux first.
+			const ua = navigator.userAgent;
+			const system = (ua.match(/iPhone OS [\d_]+|Android [\d.]+/) ?? ua.match(/Mac OS X|Windows|Linux/))?.[0] ?? '?';
+			captureMessage(`Meet audio (${system}): ${health}`);
+			void flush();
+			health = '';
+		};
+		addEventListener('pagehide', report);
 		const sample = setInterval(() => {
 			if (lk && status === 'live') void audioHealth(lk).then((line) => (health = line || health));
 		}, 10_000);
@@ -288,12 +307,8 @@
 		return () => {
 			clearInterval(tick);
 			clearInterval(sample);
-			if (health) {
-				// An Android's agent says Linux first.
-				const ua = navigator.userAgent;
-				const system = (ua.match(/iPhone OS [\d_]+|Android [\d.]+/) ?? ua.match(/Mac OS X|Windows|Linux/))?.[0] ?? '?';
-				captureMessage(`Meet audio (${system}): ${health}`);
-			}
+			report();
+			removeEventListener('pagehide', report);
 			leaving = true;
 			void lk?.disconnect();
 			if (iOS && session) session.type = 'auto';
