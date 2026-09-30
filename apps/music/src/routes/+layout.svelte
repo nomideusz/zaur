@@ -131,8 +131,7 @@
 		{ href: '/albums', label: 'Albums', icon: 'album', tab: true },
 		{ href: '/artists', label: 'Artists', icon: 'artist', tab: true },
 		{ href: '/playlists', label: 'Playlists', icon: 'playlist' },
-		{ href: '/favourites', label: 'Favourites', icon: 'heart' },
-		{ href: '/add', label: 'Add', icon: 'add', tab: true }
+		{ href: '/favourites', label: 'Favourites', icon: 'heart' }
 	];
 	// While a page loads, the one it is going to: the tapped section lights at once.
 	const path = $derived((way.to ?? navigating.to?.url ?? page.url).pathname);
@@ -202,7 +201,7 @@
 			{#each sections as section (section.href)}
 				<a href={section.href} class="navlink" aria-current={isCurrent(section.href) ? 'page' : undefined}>
 					<Icon name={section.icon} />
-					{section.href === '/add' ? 'Add from YouTube' : section.label}
+					{section.label}
 				</a>
 			{/each}
 		</nav>

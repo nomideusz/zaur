@@ -1,15 +1,17 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { apiUser } from '#lib/server/auth';
-import { addJob, jobsFor, removeJob, videoIdFrom } from '#lib/server/youtube';
+import { addJob, jobsFor, removeJob, retryJob, videoIdFrom } from '#lib/server/youtube';
 
 export const GET: RequestHandler = ({ locals }) => json(jobsFor(apiUser(locals).email));
 
-/** { url } — a YouTube or Bartube link, or text with one in it (a phone's share). */
+/** { url } — a YouTube or Bartube link, or text with one in it (a phone's share); { retry } — a failed row's id. */
 export const POST: RequestHandler = async ({ request, locals }) => {
-	const { url } = (await request.json().catch(() => ({}))) as { url?: string };
+	const { email } = apiUser(locals);
+	const { url, retry } = (await request.json().catch(() => ({}))) as { url?: string; retry?: string };
+	if (typeof retry === 'string') return json(retryJob(retry, email) ?? error(404, 'Nothing to try again.'));
 	const videoId = typeof url === 'string' ? videoIdFrom(url) : null;
 	if (!videoId) error(400, 'That does not look like a YouTube or Bartube video link.');
-	return json(addJob(videoId, apiUser(locals).email));
+	return json(addJob(videoId, email));
 };
 
 /** ?id= — dismiss a finished row from the list. */

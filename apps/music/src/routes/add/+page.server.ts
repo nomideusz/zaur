@@ -1,4 +1,5 @@
-import { signedIn } from '#lib/server/auth';
+import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = (event) => ({ user: signedIn(event) });
+// Adding moved into Search. Installed apps still share to /add until their manifest updates.
+export const load: PageServerLoad = ({ url }) => redirect(308, `/search${url.search}`);

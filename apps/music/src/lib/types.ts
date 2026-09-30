@@ -52,8 +52,7 @@ export interface Playlist {
 	entry?: Song[];
 }
 
-/** One "Add from YouTube" request, as the add page shows it. */
-/** A YouTube search hit on the Add page. */
+/** A YouTube search hit, to add. */
 export interface YouTubeResult {
 	videoId: string;
 	title: string;
@@ -61,9 +60,23 @@ export interface YouTubeResult {
 	seconds: number;
 }
 
+/** An album found outside the library (on Deezer), to add whole. */
+export interface OutsideAlbum {
+	id: number;
+	title: string;
+	artist: string;
+	cover?: string;
+	tracks: number;
+	/** album, ep, single, compile */
+	kind?: string;
+}
+
+/** One song being added: a video, or an album's track (whose video is found when its turn comes). */
 export interface AddJob {
 	id: string;
-	videoId: string;
+	videoId?: string;
+	/** The album it is filed under, when added as part of one. */
+	album?: string;
 	status: 'queued' | 'downloading' | 'done' | 'failed';
 	title?: string;
 	artist?: string;

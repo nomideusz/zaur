@@ -57,7 +57,7 @@
 			<button class="btn-tactile btn-primary tall" type="button" onclick={shuffleAll} disabled={shuffling}>
 				<Icon name="shuffle" /> Shuffle all
 			</button>
-			<a class="btn-tactile tall max-md:hidden" href="/add"><Icon name="add" /> Add from YouTube</a>
+			<a class="btn-tactile tall max-md:hidden" href="/search"><Icon name="add" /> Add music</a>
 			<!-- The phone's way to the account and Sign out (the sidebar has them on a wide screen). -->
 			<a class="z-avatar size-11 text-[15px] no-underline md:hidden" href="/account" aria-label="Account: {data.user.name}">
 				{[...data.user.name][0]?.toUpperCase()}
@@ -77,7 +77,7 @@
 	{:else}
 		<section class="section">
 			<div class="section-head"><h2>Recently added</h2><a href="/albums?sort=newest">See all</a></div>
-			<p class="empty-note">The library is empty. <a class="link" href="/add">Add something from YouTube</a>.</p>
+			<p class="empty-note">The library is empty. <a class="link" href="/search">Search for something to add</a>.</p>
 		</section>
 	{/if}
 

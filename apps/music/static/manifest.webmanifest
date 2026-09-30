@@ -16,11 +16,10 @@
 	],
 	"shortcuts": [
 		{ "name": "Search", "url": "/search" },
-		{ "name": "Add from YouTube", "short_name": "Add", "url": "/add" },
 		{ "name": "Favourites", "url": "/favourites" }
 	],
 	"share_target": {
-		"action": "/add",
+		"action": "/search",
 		"method": "GET",
 		"enctype": "application/x-www-form-urlencoded",
 		"params": { "title": "title", "text": "text", "url": "url" }

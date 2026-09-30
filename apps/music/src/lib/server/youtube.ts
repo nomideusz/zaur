@@ -21,6 +21,7 @@ import { pipeline } from 'node:stream/promises';
 import type { ReadableStream } from 'node:stream/web';
 import type { AddJob, YouTubeResult } from '#lib/types';
 import { adminSub } from '#lib/server/navidrome';
+import { findUpload, type AlbumTrack } from '#lib/server/albums';
 
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/;
 
@@ -59,7 +60,20 @@ export interface VideoInfo {
 // "(Official Video)", "[Lyrics]", "(4K Remaster)" and the like.
 const NOISE = /\s*[([](?:official|lyrics?|audio|video|visuali[sz]er|hd|hq|4k|remaster|m\/?v)\b[^)\]]*[)\]]/gi;
 
-export function tagsFor(info: VideoInfo): { artist: string; title: string; album: string; year?: string } {
+/** How a song is filed: what tagsFor reads from a video, or what an album's tracklist says. */
+export interface AlbumTags {
+	artist: string;
+	title: string;
+	album: string;
+	year?: string;
+	albumArtist?: string;
+	track?: number;
+	disc?: number;
+	/** The album's cover, instead of the video's thumbnail. */
+	cover?: string;
+}
+
+export function tagsFor(info: VideoInfo): AlbumTags {
 	const channel = (info.channel || info.uploader || 'Unknown artist').replace(/\s*-\s*Topic$/, '').replace(/VEVO$/, '').trim();
 	let artist = info.artists?.length ? info.artists.join(', ') : info.artist;
 	let title = info.track;
@@ -80,23 +94,38 @@ const safeName = (s: string) =>
 
 const youtubeDir = () => join(process.env.MUSIC_DIR?.trim() || '/music', 'YouTube');
 
-type Job = AddJob & { by: string };
+/** An album's track has no video yet: it is looked up on YouTube when its turn comes. */
+type Job = AddJob & { by: string; track?: AlbumTrack };
 // ponytail: jobs live in memory — a restart forgets the list, not the files.
 const jobs: Job[] = [];
 let queue: Promise<void> = Promise.resolve();
 
-export function addJob(videoId: string, email: string): AddJob {
-	const earlier = jobs.findIndex((j) => j.videoId === videoId && j.by === email);
+const sameTrack = (a: AlbumTrack, b: AlbumTrack) =>
+	a.album === b.album && a.albumArtist === b.albumArtist && a.disc === b.disc && a.track === b.track;
+
+/** A video to add, by its ID, or an album's track to find on YouTube and add. */
+export function addJob(what: string | AlbumTrack, email: string): AddJob {
+	const mine = (j: Job) => j.by === email && (typeof what === 'string' ? j.videoId === what : !!j.track && sameTrack(j.track, what));
+	const earlier = jobs.findIndex(mine);
 	if (earlier >= 0) {
 		if (jobs[earlier].status !== 'failed') return strip(jobs[earlier]);
 		// A retry takes the failed attempt's place rather than adding a row.
 		jobs.splice(earlier, 1);
 	}
-	const job: Job = { id: randomUUID(), videoId, by: email, status: 'queued', at: Date.now() };
+	const job: Job =
+		typeof what === 'string'
+			? { id: randomUUID(), videoId: what, by: email, status: 'queued', at: Date.now() }
+			: { id: randomUUID(), by: email, track: what, title: what.title, artist: what.artist, album: what.album, status: 'queued', at: Date.now() };
 	jobs.unshift(job);
-	jobs.splice(200);
+	jobs.splice(500);
 	queue = queue.then(() => run(job));
 	return strip(job);
+}
+
+/** Try a failed row again, however it was added. */
+export function retryJob(id: string, email: string): AddJob | null {
+	const job = jobs.find((j) => j.id === id && j.by === email && j.status === 'failed');
+	return job ? addJob(job.track ?? job.videoId!, email) : null;
 }
 
 export const jobsFor = (email: string): AddJob[] => jobs.filter((j) => j.by === email).map(strip);
@@ -107,26 +136,32 @@ export function removeJob(id: string, email: string): void {
 	if (at >= 0) jobs.splice(at, 1);
 }
 
-function strip({ by: _, ...job }: Job): AddJob {
+function strip({ by: _, track: __, ...job }: Job): AddJob {
 	return job;
 }
 
 async function run(job: Job): Promise<void> {
 	const work = await mkdtemp(join(tmpdir(), 'zaur-music-'));
 	try {
-		const existing = await findInLibrary(job.videoId);
+		job.status = 'downloading';
+		if (!job.videoId && job.track) {
+			const upload = await findUpload(job.track);
+			if (!upload) throw new Error('Not found on YouTube (not this take of it, anyway).');
+			job.videoId = upload.videoId;
+		}
+		const existing = await findInLibrary(job.videoId!);
 		if (existing) {
 			Object.assign(job, { status: 'done', title: existing, error: 'Already in the library' });
 			return;
 		}
-		job.status = 'downloading';
 		const info = await download(job, work);
-		const tags = tagsFor(info);
+		const tags = job.track ?? tagsFor(info);
 		Object.assign(job, { title: tags.title, artist: tags.artist });
+		if (tags.cover) await save(tags.cover, join(work, 'cover-album.jpg')).catch((error) => console.warn('[add] no album cover', error));
 
 		const files = await readdir(work);
 		const audio = files.find((f) => f.startsWith('audio.') && /\.(m4a|mp4|aac|mp3|opus|ogg|webm)$/.test(f));
-		const thumb = files.find((f) => f.startsWith('audio.') && /\.(webp|jpe?g|png)$/.test(f));
+		const thumb = files.find((f) => f === 'cover-album.jpg') ?? files.find((f) => f.startsWith('audio.') && /\.(webp|jpe?g|png)$/.test(f));
 		if (!audio) throw new Error('yt-dlp left no audio file');
 
 		const input = ['-i', join(work, audio)];
@@ -138,7 +173,16 @@ async function run(job: Job): Promise<void> {
 			input.push('-i', join(work, 'cover.jpg'));
 			art.push('-map', '1:v', '-disposition:v:0', 'attached_pic');
 		}
-		const meta = { title: tags.title, artist: tags.artist, album_artist: tags.artist, album: tags.album, date: tags.year, comment: `https://youtu.be/${info.id}` };
+		const meta = {
+			title: tags.title,
+			artist: tags.artist,
+			album_artist: tags.albumArtist ?? tags.artist,
+			album: tags.album,
+			date: tags.year,
+			track: tags.track,
+			disc: tags.disc,
+			comment: `https://youtu.be/${info.id}`
+		};
 		const tagged = join(work, 'tagged.m4a');
 		await ffmpeg([
 			...input,
@@ -147,10 +191,14 @@ async function run(job: Job): Promise<void> {
 			tagged
 		]);
 
-		const folder = join(youtubeDir(), safeName(tags.artist));
+		// An album's tracks go together, in order: YouTube/<album artist>/<album>/03 Title [id].m4a.
+		const folder = job.track
+			? join(youtubeDir(), safeName(tags.albumArtist ?? tags.artist), safeName(tags.album))
+			: join(youtubeDir(), safeName(tags.artist));
+		const number = job.track && tags.track ? `${tags.disc ? `${tags.disc}-` : ''}${String(tags.track).padStart(2, '0')} ` : '';
 		await mkdir(folder, { recursive: true });
 		// Copy, not rename: the temp dir may sit on another filesystem.
-		await copyFile(tagged, join(folder, `${safeName(tags.title)} [${info.id}].m4a`));
+		await copyFile(tagged, join(folder, `${number}${safeName(tags.title)} [${info.id}].m4a`));
 		await adminSub('startScan').catch((error) => console.warn('[add] scan request failed', error));
 		job.status = 'done';
 	} catch (error) {
@@ -168,7 +216,7 @@ async function run(job: Job): Promise<void> {
 async function findInLibrary(videoId: string): Promise<string | null> {
 	const files = await readdir(youtubeDir(), { recursive: true }).catch(() => [] as string[]);
 	const hit = files.find((f) => f.includes(`[${videoId}]`));
-	return hit ? hit.split('/').at(-1)!.replace(/ \[[^\]]+\]\.\w+$/, '') : null;
+	return hit ? hit.split('/').at(-1)!.replace(/^(?:\d+-)?\d+ /, '').replace(/ \[[^\]]+\]\.\w+$/, '') : null;
 }
 
 function download(job: Job, work: string): Promise<VideoInfo> {
