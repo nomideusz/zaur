@@ -1,4 +1,3 @@
-import { goto } from '$app/navigation';
 import { signOutAccount, switchAccount } from '../routes/session.remote';
 import { logout } from '../routes/login.remote';
 
@@ -30,7 +29,14 @@ export async function signOutOf(key: string): Promise<void> {
 	location.assign(signedIn ? '/' : '/login');
 }
 
+/**
+ * Sign out of everything. A full page load, like the two above: a client-side
+ * `goto` kept the app's pages and their cached session in memory, so Back
+ * brought the shell straight back without asking the server who was there.
+ */
 export function signOutAll(): void {
-	announce();
-	void logout().then(() => goto('/login', { replaceState: true }));
+	void logout().then(() => {
+		announce();
+		location.assign('/login');
+	});
 }

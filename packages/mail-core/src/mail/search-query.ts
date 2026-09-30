@@ -111,5 +111,5 @@ function parseSearchDate(value: string, edge: 'start' | 'end'): string {
 }
 
 export function searchOperatorHint(): string {
-	return 'from: · to: · subject: · has:attachment · is:unseen · is:highlighted · after: · before:';
+	return 'from: · to: · subject: · has:attachment · is:unseen · is:flagged · is:important · after: · before:';
 }

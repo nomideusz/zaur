@@ -60,7 +60,7 @@
 	{#if data.addingTo}
 		<p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">
 			Signed in as <span class="z-mono text-[11.5px] text-[var(--z-strong)]">{data.addingTo}</span>. The account
-			you add here joins it; switch between them from the account menu.
+			you add here joins it; switch between them from the account menu or Settings.
 		</p>
 	{:else if data.continueTo}
 		<p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">
@@ -97,9 +97,12 @@
 					<rect x="2" y="3.5" width="12" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3" />
 					<path d="M2.4 4.6L8 8.8l5.6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
 				</svg>
+				<!-- Typing on arrival lands in the first field still to fill in. -->
+				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					{...login.fields.email.as('email', data.email)}
 					id="login-email"
+					autofocus={!data.email}
 					required
 					autocomplete="username"
 					autocapitalize="none"
@@ -118,9 +121,11 @@
 					<rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
 					<path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
 				</svg>
+				<!-- svelte-ignore a11y_autofocus -->
 				<input
 					{...login.fields.password.as('password')}
 					id="login-password"
+					autofocus={Boolean(data.email)}
 					required
 					autocomplete="current-password"
 					enterkeyhint="go"
@@ -162,7 +167,7 @@
 		>
 			<input {...login.fields.remember.as('checkbox')} disabled={pending} class="z-check disabled:opacity-60" />
 			<span class="flex-1 text-[13.5px] text-[var(--z-strong)]">Keep me signed in</span>
-			<span class="z-mono text-[10px] text-[var(--z-soft)]">30 days</span>
+			<span class="z-mono text-[10px] text-[var(--z-soft)] max-[359px]:hidden">30 days</span>
 		</label>
 
 		<button type="submit" disabled={pending} class="btn-tactile btn-primary mt-3.5 h-[42px] w-full !text-[14px]">

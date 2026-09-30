@@ -23,6 +23,16 @@ export function keyboardFrame(
 	return { height: Math.round(viewHeight), top: Math.max(0, Math.round(offsetTop)) };
 }
 
+/**
+ * Chrome's way leaves nothing to measure against the visual viewport — the
+ * layout shrank with it — so it is measured against the tallest this window
+ * has been at its width, and only while something is being typed into: a
+ * window that is simply short has no keyboard in it.
+ */
+export function layoutShrank(tallest: number, innerHeight: number, editing: boolean): boolean {
+	return editing && tallest - innerHeight >= KEYBOARD_MIN;
+}
+
 const TOUCH = '(hover: none) and (pointer: coarse)';
 
 let installed = false;
@@ -39,10 +49,23 @@ export function installKeyboardInset(): void {
 	let frame = 0;
 	let height = '';
 	let top = '';
+	let width = 0;
+	let tallest = 0;
 
 	const sync = () => {
 		frame = 0;
+		// A turn of the phone starts the measure again.
+		if (window.innerWidth !== width) tallest = 0;
+		width = window.innerWidth;
+		tallest = Math.max(tallest, window.innerHeight);
 		const next = touch.matches ? keyboardFrame(window.innerHeight, vv.height, vv.offsetTop) : null;
+		const active = document.activeElement as HTMLElement | null;
+		const editing = !!active && (active.isContentEditable || active.matches('input, textarea'));
+		// The class is what hides the tab row; the frame below is iOS' alone.
+		root.classList.toggle(
+			'z-keyboard-open',
+			!!next || (touch.matches && layoutShrank(tallest, window.innerHeight, editing))
+		);
 		const nextHeight = next ? `${next.height}px` : '';
 		const nextTop = next ? `${next.top}px` : '';
 		if (nextHeight === height && nextTop === top) return;
@@ -51,12 +74,10 @@ export function installKeyboardInset(): void {
 		if (!next) {
 			root.style.removeProperty('--z-vv-height');
 			root.style.removeProperty('--z-vv-top');
-			root.classList.remove('z-keyboard-open');
 			return;
 		}
 		root.style.setProperty('--z-vv-height', nextHeight);
 		root.style.setProperty('--z-vv-top', nextTop);
-		root.classList.add('z-keyboard-open');
 		// The pan is the browser scrolling the page to chase the caret. The
 		// shell is not a document scroller; putting the page back lets the
 		// translate own that offset instead of stacking on top of it.
@@ -72,5 +93,8 @@ export function installKeyboardInset(): void {
 	vv.addEventListener('resize', schedule);
 	vv.addEventListener('scroll', schedule);
 	window.addEventListener('scroll', schedule);
+	window.addEventListener('resize', schedule);
+	document.addEventListener('focusin', schedule);
+	document.addEventListener('focusout', schedule);
 	sync();
 }

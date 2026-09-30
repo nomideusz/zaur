@@ -34,6 +34,8 @@
 		onBulk: (action: BulkAction, mailboxId?: string) => void;
 		busy?: boolean;
 		onNewMessage: (anchor: { left: number; top: number; right: number; bottom: number }) => void;
+		/** Messages in the outbox, still to go out. */
+		waiting?: number;
 	}
 
 	let {
@@ -51,7 +53,8 @@
 		onSetSelection,
 		onBulk,
 		busy = false,
-		onNewMessage
+		onNewMessage,
+		waiting = 0
 	}: Props = $props();
 
 	let searchEl = $state<HTMLInputElement | null>(null);
@@ -164,10 +167,11 @@
 			>
 				<ActionIcon name={allRead ? 'mail' : 'mail-open'} class="size-[18px]" />
 			</button>
+			<!-- Under 380px one has to go: Archive, which is also a folder in Move to. -->
 			{#if archiveTarget}
 				<button
 					type="button"
-					class="z-icon-btn size-11"
+					class="z-icon-btn size-11 max-[379px]:hidden"
 					disabled={busy}
 					aria-label="Archive"
 					onclick={() => onBulk('move', archiveTarget.id)}
@@ -190,7 +194,7 @@
 		{#if moveTargets.length > 0}
 			<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 				<Menu.Trigger
-					class="btn-tactile size-11 shrink-0 p-0 !border-[var(--z-accent-line)] !text-[var(--z-accent-ink)] max-[379px]:hidden"
+					class="btn-tactile size-11 shrink-0 p-0 !border-[var(--z-accent-line)] !text-[var(--z-accent-ink)]"
 					disabled={busy}
 					aria-label="Move to"
 				>
@@ -258,7 +262,7 @@
 			{#if draft || searchQuery}
 				<button
 					type="button"
-					class="absolute top-1/2 right-1 flex size-9 -translate-y-1/2 items-center justify-center rounded-[8px] text-[var(--z-strong)]"
+					class="absolute top-0 right-0 flex size-11 items-center justify-center rounded-[8px] text-[var(--z-strong)]"
 					aria-label="Clear search"
 					onclick={() => {
 						draft = '';
@@ -301,7 +305,7 @@
 				{#if activeMailbox && activeMailbox.unread > 0}
 					<!-- The count lives in the drawer too; on a very narrow phone the name wins. -->
 					<span
-						class="z-count [--z-count-h:18px] !px-1 !text-[11px] max-[359px]:hidden"
+						class="z-count [--z-count-h:18px] !px-1 !text-[12px] max-[359px]:hidden"
 						style:--z-stroke={COUNT_BADGE.border}
 						style:--z-ink-on={COUNT_BADGE.text}
 						style:background-color={COUNT_BADGE.bg}
@@ -384,3 +388,12 @@
 		</div>
 	{/if}
 </header>
+{#if waiting > 0}
+	<!-- The outbox has no folder; this is the one place a queued message shows. -->
+	<p
+		class="shrink-0 border-b border-[var(--z-ch-needs-stroke)] bg-[var(--z-ch-needs-fill)] px-3.5 py-1.5 text-[12.5px] font-semibold text-[var(--z-ch-needs-ink)] md:hidden"
+		role="status"
+	>
+		{waiting} waiting to send
+	</p>
+{/if}

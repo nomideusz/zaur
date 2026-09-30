@@ -10,6 +10,7 @@
  * palette and the frame sits on a white card, because recolouring someone
  * else's layout is how you get invisible text.
  */
+import { INLINE_IMAGE_PATH } from './urls';
 
 const LIGHT = {
 	ink: '#1e293b',
@@ -48,9 +49,12 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 	p { margin: 0; }
 	p + p, p + ul, p + ol, ul + p, ol + p, p + pre, pre + p { margin-top: 0.9em; }
 	.z-email-body--plain p + p { margin-top: 0; }
-	a { color: ${palette.link}; text-decoration: underline; text-underline-offset: 2px; }
-	a:hover { color: ${palette.linkHover}; }
+	/* Only what can be followed looks like a link: html.ts takes the address off some. */
+	a:any-link { color: ${palette.link}; text-decoration: underline; text-underline-offset: 2px; }
+	a:any-link:hover { color: ${palette.linkHover}; }
 	img { max-width: 100%; height: auto; }
+	/* A remote image that was not fetched (html.ts): a quiet box of the size it was given. */
+	img[data-blocked-src] { background: ${palette.well}; outline: 1px dashed ${palette.rule}; outline-offset: -1px; border-radius: 4px; }
 	table { max-width: 100%; }
 	/* Fixed-width marketing wrappers (tagged by the sanitizer) reflow to the column. */
 	[data-z-fixed-width] { width: 100% !important; max-width: 100% !important; }
@@ -98,10 +102,32 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 		font-size: 0.9em;
 	}
-	pre { background: ${palette.well}; border: 1px solid ${palette.rule}; border-radius: 6px; padding: 12px; overflow-x: auto; }
+	/* Wraps rather than scrolls: inside a layout table an unwrapped line is the table's
+	   minimum width, and the whole mail would be as wide as its longest line of code. */
+	pre { background: ${palette.well}; border: 1px solid ${palette.rule}; border-radius: 6px; padding: 12px; overflow-x: auto; white-space: pre-wrap; overflow-wrap: anywhere; }
 	code { background: ${palette.well}; border-radius: 4px; padding: 1px 4px; }
 	hr { border: 0; border-top: 1px solid ${palette.rule}; margin: 1rem 0; }
 `;
+}
+
+/**
+ * The frame loads images and nothing else: `data:`, `blob:`, inline (`cid:`)
+ * images from the one address that serves them, and other servers' only once
+ * the reader has said yes. Never `'self'`: the frame resolves a mail's URLs
+ * against the app and sends its cookies, so the app's own addresses are the
+ * ones a mail must not reach (`<img src="/oidc/logout">`). The sanitizer takes
+ * all of this out first (html.ts); this is the browser holding the same line
+ * for whatever markup or CSS trick it did not think of. It can only narrow
+ * the app's own policy, which the frame inherits.
+ *
+ * ponytail: `https:` cannot leave out the app's own host, so with images
+ * allowed the sanitizer alone keeps a mail off it. A `<base>` on a dead origin
+ * would cover relative URLs, but the app's `base-uri 'self'` refuses it.
+ */
+function frameCsp(remote: boolean, origin: string | undefined): string {
+	const inline = origin ? ` ${origin}${INLINE_IMAGE_PATH}` : '';
+	const images = `data: blob:${inline}${remote ? ' https:' : ''}`;
+	return `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src ${images}; style-src 'unsafe-inline'">`;
 }
 
 const LIGHT_STYLES = frameStyles(LIGHT, 'light');
@@ -112,6 +138,10 @@ export function buildEmailFrameSrcdoc(options: {
 	plain: boolean;
 	/** The shell is dark. Only plain-text mail follows it; see the module note. */
 	dark?: boolean;
+	/** The reader said yes to remote images. Anything else keeps the frame offline. */
+	remote?: boolean;
+	/** The app's origin, for the one address of it the frame may load: inline images. */
+	origin?: string;
 }): string {
 	const bodyClass = options.plain ? 'z-email-body z-email-body--plain' : 'z-email-body';
 	const styles = options.dark && options.plain ? DARK_STYLES : LIGHT_STYLES;
@@ -119,6 +149,7 @@ export function buildEmailFrameSrcdoc(options: {
 <html>
 <head>
 <meta charset="utf-8">
+${frameCsp(options.remote === true, options.origin)}
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>${styles}</style>
 </head>

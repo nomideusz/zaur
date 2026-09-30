@@ -1,4 +1,4 @@
-import { recipientEmails } from './recipients';
+import { outgoingRecipients } from './recipients';
 import { outgoingAttachments } from './attachments';
 import type { Draft, DraftSaveInput } from './types';
 
@@ -18,14 +18,14 @@ export const DRAFT_CONTENT_KEYS: ReadonlySet<string> = new Set([
 	'from'
 ]);
 
-/** The server draft stores addresses, so the three chip lists unwrap here. */
+/** The three chip lists unwrap to what the server draft stores: addresses, with their names. */
 export function buildDraftSaveInput(draft: DraftContent): DraftSaveInput {
 	return {
 		jmapDraftId: draft.jmapDraftId,
 		from: draft.from,
-		to: recipientEmails(draft.to),
-		cc: recipientEmails(draft.cc),
-		bcc: recipientEmails(draft.bcc),
+		to: outgoingRecipients(draft.to),
+		cc: outgoingRecipients(draft.cc),
+		bcc: outgoingRecipients(draft.bcc),
 		subject: draft.subject,
 		body: draft.body,
 		bodyHtml: draft.bodyHtml,

@@ -130,9 +130,18 @@ const shell = base.slice(base.indexOf('.z-shell'));
 // to nothing on a tablet.
 test('shell: the grid collapses to one pane, then two, then three', () => {
 	assert.match(shell, /\.z-shell \{[^}]*grid-template-columns: minmax\(0, 1fr\);/);
-	assert.match(shell, /@media \(min-width: 768px\) \{\s*\.z-shell \{\s*grid-template-columns: var\(--z-list-w[^)]*\) 1px minmax\(0, 1fr\);/);
 	assert.match(
 		shell,
-		/@media \(min-width: 1024px\) \{\s*\.z-shell\[data-sidebar='open'\] \{\s*grid-template-columns: var\(--z-sidebar-width\)/
+		/@media \(min-width: 768px\) \{\s*\.z-shell \{\s*grid-template-columns: min\(var\(--z-list-w[^)]*\), 50%\) 1px minmax\(0, 1fr\);/
 	);
+	assert.match(
+		shell,
+		/@media \(min-width: 1024px\) \{\s*\.z-shell\[data-sidebar='open'\] \{\s*grid-template-columns:\s*var\(--z-sidebar-width\)/
+	);
+});
+
+// Without a row template the one row is as tall as the tallest pane: a long
+// sidebar pushed the list's last rows and the status line off the window.
+test('shell: one row, the height of the slot', () => {
+	assert.match(shell, /\.z-shell \{[^}]*grid-template-rows: minmax\(0, 1fr\);/);
 });

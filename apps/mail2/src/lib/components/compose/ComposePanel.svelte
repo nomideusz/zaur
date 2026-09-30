@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { attachmentKind, formatAttachmentSize } from '#lib/compose/attachments';
-	import { EDGE, PANEL_MIN_H, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, maximizedRect } from '#lib/compose/layout';
-	import { filterContacts } from '#lib/compose/recipients';
+	import { EDGE, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, fitPanel, maximizedRect } from '#lib/compose/layout';
+	import { hasDraftContent } from '#lib/compose/draft-save';
+	import { backLayer } from '#lib/back-layer.svelte.ts';
+	import { filterContacts, highlightedSuggestion, makeRecipient } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
 	import RichBody from './RichBody.svelte';
@@ -11,7 +13,7 @@
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
-	import { flushSync } from 'svelte';
+	import { flushSync, onMount, untrack } from 'svelte';
 	import {
 		buildSchedulePresets,
 		customSendTimeMin,
@@ -66,17 +68,26 @@
 	 */
 	const sheet = $derived(viewport.phone || rootH < 520);
 	const filled = $derived(maximized || sheet);
-	const rect = $derived(
-		maximized ? maximizedRect(rootW, rootH) : { x: draft.x, y: draft.y, w: draft.w, h: draft.h }
-	);
 	/** The attachment strip's height as drawn: its chips wrap into as many rows as they need. */
 	let stripH = $state(0);
-	// An auto height never runs off a short shell: the field column scrolls instead.
-	const height = $derived(
-		maximized || !draft.auto
-			? rect.h
-			: Math.max(PANEL_MIN_H, Math.min(computeAutoHeight(draft, stripH || undefined), rootH - draft.y - EDGE))
-	);
+	/**
+	 * Where the panel is drawn. The draft keeps the rect the user gave it; the
+	 * shell may have shrunk since (a resized window), so it is fitted on the way
+	 * out — slid back inside, and cut down only when the shell is smaller than
+	 * the panel, where the field column scrolls instead.
+	 */
+	const rect = $derived.by(() => {
+		if (maximized) return maximizedRect(rootW, rootH);
+		const stored = {
+			x: draft.x,
+			y: draft.y,
+			w: draft.w,
+			h: draft.auto ? computeAutoHeight(draft, stripH || undefined) : draft.h
+		};
+		// Not measured yet (the page is mounting): nothing to fit against.
+		return rootW && rootH ? fitPanel(stored, rootW, rootH) : stored;
+	});
+	const height = $derived(rect.h);
 	const step = $derived(computeStep(draft));
 	const bodyHeight = $derived(bodyHeightPx(draft));
 	// Full-strength once the box has grown — an equality check dimmed it at 340 (maximized).
@@ -109,9 +120,21 @@
 			.filter((row) => row.names)
 	);
 
+	/**
+	 * A phone on its side with the keyboard up leaves the sheet some 150px: its
+	 * bar and the action bar alone are 124. While the message has the focus there,
+	 * the sheet is its bar (with Send) and the message; the rest returns with the
+	 * height, when the keyboard goes. A small upright phone (some 270px over its
+	 * keyboard) loses the address rows only: the action bar still fits there.
+	 */
+	let inBody = $state(false);
+	const cramped = $derived(sheet && inBody && rootH < 300);
+	const noBar = $derived(cramped && rootH < 240);
+
 	function onFieldsFocus(event: FocusEvent) {
 		const target = event.target as HTMLElement;
-		if (target.id !== subjectId) writing = !!target.closest(`#${CSS.escape(bodyId)}`);
+		inBody = !!target.closest(`#${CSS.escape(bodyId)}`);
+		if (target.id !== subjectId) writing = inBody;
 	}
 
 	/** Synchronous, so the To field is focused inside the tap and the keyboard stays up. */
@@ -120,6 +143,12 @@
 		focusField('to');
 	}
 
+	/**
+	 * A sheet's message box never flexes to nothing: squeezed (keyboard up,
+	 * address rows open, files attached) the column scrolls, and the caret
+	 * brings the box into view.
+	 */
+	const bodyFloor = $derived(sheet ? 'min-h-[84px]' : 'min-h-0');
 	const subjectDim = $derived(draft.to.length === 0 ? 'opacity-68' : 'opacity-100');
 	/** Schedule picker state — transient UI, so local state rather than the draft record. */
 	let scheduleOpen = $state(false);
@@ -151,14 +180,44 @@
 		pickSendAt(new Date(customSendTime));
 	}
 
-	/** Autosave state in the tabbed-studio's "Draft: …" vocabulary. */
+	/**
+	 * Autosave state in the tabbed-studio's "Draft: …" vocabulary. The time is
+	 * 24-hour like the list's, and a sheet leaves it out: at 320px it squeezed
+	 * the bar's title to "N…".
+	 */
 	const saveLabel = $derived(
 		draft.draftSaving
 			? 'Saving…'
-			: draft.draftSavedAt
-				? `Saved ${new Date(draft.draftSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
-				: null
+			: !draft.draftSavedAt
+				? null
+				: sheet
+					? 'Saved'
+					: `Saved ${new Date(draft.draftSavedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
 	);
+
+	/**
+	 * On a phone the sheet is a whole screen, so it is a history entry: Back puts
+	 * the draft in the dock instead of leaving Mail from under it. Never
+	 * discarded — only a draft with nothing in it is simply closed. The dock chip
+	 * needs no entry of its own; reopening it makes this one again.
+	 */
+	const layer = backLayer(`compose-${untrack(() => draft.id)}`);
+	let entered = false;
+	$effect(() => {
+		if (layer.open) entered = true;
+		else if (entered) {
+			untrack(() =>
+				hasDraftContent(draft) || draft.jmapDraftId ? compose.minimize(draft.id) : compose.close(draft.id)
+			);
+		}
+	});
+	onMount(() => {
+		void layer.show();
+		return () => {
+			entered = false;
+			void layer.hide();
+		};
+	});
 
 	// Focus is requested once per draft (and again when send-without-recipients
 	// nudges back to To); the panel consumes it after focusing. A frame late: a menu
@@ -191,8 +250,9 @@
 			pointerId: event.pointerId,
 			startX: event.clientX,
 			startY: event.clientY,
-			originX: draft.x,
-			originY: draft.y
+			// From where it is drawn: a fitted panel is not where the draft says.
+			originX: rect.x,
+			originY: rect.y
 		};
 		compose.setGesture(draft.id, true);
 		headerEl?.setPointerCapture(event.pointerId);
@@ -248,7 +308,7 @@
 			pointerId: event.pointerId,
 			startX: event.clientX,
 			startY: event.clientY,
-			origin: { x: draft.x, y: draft.y, w: draft.w, h: draft.h }
+			origin: { x: rect.x, y: rect.y, w: rect.w, h: height }
 		};
 		compose.setGesture(draft.id, true);
 		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -288,9 +348,12 @@
 			return;
 		}
 		if (event.key === 'Enter' || event.key === ',' || event.key === 'Tab') {
-			const highlighted = items[hiOf(field)] ?? null;
+			// Only what can be seen is committed: the row highlighted in an open
+			// list, or a typed address. With neither the key keeps its own job —
+			// Tab and Shift+Tab move on, Enter does nothing.
+			const highlighted = highlightedSuggestion(openOf(field), items, hiOf(field));
 			const text = inputOf(field);
-			if (!highlighted && !/@/.test(text)) {
+			if (!highlighted && !makeRecipient(text)) {
 				if (event.key === ',') event.preventDefault();
 				return;
 			}
@@ -314,16 +377,36 @@
 	}
 
 	// Picking a recipient must move focus after the input's own focus
-	// restore, hence the double rAF plus a fresh DOM query (spec).
+	// restore, hence the double rAF plus a fresh DOM query (spec). Focus stays
+	// in the field: the next thing typed is as likely a second address as a
+	// subject, and Tab moves on.
 	function refocusAfterCommit(field: RecipientField) {
-		requestAnimationFrame(() =>
-			requestAnimationFrame(() => {
-				// From To, a draft with no subject yet moves on to one; Cc and Bcc
-				// always stay put, since you are usually adding more than one.
-				const id = field !== 'to' || draft.subject.trim() ? fieldId(field) : subjectId;
-				document.getElementById(id)?.focus();
-			})
-		);
+		requestAnimationFrame(() => requestAnimationFrame(() => focusField(field)));
+	}
+
+	/**
+	 * Cc and Bcc: the button pressed is gone with the change, and focus with it
+	 * — to <body>, where the address typed next ran the list's shortcuts. The
+	 * new field takes it, synchronously, so a phone's keyboard stays up.
+	 */
+	function showFields(fields: ('cc' | 'bcc')[]) {
+		flushSync(() => fields.forEach((field) => compose.showRecipientField(draft.id, field, true)));
+		focusField(fields[0]!);
+	}
+
+	/**
+	 * A ✕ that takes its own row away would drop focus on <body> the same way.
+	 * It stays in the panel — on the panel itself rather than a field, so
+	 * removing something does not raise a phone's keyboard.
+	 */
+	function removing(remove: () => void) {
+		flushSync(remove);
+		if (!panelEl?.contains(document.activeElement)) panelEl?.focus({ preventScroll: true });
+	}
+
+	/** Anything outside the panels, clicked or focused, takes the keyboard back: see `compose.keysIn`. */
+	function releaseKeys(event: Event) {
+		if (!(event.target as Element | null)?.closest?.('[role="dialog"]')) compose.keysIn = null;
 	}
 
 	// --- editing a chip ---
@@ -380,10 +463,14 @@
 
 	function removeChip(event: MouseEvent, field: RecipientField, email: string) {
 		event.stopPropagation();
-		compose.removeRecipient(draft.id, field, email);
+		removing(() => compose.removeRecipient(draft.id, field, email));
+		// At a desk the next thing typed is the address that replaces it.
+		if (!sheet) focusField(field);
 	}
 
 </script>
+
+<svelte:window onpointerdown={releaseKeys} onfocusin={releaseKeys} />
 
 <!-- Step markers, in the shell's status-dot vocabulary: the same ringed blue
      dot that marks a draft with content in the dock. -->
@@ -394,12 +481,12 @@
 	></span>
 {/snippet}
 
-<!-- Primary, and recessed until there is a recipient; the key sits inside it on a desk. -->
+<!-- Primary, and recessed until there is a recipient — in any of the three rows; the key sits inside it on a desk. -->
 {#snippet sendButton(compact: boolean)}
 	<button
 		type="button"
-		class="btn-tactile btn-primary {compact ? '!h-11 !px-4 !text-[14px] !font-semibold' : '!h-[30px] !px-3.5'}"
-		disabled={draft.sending || draft.to.length === 0}
+		class="btn-tactile btn-primary shrink-0 whitespace-nowrap {compact ? '!h-11 !px-4 !text-[14px] !font-semibold' : '!h-[30px] !px-3.5'}"
+		disabled={draft.sending || draft.to.length + draft.cc.length + draft.bcc.length === 0}
 		onclick={() => void compose.sendDraft(draft.id)}
 	>
 		{draft.sendAt ? 'Schedule send' : draft.sending ? 'Sending…' : 'Send'}
@@ -532,15 +619,27 @@
 				autocorrect="off"
 				spellcheck="false"
 				enterkeyhint="done"
-				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
+				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent max-[359px]:min-w-[72px] max-[359px]:basis-[72px] text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 			/>
 
 			{#if openOf(field)}
+				<!--
+					The box hangs over the Subject row. With nobody to suggest it must not
+					take the click meant for Subject: a typed address needs no box at a desk
+					(Enter, Tab and leaving the field all add it), and "No matching
+					contacts" lets the pointer through — the field then loses focus, which
+					closes it.
+				-->
+				{@const typed = items.length === 0 && makeRecipient(inputOf(field)) !== null}
 				<div
 					id={listboxId(field)}
 					role="listbox"
 					aria-label="Contact suggestions"
-					class="absolute top-[calc(100%+4px)] right-0 left-0 z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] p-1.5 shadow-[var(--z-shadow-menu)]"
+					class="absolute top-[calc(100%+4px)] right-0 left-0 z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] p-1.5 shadow-[var(--z-shadow-menu)] {typed
+						? 'pointer-fine:hidden'
+						: items.length === 0
+							? 'pointer-events-none'
+							: ''}"
 				>
 					{#each items as suggestion, index (suggestion.email)}
 						{@const theme = identityTone(suggestion.email || suggestion.name)}
@@ -551,7 +650,7 @@
 							class="flex w-full items-center gap-2.5 rounded-[8px] border px-[9px] py-1.5 text-left transition-colors {index ===
 							hiOf(field)
 								? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)]' : 'border-transparent'}"
-							onpointerdown={(event) => event.preventDefault()}
+							onmousedown={(event) => event.preventDefault()}
 							onclick={() => {
 								compose.addRecipient(draft.id, field, inputOf(field), suggestion);
 								refocusAfterCommit(field);
@@ -578,13 +677,24 @@
 						</button>
 					{/each}
 					{#if items.length === 0}
-						<p class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">
-							{#if inputOf(field).includes('@')}
-								Press <kbd class="z-kbd mx-0.5">Enter</kbd> to add {inputOf(field).trim()}
-							{:else}
-								No matching contacts
-							{/if}
-						</p>
+						{#if typed}
+							<!-- An address nobody in the list has: Done adds it, and so does this row — the only way a touch screen can be told about. -->
+							<button
+								type="button"
+								role="option"
+								aria-selected="true"
+								class="w-full truncate rounded-[8px] px-2.5 py-1.5 text-left text-[13px] text-[var(--z-soft)] pointer-coarse:py-2.5"
+								onmousedown={(event) => event.preventDefault()}
+								onclick={() => {
+									compose.addRecipient(draft.id, field, inputOf(field), null);
+									refocusAfterCommit(field);
+								}}
+							>
+								Add {inputOf(field).trim()}
+							</button>
+						{:else}
+							<p class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">No matching contacts</p>
+						{/if}
 					{:else}
 						<div
 							class="mt-1 flex items-center justify-end gap-3 border-t border-[var(--z-hairline)] px-2 pt-1.5 text-[11px] text-[var(--z-faint)] max-md:hidden"
@@ -616,10 +726,7 @@
 						class="btn-tactile !size-8 !rounded-[8px] !p-0 md:hidden"
 						aria-label="Show Cc and Bcc"
 						title="Cc and Bcc"
-						onclick={() => {
-							compose.showRecipientField(draft.id, 'cc', true);
-							compose.showRecipientField(draft.id, 'bcc', true);
-						}}
+						onclick={() => showFields(draft.ccShown ? ['bcc'] : ['cc', 'bcc'])}
 					>
 						<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -629,7 +736,7 @@
 						<button
 							type="button"
 							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
-							onclick={() => compose.showRecipientField(draft.id, 'cc', true)}
+							onclick={() => showFields(['cc'])}
 						>
 							Cc
 						</button>
@@ -638,7 +745,7 @@
 						<button
 							type="button"
 							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
-							onclick={() => compose.showRecipientField(draft.id, 'bcc', true)}
+							onclick={() => showFields(['bcc'])}
 						>
 							Bcc
 						</button>
@@ -651,7 +758,7 @@
 					type="button"
 					class="flex size-[22px] items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-8 max-md:rounded-[8px]"
 					aria-label="Remove {label}"
-					onclick={() => compose.showRecipientField(draft.id, field as 'cc' | 'bcc', false)}
+					onclick={() => removing(() => compose.showRecipientField(draft.id, field as 'cc' | 'bcc', false))}
 				>
 					<svg class="size-3 max-md:size-[15px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
@@ -660,6 +767,76 @@
 			</span>
 		{/if}
 	</div>
+{/snippet}
+
+<!--
+	The attachment strip. A window pins it above the action bar, up to three rows
+	of chips before it scrolls. A sheet has it scroll with the message instead:
+	pinned, one file and the keyboard left the message no height at all.
+-->
+{#snippet attachmentStrip()}
+	{#if draft.attachments.length > 0}
+		<!-- Up to three rows of chips before it scrolls; the panel grows to hold them. -->
+		<div
+			bind:offsetHeight={stripH}
+			class="flex shrink-0 flex-wrap content-start gap-2 pt-3 pb-3 pr-4 pl-4 {sheet
+				? '-mx-4'
+				: 'max-h-[130px] overflow-y-auto [scrollbar-width:thin]'}"
+		>
+			{#each draft.attachments as attachment (attachment.id)}
+				{@const badge = attachmentBadge(attachment.type)}
+				{@const failed = attachment.status === 'error'}
+				<!--
+					Uploading replaces the size with a progress rule; a failure turns the
+					whole chip into the discard channel and offers the one action worth
+					having, Retry — the file is kept until it lands.
+				-->
+				<span
+					class="flex h-[30px] shrink-0 items-center gap-2 rounded-[8px] border pr-1.5 pl-1.5 {failed
+						? 'border-[var(--z-ch-discard-stroke)] bg-[var(--z-ch-discard-fill)]'
+						: 'border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]'}"
+				>
+					<span
+						class="flex h-5 min-w-5 items-center justify-center rounded-[5px] border px-1 text-[9px] font-bold uppercase"
+						style:background-color={failed ? 'var(--z-surface)' : badge.bg}
+						style:border-color={failed ? 'var(--z-ch-discard-stroke)' : badge.border}
+						style:color={failed ? 'var(--z-ch-discard-ink)' : badge.text}
+					>
+						{attachmentKind(attachment.name, attachment.type)}
+					</span>
+					<span class="max-w-[180px] truncate text-[13px] font-medium {failed ? 'text-[var(--z-ch-discard-ink)]' : 'text-[var(--z-body)]'}">
+						{attachment.name}
+					</span>
+					{#if attachment.status === 'uploading'}
+						<span class="z-upload-rule inline-flex h-[5px] w-7 overflow-hidden rounded-full bg-[var(--z-hairline)]" aria-label="Uploading" role="progressbar">
+							<span class="block h-full w-3/5 bg-[var(--z-accent)]"></span>
+						</span>
+					{:else if failed}
+						<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-ch-discard-ink)]">Failed · {formatAttachmentSize(attachment.size)}</span>
+						<button
+							type="button"
+							class="btn-tactile !h-[22px] !rounded-[6px] !border-[var(--z-ch-discard-line)] !px-2 !text-[11px] !font-semibold !text-[var(--z-ch-discard-ink)]"
+							onclick={() => compose.retryAttachment(draft.id, attachment.id)}
+						>
+							Retry
+						</button>
+					{:else}
+						<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]">{formatAttachmentSize(attachment.size)}</span>
+					{/if}
+					<button
+						type="button"
+						class="z-icon-btn !size-[18px] !rounded-[5px] {failed ? 'hover:!bg-[color-mix(in_oklab,var(--z-surface)_70%,transparent)]' : ''}"
+						aria-label="Remove {attachment.name}"
+						onclick={() => removing(() => compose.removeAttachment(draft.id, attachment.id))}
+					>
+						<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+						</svg>
+					</button>
+				</span>
+			{/each}
+		</div>
+	{/if}
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -679,6 +856,7 @@
 	style:height={sheet ? undefined : `${height}px`}
 	style:z-index="{draft.z}"
 	onpointerdown={() => compose.raise(draft.id)}
+	onfocusin={() => (compose.keysIn = draft.id)}
 >
 	<!-- Header / drag handle -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -800,7 +978,9 @@
 			fifth of the screen spent saying "To".
 		-->
 		<!-- Only an account with aliases has a choice to make, so only then is there a row. -->
-		{#if folded}
+		{#if cramped}
+			<!-- Only the message: see `cramped`. -->
+		{:else if folded}
 			<button
 				type="button"
 				class="flex h-[54px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] text-left text-base"
@@ -844,7 +1024,7 @@
 		{/if}
 
 		<!-- Subject -->
-		<div class="flex h-[45px] items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px] {subjectDim} transition-opacity duration-[160ms]">
+		<div class="{cramped ? 'hidden' : 'flex'} h-[45px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px] {subjectDim} transition-opacity duration-[160ms]">
 			{@render stepDot(step === 2)}
 			<input
 				id={subjectId}
@@ -874,7 +1054,7 @@
 				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
 				class="font-(family-name:--font-mail-mono) -mr-4 resize-none border-0 bg-transparent pt-[14px] pr-4 pb-4 text-[14px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
 					? 'opacity-100'
-					: 'opacity-68'} {filled ? 'min-h-0 flex-1' : ''}"
+					: 'opacity-68'} {filled ? `${bodyFloor} flex-1` : ''}"
 				style:height={filled ? undefined : `${bodyHeight}px`}
 				style:transition="height 200ms ease"
 				style:scrollbar-width="thin"
@@ -895,9 +1075,14 @@
 				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
 				onfiles={(files) => compose.attachFiles(draft.id, files)}
 				onimage={(file) => compose.uploadInlineImage(draft.id, file)}
+				onfail={() => {
+					// The editor is a lazy chunk: offline, or gone after a deploy. The words are kept.
+					compose.patch(draft.id, { plain: true, bodyHtml: '' });
+					compose.pushToast({ text: "Couldn't load the editor — writing in plain text", tone: 'warning' });
+				}}
 				class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
 					? 'opacity-100'
-					: 'opacity-68'} {filled ? 'min-h-0 flex-1 [&>*]:max-w-[46em]' : '[&>*]:max-w-[33em]'}"
+					: 'opacity-68'} {filled ? `${bodyFloor} flex-1 [&>*]:max-w-[46em]` : '[&>*]:max-w-[33em]'}"
 				height={filled ? undefined : `${bodyHeight}px`}
 			/>
 			{/key}
@@ -906,73 +1091,14 @@
 		{#if draft.sendError}
 			<p class="pb-2 text-xs font-medium text-red-600">{draft.sendError}</p>
 		{/if}
+		{#if sheet}{@render attachmentStrip()}{/if}
 	</div>
 
-	<!-- Attachment strip -->
-	{#if draft.attachments.length > 0}
-		<!-- Up to three rows of chips before it scrolls; the panel grows to hold them. -->
-		<div
-			bind:offsetHeight={stripH}
-			class="flex max-h-[130px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4 [scrollbar-width:thin]"
-		>
-			{#each draft.attachments as attachment (attachment.id)}
-				{@const badge = attachmentBadge(attachment.type)}
-				{@const failed = attachment.status === 'error'}
-				<!--
-					Uploading replaces the size with a progress rule; a failure turns the
-					whole chip into the discard channel and offers the one action worth
-					having, Retry — the file is kept until it lands.
-				-->
-				<span
-					class="flex h-[30px] shrink-0 items-center gap-2 rounded-[8px] border pr-1.5 pl-1.5 {failed
-						? 'border-[var(--z-ch-discard-stroke)] bg-[var(--z-ch-discard-fill)]'
-						: 'border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]'}"
-				>
-					<span
-						class="flex h-5 min-w-5 items-center justify-center rounded-[5px] border px-1 text-[9px] font-bold uppercase"
-						style:background-color={failed ? 'var(--z-surface)' : badge.bg}
-						style:border-color={failed ? 'var(--z-ch-discard-stroke)' : badge.border}
-						style:color={failed ? 'var(--z-ch-discard-ink)' : badge.text}
-					>
-						{attachmentKind(attachment.name, attachment.type)}
-					</span>
-					<span class="max-w-[180px] truncate text-[13px] font-medium {failed ? 'text-[var(--z-ch-discard-ink)]' : 'text-[var(--z-body)]'}">
-						{attachment.name}
-					</span>
-					{#if attachment.status === 'uploading'}
-						<span class="z-upload-rule inline-flex h-[5px] w-7 overflow-hidden rounded-full bg-[var(--z-hairline)]" aria-label="Uploading" role="progressbar">
-							<span class="block h-full w-3/5 bg-[var(--z-accent)]"></span>
-						</span>
-					{:else if failed}
-						<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-ch-discard-ink)]">Failed · {formatAttachmentSize(attachment.size)}</span>
-						<button
-							type="button"
-							class="btn-tactile !h-[22px] !rounded-[6px] !border-[var(--z-ch-discard-line)] !px-2 !text-[11px] !font-semibold !text-[var(--z-ch-discard-ink)]"
-							onclick={() => compose.retryAttachment(draft.id, attachment.id)}
-						>
-							Retry
-						</button>
-					{:else}
-						<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]">{formatAttachmentSize(attachment.size)}</span>
-					{/if}
-					<button
-						type="button"
-						class="z-icon-btn !size-[18px] !rounded-[5px] {failed ? 'hover:!bg-[color-mix(in_oklab,var(--z-surface)_70%,transparent)]' : ''}"
-						aria-label="Remove {attachment.name}"
-						onclick={() => compose.removeAttachment(draft.id, attachment.id)}
-					>
-						<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-						</svg>
-					</button>
-				</span>
-			{/each}
-		</div>
-	{/if}
+	{#if !sheet}{@render attachmentStrip()}{/if}
 
 	<!-- Action bar. On a phone every control is a 44px target and the bar grows to hold them. -->
 	<div
-		class="relative flex shrink-0 items-center border-t border-[var(--z-hairline)] {viewport.phone
+		class="relative {noBar ? 'hidden' : 'flex'} shrink-0 items-center border-t border-[var(--z-hairline)] {viewport.phone
 			? 'h-16 gap-1 px-2'
 			: 'h-[53px] gap-2 pr-3 pl-4'}"
 	>
@@ -1001,7 +1127,7 @@
 		<Popover.Root
 					open={scheduleOpen}
 					onOpenChange={(details) => (scheduleOpen = details.open)}
-					positioning={{ placement: 'bottom-end', gutter: 8 }}
+					positioning={{ placement: 'top-start', gutter: 8 }}
 					lazyMount
 					unmountOnExit
 				>
@@ -1028,7 +1154,7 @@
 								{#if draft.sendAt}
 									<button
 										type="button"
-										class="flex w-full items-center justify-between gap-2 z-menu-item justify-between"
+										class="z-menu-item flex w-full items-center justify-between gap-2 {viewport.phone ? 'min-h-11' : ''}"
 										onclick={() => {
 											compose.setSendAt(draft.id, null);
 											scheduleOpen = false;
@@ -1042,7 +1168,7 @@
 								{#each schedulePresets as preset (preset.label)}
 									<button
 										type="button"
-										class="flex w-full items-center justify-between gap-2 z-menu-item justify-between"
+										class="z-menu-item flex w-full items-center justify-between gap-2 {viewport.phone ? 'min-h-11' : ''}"
 										onclick={() => pickSendAt(preset.date)}
 									>
 										<span>{preset.label}</span>
@@ -1059,7 +1185,7 @@
 									<input
 										id="compose-schedule-{draft.id}"
 										type="datetime-local"
-										class="z-field z-mono !text-[12.5px]"
+										class="z-field z-mono {viewport.phone ? '!h-11 !text-base' : '!text-[12.5px]'}"
 										min={customMin}
 										value={customSendTime}
 										oninput={(event) =>
@@ -1067,7 +1193,8 @@
 									/>
 									<button
 										type="button"
-										class="btn-tactile !h-8 !border-[var(--z-ch-needs-solid)] !bg-[var(--z-ch-needs-fill)] !text-[12.5px] !font-semibold !text-[var(--z-ch-needs-ink)]" disabled={!customSendTime}
+										class="btn-tactile {viewport.phone ? '!h-11 !text-[14px]' : '!h-8 !text-[12.5px]'} !border-[var(--z-ch-needs-solid)] !bg-[var(--z-ch-needs-fill)] !font-semibold !text-[var(--z-ch-needs-ink)]"
+										disabled={!customSendTime}
 										onclick={pickCustomSendAt}
 									>
 										Schedule
@@ -1078,7 +1205,16 @@
 					</Portal>
 				</Popover.Root>
 		<span class="{viewport.phone ? 'h-6' : 'h-5'} w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
-		<RichToolbar id={toolsId} off={draft.plain} large={viewport.phone} class="overflow-x-auto" />
+		<RichToolbar id={toolsId} off={draft.plain} large={viewport.phone} class="overflow-x-auto {viewport.phone ? 'pr-4' : ''}" />
+		{#if viewport.phone && !draft.plain}
+			<!-- A phone shows three of the eleven: the fade says the row goes on. -->
+			<span class="relative -ml-1 w-0 shrink-0 self-stretch" aria-hidden="true">
+				<span
+					class="pointer-events-none absolute inset-y-0 right-0 w-6"
+					style="background: linear-gradient(to left, var(--z-surface), transparent)"
+				></span>
+			</span>
+		{/if}
 		<button
 			type="button"
 			class="z-icon-btn !w-auto shrink-0 font-semibold {viewport.phone ? 'h-11 px-3 text-[14px]' : 'px-1.5 text-[11.5px]'} {draft.plain

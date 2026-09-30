@@ -32,20 +32,25 @@
 		sidebar is collapsed), the compose dock bottom right. The middle is the
 		one strip of the bottom edge that nothing persistent occupies, and a
 		notice that covers a message row for three seconds costs nothing.
+
+		Above every compose panel and the popovers a panel opens (one over its
+		own `z`, which climbs each time a panel is raised): Undo send is a
+		notice's button, and a tall panel reaches the bottom centre.
 	-->
-	<div class="z-toasts absolute z-[60] flex flex-col items-center gap-2" data-docked={docked}>
+	<div class="z-toasts absolute flex flex-col items-center gap-2" style:z-index={compose.zTop + 2} data-docked={docked}>
 		{#each compose.toasts as toast (toast.id)}
 			<div
-				class="z-railed flex max-w-[min(380px,calc(100vw-3rem))] items-center gap-2.5 rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] py-2.5 pr-2 pl-[18px] shadow-[var(--z-shadow-menu)]"
+				class="z-railed flex max-w-[min(380px,calc(100vw-3rem))] items-center gap-2.5 rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] py-2.5 pr-2 pl-[18px] shadow-[var(--z-shadow-menu)] max-md:max-w-none max-md:py-1.5 max-md:pr-1.5"
 				style:--z-rail={TONE[toast.tone ?? 'info']}
 				style:--z-rail-inset="10px"
 				role="status"
 			>
-				<p class="min-w-0 flex-1 text-[13px] font-medium text-[var(--z-body)]">{toast.text}</p>
+				<!-- On a phone the two controls are thumb-sized: Undo send is time-limited, and this is its only button. -->
+				<p class="min-w-0 flex-1 text-[13px] font-medium text-[var(--z-body)] max-md:py-1.5 max-md:text-[14px]">{toast.text}</p>
 				{#if toast.actionLabel}
 					<button
 						type="button"
-						class="btn-tactile shrink-0 !h-[26px] !rounded-[6px] !px-2.5 !text-[12px] !font-semibold"
+						class="btn-tactile shrink-0 !h-[26px] !rounded-[6px] !px-2.5 !text-[12px] !font-semibold max-md:!h-11 max-md:!rounded-[8px] max-md:!px-4 max-md:!text-[14px]"
 						onclick={() => compose.runToastAction(toast.id)}
 					>
 						{toast.actionLabel}
@@ -53,7 +58,7 @@
 				{/if}
 				<button
 					type="button"
-					class="z-icon-btn !size-6"
+					class="z-icon-btn !size-6 max-md:!size-11"
 					aria-label="Dismiss notification"
 					onclick={() => compose.dismissToast(toast.id)}
 				>
@@ -91,7 +96,6 @@
 			right: 12px;
 			transform: none;
 			bottom: calc(var(--z-tabbar-h, 0px) + 12px);
-			z-index: 80;
 			align-items: stretch;
 		}
 

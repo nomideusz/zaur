@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { buildEmailFrameSrcdoc } from '#lib/email/frame';
 	import { prefs } from '#lib/settings.svelte.ts';
 
@@ -7,9 +8,11 @@
 		html: string;
 		/** True when the html was produced from a plain-text body. */
 		plain: boolean;
+		/** Remote images are allowed for this message; otherwise the frame's CSP refuses them. */
+		remote?: boolean;
 	}
 
-	let { html, plain }: Props = $props();
+	let { html, plain, remote = false }: Props = $props();
 
 	let frame: HTMLIFrameElement | undefined = $state();
 	let observer: ResizeObserver | undefined;
@@ -18,18 +21,24 @@
 	/**
 	 * The frame cannot see the shell's tokens, so it is told which palette to
 	 * use. "system" follows the OS and is re-read when the OS flips.
+	 *
+	 * Read before the first render, not in the effect: a `srcdoc` that changes
+	 * right after mount is a second navigation of the frame, and WebKit files it
+	 * in history — Back then had to be pressed twice to leave a plain-text
+	 * message in dark mode.
 	 */
-	let systemDark = $state(false);
+	let systemDark = $state(browser && window.matchMedia('(prefers-color-scheme: dark)').matches);
 	$effect(() => {
 		const media = window.matchMedia('(prefers-color-scheme: dark)');
 		const sync = () => (systemDark = media.matches);
-		sync();
 		media.addEventListener('change', sync);
 		return () => media.removeEventListener('change', sync);
 	});
 	const dark = $derived(prefs.theme === 'dark' || (prefs.theme === 'system' && systemDark));
 
-	const srcdoc = $derived(buildEmailFrameSrcdoc({ html, plain, dark }));
+	// The origin is for the frame's CSP, which names the inline-image address in full.
+	const origin = browser ? location.origin : undefined;
+	const srcdoc = $derived(buildEmailFrameSrcdoc({ html, plain, dark, remote, origin }));
 
 	function applyHeight() {
 		pending = false;

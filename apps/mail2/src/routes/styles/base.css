@@ -155,9 +155,13 @@
 		color: var(--z-faint);
 	}
 
-	/* Destructive: red ink on white, and the discard channel on hover. */
+	/*
+	 * Destructive: red ink on the surface, and the discard channel on hover.
+	 * `--z-danger`, not the channel's ink: that one is for text on the channel's
+	 * fill, and in dark it is a pale pink that stops reading as red on a button.
+	 */
 	.btn-danger {
-		color: var(--z-ch-discard-ink);
+		color: var(--z-danger);
 	}
 
 	.btn-danger:hover:not(:disabled) {
@@ -719,23 +723,83 @@
 	 * depending on whether a thread is open, so exactly one fills it.
 	 * Tablet: list + reader; the sidebar is an overlay drawer instead of a column.
 	 * Desktop: the sidebar joins as a column whenever it is open.
+	 *
+	 * One row, exactly as tall as the slot: left to size itself, the row grows
+	 * to the tallest pane (a long sidebar) and pushes the others, and the status
+	 * line under them, off the bottom of the window. Each pane scrolls inside.
+	 *
+	 * The list's width is the person's (`--z-list-w`, from the splitter) only
+	 * while the window has room for it: it never takes more than half of what
+	 * the sidebar leaves, so the message is always the wider pane.
 	 */
 	.z-shell {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr);
 	}
 
 	@media (min-width: 768px) {
 		.z-shell {
-			grid-template-columns: var(--z-list-w, 480px) 1px minmax(0, 1fr);
+			grid-template-columns: min(var(--z-list-w, 480px), 50%) 1px minmax(0, 1fr);
 		}
 	}
 
 	@media (min-width: 1024px) {
 		.z-shell[data-sidebar='open'] {
-			grid-template-columns: var(--z-sidebar-width) var(--z-list-w, 480px) 1px minmax(0, 1fr);
+			grid-template-columns:
+				var(--z-sidebar-width) min(var(--z-list-w, 480px), (100% - var(--z-sidebar-width)) / 2)
+				1px minmax(0, 1fr);
 		}
 	}
+}
+
+/*
+ * Touch without a mouse or a keyboard: a phone, a tablet, a phone on its side
+ * (which is wide enough for the desk layout, so width alone cannot tell).
+ * Keycaps advertise keys that are not there — they go, and a hint that is
+ * nothing but a key and its caption goes with it. Icon buttons and the
+ * header's controls grow to a fingertip; their glyphs stay the size they were.
+ * The message list's bar is a header too, and as tall there as the reader's.
+ * Unlayered, so a call site's `size-*` utility cannot shrink them back.
+ */
+@media (hover: none) and (pointer: coarse) {
+	kbd,
+	span:has(> kbd:only-child) {
+		display: none;
+	}
+
+	.z-icon-btn,
+	:is(.z-shell-header, .z-list-bar) :is(.btn-tactile, .z-segment, .z-avatar) {
+		min-width: 40px;
+		min-height: 40px;
+	}
+
+	/* A word in a switch (Day · Week · Month) is as wide as the word: only the
+	   section tabs, which are bare icons on a tablet, need the width too. */
+	:is(.z-shell-header, .z-list-bar) :not(nav) > .z-segment {
+		min-width: 0;
+	}
+}
+
+/*
+ * The app inside the screen's safe area (`viewport-fit=cover` in app.html):
+ * clear of the home indicator, and of the notch when the phone is on its side.
+ * Everything in the shell — the tab row, a compose sheet, toasts — is laid out
+ * inside the padding, so none of them has to know; the strips themselves are
+ * painted the surface, the colour of the bars that touch them. With no insets
+ * (a desk, Android, any ordinary tab) every length here is zero.
+ */
+.z-safe {
+	padding: 0 env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px);
+	background:
+		linear-gradient(var(--z-surface), var(--z-surface)) bottom / 100% env(safe-area-inset-bottom, 0px) no-repeat,
+		linear-gradient(var(--z-surface), var(--z-surface)) left / env(safe-area-inset-left, 0px) 100% no-repeat,
+		linear-gradient(var(--z-surface), var(--z-surface)) right / env(safe-area-inset-right, 0px) 100% no-repeat;
+}
+
+/* The keyboard covers the home indicator; the strip it sat in goes back to the page. */
+html.z-keyboard-open .z-safe {
+	padding-bottom: 0;
 }
 
 /*

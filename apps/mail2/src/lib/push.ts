@@ -4,6 +4,7 @@
  * the settings card cannot disagree with the browser.
  */
 import { pushConfig, subscribePush, unsubscribePush } from '../routes/push.remote';
+import { isIosTab } from './install.svelte.ts';
 
 export type PushStatus =
 	| 'unconfigured' // no VAPID keys on this server
@@ -12,11 +13,6 @@ export type PushStatus =
 	| 'denied'
 	| 'off'
 	| 'on';
-
-function isIosTab(): boolean {
-	const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-	return ios && !matchMedia('(display-mode: standalone)').matches;
-}
 
 /** Kit registers the worker on load; wait for it, but not forever. */
 async function registration(): Promise<ServiceWorkerRegistration | null> {

@@ -11,6 +11,7 @@
 		CATEGORIES,
 		categoryLabel
 	} from '@zaur/mail-core';
+	import { leaveGuard } from '#lib/leave-guard';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
 	import { CHANNELS, categoryChannel, channelStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
@@ -58,6 +59,9 @@
 	});
 
 	const dirty = $derived(loadedFrom !== null && JSON.stringify(draft) !== loadedFrom);
+
+	// A rule with a few conditions is a minute of work: leaving asks first.
+	leaveGuard(() => dirty, 'your rules');
 	const problems = $derived(draft.flatMap((rule) => ruleProblems(rule)));
 	/** Incomplete rules are kept but not compiled, so they must not block a save. */
 	const blocked = $derived(draft.some((rule) => !rule.name.trim()));
@@ -303,7 +307,7 @@
 											</select>
 											<input
 												type="text"
-												class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+												class="z-field min-w-0 flex-1 !h-[30px] max-md:basis-full max-md:text-base"
 												placeholder="…"
 												value={condition.value}
 												oninput={(event) => setCondition(rule.id, conditionIndex, { value: event.currentTarget.value })}
@@ -334,19 +338,19 @@
 												<option value="discard">Discard</option>
 											</select>
 											{#if action.type === 'fileInto'}
-												<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Folder" value={action.mailbox} onchange={(event) => setAction(rule.id, actionIndex, { type: 'fileInto', mailbox: event.currentTarget.value })}>
+												<select class="z-field min-w-0 flex-1 basis-[120px] !h-[30px]" aria-label="Folder" value={action.mailbox} onchange={(event) => setAction(rule.id, actionIndex, { type: 'fileInto', mailbox: event.currentTarget.value })}>
 													{#each fileTargets as target (target.id)}
 														<option value={target.name}>{target.name}</option>
 													{/each}
 												</select>
 											{:else if action.type === 'addFlag'}
-												<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Mark as" value={action.flag} onchange={(event) => setAction(rule.id, actionIndex, { type: 'addFlag', flag: event.currentTarget.value as RuleFlag })}>
+												<select class="z-field min-w-0 flex-1 basis-[120px] !h-[30px]" aria-label="Mark as" value={action.flag} onchange={(event) => setAction(rule.id, actionIndex, { type: 'addFlag', flag: event.currentTarget.value as RuleFlag })}>
 													{#each FLAGS as flag (flag.value)}
 														<option value={flag.value}>{flag.label}</option>
 													{/each}
 												</select>
 											{:else if action.type === 'categorize'}
-												<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Category" value={action.category} onchange={(event) => setAction(rule.id, actionIndex, { type: 'categorize', category: event.currentTarget.value })}>
+												<select class="z-field min-w-0 flex-1 basis-[120px] !h-[30px]" aria-label="Category" value={action.category} onchange={(event) => setAction(rule.id, actionIndex, { type: 'categorize', category: event.currentTarget.value })}>
 													{#each CATEGORIES as category (category.id)}
 														<option value={category.id}>{category.label}</option>
 													{/each}

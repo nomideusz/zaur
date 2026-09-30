@@ -106,7 +106,9 @@
 		<!-- Folder switcher: tactile arrows around a fixed-width sunken label
 		     that stays put while browsing, so the eye has one place to read.
 		     Only while the mailbox list is closed — open, the list already names
-		     the folder and carries its count. -->
+		     the folder and carries its count. Below `lg` the header's stretch is
+		     a few hundred pixels, and the arrows give theirs to the search field:
+		     the label's menu and the drawer both still switch folders. -->
 		{#if !sidebarOpen}
 			<div
 				class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
@@ -116,7 +118,7 @@
 				{#if onPrevMailbox}
 					<button
 						type="button"
-						class="flex h-[30px] w-7 items-center justify-center rounded-l-[7px] border-r border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
+						class="flex h-[30px] w-7 pointer-coarse:h-10 pointer-coarse:w-10 items-center justify-center rounded-l-[7px] border-r border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-lg:hidden"
 						onclick={onPrevMailbox}
 						title="Previous mailbox"
 						aria-label="Previous mailbox"
@@ -130,7 +132,7 @@
 				{#if mailboxes}
 					<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 						<Menu.Trigger
-							class="flex h-[30px] w-[184px] items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-md:w-auto max-md:max-w-[46vw] max-md:rounded-[7px] max-md:bg-[var(--z-surface)]"
+							class="flex h-[30px] w-[184px] pointer-coarse:h-10 items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-lg:rounded-[7px] max-md:w-auto max-md:max-w-[46vw] max-md:bg-[var(--z-surface)]"
 						>
 							{#if activeMailbox}
 								{@const channel = mailboxChannel(activeMailbox.kind)}
@@ -189,7 +191,7 @@
 				{#if onNextMailbox}
 					<button
 						type="button"
-						class="flex h-[30px] w-7 items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
+						class="flex h-[30px] w-7 pointer-coarse:h-10 pointer-coarse:w-10 items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-lg:hidden"
 						onclick={onNextMailbox}
 						title="Next mailbox"
 						aria-label="Next mailbox"
@@ -209,7 +211,7 @@
 	-->
 	{#if onSearch}
 		<div
-			class="flex min-w-0 flex-1 items-center justify-center px-2 {phoneSearchOpen
+			class="flex min-w-[150px] flex-1 items-center justify-center px-2 {phoneSearchOpen
 				? ''
 				: 'max-md:hidden'}"
 		>
@@ -235,7 +237,7 @@
 					spellcheck="false"
 					aria-label="Search mail"
 					placeholder={activeMailbox ? `Search ${activeMailbox.name}…` : 'Search mail…'}
-					class="z-field !h-[30px] w-full !pr-7 !pl-8 !text-[12.5px] max-md:!text-base"
+					class="z-field !h-[30px] pointer-coarse:!h-10 w-full !pr-7 !pl-8 !text-[12.5px] text-ellipsis max-md:!text-base"
 					onkeydown={onSearchKeydown}
 				/>
 				{#if draft || searchQuery}
@@ -251,7 +253,7 @@
 						</svg>
 					</button>
 				{:else}
-					<kbd class="z-kbd pointer-events-none absolute right-1.5 max-md:hidden" aria-hidden="true">/</kbd>
+					<kbd class="z-kbd pointer-events-none absolute right-1.5 max-lg:hidden" aria-hidden="true">/</kbd>
 				{/if}
 			</div>
 		</div>

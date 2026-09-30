@@ -1,11 +1,11 @@
 import DOMPurify from 'dompurify';
 import { browser } from '$app/environment';
 import {
-	escapeHtml,
 	findQuoteStart,
 	findPlainTextQuoteStart,
 	plainTextToSafeHtml
 } from '@zaur/mail-core/email/text';
+import { classifyUrl, classifySrcset, inlineImageSrc, linkAllowed, type UrlKind } from './urls';
 
 export {
 	normalizeEmailPlainText,
@@ -49,8 +49,16 @@ const EMAIL_SANITIZE_CONFIG = {
 	]
 };
 
-function isExternalUrl(url: string): boolean {
-	return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//');
+/**
+ * Untrusted markup is only ever parsed into a document with no browsing
+ * context, where nothing loads. A node made by the live `document` starts
+ * fetching its images the moment it is parsed — WebKit does so even for a
+ * detached <div> — which is before anything below has had a chance to block them.
+ */
+function parseInert(html: string): HTMLElement {
+	const inert = document.implementation.createHTMLDocument('');
+	inert.body.innerHTML = html;
+	return inert.body;
 }
 
 type Rgb = { r: number; g: number; b: number };
@@ -302,33 +310,107 @@ function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
 	}
 }
 
-function blockExternalContentInDocument(root: ParentNode, allowExternal: boolean): boolean {
-	if (allowExternal) return false;
+/** The attributes that fetch on their own: <img>/<source>/<video>/<audio>, and table backgrounds. */
+const FETCHING_ATTRS = ['src', 'srcset', 'poster', 'background'];
+
+/**
+ * What may fetch from an inline style: url(), image-set() and its bare strings,
+ * the drafts' src() and image(), or an escape spelling any of them.
+ */
+const CSS_MAY_FETCH = /(url|src|image|image-set)\(|\\/i;
+/** A url() as the browser writes it back: closed, its address free of quotes, brackets and escapes. */
+const CSS_URL = /url\((["']?)([^"'()\\\s]*)\1\)/gi;
+/** What is left once those are accounted for: a url() of another shape, an escape, image-set's strings. */
+const CSS_STRAY = /(url|src|image)\(|\\|image-set\([^;]*["']/i;
+
+/**
+ * What a blocked image leaves behind: an empty picture of the size the mail
+ * gave it, so the layout holds and nothing draws a broken-image glyph. The
+ * frame draws `[data-blocked-src]` as a quiet box (frame.ts).
+ */
+function blockedImagePlaceholder(image: Element): string {
+	const width = Number(image.getAttribute('width')) || 96;
+	const height = Number(image.getAttribute('height')) || 64;
+	return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='${width}' height='${height}'/%3E`;
+}
+
+/**
+ * Takes out what the mail would make the browser fetch when it is shown.
+ * Another server's content waits for the reader's yes, and is what raises the
+ * "images hidden" notice. The app's own addresses are never the mail's to
+ * fetch, asked or not (urls.ts); only an inline image passes. The frame's own
+ * CSP (frame.ts) is what holds if something slips past this.
+ */
+function blockFetchesInDocument(root: ParentNode, allowExternal: boolean): boolean {
+	const origin = location.origin;
+	const keep = (kind: UrlKind) => kind === 'inert' || (kind === 'remote' && allowExternal);
 
 	let blockedExternal = false;
-	for (const image of root.querySelectorAll('img')) {
-		const src = image.getAttribute('src');
-		if (src && isExternalUrl(src)) {
-			image.setAttribute('data-blocked-src', src);
-			image.removeAttribute('src');
-			image.setAttribute('alt', '[Image blocked]');
-			blockedExternal = true;
+	for (const element of root.querySelectorAll('[src], [srcset], [poster], [background]')) {
+		let blocked = false;
+		for (const name of FETCHING_ATTRS) {
+			const value = element.getAttribute(name);
+			if (value === null) continue;
+			const inline = name === 'src' && element.tagName === 'IMG' ? inlineImageSrc(value, origin) : null;
+			if (inline) {
+				element.setAttribute(name, inline);
+				continue;
+			}
+			const kind = name === 'srcset' ? classifySrcset(value, origin) : classifyUrl(value, origin);
+			if (keep(kind)) continue;
+			element.removeAttribute(name);
+			if (kind === 'remote') blocked = true;
+		}
+		if (!blocked) continue;
+		blockedExternal = true;
+		if (element.tagName === 'IMG' && !element.hasAttribute('src')) {
+			element.setAttribute('data-blocked-src', '');
+			element.setAttribute('src', blockedImagePlaceholder(element));
+			if (!element.hasAttribute('alt')) element.setAttribute('alt', '');
 		}
 	}
 
-	for (const element of root.querySelectorAll('[style]')) {
-		const style = element.getAttribute('style');
-		if (style && /url\s*\(/i.test(style)) {
-			element.setAttribute('style', style.replace(/url\s*\([^)]*\)/gi, 'none'));
-			blockedExternal = true;
-		}
+	for (const element of root.querySelectorAll<HTMLElement>('[style]')) {
+		if (!CSS_MAY_FETCH.test(element.getAttribute('style') ?? '')) continue;
+		// Read what the browser made of the style, not what was written: escapes
+		// are resolved there (`\75rl(`) and every url() is closed and quoted.
+		const style = element.style.cssText.replace(CSS_URL, (whole, _quote, url: string) => {
+			const kind = classifyUrl(url, origin);
+			if (keep(kind)) return whole;
+			if (kind === 'remote') blockedExternal = true;
+			return 'none';
+		});
+		// Something that may still fetch, in a form not read above, takes the whole style with it.
+		if (CSS_STRAY.test(style.replace(CSS_URL, ''))) element.removeAttribute('style');
+		else element.setAttribute('style', style);
 	}
 
 	return blockedExternal;
 }
 
+/** `mailto:ada@example.com?subject=…` as this app's own compose link, `/?to=`. */
+function composeHref(href: string): string | null {
+	const to = /^\s*mailto:([^?#]+)/i.exec(href)?.[1];
+	if (!to) return null;
+	try {
+		return `/?to=${encodeURIComponent(decodeURIComponent(to))}`;
+	} catch {
+		return null;
+	}
+}
+
 function hardenLinks(root: ParentNode) {
-	for (const link of root.querySelectorAll('a')) {
+	// <area> too: an image map is a link, and without a target it navigates the frame itself.
+	for (const link of root.querySelectorAll('a, area')) {
+		// An address in a message opens a draft here rather than in the system's
+		// mail client. In a new tab, like every link: the frame's sandbox does not
+		// let it navigate the app it sits in, and is not widened for this.
+		const href = link.getAttribute('href');
+		const compose = composeHref(href ?? '');
+		if (compose) link.setAttribute('href', compose);
+		// The mail's own addresses into this app are dropped, bar a page named
+		// in full (urls.ts); the link stays, as text.
+		else if (href !== null && !linkAllowed(href, location.origin)) link.removeAttribute('href');
 		link.setAttribute('target', '_blank');
 		link.setAttribute('rel', 'noopener noreferrer');
 	}
@@ -344,8 +426,10 @@ const HTML_QUOTE_PATTERNS = [
 function splitElementAtTextOffset(root: HTMLElement, offset: number) {
 	if (offset <= 0) return;
 
-	const range = document.createRange();
-	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	// The root's own (inert) document, not the live one: see `parseInert`.
+	const doc = root.ownerDocument;
+	const range = doc.createRange();
+	const walker = doc.createTreeWalker(root, NodeFilter.SHOW_TEXT);
 	let remaining = offset;
 	let startNode: Text | null = null;
 	let startOffset = 0;
@@ -365,7 +449,7 @@ function splitElementAtTextOffset(root: HTMLElement, offset: number) {
 	range.setStart(startNode, startOffset);
 	range.setEnd(root, root.childNodes.length);
 
-	const quote = document.createElement('blockquote');
+	const quote = doc.createElement('blockquote');
 	quote.className = 'z-email-quote';
 	quote.appendChild(range.extractContents());
 	root.appendChild(quote);
@@ -391,17 +475,8 @@ function postProcessSanitizedHtml(
 	html: string,
 	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean; lightSurface: boolean } {
-	if (!browser) {
-		return {
-			html: postProcessSanitizedHtmlString(html, options.allowExternal),
-			blockedExternal: !options.allowExternal && hasExternalContent(html),
-			lightSurface: false
-		};
-	}
-
-	const container = document.createElement('div');
-	container.innerHTML = html;
-	const blockedExternal = blockExternalContentInDocument(container, options.allowExternal);
+	const container = parseInert(html);
+	const blockedExternal = blockFetchesInDocument(container, options.allowExternal);
 	hardenLinks(container);
 	wrapHtmlQuotedReplies(container);
 	normalizeEmailBlockquotes(container);
@@ -424,23 +499,6 @@ function postProcessSanitizedHtml(
 	}
 
 	return { html: container.innerHTML, blockedExternal, lightSurface };
-}
-
-function hasExternalContent(html: string): boolean {
-	return /<img\b[^>]*\bsrc\s*=\s*(['"]?)(?:https?:\/\/|\/\/)/i.test(html) || /url\s*\(/i.test(html);
-}
-
-function postProcessSanitizedHtmlString(html: string, allowExternal: boolean): string {
-	let next = html.replace(/<a\b/gi, '<a target="_blank" rel="noopener noreferrer"');
-	if (allowExternal) return next;
-
-	next = next.replace(/(<img\b[^>]*?)\s+src\s*=\s*(["']?)(https?:\/\/[^"'\s>]+|\/\/[^"'\s>]+)\2/gi, (_match, prefix, _quote, src) => {
-		return `${prefix} data-blocked-src="${escapeHtml(src)}" alt="[Image blocked]"`;
-	});
-	next = next.replace(/\sstyle\s*=\s*(["'])([^"']*url\s*\([^"']*)\1/gi, (_match, quote, style) => {
-		return ` style=${quote}${style.replace(/url\s*\([^)]*\)/gi, 'none')}${quote}`;
-	});
-	return next;
 }
 
 /** Start index of trailing quoted reply in plain-text bodies (Gmail, Proton, Apple Mail, etc.). */
@@ -477,8 +535,9 @@ export function prepareEmailHtml(
 	rawHtml: string,
 	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean; lightSurface: boolean } {
+	// No DOM to sanitize in (the server, or DOMPurify failed to load): show nothing rather than the raw message.
 	if (!browser || typeof DOMPurify?.sanitize !== 'function') {
-		return { html: rawHtml, blockedExternal: false, lightSurface: false };
+		return { html: '', blockedExternal: false, lightSurface: false };
 	}
 	ensureReflowHook();
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
@@ -491,13 +550,13 @@ export function prepareEmailHtml(
  */
 function foldQuotedHistory(html: string): string {
 	if (!browser || !html.includes('z-email-quote')) return html;
-	const container = document.createElement('div');
-	container.innerHTML = html;
+	const container = parseInert(html);
+	const doc = container.ownerDocument;
 	for (const quote of container.querySelectorAll('.z-email-quote')) {
 		if (quote.parentElement?.closest('.z-email-quote')) continue;
-		const fold = document.createElement('details');
+		const fold = doc.createElement('details');
 		fold.className = 'z-email-fold';
-		const summary = document.createElement('summary');
+		const summary = doc.createElement('summary');
 		summary.textContent = 'Quoted text';
 		quote.replaceWith(fold);
 		fold.append(summary, quote);
@@ -520,6 +579,15 @@ interface RenderOptions {
 
 type RenderedBody = { html: string; blockedExternal: boolean; isHtml: boolean; lightSurface: boolean };
 
+/** Plain text's links are made by the linkifier; they follow the same rule as HTML mail's. */
+function plainTextHtml(text: string): string {
+	const html = plainTextToSafeHtml(text);
+	if (!browser || !html.includes('<a ')) return html;
+	const container = parseInert(html);
+	hardenLinks(container);
+	return container.innerHTML;
+}
+
 export function renderMessageBody(options: RenderOptions): RenderedBody {
 	const body = renderBody(options);
 	return options.foldQuotes ? { ...body, html: foldQuotedHistory(body.html) } : body;
@@ -528,7 +596,7 @@ export function renderMessageBody(options: RenderOptions): RenderedBody {
 function renderBody(options: RenderOptions): RenderedBody {
 	if (options.preferPlainText && options.bodyText.trim()) {
 		return {
-			html: plainTextToSafeHtml(options.bodyText),
+			html: plainTextHtml(options.bodyText),
 			blockedExternal: false,
 			isHtml: false,
 			lightSurface: false
@@ -545,7 +613,7 @@ function renderBody(options: RenderOptions): RenderedBody {
 		const htmlHasQuote = prepared.html.includes('z-email-quote');
 		if (textHasQuote && !htmlHasQuote) {
 			return {
-				html: plainTextToSafeHtml(options.bodyText),
+				html: plainTextHtml(options.bodyText),
 				blockedExternal: prepared.blockedExternal,
 				isHtml: false,
 				lightSurface: false
@@ -555,7 +623,7 @@ function renderBody(options: RenderOptions): RenderedBody {
 	}
 
 	return {
-		html: plainTextToSafeHtml(options.bodyText),
+		html: plainTextHtml(options.bodyText),
 		blockedExternal: false,
 		isHtml: false,
 		lightSurface: false

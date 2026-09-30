@@ -92,7 +92,7 @@
 					{#if others.length > 0}
 						<Menu.Item
 							value="signout-account"
-							class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
+							class="z-menu-item !text-[var(--z-danger)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
 							onSelect={() => void signOutThis()}
 						>
 							Sign out of this account
@@ -100,7 +100,7 @@
 					{/if}
 					<Menu.Item
 						value="signout"
-						class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
+						class="z-menu-item !text-[var(--z-danger)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
 						onSelect={signOutAll}
 					>
 						{others.length > 0 ? 'Sign out of all accounts' : 'Sign out'}

@@ -24,10 +24,13 @@ export interface OutgoingAttachmentDTO {
 	size: number;
 }
 
+/** A bare address is still taken: a message queued in the outbox by an older build carries those. */
+export type RecipientDTO = string | { name?: string; email: string };
+
 export interface SendInput {
-	to: string[];
-	cc?: string[];
-	bcc?: string[];
+	to: RecipientDTO[];
+	cc?: RecipientDTO[];
+	bcc?: RecipientDTO[];
 	subject: string;
 	body: string;
 	/** The written HTML; without it the message goes out as plain text. */
@@ -47,16 +50,19 @@ export interface SendResult {
 	emailId?: string;
 }
 
-function cleanRecipients(list: string[] | undefined): string[] {
+/** Addresses deduped, each with the display name it was given (one line, no control characters). */
+function cleanRecipients(list: RecipientDTO[] | undefined): { name?: string; email: string }[] {
 	const seen = new Set<string>();
-	const out: string[] = [];
+	const out: { name?: string; email: string }[] = [];
 	for (const raw of list ?? []) {
-		const email = String(raw).trim();
+		const given = raw && typeof raw === 'object' ? raw : { email: raw };
+		const email = String(given.email ?? '').trim();
 		if (!email || !email.includes('@')) continue;
 		const key = email.toLowerCase();
 		if (seen.has(key)) continue;
 		seen.add(key);
-		out.push(email);
+		const name = String(given.name ?? '').replace(/[\u0000-\u001f\u007f]+/g, ' ').trim().slice(0, 200);
+		out.push(name ? { name, email } : { email });
 	}
 	return out;
 }
@@ -145,9 +151,9 @@ export const cancelScheduled = command(
 export interface DraftSavePayload {
 	/** Server email id of the previously saved copy, for updates. */
 	jmapDraftId?: string | null;
-	to?: string[];
-	cc?: string[];
-	bcc?: string[];
+	to?: RecipientDTO[];
+	cc?: RecipientDTO[];
+	bcc?: RecipientDTO[];
 	subject?: string;
 	body?: string;
 	bodyHtml?: string;

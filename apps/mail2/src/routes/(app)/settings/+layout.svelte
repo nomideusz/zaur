@@ -29,7 +29,8 @@
 <svelte:head><title>{isRoot ? 'Settings' : `${current.label} · Settings`} · Zaur Mail</title></svelte:head>
 
 <SectionShell title="Settings">
-	<div class="flex min-h-0 flex-1">
+	<!-- On touch every button, switch and field on a settings page is a fingertip tall, as the header's are (base.css); a phone's selects are 16px, under which iOS zooms the page on focus. -->
+	<div class="flex min-h-0 flex-1 pointer-coarse:[&_:is(.btn-tactile,.z-segment,.z-field)]:min-h-10 pointer-coarse:[&_:is(.btn-tactile,.z-segment)]:min-w-10 max-md:[&_select]:text-base">
 		<!-- The pages, as mail's sidebar lists folders: same column, same rows. -->
 		<nav
 			class="w-[var(--z-sidebar-width)] shrink-0 overflow-y-auto border-r border-[var(--z-line)] bg-[var(--z-surface)] px-3 py-4 select-none max-md:hidden"

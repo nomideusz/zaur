@@ -54,6 +54,11 @@ export const handle: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', event.url.pathname.startsWith('/meet/') ? MEET : LOCKED);
+	// Pages are one person's mail: never kept, so Back after signing out asks the
+	// server (and is sent to sign in) instead of redrawing the last copy.
+	if (response.headers.get('content-type')?.startsWith('text/html') && !response.headers.has('cache-control')) {
+		response.headers.set('cache-control', 'no-store');
+	}
 	return response;
 };
 

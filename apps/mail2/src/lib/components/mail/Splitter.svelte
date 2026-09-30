@@ -9,37 +9,52 @@
 
 	let { width, min = 380, max = 760, onResize, onReset }: Props = $props();
 
-	let dragging = $state(false);
+	/** Where the gesture began: the pointer, and the width the list had on screen. */
+	let drag = $state<{ x: number; width: number } | null>(null);
+	const dragging = $derived(drag !== null);
 
-	function clamp(value: number): number {
-		return Math.min(max, Math.max(min, value));
+	/**
+	 * Half of what the list and the reader share: the shell's grid never shows
+	 * the list wider (base.css, `.z-shell`), so neither a drag nor a key may ask
+	 * for more — the handle would stop following and the stored width mean nothing.
+	 */
+	function limit(handle: EventTarget | null): number {
+		const list = (handle as HTMLElement).previousElementSibling?.getBoundingClientRect();
+		const reader = (handle as HTMLElement).nextElementSibling?.getBoundingClientRect();
+		return list && reader ? Math.min(max, Math.floor((reader.right - list.left) / 2)) : max;
+	}
+
+	/** From the width on screen: a stored one the window has no room for is shown narrower. */
+	function resize(handle: EventTarget | null, from: number, by: number) {
+		const most = limit(handle);
+		onResize(Math.max(min, Math.min(most, Math.min(from, most) + by)));
 	}
 
 	function handlePointerDown(event: PointerEvent) {
 		event.preventDefault();
-		dragging = true;
+		drag = { x: event.clientX, width: Math.min(width, limit(event.currentTarget)) };
 		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 	}
 
 	function handlePointerMove(event: PointerEvent) {
-		if (!dragging) return;
-		// Track the cursor 1:1 — no transitions while gesturing.
-		onResize(clamp(width + event.movementX));
+		if (!drag) return;
+		// From where it began, not step by step: past a limit the handle waits for the pointer to come back to it.
+		resize(event.currentTarget, drag.width, event.clientX - drag.x);
 	}
 
 	function handlePointerUp(event: PointerEvent) {
-		if (!dragging) return;
-		dragging = false;
+		if (!drag) return;
+		drag = null;
 		(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
 		if (event.key === 'ArrowLeft') {
 			event.preventDefault();
-			onResize(clamp(width - 24));
+			resize(event.currentTarget, width, -24);
 		} else if (event.key === 'ArrowRight') {
 			event.preventDefault();
-			onResize(clamp(width + 24));
+			resize(event.currentTarget, width, 24);
 		}
 	}
 </script>

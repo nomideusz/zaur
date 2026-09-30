@@ -389,6 +389,9 @@ const teamEmails = new Map(
 	].map((email) => [email.id, email])
 );
 
+/** Sieve scripts (RFC 9661): none to begin with; Settings → Rules saves one. */
+const sieveScripts = [];
+
 // The people a calendar can be shared with (RFC 9670 Principals), you among them.
 const principals = [
 	{ id: 'principal-smoke', type: 'individual', name: 'Smoke Tester', email: 'smoke@zaur.app' },
@@ -409,7 +412,7 @@ const events = new Map([
 	['e2', { id: 'e2', uid: 'urn:uuid:e2', calendarIds: { cal2: true }, title: 'Sprint planning', start: `${y}-${m}-16T14:00:00`, duration: 'PT2H', timeZone: 'Europe/Warsaw', showWithoutTime: false, description: 'Bring the backlog.', recurrenceRule: { '@type': 'RecurrenceRule', frequency: 'weekly' } }],
 	['e3', { id: 'e3', uid: 'urn:uuid:e3', calendarIds: { cal1: true }, title: 'Holiday', start: `${y}-${m}-20T00:00:00`, duration: 'P2D', timeZone: 'Europe/Warsaw', showWithoutTime: true }],
 	// Three that overlap, so the time grid has lanes to share out.
-	['e4', { id: 'e4', uid: 'urn:uuid:e4', calendarIds: { cal2: true }, title: 'Design review', start: slot(0, 10, 0), duration: 'PT1H30M', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
+	['e4', { id: 'e4', uid: 'urn:uuid:e4', calendarIds: { cal2: true }, title: 'Design review', start: slot(0, 10, 0), duration: 'PT1H30M', timeZone: 'Europe/Warsaw', showWithoutTime: false, participants: { p1: { '@type': 'Participant', name: 'Anna Nowak', email: 'anna@zaur.app', sendTo: { imip: 'mailto:anna@zaur.app' }, roles: { owner: true, attendee: true }, participationStatus: 'accepted' }, p2: { '@type': 'Participant', name: 'Smoke Tester', sendTo: { imip: 'mailto:smoke@zaur.app' }, roles: { attendee: true }, participationStatus: 'tentative' }, p3: { '@type': 'Participant', calendarAddress: 'mailto:a-rather-long-address-for-a-guest@subdomain.example.com', roles: { attendee: true } }, p4: { '@type': 'Participant', name: 'Bob Kowalski', email: 'bob@zaur.app', roles: { attendee: true }, participationStatus: 'declined' } } }],
 	['e5', { id: 'e5', uid: 'urn:uuid:e5', calendarIds: { cal1: true }, title: 'Call with Anna', start: slot(0, 10, 30), duration: 'PT1H', timeZone: 'Europe/Warsaw', showWithoutTime: false, locations: { l1: { name: 'Meet' } } }],
 	['e6', { id: 'e6', uid: 'urn:uuid:e6', calendarIds: { cal2: true }, title: 'Standup', start: slot(0, 9, 0), duration: 'PT15M', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
 	['e7', { id: 'e7', uid: 'urn:uuid:e7', calendarIds: { cal1: true }, title: 'Pick up the kids', start: slot(1, 15, 30), duration: 'PT45M', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
@@ -685,7 +688,22 @@ function handle([name, args, callId]) {
 		case 'Quota/get':
 			return ok({ state: 'q', list: [{ id: 'q1', resourceType: 'octets', used: 123456789, hardLimit: 5000000000, scope: 'account', name: 'mail', types: ['Email'] }], notFound: [] });
 		case 'SieveScript/get':
-			return ok({ state: 's', list: [], notFound: [] });
+			return ok({ state: 's', list: sieveScripts, notFound: [] });
+		// A script containing "fail-validate" is refused, to exercise the error path.
+		case 'SieveScript/validate':
+			return ok({ error: String(blobs[args.blobId]?.[1] ?? '').includes('fail-validate') ? { type: 'invalidSieve', description: 'The script is not valid Sieve' } : null });
+		case 'SieveScript/set': {
+			const created = {};
+			for (const [key, data] of Object.entries(args.create ?? {})) {
+				const script = { id: `sieve-${randomUUID().slice(0, 6)}`, name: data.name, blobId: data.blobId, isActive: false };
+				sieveScripts.push(script);
+				created[key] = { id: script.id };
+			}
+			for (const [id, patch] of Object.entries(args.update ?? {})) Object.assign(sieveScripts.find((script) => script.id === id) ?? {}, patch);
+			const active = args.onSuccessActivateScript?.startsWith('#') ? created[args.onSuccessActivateScript.slice(1)]?.id : args.onSuccessActivateScript;
+			if (active) for (const script of sieveScripts) script.isActive = script.id === active;
+			return ok({ created, updated: Object.fromEntries(Object.keys(args.update ?? {}).map((id) => [id, null])) });
+		}
 		case 'AddressBook/get':
 			return ok({ state: 'ab', list: addressBooks, notFound: [] });
 		case 'ContactCard/query': {

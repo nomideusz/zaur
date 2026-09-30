@@ -56,7 +56,9 @@ export function incomingMailMessage(
 			? `${from}: ${single.subject?.trim() || '(no subject)'}`
 			: `${emails.length} new messages in Inbox`,
 		url: params ? `/?${params}` : '/',
-		tag: `zaur-new-mail-${opts.key}`,
+		// One per thread, so a second sender does not wipe the first from the tray;
+		// a batch shares the account's.
+		tag: `zaur-new-mail-${opts.key}${single?.threadId ? `-${single.threadId}` : ''}`,
 		unreadCount: opts.unreadCount
 	};
 }

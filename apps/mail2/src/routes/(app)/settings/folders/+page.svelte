@@ -58,7 +58,7 @@
 <StatusNote {status} />
 
 {#snippet parentSelect(value: string, self: MailboxDTO | null, onchange: (next: string) => void)}
-	<select class="z-field min-w-0 !h-[30px]" aria-label="Inside" {value} onchange={(event) => onchange(event.currentTarget.value)}>
+	<select class="z-field min-w-0 max-w-[180px] !h-[30px]" aria-label="Inside" {value} onchange={(event) => onchange(event.currentTarget.value)}>
 		<option value="">Top level</option>
 		{#each withoutBranch(mailboxesResource?.current ?? [], self) as mailbox (mailbox.id)}
 			<option value={mailbox.id}>{'   '.repeat(mailbox.depth)}{mailbox.name}</option>

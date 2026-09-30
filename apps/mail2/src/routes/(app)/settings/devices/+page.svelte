@@ -84,7 +84,7 @@
 			{#each sessions as item (item.id)}
 				<li class="flex items-center justify-between gap-3 px-4 py-2.5">
 					<div class="min-w-0">
-						<div class="flex items-center gap-2 text-[13.5px] font-medium text-[var(--z-body)]">
+						<div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13.5px] font-medium text-[var(--z-body)]">
 							<span class="truncate">{describeUserAgent(item.userAgent)}</span>
 							{#if item.current}
 								<span class="z-chip !normal-case !tracking-normal" style="--z-stroke:var(--z-accent-stroke);--z-ink-on:var(--z-accent-ink)">This device</span>
@@ -100,9 +100,12 @@
 				</li>
 			{/each}
 		</ul>
+		<!-- One span: the foot is a flex row, and a sentence split into its items breaks at the link. -->
 		<p class="z-card-foot">
-			Browsers signed in through Zaur Mail (1.0 and 2.0 share these). Mail apps are not listed — revoke their
-			<a href="/settings/app-passwords" class="font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)]">app password</a>.
+			<span>
+				Browsers signed in through Zaur Mail (1.0 and 2.0 share these). Mail apps are not listed — revoke their
+				<a href="/settings/app-passwords" class="font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)]">app password</a>.
+			</span>
 		</p>
 	</section>
 {/if}

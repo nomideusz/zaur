@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import type { MailboxDTO, SharedMailboxDTO } from '#lib/mail/types';
 	import { channelStyle, identityStyle, labelChannel, mailboxChannel, type Channel } from '#lib/mail/colors';
 	import { LABEL_FILTERS, filterName, type ListFilter } from '#lib/mail/labels';
@@ -19,8 +20,10 @@
 		/** Unseen mail under each label in the open folder, keyed by filter. */
 		labelCounts: Record<string, number> | undefined;
 		onNewMessage: () => void;
-		/** Set when the sidebar is a drawer: on a phone it gets a header and a way to close. */
-		onClose?: () => void;
+		/** Set when the sidebar is a drawer: on a phone it gets a header and a way to close. Settled once it is shut. */
+		onClose?: () => void | Promise<void>;
+		/** A list row dragged onto one of your own folders. */
+		onDropThread?: (mailboxId: string, threadId: string) => void;
 	}
 
 	let {
@@ -33,8 +36,13 @@
 		onFilter,
 		labelCounts,
 		onNewMessage,
-		onClose
+		onClose,
+		onDropThread
 	}: Props = $props();
+
+	/** What a dragged list row carries (`MailList`). */
+	const THREAD = 'text/x-zaur-thread';
+	let dropOn = $state<string | null>(null);
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
@@ -46,18 +54,35 @@
 	channel's hue. Anything else is plain, and the box says so. A folder row is
 	where you are (`aria-current`); a label row is a switch (`aria-pressed`).
 -->
-{#snippet checkRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false, depth = 0)}
+{#snippet checkRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false, depth = 0, dropId: string | null = null)}
 	<button
 		type="button"
 		class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] max-md:min-h-11 max-md:text-[15px] {on
 			? 'z-hue-wash font-semibold'
-			: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'}"
+			: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'} {dropId && dropOn === dropId
+			? '!border-[var(--z-accent-stroke)] bg-[var(--z-hover)]'
+			: ''}"
 		style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{on ? '1' : '0'}"
 		style:color={on ? channel.ink : undefined}
 		style:padding-left={depth ? `${18 + depth * 14}px` : undefined}
 		aria-current={!toggle && on ? 'true' : undefined}
 		aria-pressed={toggle ? on : undefined}
 		{onclick}
+		ondragover={(event) => {
+			if (!dropId || !onDropThread || !event.dataTransfer?.types.includes(THREAD)) return;
+			event.preventDefault();
+			dropOn = dropId;
+		}}
+		ondragleave={(event) => {
+			if (!event.currentTarget.contains(event.relatedTarget as Node | null)) dropOn = null;
+		}}
+		ondrop={(event) => {
+			const threadId = event.dataTransfer?.getData(THREAD);
+			dropOn = null;
+			if (!dropId || !threadId) return;
+			event.preventDefault();
+			onDropThread?.(dropId, threadId);
+		}}
 	>
 		<span class="hobday-checkbox" data-checked={on} aria-hidden="true"></span>
 		<span class="min-w-0 flex-1 truncate">{name}</span>
@@ -92,7 +117,7 @@
 				<span class="min-w-0 flex-1">
 					<span class="block truncate text-[14px] font-semibold text-[var(--z-ink)]">{session.displayName ?? session.username}</span>
 					{#if session.displayName}
-						<span class="z-mono block truncate text-[11px] text-[var(--z-soft)]">{session.username}</span>
+						<span class="z-mono block truncate text-[12px] text-[var(--z-soft)]">{session.username}</span>
 					{/if}
 				</span>
 			{:else}
@@ -109,7 +134,21 @@
 	<div class="flex-1 overflow-y-auto px-3 py-4">
 		<h2 class="z-caption mb-[9px] flex items-center justify-between px-1.5">
 			Mailboxes
-			<a href="/settings/folders" class="font-medium text-[var(--z-soft)] hover:text-[var(--z-accent)]" onclick={onClose}>Edit</a>
+			<!-- As a drawer it is a history entry of its own: that one is left first, so
+			     Back from the folder settings lands on the list, drawer shut. (Replacing
+			     it with the link instead leaves Back on a URL of Mail showing Settings:
+			     the router takes the step for one between two states of the same page.)
+			     The negative margins are the touch target, without moving the caption. -->
+			<a
+				href="/settings/folders"
+				class="font-medium text-[var(--z-soft)] hover:text-[var(--z-accent)] max-md:-my-3.5 max-md:-mr-3 max-md:px-3 max-md:py-3.5"
+				onclick={onClose
+					? (event) => {
+							event.preventDefault();
+							void Promise.resolve(onClose()).then(() => goto('/settings/folders'));
+						}
+					: undefined}
+			>Edit</a>
 		</h2>
 		<ul class="flex flex-col gap-[3px]" role="list">
 			{#if mailboxes}
@@ -117,7 +156,7 @@
 					{@const isSelected = !activeAccount && mailbox.id === activeMailboxId}
 					<li>
 						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
-							onSelectMailbox(mailbox.id, null), false, mailbox.depth
+							onSelectMailbox(mailbox.id, null), false, mailbox.depth, isSelected ? null : mailbox.id
 						)}
 					</li>
 				{/each}

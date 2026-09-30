@@ -87,7 +87,7 @@
 	--z-accent-soft: #dbeafe; /* active pills, selection header */
 	--z-accent-tint: #eff6ff; /* selected / open row */
 	--z-accent-faint: #f5f9ff; /* the keyboard cursor */
-	--z-danger: #b91c1c;
+	--z-danger: #b91c1c; /* red ink on a plain surface: a destructive button, a menu's Sign out */
 
 	/* The unread count, wherever a count sits on a control. */
 	--z-count-fill: #e0f2fe;
@@ -230,7 +230,7 @@
 		--z-accent-soft: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
 		--z-accent-tint: color-mix(in oklab, #3b82f6 14%, var(--z-surface));
 		--z-accent-faint: color-mix(in oklab, #3b82f6 8%, var(--z-surface));
-		--z-danger: #fca5a5;
+		--z-danger: #f87171;
 		--z-count-fill: color-mix(in oklab, #38bdf8 22%, var(--z-surface));
 		--z-count-ink: #e0f2fe;
 		--z-ch-correspondence-fill: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
@@ -296,7 +296,7 @@
 	--z-accent-soft: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
 	--z-accent-tint: color-mix(in oklab, #3b82f6 14%, var(--z-surface));
 	--z-accent-faint: color-mix(in oklab, #3b82f6 8%, var(--z-surface));
-	--z-danger: #fca5a5;
+	--z-danger: #f87171;
 	--z-count-fill: color-mix(in oklab, #38bdf8 22%, var(--z-surface));
 	--z-count-ink: #e0f2fe;
 	--z-ch-correspondence-fill: color-mix(in oklab, #3b82f6 22%, var(--z-surface));

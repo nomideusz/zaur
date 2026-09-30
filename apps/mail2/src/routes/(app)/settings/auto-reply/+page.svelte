@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { messageOf } from '#lib/errors';
+	import { leaveGuard } from '#lib/leave-guard';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import { whoami } from '../../../session.remote';
 	import { vacation as vacationQuery, saveVacation, type VacationDTO } from '../../../settings.remote';
@@ -22,8 +23,16 @@
 		return (['isEnabled', 'fromDate', 'toDate', 'subject', 'textBody'] as const).some((key) => away![key] !== current[key]);
 	});
 
+	// Leaving with a typed message asks first.
+	leaveGuard(() => dirty, 'your auto-reply');
+
 	async function persist() {
 		if (!away) return;
+		// Switched on with nothing to say, what senders get is the server's guess.
+		if (away.isEnabled && !away.textBody?.trim()) {
+			status = { text: 'Write the message people will get.', error: true };
+			return;
+		}
 		saving = true;
 		status = null;
 		try {
@@ -52,7 +61,7 @@
 			<input type="checkbox" class="z-check" bind:checked={away.isEnabled} />
 		</label>
 		<div class="z-card-body flex flex-col gap-3 {away.isEnabled ? '' : 'opacity-70'}">
-			<div class="grid grid-cols-2 gap-2.5">
+			<div class="grid grid-cols-2 gap-2.5 max-sm:grid-cols-1">
 				<label class="min-w-0">
 					<span class="block text-[12px] text-[var(--z-soft)]">First day</span>
 					<input type="date" bind:value={away.fromDate} max={away.toDate || undefined} class="z-field mt-1 w-full max-md:text-base" />
@@ -61,7 +70,7 @@
 					<span class="block text-[12px] text-[var(--z-soft)]">Last day</span>
 					<input type="date" bind:value={away.toDate} min={away.fromDate || undefined} class="z-field mt-1 w-full max-md:text-base" />
 				</label>
-				<span class="col-span-2 text-[11.5px] text-[var(--z-soft)]">Leave empty to start now, or to keep replying until you switch it off.</span>
+				<span class="col-span-2 text-[11.5px] text-[var(--z-soft)] max-sm:col-span-1">Leave empty to start now, or to keep replying until you switch it off.</span>
 			</div>
 			<label class="block">
 				<span class="block text-[12px] text-[var(--z-soft)]">Subject</span>

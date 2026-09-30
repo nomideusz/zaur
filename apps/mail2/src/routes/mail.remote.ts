@@ -22,7 +22,7 @@ import { connect, connectMail, refuse, requireAccount, requireAccountKey } from 
 import { pickPrincipal } from '#lib/share';
 import { aiSettings, categorizeInBackground } from '#lib/server/categorize';
 import { LABEL_FILTERS, filterKeyword, type ListFilter } from '#lib/mail/labels';
-import { treeOrder } from '#lib/mail/folders';
+import { stillIn, treeOrder } from '#lib/mail/folders';
 import { WEBMAIL_SETTINGS_SUBJECT } from '#lib/server/webmail-import';
 
 function schema<T>() {
@@ -305,6 +305,10 @@ export type BulkAction = 'read' | 'unread' | 'star' | 'unstar' | 'important' | '
  * A message that leaves its folder stops being sent: deleting or moving one
  * out of Scheduled cancels its pending submission first, or Stalwart would
  * still send it at its time from wherever it had been put.
+ *
+ * `delete` is for good, so it names the folder it was asked from
+ * (`sourceMailboxId`) and destroys only what is still filed there; `count` is
+ * how many that was.
  */
 export interface BulkInput {
 	action: BulkAction;
@@ -324,7 +328,7 @@ export const bulk = command(
 
 		const client = await connectMail(account);
 		// Only the owner sends from a mailbox, so only theirs has sends to cancel.
-		const cancelSends = () => (account ? Promise.resolve(0) : client.cancelPendingSends(ids).catch(refuse));
+		const cancelSends = (of = ids) => (account ? Promise.resolve(0) : client.cancelPendingSends(of).catch(refuse));
 		switch (action) {
 			case 'read':
 			case 'unread':
@@ -346,10 +350,15 @@ export const bulk = command(
 				await cancelSends();
 				await client.moveEmailsToMailbox(ids, mailboxId, sourceMailboxId);
 				break;
-			case 'delete':
-				await cancelSends();
-				await client.destroyEmails(ids);
-				break;
+			case 'delete': {
+				if (!sourceMailboxId) error(400, 'No folder to delete from');
+				// A stale row (the move was undone, or made elsewhere) must not take
+				// the message with it from the folder it is in now.
+				const here = stillIn(await client.getEmailsByIds(ids), sourceMailboxId);
+				await cancelSends(here);
+				await client.destroyEmails(here);
+				return { count: here.length };
+			}
 			default:
 				error(400, 'Unknown action');
 		}

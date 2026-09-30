@@ -106,9 +106,11 @@ export function openingPosition(
 
 	const x = centreX + (anchoredX - centreX) * CENTRE_PULL + offset;
 	const y = centreY + (anchoredY - centreY) * CENTRE_PULL + offset;
+	// Never over the top bar: on a short shell the cascade used to lift the first panel onto it.
+	const top = TOP_CHROME + MARGIN;
 	return {
 		x: Math.round(clamp(x, EDGE, Math.max(EDGE, rootW - width - EDGE))),
-		y: Math.round(clamp(y, MARGIN, Math.max(MARGIN, rootH - height - EDGE)))
+		y: Math.round(clamp(y, top, Math.max(top, rootH - height - EDGE)))
 	};
 }
 
@@ -118,6 +120,26 @@ export function clamp(
 	max: number
 ): number {
 	return Math.min(max, Math.max(min, value));
+}
+
+/**
+ * Where a panel is drawn in the shell as it is now. The stored rect is what the
+ * user chose in a window that may since have shrunk: slide it back inside, and
+ * shrink it only when the shell is smaller than the panel.
+ */
+export function fitPanel(
+	rect: { x: number; y: number; w: number; h: number },
+	rootW: number,
+	rootH: number
+) {
+	const w = Math.min(rect.w, Math.max(PANEL_MIN_W, rootW - EDGE * 2));
+	const h = Math.min(rect.h, Math.max(PANEL_MIN_H, rootH - EDGE * 2));
+	return {
+		x: clamp(rect.x, EDGE, Math.max(EDGE, rootW - w - EDGE)),
+		y: clamp(rect.y, EDGE, Math.max(EDGE, rootH - h - EDGE)),
+		w,
+		h
+	};
 }
 
 /** Clamp a panel rect against the shell container during drag/resize. */

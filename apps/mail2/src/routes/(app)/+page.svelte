@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resyncPush } from '#lib/push';
@@ -9,12 +10,7 @@
 	import { mailboxes, sharedMailboxes, threads, thread, quota, bulk, emptyFolder, labelCounts, copyAttachments,
 		type BulkAction, type ListFilter, search as searchRemote
 	} from '../mail.remote';
-	import {
-		send as sendRemote,
-		cancelScheduled,
-		saveDraft as saveDraftRemote,
-		deleteDraft as deleteDraftRemote
-	} from '../compose.remote';
+	import { cancelScheduled } from '../compose.remote';
 	import { contacts as contactsRemote } from '../contacts.remote';
 	import { contactDisplayName } from '@zaur/mail-core';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
@@ -27,9 +23,10 @@
 	import StatusLine from '#lib/components/mail/StatusLine.svelte';
 	import ComposePanel from '#lib/components/compose/ComposePanel.svelte';
 	import ComposeDock from '#lib/components/compose/ComposeDock.svelte';
-	import Toasts from '#lib/components/compose/Toasts.svelte';
 	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
+	import { mailboxOfUrl } from '#lib/mail/folders';
 	import { patchQuery, readerThread } from '#lib/mail/reader-thread.svelte.ts';
+	import { backLayer, inOrder } from '#lib/back-layer.svelte.ts';
 	import { LiveUpdates } from '#lib/mail/live';
 	import {
 		prefs,
@@ -42,21 +39,29 @@
 	import { accountPrefs, identities, setAccountPrefs } from '../settings.remote';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
-	import { uploadFile } from '#lib/compose/attachments';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { ComposeContact } from '#lib/compose/types';
 	import type { MessageDetail } from '@zaur/mail-core';
 	import type { ThreadListDTO } from '#lib/mail/types';
 
+	/**
+	 * What the address bar says. Not `page.url`: the shallow patches that mirror
+	 * the folder and the thread leave that at the URL the page loaded on, so
+	 * after Back from another section it no longer says where you were.
+	 */
+	const address = () => new URLSearchParams(browser ? location.search : page.url.search);
+
 	let selectedMailboxId = $state<string | null>(null);
 	/** A mailbox someone shares with you (`?shared=`, its JMAP account), or null for yours. */
-	let mailAccount = $state<string | null>(page.url.searchParams.get('shared'));
+	let mailAccount = $state<string | null>(address().get('shared'));
 	/** '' means "showing a folder"; anything else means the list shows results. */
 	let searchQuery = $state('');
 	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
 	let phoneBar = $state<ReturnType<typeof PhoneMailBar> | null>(null);
-	let listFilter = $state<ListFilter>(prefs.unseenByDefault ? 'unseen' : 'all');
+	let statusLine = $state<ReturnType<typeof StatusLine> | null>(null);
+	const defaultFilter = (): ListFilter => (prefs.unseenByDefault ? 'unseen' : 'all');
+	let listFilter = $state<ListFilter>(defaultFilter());
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
 	// The app column is the layout's; floating compose panels are placed against it.
@@ -65,15 +70,38 @@
 	let rootW = $state(0);
 	let rootH = $state(0);
 	let bulkBusy = $state(false);
-	/** Below 1024px the sidebar is an overlay drawer, not a column. */
-	let drawerOpen = $state(false);
+	/**
+	 * Below 1024px the sidebar is an overlay drawer, not a column — and a history
+	 * entry, so Back closes it rather than leaving Mail.
+	 */
+	const drawer = backLayer('drawer', () => viewport.compact);
+	const drawerOpen = $derived(viewport.compact && drawer.open);
+	let drawerEl = $state<HTMLElement | null>(null);
+	let mainEl = $state<HTMLElement | null>(null);
 
 	const sidebarVisible = $derived(viewport.compact ? drawerOpen : prefs.sidebarOpen);
 
 	function toggleSidebar() {
-		if (viewport.compact) drawerOpen = !drawerOpen;
-		else setPref('sidebarOpen', !prefs.sidebarOpen);
+		if (!viewport.compact) setPref('sidebarOpen', !prefs.sidebarOpen);
+		else if (drawerOpen) void drawer.hide();
+		else void drawer.show();
 	}
+
+	// The drawer is modal: focus goes in with it and back to its toggle after,
+	// and the panes under the scrim are out of reach of Tab and screen readers.
+	$effect(() => {
+		if (!drawerOpen || !drawerEl || !mainEl) return;
+		const opener = document.activeElement as HTMLElement | null;
+		const panes = mainEl.querySelectorAll<HTMLElement>(':scope > :not([data-drawer])');
+		for (const pane of panes) pane.inert = true;
+		// Where you are, or else the first thing on show (the header's Close is a phone's only).
+		const first = [...drawerEl.querySelectorAll<HTMLElement>('button, a')];
+		(first.find((el) => el.ariaCurrent === 'true') ?? first.find((el) => el.offsetParent))?.focus({ preventScroll: true });
+		return () => {
+			for (const pane of panes) pane.inert = false;
+			if (opener?.isConnected) opener.focus({ preventScroll: true });
+		};
+	});
 
 	const reader = readerThread();
 	const openThreadId = $derived(reader.id);
@@ -87,16 +115,26 @@
 	/** Search the open folder, or every folder. It stays as picked until the page reloads. */
 	let searchAll = $state(false);
 
-	function selectMailbox(id: string, account: string | null = mailAccount) {
+	async function selectMailbox(id: string, account: string | null = mailAccount) {
+		// History first. Closing the drawer (or a phone's reader) is a step back onto
+		// the entry of the folder being left, and the list follows the address it
+		// lands on: a folder shown before that would be taken back by it.
+		if (drawerOpen || page.state.reader) await Promise.all([drawer.hide(), reader.close()]);
+		showMailbox(id, account);
+		folderToUrl(id);
+		void reader.close();
+	}
+
+	/** The list turns to a folder. Keeping the address in step is the caller's. */
+	function showMailbox(id: string, account: string | null) {
 		selectedMailboxId = id;
 		mailAccount = account;
-		folderToUrl(id);
-		drawerOpen = false;
-		reader.close();
 		cursorId = null;
 		selection = new Set();
-		// A folder you picked is a folder you want to see, not results filtered by it.
+		// A folder you picked is a folder you want to see, not results filtered by it
+		// or narrowed to a label it may not hold.
 		searchQuery = '';
+		listFilter = defaultFilter();
 	}
 
 	function setFilter(value: ListFilter) {
@@ -110,7 +148,7 @@
 	 */
 	function pickLabel(value: ListFilter) {
 		setFilter(value);
-		drawerOpen = false;
+		void drawer.hide();
 		if (searchQuery) runSearch('');
 	}
 
@@ -127,6 +165,8 @@
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
+	/** Asked and answered: nobody is signed in. Not the moment before the answer, which every cold start has. */
+	const signedOut = $derived(who.ready && !who.current);
 	const identitiesResource = $derived(session ? identities() : undefined);
 	// Aliases are me too: reply-all leaves them out, and compose offers them in From.
 	const myEmails = $derived(
@@ -139,7 +179,7 @@
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
-		if (who.ready && !who.current) goto('/login', { replace: true });
+		if (signedOut) goto('/login', { replace: true });
 	});
 
 	/**
@@ -170,19 +210,21 @@
 	/**
 	 * `?account=<key>`: a notification for another signed-in account switches to
 	 * it first (the reload keeps `?thread=`). Unknown or already active: dropped.
+	 * Handled once per link: the next one (a notification tapped while Mail is
+	 * open arrives as a navigation, not a load) is taken up again.
 	 */
 	let accountLinkHandled = false;
 	$effect(() => {
-		if (!session || accountLinkHandled) return;
+		// Read first: a run that stops at the flag must still be waiting on the next URL.
 		const key = page.url.searchParams.get('account');
-		if (key === null) return;
+		if (!session || accountLinkHandled || key === null) return;
 		accountLinkHandled = true;
 		untrack(() => {
 			const url = new URL(page.url.href);
 			url.searchParams.delete('account');
 			const known = session.accounts.some((account) => account.key === key);
 			if (known && key !== session.key) void useAccount(key, url.pathname + url.search);
-			else void goto(url, { replace: true, reset: false });
+			else void goto(url, { replace: true, reset: false }).finally(() => (accountLinkHandled = false));
 		});
 	});
 
@@ -206,12 +248,37 @@
 	});
 
 	/**
+	 * The address moved and no pick here moved it — a tapped notification, the
+	 * Mail tab, Back or Forward (also onto this page from another section): what
+	 * it says is what is shown, as on a load. `page.url` is only the signal: it
+	 * is set anew by every real navigation and every step through history,
+	 * never by the shallow patches that mirror a pick. Nothing is written back;
+	 * the address is already right. Without this a notification tapped while
+	 * Drafts is open would open its thread as a draft.
+	 */
+	$effect(() => {
+		const link = page.url;
+		untrack(() => {
+			const params = address();
+			// A link's own `?thread=` is opened further down (it may be a draft, and
+			// opening marks it read); an entry gone back to shows what it showed.
+			if (!link.searchParams.has('thread')) reader.show(params.get('thread'));
+			// Nothing picked yet: the first pick is the effect below's.
+			if (!selectedMailboxId) return;
+			const target = mailboxOfUrl(params, mailboxesResource?.current, sharedList);
+			if (target && (target.id !== selectedMailboxId || target.account !== mailAccount)) {
+				showMailbox(target.id, target.account);
+			}
+		});
+	});
+
+	/**
 	 * `?folder=<mailbox id>` is the open folder — a reload or a shared link lands
 	 * there — and the inbox is the URL without it. An unknown id opens the inbox.
 	 */
 	$effect(() => {
 		if (selectedMailboxId || !mailboxList) return;
-		const linked = page.url.searchParams.get('folder');
+		const linked = address().get('folder');
 		const inbox = mailboxList.find((mailbox) => mailbox.kind === 'inbox');
 		const pick = mailboxList.find((mailbox) => mailbox.id === linked) ?? inbox ?? mailboxList[0];
 		selectedMailboxId = pick?.id ?? null;
@@ -228,13 +295,14 @@
 		// Whose Inbox it is goes wherever its name is shown.
 		return box && activeShared ? { ...box, name: `${box.name} · ${activeShared.name}` } : box;
 	});
+	const inboxUnseen = $derived(mailboxesResource?.current?.find((box) => box.kind === 'inbox')?.unread ?? 0);
 	/** Every mail query and action takes this: absent for your own mailbox. */
 	const account = $derived(mailAccount ?? undefined);
 
 	function stepMailbox(delta: number) {
 		if (!mailboxList || mailboxList.length === 0) return;
 		const currentIndex = mailboxList.findIndex((m) => m.id === selectedMailboxId);
-		selectMailbox(mailboxList[(currentIndex + delta + mailboxList.length) % mailboxList.length]!.id);
+		void selectMailbox(mailboxList[(currentIndex + delta + mailboxList.length) % mailboxList.length]!.id);
 	}
 
 	const searching = $derived(searchQuery.trim().length > 0);
@@ -273,6 +341,30 @@
 				})
 			: undefined
 	);
+
+	/**
+	 * A folder's list is kept from the last visit, and only the open one follows
+	 * live changes — so coming back to one shows what it held and asks again.
+	 */
+	$effect(() => {
+		void listKey;
+		untrack(() => {
+			if (threadsResource?.ready) void threadsResource.refresh();
+		});
+	});
+
+	/** The same for a folder that is not open: a move into or out of it re-asks its first page. */
+	function refreshFolder(mailboxId: string) {
+		void threads({
+			mailboxId,
+			filter: listFilter,
+			limit: prefs.pageSize,
+			kind: mailboxList?.find((box) => box.id === mailboxId)?.kind,
+			account
+		})
+			.refresh()
+			.catch(() => {});
+	}
 
 	const labelCountsResource = $derived(
 		session && activeMailbox ? labelCounts({ mailboxId: activeMailbox.id, account }) : undefined
@@ -337,31 +429,12 @@
 		if (anyList || activeMailbox?.kind === 'drafts') void listResource?.refresh();
 	}
 
-	compose.setTransport({
-		get account() {
-			return session?.key ?? null;
-		},
-		send: async (payload) => {
-			const result = await sendRemote(payload);
-			afterMailMutation(true);
-			return result;
-		},
-		cancelScheduled: async (emailId) => {
-			const result = await cancelScheduled({ emailId });
-			afterMailMutation(true);
-			return result;
-		},
-		uploadAttachment: uploadFile,
-		saveDraft: async (input) => {
-			const result = await saveDraftRemote(input);
-			afterMailMutation();
-			return result;
-		},
-		deleteDraft: async (emailId) => {
-			const result = await deleteDraftRemote({ emailId });
-			afterMailMutation();
-			return result;
-		}
+	// Compose's transport is the layout's; it tells whichever Mail page is up.
+	$effect(() => {
+		shell.mailChanged = afterMailMutation;
+		return () => {
+			if (shell.mailChanged === afterMailMutation) shell.mailChanged = undefined;
+		};
 	});
 
 	/**
@@ -428,17 +501,14 @@
 		return () => live.stop();
 	});
 
+	// What the last visit left behind: drafts that a dead connection kept on
+	// this device go up when it returns. (The outbox is the layout's to drain.)
 	$effect(() => {
 		if (!session) return;
-		const drain = () => {
-			void compose.recoverLocalDrafts();
-			void compose.drainOutbox().then((sent) => {
-				if (sent > 0) listResource?.refresh();
-			});
-		};
-		void drain();
-		window.addEventListener('online', drain);
-		return () => window.removeEventListener('online', drain);
+		const recover = () => void compose.recoverLocalDrafts();
+		recover();
+		window.addEventListener('online', recover);
+		return () => window.removeEventListener('online', recover);
 	});
 
 	$effect(() => {
@@ -523,7 +593,6 @@
 		anchor: AnchorRect | null
 	) {
 		const position = panelPosition(anchor);
-		const thread = threadResource?.current ?? [message];
 		// A forward is sent from your mailbox, so a shared one's files are copied into it first.
 		if (mailAccount && mode === 'forward' && message.attachments.length > 0) {
 			const copied = await copyAttachments({
@@ -538,7 +607,7 @@
 			}
 			message = { ...message, attachments };
 		}
-		compose.reply(message, thread, myEmails, mode, position);
+		compose.reply(message, myEmails, mode, position);
 	}
 
 	const selectedIds = $derived(selectedEmailIds(listData?.rows, selection));
@@ -587,7 +656,6 @@
 		const destinationKind =
 			payload.action === 'move' ? mailboxList?.find((box) => box.id === payload.mailboxId)?.kind : undefined;
 		const verbs: Partial<Record<BulkAction, string>> = {
-			delete: 'deleted',
 			move: 'moved',
 			important: 'marked important',
 			unimportant: 'marked not important'
@@ -597,7 +665,9 @@
 				? 'marked as spam'
 				: destinationKind === 'trash'
 					? 'moved to Trash'
-					: (verbs[payload.action] ?? 'updated');
+					: destinationKind === 'archive'
+						? 'archived'
+						: (verbs[payload.action] ?? 'updated');
 		// Where each moved message came from, so Undo can put it back: the folder,
 		// or across folders each row's own.
 		const origins = new Map<string, string[]>();
@@ -619,24 +689,33 @@
 			const { count } = await bulk(payload);
 			// A thread that just left the folder can't stay open in the reader.
 			if (leavesFolder && openThreadId && scope.has(openThreadId)) reader.close();
+			// The cursor steps to the row that takes the place of the one that left, so `e` `e` `e` works down a list.
+			if (leavesFolder && cursorId && scope.has(cursorId)) {
+				const at = flatRowIds.indexOf(cursorId);
+				const stays = (id: string) => !scope.has(id);
+				cursorId = flatRowIds.slice(at + 1).find(stays) ?? flatRowIds.slice(0, at).findLast(stays) ?? null;
+			}
 			if (!threadIds) selection = new Set();
 			void listResource?.refresh();
 			void foldersResource?.refresh();
 			// The folder that just received these keeps a cached list of its own, so
 			// without this, opening it straight after a move shows it as it was
 			// before — which reads as a move that did not happen.
-			if (payload.action === 'move' && payload.mailboxId) {
-				void threads({
-					mailboxId: payload.mailboxId,
-					filter: listFilter,
-					limit: prefs.pageSize,
-					kind: mailboxList?.find((box) => box.id === payload.mailboxId)?.kind,
-					account
-				})
-					.refresh()
-					.catch(() => {});
+			if (payload.action === 'move' && payload.mailboxId) refreshFolder(payload.mailboxId);
+			// The server destroys only what is still in this folder; a row that had
+			// gone stale names a message that lives elsewhere now, and stays there.
+			if (payload.action === 'delete' && count === 0) {
+				compose.pushToast({ text: `Not deleted — no longer in ${activeMailbox?.name ?? 'this folder'}`, tone: 'info' });
+				return;
 			}
-			const text = `${count} ${count === 1 ? 'message' : 'messages'} ${verb}${unscheduled ? ' — not sent' : ''}`;
+			// A row is a conversation, and that is what was acted on — "2 messages
+			// moved" for one row reads as one too many. A destroy counts what it
+			// destroyed, message by message, as its confirmation did.
+			const said =
+				payload.action === 'delete'
+					? `${count} ${count === 1 ? 'message' : 'messages'} deleted`
+					: `${scope.size} ${scope.size === 1 ? 'conversation' : 'conversations'} ${verb}`;
+			const text = `${said}${unscheduled ? ' — not sent' : ''}`;
 			const destination = payload.mailboxId!;
 			compose.pushToast(
 				undoable
@@ -704,6 +783,9 @@
 			);
 			void listResource?.refresh();
 			void foldersResource?.refresh();
+			// The folder they were taken back out of must stop listing them: a row
+			// left there would offer to delete a message that is no longer in it.
+			refreshFolder(from);
 		} catch (cause) {
 			compose.pushToast({
 				text: cause instanceof Error ? cause.message : 'Could not undo the move',
@@ -733,23 +815,31 @@
 	 * `/?thread=<id>` opens that thread, in `?folder=`'s folder or the inbox:
 	 * where a new-mail notification points, and what a reload with a thread open
 	 * lands on. Taken off the URL before the reader opens, which puts it back —
-	 * on a phone as its own entry, so Back returns to the plain list.
+	 * on a phone as its own entry, so Back returns to the plain list. Once per
+	 * link, and in turn with the other history changes (a folder switch the
+	 * same link caused is patching the URL too).
 	 */
 	let threadLinkHandled = false;
 	$effect(() => {
-		if (!session || threadLinkHandled || !activeMailbox) return;
-		// An `?account=` on the same link is settled first (it may reload into another account).
-		if (page.url.searchParams.has('account')) return;
-		const threadId = page.url.searchParams.get('thread');
-		if (threadId === null) return;
+		// Read first, as above. An `?account=` on the same link is settled before
+		// the thread (it may reload into another account).
+		const threadId = page.url.searchParams.has('account') ? null : page.url.searchParams.get('thread');
+		if (!session || threadLinkHandled || !activeMailbox || threadId === null) return;
+		// A reload inside a phone's reader: its entry, kept across the reload, already shows the thread.
+		if (page.state.reader === threadId) return;
 		threadLinkHandled = true;
 		// Untracked: opening marks the thread read, and a command bumps its own state.
 		// A real (replacing) navigation, not replaceState: on a phone the reader pushes
 		// a shallow entry relative to the page's URL, which must already be clean.
 		untrack(() => {
-			const url = new URL(location.href);
-			url.searchParams.delete('thread');
-			void goto(url, { replace: true, reset: false }).then(() => openRow(threadId));
+			void inOrder(() => {
+				const url = new URL(location.href);
+				url.searchParams.delete('thread');
+				return goto(url, { replace: true, reset: false });
+			}).then(() => {
+				threadLinkHandled = false;
+				return openRow(threadId);
+			});
 		});
 	});
 
@@ -759,9 +849,12 @@
 	});
 
 	async function openRow(threadId: string) {
+		// The row you opened is where the keyboard is: `e` files what you are
+		// reading, `j` goes to the one after it. A phone has no cursor to show.
+		if (!viewport.phone) cursorId = threadId;
 		// The reader hides the top bar on a phone, and with it the drawer's only
 		// toggle — so the drawer never survives into a thread.
-		drawerOpen = false;
+		if (drawerOpen) await drawer.hide();
 		const rowMailbox = listData?.rows.find((row) => row.threadId === threadId)?.mailboxId;
 		const kind = acrossFolders
 			? mailboxList?.find((mailbox) => mailbox.id === rowMailbox)?.kind
@@ -812,12 +905,17 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
+		// Whoever handled the key already owns it: a popover closing on Escape, a row opening on Enter.
+		if (event.defaultPrevented) return;
+		const target = event.target as HTMLElement | null;
 		if (event.key === 'Escape' && drawerOpen) {
 			event.preventDefault();
-			drawerOpen = false;
+			void drawer.hide();
 			return;
 		}
-		if (event.key === 'Escape') {
+		// An open menu, popover or link dialog keeps Escape and what is typed into it (type-ahead).
+		const inLayer = !!target?.closest?.('[data-scope][data-part="content"], [data-trix-dialog], dialog');
+		if (event.key === 'Escape' && !inLayer) {
 			const front = compose.frontPanel();
 			if (front) {
 				event.preventDefault();
@@ -834,10 +932,12 @@
 			}
 		}
 
-		const target = event.target as HTMLElement | null;
-		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
-			return;
-		}
+		// The drawer is modal; a select takes letters as type-ahead, like a field.
+		if (inLayer || drawerOpen) return;
+		// A compose panel owns the keyboard wherever in it the focus is (its title bar, a button), and
+		// still does when focus fell out of it to <body>: letters meant for a message archived mail.
+		if (target?.closest?.('[role="dialog"]') || (target === document.body && compose.holdsKeys())) return;
+		if (target && (target.matches?.('input, textarea, select') || target.isContentEditable)) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
 
 		switch (event.key) {
@@ -855,6 +955,8 @@
 				break;
 			case 'Enter':
 			case 'o':
+				// Enter on a link or a button presses it; `o` is the key that always opens.
+				if (event.key === 'Enter' && target?.closest?.('a[href], button, [role="button"], [role="separator"], summary')) break;
 				event.preventDefault();
 				openCursor();
 				break;
@@ -879,10 +981,28 @@
 				runRowShortcut(important ? 'unimportant' : 'important');
 				break;
 			}
+			case 'u': {
+				event.preventDefault();
+				const seen = selection.size > 0
+					? flatRows.filter((row) => selection.has(row.threadId)).every((row) => !row.unread)
+					: !(cursorRow?.unread ?? false);
+				runRowShortcut(seen ? 'unread' : 'read');
+				break;
+			}
 			case 'e':
 				event.preventDefault();
 				if (archiveTarget) runRowShortcut('move', archiveTarget.id);
 				break;
+			// The thread in the reader: reply, reply all, forward — from its latest message, as its toolbar does.
+			case 'r':
+			case 'a':
+			case 'f': {
+				const latest = threadResource?.current?.at(-1);
+				if (!latest) break;
+				event.preventDefault();
+				void openReply(event.key === 'r' ? 'reply' : event.key === 'a' ? 'replyAll' : 'forward', latest, null);
+				break;
+			}
 			// Deliberately shift-# and not Delete: in Trash this one destroys.
 			case '#':
 				event.preventDefault();
@@ -891,6 +1011,10 @@
 			case '[':
 				event.preventDefault();
 				toggleSidebar();
+				break;
+			case '?':
+				event.preventDefault();
+				statusLine?.showKeys();
 				break;
 			case '/':
 				event.preventDefault();
@@ -905,14 +1029,9 @@
 	}
 </script>
 
-<!-- A held send goes out when the window closes; leaving first puts it off to the next visit. -->
-<svelte:window
-	onkeydown={handleKeydown}
-	onbeforeunload={(event) => {
-		if (compose.holding) event.preventDefault();
-	}}
-/>
-<svelte:head><title>Mail · Zaur Mail</title></svelte:head>
+<svelte:window onkeydown={handleKeydown} />
+<!-- A pinned tab says how much is waiting in the inbox, and which folder it is on. -->
+<svelte:head><title>{inboxUnseen > 0 ? `(${inboxUnseen}) ` : ''}{activeMailbox?.name ?? 'Mail'} · Zaur Mail</title></svelte:head>
 
 <!--
 	A phone reading a thread gets one bar, not two: the reader's own toolbar
@@ -935,7 +1054,7 @@
 	onNextMailbox={() => stepMailbox(1)}
 />
 
-{#if !session}
+{#if signedOut}
 	<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
 		<p class="text-sm font-semibold text-slate-800">Session ended</p>
 		<p class="max-w-[420px] text-[13px] leading-relaxed text-slate-500">
@@ -960,9 +1079,11 @@
 			onBulk={(action, mailboxId) => void runBulk(action, mailboxId)}
 			busy={bulkBusy}
 			onNewMessage={(anchor) => openCompose(anchor)}
+			waiting={compose.outboxCount}
 		/>
 	{/if}
 	<main
+		bind:this={mainEl}
 		class="z-shell relative min-h-0 flex-1"
 		data-sidebar={sidebarVisible ? 'open' : 'closed'}
 		style:--z-list-w="{prefs.listWidth}px"
@@ -973,12 +1094,18 @@
 			{#if viewport.compact}
 				<button
 					type="button"
+					data-drawer
+					tabindex="-1"
 					class="absolute inset-0 z-40 bg-[var(--z-scrim)] lg:hidden"
 					aria-label="Close folder list"
-					onclick={() => (drawerOpen = false)}
+					onclick={() => void drawer.hide()}
 				></button>
 			{/if}
 			<div
+				bind:this={drawerEl}
+				data-drawer
+				role={viewport.compact ? 'dialog' : undefined}
+				aria-label={viewport.compact ? 'Mailboxes' : undefined}
 				class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
 			>
 				<Sidebar
@@ -990,11 +1117,11 @@
 					filter={listFilter}
 					onFilter={pickLabel}
 					labelCounts={labelCountsResource?.current}
-					onClose={viewport.compact ? () => (drawerOpen = false) : undefined}
-					onNewMessage={() => {
-						drawerOpen = false;
-						openCompose();
-					}}
+					onClose={viewport.compact ? () => drawer.hide() : undefined}
+					onNewMessage={() => void drawer.hide().then(() => openCompose())}
+					onDropThread={mailAccount
+						? undefined
+						: (mailboxId, threadId) => void runBulk('move', mailboxId, selection.has(threadId) ? undefined : [threadId])}
 				/>
 			</div>
 		{/if}
@@ -1058,9 +1185,9 @@
 	<ComposeDock />
 {/if}
 
-<Toasts />
-
 <StatusLine
+	bind:this={statusLine}
+	waiting={compose.outboxCount}
 	mailboxName={activeMailbox?.name ?? null}
 	unseen={activeMailbox?.unread ?? 0}
 	quota={quotaResource?.current}

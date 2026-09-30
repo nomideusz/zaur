@@ -22,6 +22,12 @@ export class Shell {
 	 * still see itself in `bar` and wipe the one its successor just set.
 	 */
 	owner: Snippet | undefined;
+	/**
+	 * Mail's lists, to be asked again after a send or a draft save. Compose's
+	 * transport is the layout's (the outbox sends from every section); the
+	 * lists are Mail's, and only while it is the section on show.
+	 */
+	mailChanged: ((anyList: boolean) => void) | undefined;
 }
 
 // A string, not a Symbol: Vite's HMR can hold two instances of this module at

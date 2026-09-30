@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { prefs, setPref, THEMES, LIST_MIN, LIST_MAX, DEFAULT_PREFS } from '#lib/settings.svelte.ts';
+	import { install } from '#lib/install.svelte.ts';
 </script>
 
 <!-- Not synced on purpose: a theme and a pixel width mean something different on a different screen. -->
@@ -48,6 +49,23 @@
 		</button>
 	</div>
 </section>
+
+<!-- Only where it can happen: a browser that offers its install dialog, or an iPhone tab, where the Share sheet is the way in. -->
+{#if install.available || install.ios}
+	<section class="z-card">
+		<div class="flex items-center justify-between gap-4 px-4 py-3">
+			<span class="min-w-0">
+				<span class="block text-[13.5px] font-medium text-[var(--z-body)]">Install Zaur Mail</span>
+				<span class="mt-[1px] block text-[12px] leading-[1.4] text-[var(--z-soft)]">
+					{install.ios ? 'Tap Share, then Add to Home Screen.' : 'Its own window and icon, like any other app.'}
+				</span>
+			</span>
+			{#if install.available}
+				<button type="button" class="btn-tactile btn-primary !h-8 shrink-0" onclick={() => install.prompt()}>Install</button>
+			{/if}
+		</div>
+	</section>
+{/if}
 
 <style>
 	/* The slider: a 7px track, the accent for the filled part, a tactile thumb. */

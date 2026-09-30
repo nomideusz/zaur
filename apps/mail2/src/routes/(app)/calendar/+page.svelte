@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
+	import { leaveGuard } from '#lib/leave-guard';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
+	import { Calendar as CalendarGrid, fmtTime } from '@nomideusz/svelte-calendar';
 	import type { CalendarViewId, TimelineEvent } from '@nomideusz/svelte-calendar';
 	import type { Calendar, CalendarEvent } from '@zaur/mail-core';
 	import { calendarAllowsWrites, calendarKey, eventKey, isRecurringInstance } from '@zaur/mail-core';
@@ -26,6 +28,8 @@
 	import { eventsOnDay, shiftMonth, startOfDay } from '#lib/calendar/schedule';
 	import { ZAUR_THEME, sourceOf, toTimelineEvent } from '#lib/calendar/bridge';
 	import { LiveUpdates } from '#lib/mail/live';
+	import { backLayer } from '#lib/back-layer.svelte.ts';
+	import { viewport } from '#lib/viewport.svelte.ts';
 	import { whoami } from '../../session.remote';
 	import {
 		calendars as calendarsRemote,
@@ -87,6 +91,25 @@
 		phone ? VIEWS.filter((option) => option.value === 'day' || option.value === 'month' || option.value === view) : VIEWS
 	);
 
+	/**
+	 * The phone's day view writes "now" beside its line as 24-hour "08:03",
+	 * next to hours written "8a", and on top of the hour's own label when the
+	 * two are within ten minutes. The markup is the package's, so the page
+	 * keeps the minute: the label's text comes from here (`--z-now`, in the
+	 * grid's own format) and the hour label it would touch steps out.
+	 */
+	let now = $state(new Date());
+	$effect(() => {
+		if (!phone) return;
+		const timer = setInterval(() => (now = new Date()), 30_000);
+		return () => clearInterval(timer);
+	});
+	const nowText = $derived(`"${fmtTime(now)}"`);
+	/** Which hour row (1-based, from midnight) the now label sits on, if any. */
+	const nowRow = $derived(
+		now.getMinutes() <= 10 ? now.getHours() + 1 : now.getMinutes() >= 50 ? now.getHours() + 2 : 0
+	);
+
 	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC';
 	const month = $derived(monthGrid(anchor.getFullYear(), anchor.getMonth(), 'monday'));
 	/** The days the current view is asking the server about. */
@@ -106,21 +129,37 @@
 				: addDays(anchor, view === 'day' ? delta : 7 * delta);
 	}
 
+	// Under 1024px the header has no room for "Saturday, September 19", nor
+	// for the year after a week that is plainly this one.
+	const short = (date: Date) => date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 	const title = $derived(
 		view === 'month'
-			? phone
+			? viewport.compact
 				? anchor.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
 				: formatMonthTitle(anchor.getFullYear(), anchor.getMonth())
 			: view === 'day'
 				? anchor.toLocaleDateString(
 						undefined,
-						// A phone header has no room for "Saturday, September 19".
-						phone
+						viewport.compact
 							? { weekday: 'short', day: 'numeric', month: 'short' }
 							: { weekday: 'long', day: 'numeric', month: 'long' }
 					)
-				: formatWeekRange(anchor, 'monday')
+				: viewport.compact
+					? `${short(span[0]!)} – ${short(span[span.length - 1]!)}`
+					: formatWeekRange(anchor, 'monday')
 	);
+
+	/**
+	 * A day in the month grid was picked (or its "+2 more"). Left to itself the
+	 * grid swaps in its own day planner while our header still says Month; the
+	 * page owns that. Beside the month sits the day's list, so picking a day
+	 * fills it — under 1024px there is no room for the list (see `railOpen`),
+	 * and picking a day goes to the day instead.
+	 */
+	function pickDay(date: Date) {
+		anchor = startOfDay(date);
+		if (viewport.compact) view = 'day';
+	}
 
 	/* ── Data ─────────────────────────────────────────────────────────── */
 
@@ -151,8 +190,25 @@
 	const calendarByKey = $derived(new Map(calendarList.map((calendar) => [calendarKey(calendar), calendar])));
 	const calendarsOf = (event: CalendarEvent) =>
 		event.calendarIds.map((id) => calendarByKey.get(calendarKey({ id, accountId: event.accountId })));
+	/**
+	 * A load that fails must not look like an empty calendar. What each range
+	 * last answered is kept, so a refresh that fails (offline, the server away)
+	 * shows that again and says so; with nothing kept, the failure stands where
+	 * the events would.
+	 */
+	// ponytail: one entry per range looked at while the page is open; trim it if that ever adds up.
+	const kept = new Map<string, CalendarEvent[]>();
+	const rangeKey = (bounds: { after: string; before: string }) => `${bounds.after}|${bounds.before}`;
+	/** The grid's last load failed: it shows what was `kept`, or had nothing to show. */
+	let failed = $state<'kept' | 'nothing' | null>(null);
+	$effect(() => {
+		const list = eventsResource?.current;
+		if (list) kept.set(rangeKey(range), list);
+	});
+	/** The day list's events: the server's answer, or the last one when asking again failed. */
+	const loaded = $derived(eventsResource?.current ?? (eventsResource?.error ? kept.get(rangeKey(range)) : undefined));
 	const visibleEvents = $derived(
-		(eventsResource?.current ?? []).filter((event) =>
+		(loaded ?? []).filter((event) =>
 			calendarsOf(event).some((calendar) => calendar?.isVisible !== false)
 		)
 	);
@@ -197,7 +253,21 @@
 					timeZone
 				};
 				gridRange = bounds;
-				const list = await eventsRemote(bounds);
+				let list: CalendarEvent[];
+				try {
+					const query = eventsRemote(bounds);
+					// A failure is cached like an answer: come back to, the range would
+					// fail again without being asked for. (Untracked: see `gridRange`.)
+					if (untrack(() => query.error)) await query.refresh();
+					list = await query;
+					kept.set(rangeKey(bounds), list);
+					failed = null;
+				} catch {
+					// The grid draws a failed load as an empty week; see `kept`.
+					const before = kept.get(rangeKey(bounds));
+					failed = before ? 'kept' : 'nothing';
+					list = before ?? [];
+				}
 				return list
 					.filter((event) =>
 						event.calendarIds.some(
@@ -211,7 +281,8 @@
 
 	/** Put the server's answer back in front of both the grid and the day list. */
 	async function reload() {
-		await Promise.all([
+		// Settled, not all: a refresh that fails still has to reach the grid, which says so.
+		await Promise.allSettled([
 			eventsResource?.refresh(),
 			gridRange ? eventsRemote(gridRange).refresh() : null
 		]);
@@ -236,33 +307,77 @@
 
 	function flash(text: string) {
 		notice = text;
-		setTimeout(() => (notice = null), 2500);
+		// Only its own: a second notice inside the window keeps its full time.
+		setTimeout(() => {
+			if (notice === text) notice = null;
+		}, 2500);
 	}
 
+	/**
+	 * On a phone the rail's panel covers the whole screen, so it is a history
+	 * entry: Back closes it rather than leaving the calendar.
+	 */
+	const panel = backLayer('calendar-panel');
+
+	/** An event form with something typed in it asks before it is dropped. */
+	let editor = $state<ReturnType<typeof EventEditor> | null>(null);
+	const mayLeave = leaveGuard(
+		() => (mode === 'new' || mode === 'edit') && (editor?.isDirty() ?? false),
+		'this event'
+	);
+
+	/** Whatever else the rail is asked to hold replaces the form in it: `false` when the person keeps the form. */
+	function openPanel(next: Exclude<typeof mode, 'view'>): boolean {
+		if (!mayLeave()) return false;
+		mode = next;
+		void panel.show();
+		return true;
+	}
+	// Back, or the panel's own close, took the entry away.
+	$effect(() => {
+		if (panel.open) return;
+		untrack(() => {
+			// Back on a phone has already left the entry: staying means putting it back.
+			if (!mayLeave()) return void panel.show();
+			mode = 'view';
+			editing = null;
+		});
+	});
+
 	function startNew(at: Date = anchor, until: Date | null = null) {
+		if (!openPanel('new')) return;
 		anchor = startOfDay(at);
 		draftAt = at;
 		draftEnd = until;
 		editing = null;
 		editorError = null;
-		mode = 'new';
 	}
 
 	function startEdit(event: CalendarEvent) {
+		if (!openPanel('edit')) return;
 		editing = event;
 		editorError = null;
-		mode = 'edit';
 	}
 
 	function openEvent(event: CalendarEvent) {
+		openedAt = performance.now();
+		if (!openPanel('event')) return;
 		editing = event;
 		editorError = null;
-		mode = 'event';
 	}
+
+	/**
+	 * A tap opens the event, the rail takes its width out of the grid, and the
+	 * tap's own click then lands on the empty slot that moved under the finger.
+	 * ponytail: told apart by the clock; the grid's `onEvUp` swallowing that click
+	 * (as it does after a drag) is the fix upstream.
+	 */
+	let openedAt = 0;
 
 	function closePanel() {
 		mode = 'view';
 		editing = null;
+		void panel.hide();
 	}
 
 	async function save(draft: EventDraft) {
@@ -286,8 +401,7 @@
 				flash('Event created');
 			}
 			await reload();
-			mode = 'view';
-			editing = null;
+			closePanel();
 		} catch (cause) {
 			editorError = messageOf(cause, 'The event could not be saved.');
 		} finally {
@@ -343,17 +457,17 @@
 	}
 
 	async function remove(event: CalendarEvent) {
-		const series = isRecurringInstance(event);
+		// The first occurrence can come back as the series itself, rule and all.
+		const series = isRecurringInstance(event) || Boolean(event.recurrenceRule);
 		const prompt = series
 			? `Delete every occurrence of “${event.title}”? Repeating events are deleted as a series.`
 			: `Delete “${event.title}”?`;
 		if (!confirm(prompt)) return;
 		saving = true;
 		try {
-			await deleteEvent({ id: series ? event.baseEventId! : event.id, accountId: event.accountId });
+			await deleteEvent({ id: event.baseEventId ?? event.id, accountId: event.accountId });
 			await reload();
-			mode = 'view';
-			editing = null;
+			closePanel();
 			flash('Event deleted');
 		} catch (cause) {
 			editorError = messageOf(cause, 'The event could not be deleted.');
@@ -377,9 +491,35 @@
 	const settingsCalendar = $derived(calendarList.find((calendar) => calendarKey(calendar) === settingsKey) ?? null);
 
 	function openSettings(calendar: Calendar) {
-		settingsFrom = mode === 'calendars' ? 'calendars' : 'view';
+		const from = mode === 'calendars' ? 'calendars' : 'view';
+		if (!openPanel('calendar')) return;
+		settingsFrom = from;
 		settingsKey = calendarKey(calendar);
-		mode = 'calendar';
+	}
+
+	/** Out of a calendar's settings: to the list it was opened from, or shut. */
+	function leaveSettings() {
+		if (settingsFrom === 'calendars') mode = 'calendars';
+		else closePanel();
+	}
+
+	let panes = $state<HTMLElement>();
+	/**
+	 * Escape closes what the rail holds — an editor steps back the way Cancel
+	 * does. Heard on the window: the button that opened a panel is gone once it
+	 * is open, and focus with it (to `<body>`). Keys from the header's own menus
+	 * are theirs.
+	 */
+	function escape(event: KeyboardEvent) {
+		// A select's open list takes its own Escape.
+		if (event.key !== 'Escape' || event.defaultPrevented || event.target instanceof HTMLSelectElement) return;
+		if (event.target !== document.body && !panes?.contains(event.target as Node)) return;
+		if (mode === 'view') return;
+		event.preventDefault();
+		if (!mayLeave()) return;
+		if (mode === 'edit' && editing) mode = 'event';
+		else if (mode === 'calendar') leaveSettings();
+		else closePanel();
 	}
 
 	let addingCalendar = $state(false);
@@ -399,8 +539,13 @@
 		anchor.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
 	);
 	const panelOpen = $derived(mode !== 'view');
-	/** The month grid needs the day's list beside it; a planner is already one. */
-	const railOpen = $derived(panelOpen || view === 'month');
+	/**
+	 * The month grid needs the day's list beside it; a planner is already one.
+	 * Under 1024px the list would leave seven columns half the screen (378px on
+	 * a tablet held upright), so there the month has the width and a day opens
+	 * as the Day view — the same line below which the calendars step out.
+	 */
+	const railOpen = $derived(panelOpen || (view === 'month' && !viewport.compact));
 	/** Nothing to drag an event onto if none of your calendars take writes. */
 	const readOnly = $derived(
 		!calendarList.some((calendar) => calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn)
@@ -409,58 +554,74 @@
 
 <svelte:head><title>Calendar · Zaur Mail</title></svelte:head>
 
+<svelte:window onkeydown={escape} ononline={() => failed && void reload()} />
+
+{#if nowRow && anchor.getTime() === startOfDay(now).getTime()}
+	<!-- Only the hour rows are numbered, so which one hides is a rule written per minute. -->
+	{@html `<style>.z-cal .mb-hour:nth-child(${nowRow}) .mb-hour-label{visibility:hidden}</style>`}
+{/if}
+
 <SectionShell title="Calendar">
 	{#snippet controls()}
-		<div class="z-group shrink-0" role="group" aria-label="View">
-			{#each views as option (option.value)}
+		<!-- A phone's panel covers the grid: what would move the grid steps out with it. -->
+		<div class="contents {panelOpen ? 'max-md:hidden' : ''}">
+			<!-- Under 1024px the header shares its width with the section tabs: letters, as on a phone. -->
+			<div class="z-group shrink-0" role="group" aria-label="View">
+				{#each views as option (option.value)}
+					<button
+						type="button"
+						class="z-segment !px-2.5 max-sm:!px-2 pointer-coarse:min-[360px]:max-md:!min-w-10"
+						aria-pressed={view === option.value}
+						aria-label={option.label}
+						title={option.label}
+						onclick={() => (view = option.value)}
+					>
+						<span class="max-lg:hidden">{option.label}</span>
+						<span class="lg:hidden">{option.short}</span>
+					</button>
+				{/each}
+			</div>
+
+			<!-- On touch as tall as the bar's other buttons (base.css makes those 40px), and as wide where that
+			     leaves the date its room: not at 320px, nor beside a tablet's section tabs. -->
+			<div
+				class="flex min-w-0 items-center rounded-[6px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]"
+			>
 				<button
 					type="button"
-					class="z-segment !px-2.5 max-sm:!px-2"
-					aria-pressed={view === option.value}
-					onclick={() => (view = option.value)}
+					class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 pointer-coarse:h-10 pointer-coarse:min-[360px]:max-md:!w-10 pointer-coarse:lg:!w-10 rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
+					onclick={() => step(-1)}
+					aria-label="Previous"
 				>
-					<span class="max-sm:hidden">{option.label}</span>
-					<span class="sm:hidden">{option.short}</span>
+					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</button>
-			{/each}
+				<!-- As wide as the date it shows; it gives way before anything else in the bar. -->
+				<button
+					type="button"
+					class="h-[30px] min-w-0 max-w-[42vw] truncate pointer-coarse:h-10 bg-[var(--z-sunken)] px-3 text-[13px] font-semibold text-[var(--z-ink)] max-lg:px-2 lg:min-w-[150px] max-sm:px-1 max-[359px]:!px-0.5 max-[359px]:text-[12px]"
+					onclick={() => (anchor = today)}
+					title="Back to today"
+				>
+					{title}
+				</button>
+				<button
+					type="button"
+					class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 pointer-coarse:h-10 pointer-coarse:min-[360px]:max-md:!w-10 pointer-coarse:lg:!w-10 rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
+					onclick={() => step(1)}
+					aria-label="Next"
+				>
+					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				</button>
+			</div>
 		</div>
 
-		<div
-			class="flex min-w-0 items-center rounded-[6px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]"
-		>
-			<button
-				type="button"
-				class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
-				onclick={() => step(-1)}
-				aria-label="Previous"
-			>
-				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-			</button>
-			<button
-				type="button"
-				class="h-[30px] min-w-[170px] max-w-[42vw] truncate bg-[var(--z-sunken)] px-3 text-[13px] font-semibold text-[var(--z-ink)] max-md:min-w-0 max-sm:px-1"
-				onclick={() => (anchor = today)}
-				title="Back to today"
-			>
-				{title}
-			</button>
-			<button
-				type="button"
-				class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
-				onclick={() => step(1)}
-				aria-label="Next"
-			>
-				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
-			</button>
-		</div>
-
-		<!-- Below the width that has the calendars sidebar, they open in the rail. -->
+		<!-- Wherever the calendars are not a sidebar, they open in the rail. -->
 		<button
 			type="button"
-			class="btn-tactile shrink-0 !px-2 lg:hidden"
+			class="btn-tactile shrink-0 !px-2 {railOpen ? 'xl:hidden' : 'lg:hidden'}"
 			aria-label="Calendars"
 			aria-pressed={mode === 'calendars'}
-			onclick={() => (mode = mode === 'calendars' ? 'view' : 'calendars')}
+			onclick={() => (mode === 'calendars' ? closePanel() : openPanel('calendars'))}
 			disabled={!calendarsState?.supported}
 		>
 			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><rect x="2.5" y="3" width="11" height="10.5" rx="2" stroke="currentColor" stroke-width="1.5" /><path d="M2.5 6.5h11M5.5 1.75v2.5M10.5 1.75v2.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" /></svg>
@@ -468,19 +629,32 @@
 
 		<button
 			type="button"
-			class="btn-tactile shrink-0 gap-1.5 max-md:!px-2"
-			onclick={() => startNew()}
+			class="btn-tactile shrink-0 gap-1.5 max-xl:!px-2"
+			onclick={() => mode === 'new' || startNew()}
 			disabled={!calendarsState?.supported}
 		>
 			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
-			<span class="max-md:sr-only">New event</span>
+			<span class="max-xl:sr-only">New event</span>
 		</button>
 	{/snippet}
 
-	<div class="flex min-h-0 flex-1">
-		<!-- Calendars -->
+	<!-- Above both columns: on a phone the panel covers the grid, and what it did is said here. -->
+	{#if notice}
+		<p
+			class="shrink-0 border-b border-[var(--z-hairline)] bg-[var(--z-hover)] px-4 py-1.5 text-[12px] font-medium text-[var(--z-muted)]"
+			role="status"
+		>
+			{notice}
+		</p>
+	{/if}
+
+	<!-- On touch every button and field in the panes is a fingertip tall, as the header's are (base.css); a phone's selects are 16px, under which iOS zooms the page on focus. -->
+	<div class="flex min-h-0 flex-1 pointer-coarse:[&_:is(.btn-tactile,.z-segment,.z-field)]:min-h-10 pointer-coarse:[&_:is(.btn-tactile,.z-segment)]:min-w-10 max-md:[&_select]:text-base" bind:this={panes}>
+		<!-- Calendars. Under 1280px this and the rail together leave the grid three
+		     day columns, so while the rail is open the sidebar steps out and the
+		     header's Calendars button stands in for it. -->
 		<aside
-			class="flex w-[240px] shrink-0 flex-col border-r border-[var(--z-line)] bg-[var(--z-surface)] max-lg:hidden"
+			class="flex w-[240px] shrink-0 flex-col border-r border-[var(--z-line)] bg-[var(--z-surface)] {railOpen ? 'max-xl:hidden' : 'max-lg:hidden'}"
 			aria-label="Calendars"
 		>
 			{#if calendarsResource?.error}
@@ -506,67 +680,68 @@
 		</aside>
 
 		<!-- The grid -->
-		<div class="flex min-w-0 flex-1 flex-col {panelOpen ? 'max-md:hidden' : ''}">
-			{#if notice}
-				<p
-					class="border-b border-[var(--z-hairline)] bg-[var(--z-hover)] px-4 py-1.5 text-[12px] font-medium text-[var(--z-muted)]"
-					role="status"
-				>
-					{notice}
+		<div class="relative flex min-w-0 flex-1 flex-col {panelOpen ? 'max-md:hidden' : ''}">
+			{#if failed === 'kept'}
+				<p class="shrink-0 border-b border-[var(--z-hairline)] px-4 py-1.5 text-[12.5px] text-[var(--z-ch-discard-ink)]" role="alert">
+					Could not refresh the calendar — showing it as last loaded.
+					<button type="button" class="underline" onclick={reload}>Retry</button>
 				</p>
 			{/if}
-
-			{#if eventsResource?.error}
-				<p class="px-4 py-3 text-[13px] text-[var(--z-ch-discard-ink)]">
+			<!--
+				The grid scrolls itself — sticky day headings, and the roll view
+				scrolling under a drag — so it needs a real height, not `auto`.
+				`bind:clientHeight` is a ResizeObserver in two words.
+				It stays mounted under a failure, so the next week asked for is asked for
+				(`isolate`: its sticky headings stay under what covers it then).
+			-->
+			<div class="z-cal isolate min-h-0 flex-1" bind:clientHeight={gridHeight} inert={failed === 'nothing'} style:--z-now={nowText}>
+				<CalendarGrid
+					{adapter}
+					view={viewId}
+					currentDate={gridDate}
+					theme={ZAUR_THEME}
+					autoTheme={false}
+					mondayStart
+					height={gridHeight || 600}
+					borderRadius={0}
+					{readOnly}
+					showModePills={false}
+					showNavigation={false}
+					snapInterval={15}
+					minDuration={15}
+					minColumnWidth={84}
+					mobile={phone}
+					ondayclick={pickDay}
+					ondatechange={(date) => {
+						// `currentDate` is controlled, so the grid echoes back what it
+						// was handed: taking the echo as a change feeds itself forever.
+						//
+						// The roll view also reports the Monday of whichever week sits
+						// at its centre — on mount too, before anyone scrolls. Inside
+						// the anchored week that is an echo, not navigation: taking it
+						// would land a later switch to Day on Monday instead of the day
+						// we were on. Another week is a real scroll.
+						const next = startOfDay(date).getTime();
+						const inSpan = next >= span[0]!.getTime() && next <= span[span.length - 1]!.getTime();
+						if (view === 'day' || view === 'month' ? next !== anchor.getTime() : !inSpan)
+							anchor = new Date(next);
+					}}
+					oneventclick={(row) => {
+						const event = sourceOf(row);
+						if (event) openEvent(event);
+					}}
+					oneventcreate={({ start, end }) => performance.now() - openedAt > 400 && startNew(start, end)}
+					oneventmove={(row, start, end) => void moveEvent(row, start, end)}
+				>
+					<!-- The shell's header already carries the date and the views. -->
+					{#snippet header()}{/snippet}
+				</CalendarGrid>
+			</div>
+			{#if failed === 'nothing'}
+				<!-- Over the grid, not beside it: an empty week under this line would still read as a free one. -->
+				<div class="absolute inset-0 bg-[var(--z-surface)] p-6 text-center text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">
 					Could not load events.
-					<button type="button" class="underline" onclick={() => eventsResource?.refresh()}>Retry</button>
-				</p>
-			{:else}
-				<!--
-					The grid scrolls itself — sticky day headings, and the roll view
-					scrolling under a drag — so it needs a real height, not `auto`.
-					`bind:clientHeight` is a ResizeObserver in two words.
-				-->
-				<div class="z-cal min-h-0 flex-1" bind:clientHeight={gridHeight}>
-					<CalendarGrid
-						{adapter}
-						view={viewId}
-						currentDate={gridDate}
-						theme={ZAUR_THEME}
-						autoTheme={false}
-						mondayStart
-						height={gridHeight || 600}
-						borderRadius={0}
-						{readOnly}
-						showModePills={false}
-						showNavigation={false}
-						snapInterval={15}
-						minDuration={15}
-						mobile={phone}
-						ondatechange={(date) => {
-							// `currentDate` is controlled, so the grid echoes back what it
-							// was handed: taking the echo as a change feeds itself forever.
-							//
-							// The roll view also reports the Monday of whichever week sits
-							// at its centre — on mount too, before anyone scrolls. Inside
-							// the anchored week that is an echo, not navigation: taking it
-							// would land a later switch to Day on Monday instead of the day
-							// we were on. Another week is a real scroll.
-							const next = startOfDay(date).getTime();
-							const inSpan = next >= span[0]!.getTime() && next <= span[span.length - 1]!.getTime();
-							if (view === 'day' || view === 'month' ? next !== anchor.getTime() : !inSpan)
-								anchor = new Date(next);
-						}}
-						oneventclick={(row) => {
-							const event = sourceOf(row);
-							if (event) openEvent(event);
-						}}
-						oneventcreate={({ start, end }) => startNew(start, end)}
-						oneventmove={(row, start, end) => void moveEvent(row, start, end)}
-					>
-						<!-- The shell's header already carries the date and the views. -->
-						{#snippet header()}{/snippet}
-					</CalendarGrid>
+					<div class="mt-3"><button type="button" class="btn-tactile !h-[28px]" onclick={reload}>Retry</button></div>
 				</div>
 			{/if}
 		</div>
@@ -613,13 +788,14 @@
 						onDone={(message, closed) => {
 							flash(message);
 							if (!closed) return;
-							mode = settingsFrom;
+							leaveSettings();
 							void reload(); // its events went with it
 						}}
-						onClose={() => (mode = settingsFrom)}
+						onClose={leaveSettings}
 					/>
 				{:else if (mode === 'new' || mode === 'edit') && calendarsState}
 					<EventEditor
+						bind:this={editor}
 						event={mode === 'edit' ? editing : null}
 						day={draftAt}
 						until={draftEnd}
@@ -644,7 +820,12 @@
 						</button>
 					</div>
 					<div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-						{#if eventsResource?.loading && !eventsResource.current}
+						{#if !loaded && eventsResource?.error}
+							<p class="py-6 text-center text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">
+								Could not load events.
+								<button type="button" class="underline" onclick={reload}>Retry</button>
+							</p>
+						{:else if !loaded && eventsResource?.loading}
 							<ul class="space-y-2">
 								{#each [1, 2, 3] as n (n)}<li class="z-skeleton h-[52px] rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
 							</ul>
@@ -852,6 +1033,46 @@
 		.mg-chip:not(.mg-chip--custom) {
 			padding: 1px 6px;
 			border-bottom-width: 1px;
+		}
+
+		/* Still asking the server is not an empty day. */
+		[aria-busy='true'] .mb-empty {
+			display: none;
+		}
+
+		/* A quarter-hour block on a phone is one line of text: the resize grips
+		   and the "up next" tag would sit on top of it. It is resized in the editor. */
+		.mb-event--short .mb-ev-handle,
+		.mb-event--short .mb-ev-next-badge {
+			display: none;
+		}
+
+		/* Nor does the tag fit a block that shares its hour with two others. */
+		.mb-event {
+			container-type: inline-size;
+		}
+
+		@container (max-width: 150px) {
+			.mb-ev-next-badge {
+				display: none;
+			}
+		}
+
+		/* "Now" in the grid's own words (see `now` above); its box keeps the gutter's width. */
+		.mb-now-label {
+			font-size: 0;
+		}
+
+		.mb-now-label::after {
+			content: var(--z-now);
+			font-size: 10px;
+		}
+
+		/* The same in the week grid on a touch tablet, where the grips always show. */
+		@media (pointer: coarse) {
+			.tw-ev--short .tw-ev-handle {
+				display: none;
+			}
 		}
 	}
 </style>

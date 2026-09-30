@@ -95,11 +95,10 @@ export const saveRules = command(
 			}
 		}
 
-		await client.saveSieveScript({
-			id: target?.id,
-			name: SCRIPT_NAME,
-			source: buildRuleScript(next)
-		});
+		// A script the server refuses would otherwise reach the page as "Internal Error".
+		await client
+			.saveSieveScript({ id: target?.id, name: SCRIPT_NAME, source: buildRuleScript(next) })
+			.catch(() => error(502, 'The server did not accept these rules. Nothing was saved.'));
 
 		return { count: next.filter((rule: MailRule) => rule.enabled).length };
 	}

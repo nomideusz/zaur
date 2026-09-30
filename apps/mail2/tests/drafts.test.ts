@@ -101,11 +101,11 @@ test('DRAFT_CONTENT_KEYS: content only — no toInput, no geometry', () => {
 	assert.equal(DRAFT_CONTENT_KEYS.has('h'), false);
 });
 
-test('buildDraftSaveInput: dedupes every field, passes content through', () => {
+test('buildDraftSaveInput: dedupes every field, keeps the names, passes content through', () => {
 	const input = buildDraftSaveInput(
 		draft({
 			to: [chip('Ada@X.com'), chip('ada@x.com'), chip('', ''), chip('bob@y.com')],
-			cc: [chip('cara@z.com'), chip('cara@z.com', 'Cara')],
+			cc: [chip('cara@z.com', 'Cara'), chip('cara@z.com')],
 			bcc: [chip('hidden@z.com')],
 			subject: 'Hi',
 			body: 'Body',
@@ -115,9 +115,9 @@ test('buildDraftSaveInput: dedupes every field, passes content through', () => {
 			]
 		})
 	);
-	assert.deepEqual(input.to, ['Ada@X.com', 'bob@y.com']);
-	assert.deepEqual(input.cc, ['cara@z.com']);
-	assert.deepEqual(input.bcc, ['hidden@z.com']);
+	assert.deepEqual(input.to, [{ email: 'Ada@X.com' }, { email: 'bob@y.com' }]);
+	assert.deepEqual(input.cc, [{ name: 'Cara', email: 'cara@z.com' }]);
+	assert.deepEqual(input.bcc, [{ email: 'hidden@z.com' }]);
 	assert.equal(input.subject, 'Hi');
 	assert.equal(input.body, 'Body');
 	assert.equal(input.jmapDraftId, 'm-draft-1');

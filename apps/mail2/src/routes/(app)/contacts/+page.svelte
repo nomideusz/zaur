@@ -1,14 +1,18 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
-	import { goto } from '$app/navigation';
+	import { leaveGuard } from '#lib/leave-guard';
+	import { goto, snapshot } from '$app/navigation';
 	import { contactDisplayName, contactLetter, contactMatches } from '@zaur/mail-core';
 	import type { Contact, ContactInput } from '@zaur/mail-core';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import ContactEditor from '#lib/components/contacts/ContactEditor.svelte';
+	import { contactKeys, parseVCards, toVCards } from '#lib/components/contacts/vcard';
 	import { identityStyle } from '#lib/mail/colors';
 	import { whoami } from '../../session.remote';
 	import { contacts as contactsRemote, saveContact, deleteContact } from '../../contacts.remote';
 	import { LiveUpdates } from '#lib/mail/live';
+	import { backLayer } from '#lib/back-layer.svelte.ts';
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
@@ -55,16 +59,66 @@
 		return out;
 	});
 
+	function say(text: string, ms = 2500) {
+		notice = text;
+		// Only its own: a second notice inside the window keeps its full time.
+		setTimeout(() => {
+			if (notice === text) notice = null;
+		}, ms);
+	}
+
+	/**
+	 * On a phone the detail pane covers the list, so it is a history entry:
+	 * Back returns to the list rather than leaving Contacts.
+	 */
+	const detail = backLayer('contact');
+
+	/** A form with something typed in it asks before it is dropped. */
+	let editor = $state<ReturnType<typeof ContactEditor> | null>(null);
+	const mayLeave = leaveGuard(() => mode !== 'view' && (editor?.isDirty() ?? false), 'this contact');
+
+	// Back, or the pane's own way out, took the entry away.
+	$effect(() => {
+		if (detail.open) return;
+		untrack(() => {
+			// Back on a phone has already left the entry: staying means putting it back.
+			if (!mayLeave()) return void detail.show();
+			selectedId = null;
+			mode = 'view';
+		});
+	});
+
+	// Write leaves for Mail; Back from there returns to the contact it was written from.
+	snapshot({
+		capture: () => (detail.open ? selectedId : null),
+		restore: (id) => {
+			if (!id) return;
+			selectedId = id;
+			void detail.show();
+		}
+	});
+
 	function open(contact: Contact) {
+		if (!mayLeave()) return;
 		selectedId = contact.id;
 		mode = 'view';
 		editorError = null;
+		void detail.show();
 	}
 
 	function startNew() {
+		// Already writing one: "+" again is no reason to ask about it.
+		if (mode === 'new' || !mayLeave()) return;
 		selectedId = null;
 		mode = 'new';
 		editorError = null;
+		void detail.show();
+	}
+
+	function close() {
+		selectedId = null;
+		mode = 'view';
+		void detail.hide();
 	}
 
 	async function save(input: ContactInput) {
@@ -79,8 +133,7 @@
 			await resource?.refresh();
 			selectedId = result.id;
 			mode = 'view';
-			notice = 'Contact saved';
-			setTimeout(() => (notice = null), 2500);
+			say('Contact saved');
 		} catch (cause) {
 			editorError = messageOf(cause, 'The contact could not be saved.');
 		} finally {
@@ -94,13 +147,71 @@
 		try {
 			await deleteContact({ id: contact.id, accountId: contact.accountId });
 			await resource?.refresh();
-			if (selectedId === contact.id) selectedId = null;
-			notice = 'Contact deleted';
-			setTimeout(() => (notice = null), 2500);
+			if (selectedId === contact.id) close();
+			say('Contact deleted');
 		} catch (cause) {
-			notice = messageOf(cause, 'The contact could not be deleted.');
+			say(messageOf(cause, 'The contact could not be deleted.'));
 		} finally {
 			saving = false;
+		}
+	}
+
+	/** The whole address book as one .vcf, built here: every card is already loaded. */
+	function exportCards() {
+		const url = URL.createObjectURL(new Blob([toVCards(all)], { type: 'text/vcard' }));
+		Object.assign(document.createElement('a'), { href: url, download: 'contacts.vcf' }).click();
+		URL.revokeObjectURL(url);
+	}
+
+	let picker = $state<HTMLInputElement | null>(null);
+	let importing = $state(false);
+	/**
+	 * A .vcf read in the browser, one create per card. A card whose address is
+	 * already here (or, with no address, whose name is) is left out, and so is
+	 * its twin later in the same file.
+	 */
+	// ponytail: one request per card, in turn; a batch command if address books of thousands turn up.
+	async function importCards(file: File) {
+		importing = true;
+		try {
+			const cards = parseVCards(await file.text());
+			const known = new Set(all.flatMap(contactKeys));
+			let added = 0;
+			let skipped = 0;
+			let failed = 0;
+			for (const [index, card] of cards.entries()) {
+				notice = `Importing ${index + 1} of ${cards.length}…`;
+				const keys = contactKeys(card);
+				if (keys.length === 0 || keys.some((key) => known.has(key))) {
+					skipped += 1;
+					continue;
+				}
+				try {
+					await saveContact({ contact: card });
+					added += 1;
+					for (const key of keys) known.add(key);
+				} catch {
+					failed += 1;
+				}
+			}
+			await resource?.refresh();
+			say(
+				cards.length === 0
+					? 'No contacts found in that file'
+					: [
+							`Imported ${added} ${added === 1 ? 'contact' : 'contacts'}`,
+							skipped && `${skipped} already here or empty`,
+							failed && `${failed} could not be saved`
+						]
+							.filter(Boolean)
+							.join(' · '),
+				// Three numbers take longer to read than "Contact saved".
+				6000
+			);
+		} catch {
+			say('That file could not be read');
+		} finally {
+			importing = false;
 		}
 	}
 
@@ -121,7 +232,8 @@
 
 <SectionShell title="Contacts">
 	{#snippet controls()}
-		<div class="relative flex items-center max-md:hidden">
+		<!-- The search gives way first: next to the section tabs the bar is narrow below 1024px. -->
+		<div class="relative flex min-w-0 items-center max-md:hidden">
 			<svg class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
 				<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
@@ -131,10 +243,10 @@
 				bind:value={query}
 				placeholder="Search contacts…"
 				aria-label="Search contacts"
-				class="z-field w-[240px] !pl-8"
+				class="z-field w-[240px] min-w-0 !pl-8 max-lg:w-[170px]"
 			/>
 		</div>
-		<button type="button" class="btn-tactile gap-1.5" onclick={startNew} disabled={!contactsState?.supported}>
+		<button type="button" class="btn-tactile shrink-0 gap-1.5 whitespace-nowrap" onclick={startNew} disabled={!contactsState?.supported}>
 			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 			</svg>
@@ -142,7 +254,18 @@
 		</button>
 	{/snippet}
 
-	<div class="flex min-h-0 flex-1">
+	<!-- Above both panes: a phone shows one of them, and what was done is said over whichever it is. -->
+	{#if notice}
+		<p
+			class="shrink-0 border-b border-[var(--z-hairline)] bg-[var(--z-hover)] px-4 py-1.5 text-[12px] font-medium text-[var(--z-muted)]"
+			role="status"
+		>
+			{notice}
+		</p>
+	{/if}
+
+	<!-- On touch every button and field in the panes is a fingertip tall, as the header's are (base.css); a phone's selects are 16px, under which iOS zooms the page on focus. -->
+	<div class="flex min-h-0 flex-1 pointer-coarse:[&_:is(.btn-tactile,.z-segment,.z-field)]:min-h-10 pointer-coarse:[&_:is(.btn-tactile,.z-segment)]:min-w-10 max-md:[&_select]:text-base">
 		<!-- List -->
 		<div class="flex w-[380px] shrink-0 flex-col border-r border-[var(--z-hairline)] max-md:w-full max-md:border-r-0 {detailOpen ? 'max-md:hidden' : ''}">
 			<div class="flex items-center gap-2 border-b border-[var(--z-hairline)] px-4 py-2.5">
@@ -158,9 +281,6 @@
 						{visible.length === all.length ? `${all.length} contacts` : `${visible.length} of ${all.length}`}
 					{/if}
 				</span>
-				{#if notice}
-					<span class="ml-auto truncate text-[12px] font-medium text-[var(--z-muted)]" role="status">{notice}</span>
-				{/if}
 			</div>
 
 			<div class="min-h-0 flex-1 overflow-y-auto">
@@ -217,25 +337,48 @@
 					{/if}
 				{/if}
 			</div>
+
+			<!-- Moving an address book in or out, as a vCard file. -->
+			{#if contactsState?.supported}
+				<div class="flex shrink-0 items-center gap-2 border-t border-[var(--z-hairline)] px-4 py-2">
+					<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px]" disabled={importing} onclick={() => picker?.click()}>
+						{importing ? 'Importing…' : 'Import .vcf'}
+					</button>
+					<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px]" disabled={all.length === 0} onclick={exportCards}>Export</button>
+					<input
+						bind:this={picker}
+						type="file"
+						accept=".vcf,text/vcard,text/x-vcard"
+						hidden
+						onchange={(event) => {
+							const file = event.currentTarget.files?.[0];
+							event.currentTarget.value = '';
+							if (file) void importCards(file);
+						}}
+					/>
+				</div>
+			{/if}
 		</div>
 
 		<!-- Detail / editor -->
 		<div class="min-w-0 flex-1 {detailOpen ? '' : 'max-md:hidden'}">
 			{#if mode === 'new' || (mode === 'edit' && selected)}
 				<ContactEditor
+					bind:this={editor}
 					contact={mode === 'edit' ? selected : null}
 					{saving}
 					error={editorError}
 					onSave={save}
 					onCancel={() => {
-						mode = 'view';
 						editorError = null;
+						if (selected) mode = 'view';
+						else close();
 					}}
 				/>
 			{:else if selected}
 				<div class="flex h-full flex-col">
 					<div class="flex items-center gap-2 border-b border-[var(--z-hairline)] px-6 py-3 max-md:px-3">
-						<button type="button" class="btn-tactile !size-[30px] !p-0 md:hidden" aria-label="Back to the list" onclick={() => (selectedId = null)}>
+						<button type="button" class="btn-tactile !size-[30px] !p-0 md:hidden" aria-label="Back to the list" onclick={close}>
 							<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 								<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
 							</svg>
@@ -290,7 +433,7 @@
 
 						{#if selected.note}
 							<h3 class="z-caption mt-6">Notes</h3>
-							<p class="mt-2 text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--z-strong)]">{selected.note}</p>
+							<p class="mt-2 text-[13px] leading-relaxed break-words whitespace-pre-wrap text-[var(--z-strong)]">{selected.note}</p>
 						{/if}
 
 						{#if selected.updated}

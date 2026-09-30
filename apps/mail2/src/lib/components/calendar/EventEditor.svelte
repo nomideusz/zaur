@@ -90,6 +90,14 @@
 	 */
 	const seed = $derived(`${event?.id ?? 'new'}:${day.getTime()}:${until?.getTime() ?? ''}`);
 
+	/** The form as one string, to tell a touched one from the one that was opened. */
+	const form = () => JSON.stringify([title, calendarRef, allDay, startValue, endValue, location, description, recurrence]);
+	let opened = '';
+	/** Whether closing the form now would lose something. */
+	export function isDirty(): boolean {
+		return form() !== opened;
+	}
+
 	// A different event (or a new one on another day) resets the form.
 	$effect(() => {
 		seed;
@@ -121,6 +129,7 @@
 				description = '';
 				recurrence = null;
 			}
+			opened = form();
 		});
 	});
 
@@ -146,6 +155,24 @@
 		await navigator.clipboard.writeText(location.trim());
 		copied = true;
 		setTimeout(() => (copied = false), 1500);
+	}
+
+	/**
+	 * Moving the start carries the end along, so the event keeps its length
+	 * instead of ending before it begins.
+	 */
+	function setStart(next: string) {
+		const parse = allDay ? parseDateInputValue : parseDatetimeLocalValue;
+		const [was, now, end] = [parse(startValue), parse(next), parse(endValue)];
+		startValue = next;
+		if (!next || [was, now, end].some((date) => Number.isNaN(date.getTime()))) return;
+		if (allDay) {
+			// Whole days, counted as days: a clock change in between is not an hour off.
+			end.setDate(end.getDate() + Math.round((now.getTime() - was.getTime()) / 86_400_000));
+			endValue = toDateInputValue(end);
+		} else {
+			endValue = toDatetimeLocalValue(new Date(end.getTime() + now.getTime() - was.getTime()));
+		}
 	}
 
 	function toggleAllDay(next: boolean) {
@@ -206,10 +233,10 @@
 
 <form onsubmit={submit} class="flex h-full flex-col">
 	<div class="flex items-center justify-between gap-3 border-b border-[var(--z-hairline)] px-6 py-3 max-md:px-4">
-		<h2 class="text-[14px] font-semibold text-[var(--z-ink)]">
+		<h2 class="min-w-0 truncate text-[14px] font-semibold text-[var(--z-ink)]">
 			{event ? (instance ? 'Edit this occurrence' : 'Edit event') : 'New event'}
 		</h2>
-		<div class="flex items-center gap-2">
+		<div class="flex shrink-0 items-center gap-2">
 			{#if event && onDelete}
 				<button type="button" class="btn-tactile btn-danger !h-[30px]" onclick={onDelete} disabled={saving}>Delete</button>
 			{/if}
@@ -237,7 +264,17 @@
 
 			<label>
 				<span class={label}>Title</span>
-				<input class="{field} mt-1 !text-[15px] font-semibold" bind:value={title} required autocomplete="off" placeholder="What is happening?" />
+				<!-- A new event starts at its name; one being edited is left where it was opened. -->
+				<input
+					class="{field} mt-1 !text-[15px] font-semibold"
+					bind:value={title}
+					required
+					autocomplete="off"
+					placeholder="What is happening?"
+					{@attach (input) => {
+						if (!untrack(() => event)) input.focus();
+					}}
+				/>
 			</label>
 
 			<label>
@@ -262,9 +299,9 @@
 				<label>
 					<span class={label}>Starts</span>
 					{#if allDay}
-						<input type="date" class="{field} mt-1" bind:value={startValue} required />
+						<input type="date" class="{field} mt-1" bind:value={() => startValue, setStart} required />
 					{:else}
-						<input type="datetime-local" class="{field} mt-1" bind:value={startValue} required />
+						<input type="datetime-local" class="{field} mt-1" bind:value={() => startValue, setStart} required />
 					{/if}
 				</label>
 				<label>
@@ -299,7 +336,7 @@
 						<input type="checkbox" role="switch" class="z-check" checked={Boolean(meeting)} onchange={(e) => setMeeting(e.currentTarget.checked)} />
 					</label>
 					{#if meeting}
-						<div class="mt-2.5 flex h-8 items-center gap-2 rounded-[7px] border border-[var(--z-accent-line)] bg-[var(--z-surface)] pr-1 pl-2.5">
+						<div class="mt-2.5 flex min-h-8 items-center pointer-coarse:py-1 gap-2 rounded-[7px] border border-[var(--z-accent-line)] bg-[var(--z-surface)] pr-1 pl-2.5">
 							<span class="z-mono min-w-0 flex-1 truncate text-[11.5px]">{location.trim()}</span>
 							<button type="button" class="btn-tactile !h-6 !px-2 !text-[12px]" onclick={copyLink}>
 								<MeetIcon name={copied ? 'check' : 'copy'} class="size-3.5" />

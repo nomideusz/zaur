@@ -18,6 +18,28 @@
 
 	let { id, off = false, large = false, class: className = '' }: Props = $props();
 
+	/**
+	 * One tab stop, as a toolbar is: Tab lands on the first button and the arrows
+	 * walk the rest, so eleven buttons do not stand between the message and Send.
+	 */
+	function rove(event: KeyboardEvent & { currentTarget: HTMLElement }) {
+		if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
+		if (!(event.target instanceof HTMLButtonElement)) return; // the link field keeps its arrows
+		const buttons = [...event.currentTarget.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')];
+		const next = buttons[buttons.indexOf(event.target) + (event.key === 'ArrowRight' ? 1 : -1)];
+		if (!next) return;
+		event.preventDefault();
+		next.focus();
+	}
+
+	/** Trix acts on mousedown, which Enter and Space on a focused button never send. */
+	function press(event: MouseEvent) {
+		if (event.detail !== 0) return;
+		(event.target as HTMLElement)
+			.closest('button')
+			?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+	}
+
 	const tools = [
 		{ attribute: 'bold', key: 'b', label: 'Bold', glyph: 'B', style: 'font-weight:700' },
 		{ attribute: 'italic', key: 'i', label: 'Italic', glyph: 'I', style: 'font-style:italic;font-family:var(--font-serif, serif)' },
@@ -25,8 +47,18 @@
 	];
 </script>
 
-<trix-toolbar {id} class="z-rich-tools flex min-w-0 items-center {large ? 'gap-1' : 'gap-0.5'} {className}" class:z-rich-tools--off={off}>
-	{#each tools as tool (tool.attribute)}
+<!-- Focus belongs to its buttons, not to the bar. -->
+<!-- svelte-ignore a11y_interactive_supports_focus -->
+<trix-toolbar
+	{id}
+	role="toolbar"
+	aria-label="Formatting"
+	class="z-rich-tools flex min-w-0 items-center {large ? 'gap-1' : 'gap-0.5'} {className}"
+	class:z-rich-tools--off={off}
+	onkeydown={rove}
+	onclick={press}
+>
+	{#each tools as tool, index (tool.attribute)}
 		<button
 			type="button"
 			class="z-icon-btn shrink-0 text-[13px] {large ? '!size-11' : ''}"
@@ -34,7 +66,7 @@
 			data-trix-key={tool.key}
 			title={tool.label}
 			aria-label={tool.label}
-			tabindex={-1}
+			tabindex={index === 0 ? 0 : -1}
 		>
 			<span style={tool.style} aria-hidden="true">{tool.glyph}</span>
 		</button>
@@ -123,6 +155,10 @@
 		display: flex;
 	}
 	:global(trix-toolbar.z-rich-tools--off) {
+		display: none;
+	}
+	/* Trix's sheet hides a closed dialog; until it has loaded (or if it never does), this does. */
+	:global(.z-rich-tools [data-trix-dialog]:not([data-trix-active])) {
 		display: none;
 	}
 	:global(.z-rich-tools button.trix-active) {

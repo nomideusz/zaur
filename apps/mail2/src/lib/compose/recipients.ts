@@ -1,4 +1,4 @@
-import type { ComposeContact, Recipient } from './types';
+import type { ComposeContact, OutgoingRecipient, Recipient } from './types';
 
 const ANGLE_RE = /^(.*)<([^>]+)>$/;
 
@@ -56,6 +56,20 @@ export function commitRecipient(
 	return { recipient: makeRecipient(input, meta), remaining: '' };
 }
 
+/**
+ * The suggestion a key (Enter, Tab, a comma) may commit: the one highlighted in
+ * a list that is open, so the one the user can see. A closed list has none —
+ * its first row is whoever sorts first in the address book, and committing it
+ * added a stranger to a message from an empty field.
+ */
+export function highlightedSuggestion(
+	open: boolean,
+	suggestions: ComposeContact[],
+	index: number
+): ComposeContact | null {
+	return open ? (suggestions[index] ?? null) : null;
+}
+
 /** Split an address list — typed, pasted, or stored on a server draft — into chips. */
 export function parseRecipients(text: string, meta = ''): Recipient[] {
 	const out: Recipient[] = [];
@@ -76,9 +90,12 @@ export function parseAddressList(text: string): string[] {
 	return parseRecipients(text).map((recipient) => recipient.email);
 }
 
-/** The addresses on a chip list, deduped, for the wire. */
-export function recipientEmails(list: Recipient[]): string[] {
-	const out: string[] = [];
+/**
+ * A chip list for the wire, deduped on the address. The name a chip shows goes
+ * with it, so the recipient is "Annie Hobday" <annie@…> in the header too.
+ */
+export function outgoingRecipients(list: Recipient[]): OutgoingRecipient[] {
+	const out: OutgoingRecipient[] = [];
 	const seen = new Set<string>();
 	for (const recipient of list) {
 		const email = recipient.email.trim();
@@ -86,7 +103,8 @@ export function recipientEmails(list: Recipient[]): string[] {
 		const key = email.toLowerCase();
 		if (seen.has(key)) continue;
 		seen.add(key);
-		out.push(email);
+		const name = recipient.name.trim();
+		out.push(name && name !== email ? { name, email } : { email });
 	}
 	return out;
 }

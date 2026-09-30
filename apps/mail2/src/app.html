@@ -8,28 +8,39 @@
 		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<meta name="apple-mobile-web-app-title" content="Zaur Mail" />
+		<!-- `viewport-fit=cover`: the page reaches under the home indicator and the
+		     notch, and `.z-safe` (styles/base.css) keeps the app clear of both. -->
 		<meta
 			name="viewport"
-			content="width=device-width, initial-scale=1, interactive-widget=resizes-content"
+			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
 		/>
+		%sveltekit.head%
 		<!--
 			The colour Android paints its toolbar, and iOS before 26 its status
 			bar: `--z-surface`, the colour of the app's own top bar. iOS 26+
 			ignores it and takes the strip from the page — see `.z-screen` in
-			styles/base.css.
+			styles/base.css. After the page's own head, so a screen that brings
+			its own tag wins (the first match does); the root layout then keeps
+			them all on the colour actually under the top edge.
 		-->
 		<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#161d26" media="(prefers-color-scheme: dark)" />
 		<script nonce="%sveltekit.nonce%">
 			// The theme before first paint, so a dark preference does not flash light.
 			// Same key and shape as #lib/settings; "system" leaves the attribute off
-			// and lets prefers-color-scheme decide.
+			// and lets prefers-color-scheme decide. A chosen theme is also the system
+			// bar's: both tags take its surface, whatever the OS prefers.
 			try {
 				var theme = JSON.parse(localStorage.getItem('mail2.prefs') || '{}').theme;
-				if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+				if (theme === 'light' || theme === 'dark') {
+					document.documentElement.dataset.theme = theme;
+					var bar = theme === 'dark' ? '#161d26' : '#ffffff';
+					document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+						meta.content = bar;
+					});
+				}
 			} catch (e) {}
 		</script>
-		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">
 		<div style="display: contents">%sveltekit.body%</div>

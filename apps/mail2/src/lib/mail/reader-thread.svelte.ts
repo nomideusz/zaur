@@ -1,8 +1,7 @@
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
+import { inOrder, stepBack } from '#lib/back-layer.svelte.ts';
 import { viewport } from '#lib/viewport.svelte.ts';
-
-let queue: Promise<unknown> = Promise.resolve();
 
 /**
  * Sets (or, with null, drops) query parameters on the current entry — or, with
@@ -11,18 +10,19 @@ let queue: Promise<unknown> = Promise.resolve();
  * also closes the reader) would otherwise each undo the other.
  */
 export function patchQuery(params: Record<string, string | null>, push?: App.PageState) {
-	queue = queue
-		.then(() => {
-			// Not `page.url`: a shallow entry leaves it at the URL the page loaded on.
-			const url = new URL(location.href);
-			for (const [key, value] of Object.entries(params)) {
-				if (value === null) url.searchParams.delete(key);
-				else url.searchParams.set(key, value);
-			}
-			if (push) return goto(url, { state: push, shallow: true });
-			if (url.href !== location.href) return goto(url, { state: page.state, shallow: true, replace: true });
-		})
-		.catch(() => {});
+	void inOrder(() => {
+		// Not `page.url`: a shallow entry leaves it at the URL the page loaded on.
+		const url = new URL(location.href);
+		for (const [key, value] of Object.entries(params)) {
+			if (value === null) url.searchParams.delete(key);
+			else url.searchParams.set(key, value);
+		}
+		// `persistState`: a reload inside a phone's reader finds its entry as it was.
+		if (push) return goto(url, { state: push, shallow: true, persistState: true });
+		if (url.href !== location.href) {
+			return goto(url, { state: page.state, shallow: true, replace: true, persistState: true });
+		}
+	});
 }
 
 /**
@@ -47,10 +47,16 @@ export function readerThread(initial: string | null = null) {
 			pane = threadId;
 			patchQuery({ thread: threadId });
 		},
-		close() {
-			if (page.state.reader) return history.back();
+		/** Settled once a phone's entry is left: await it before anything that must see the list's address. */
+		close(): Promise<void> {
 			pane = null;
+			if (page.state.reader) return inOrder(() => stepBack(() => !!page.state.reader));
 			patchQuery({ thread: null });
+			return Promise.resolve();
+		},
+		/** The thread the address already names — after Back or Forward. Nothing is written back. */
+		show(threadId: string | null) {
+			pane = threadId;
 		}
 	};
 }

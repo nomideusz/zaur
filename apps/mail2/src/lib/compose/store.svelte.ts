@@ -29,7 +29,7 @@ import {
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
 import { formatScheduleTime } from './schedule';
-import { commitRecipient, isDuplicate, makeRecipient, recipientEmails } from './recipients';
+import { commitRecipient, isDuplicate, makeRecipient, outgoingRecipients } from './recipients';
 import { forwardSeed, replyAllRecipients, replySeed, signatureBlock, withSignature } from './quote';
 import type {
 	ComposeContact,
@@ -48,6 +48,8 @@ import type {
 } from './types';
 
 const DRAFT_SAVE_DEBOUNCE_MS = 1500;
+/** How often a waiting outbox is tried again, whatever the browser says about the network. */
+const OUTBOX_RETRY_MS = 20_000;
 
 export type ToastTone = 'info' | 'success' | 'warning' | 'error';
 
@@ -81,6 +83,7 @@ export interface NewDraftOptions {
 	y?: number;
 	kind?: DraftKind;
 	to?: Recipient[];
+	cc?: Recipient[];
 	subject?: string;
 	body?: string;
 	bodyHtml?: string;
@@ -100,6 +103,15 @@ class ComposeStore {
 	contacts = $state<ComposeContact[]>([]);
 	/** The account's own addresses, primary first. */
 	identities = $state<ComposeIdentity[]>([]);
+	/** Messages waiting in the outbox for the server to be reachable: past their undo window, not yet sent. */
+	outboxCount = $state(0);
+	/**
+	 * The panel the keyboard was last in, until something outside the panels is
+	 * clicked or focused. Focus that falls out of it to <body> (a control that
+	 * removed itself) is still typing into that panel as far as its author knows,
+	 * so the page's letter shortcuts stay off: they archived mail.
+	 */
+	keysIn: string | null = null;
 
 	#transport: ComposeTransport | null = null;
 	#draining = false;
@@ -108,6 +120,8 @@ class ComposeStore {
 	#savedSignatures = new Map<string, string>();
 	/** Keyed by outbox entry id. */
 	#held = new Map<string, HeldSend>();
+	#watching = false;
+	#retryTimer: ReturnType<typeof setTimeout> | null = null;
 
 	/** A message is waiting out its undo window: leaving now would delay it to the next visit. */
 	get holding(): boolean {
@@ -116,6 +130,37 @@ class ComposeStore {
 
 	setTransport(transport: ComposeTransport) {
 		this.#transport = transport;
+		this.#watchOutbox();
+	}
+
+	/**
+	 * The outbox looks after itself from the first time compose is wired up in a
+	 * browser: it is tried again on a timer for as long as anything waits in it,
+	 * and at once when the network or the tab comes back. `navigator.onLine` is
+	 * not trusted to say so — a server out of reach never flips it.
+	 */
+	#watchOutbox() {
+		if (this.#watching || typeof window === 'undefined') return;
+		this.#watching = true;
+		const retry = () => void this.drainOutbox();
+		window.addEventListener('online', retry);
+		document.addEventListener('visibilitychange', () => {
+			if (document.visibilityState === 'visible') retry();
+		});
+		void this.#countOutbox();
+	}
+
+	/** Recount what waits, and keep a retry pending while something does. */
+	async #countOutbox(): Promise<void> {
+		const entries = await listOutbox().catch(() => []);
+		// This tab's own undo windows have their own timers.
+		const waiting = entries.filter((entry) => !this.#held.has(entry.id));
+		const now = Date.now();
+		this.outboxCount = waiting.filter((entry) => (entry.holdUntil ?? 0) <= now).length;
+		if (this.#retryTimer) clearTimeout(this.#retryTimer);
+		this.#retryTimer = waiting.length
+			? setTimeout(() => void this.drainOutbox(), OUTBOX_RETRY_MS)
+			: null;
 	}
 
 	setContacts(contacts: ComposeContact[]) {
@@ -135,6 +180,11 @@ class ComposeStore {
 
 	openPanels(): Draft[] {
 		return this.drafts.filter((draft) => draft.stage !== 'minimized');
+	}
+
+	/** See `keysIn`: true while the panel that last had the keyboard is still open. */
+	holdsKeys(): boolean {
+		return this.openPanels().some((draft) => draft.id === this.keysIn);
 	}
 
 	frontPanel(): Draft | null {
@@ -159,7 +209,7 @@ class ComposeStore {
 			toInput: '',
 			toOpen: false,
 			toHi: 0,
-			cc: [],
+			cc: options.cc ?? [],
 			ccInput: '',
 			ccOpen: false,
 			ccHi: 0,
@@ -167,7 +217,7 @@ class ComposeStore {
 			bccInput: '',
 			bccOpen: false,
 			bccHi: 0,
-			ccShown: false,
+			ccShown: !!options.cc?.length,
 			bccShown: false,
 			subject: options.subject ?? '',
 			body: withSignature(body, signature),
@@ -200,7 +250,6 @@ class ComposeStore {
 
 	reply(
 		message: MessageDetail,
-		thread: MessageDetail[],
 		myEmails: Set<string>,
 		mode: ReplyMode,
 		position?: { x: number; y: number }
@@ -211,19 +260,20 @@ class ComposeStore {
 			(person) => person.email && this.#identity(person.email)
 		);
 		let to: Recipient[] = [];
+		let cc: Recipient[] = [];
 		if (mode === 'reply') {
 			to = [{ name: message.from.name, email: message.from.email, meta: '' }];
 		} else if (mode === 'replyAll') {
-			to = replyAllRecipients(thread, myEmails).map((person) => ({
-				...person,
-				meta: ''
-			}));
+			const all = replyAllRecipients(message, myEmails);
+			to = all.to.map((person) => ({ ...person, meta: '' }));
+			cc = all.cc.map((person) => ({ ...person, meta: '' }));
 		}
 		return this.newDraft({
 			...position,
 			kind: mode,
 			from: addressed ? this.#identity(addressed.email)?.email : undefined,
 			to,
+			cc,
 			subject: seed.subject,
 			body: seed.body,
 			// A forward carries the files: the blobs are already the account's, so nothing re-uploads.
@@ -705,6 +755,13 @@ class ComposeStore {
 
 	/** Open a panel from a persisted server draft (Drafts mailbox → compose). */
 	reopenDraft(seed: DraftSeed, position?: { x: number; y: number }): string {
+		// Already open, or waiting in the dock: a second panel on the same saved
+		// draft would have the two saving over each other.
+		const open = seed.jmapDraftId && this.drafts.find((draft) => draft.jmapDraftId === seed.jmapDraftId);
+		if (open) {
+			this.restore(open.id);
+			return open.id;
+		}
 		const id = this.newDraft({
 			...position,
 			kind: 'draft',
@@ -749,9 +806,10 @@ class ComposeStore {
 		const draft = this.#find(id);
 		if (!draft || draft.sending) return;
 		for (const field of RECIPIENT_FIELDS) this.commitPendingRecipient(id, field);
-		const cc = recipientEmails(draft.cc);
-		const bcc = recipientEmails(draft.bcc);
-		if (draft.to.length === 0 && cc.length === 0 && bcc.length === 0) {
+		const to = outgoingRecipients(draft.to);
+		const cc = outgoingRecipients(draft.cc);
+		const bcc = outgoingRecipients(draft.bcc);
+		if (to.length === 0 && cc.length === 0 && bcc.length === 0) {
 			// Never invent a recipient: restore + focus To instead (spec).
 			if (draft.stage === 'minimized') this.restore(id);
 			this.patch(id, { focusTarget: 'to' });
@@ -771,7 +829,7 @@ class ComposeStore {
 		}
 
 		const payload: SendPayload = {
-			to: recipientEmails(draft.to),
+			to,
 			cc,
 			bcc,
 			subject: draft.subject,
@@ -810,7 +868,7 @@ class ComposeStore {
 					text: `Scheduled for ${formatScheduleTime(new Date(payload.sendAt))}`,
 					tone: 'success',
 					actionLabel: 'Undo',
-					action: () => void this.undoScheduled(emailId, payload)
+					action: () => void this.#undoScheduled(emailId, draft)
 				});
 			} else {
 				this.pushToast({ text: 'Message sent', tone: 'success' });
@@ -822,6 +880,7 @@ class ComposeStore {
 					this.#removeInternal(id);
 					void removeLocalDraft(id).catch(() => {});
 					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
+					void this.#countOutbox();
 				} catch {
 					draft.sending = false;
 					draft.sendError = "You're offline and the message couldn't be stored. Try again.";
@@ -834,20 +893,15 @@ class ComposeStore {
 		}
 	}
 
-	async undoScheduled(emailId: string, payload: SendPayload): Promise<void> {
+	/**
+	 * Cancelling moves the scheduled copy back to Drafts, so the panel that
+	 * returns — the one that was sent, as it was — takes that copy as its own.
+	 */
+	async #undoScheduled(emailId: string, draft: Draft): Promise<void> {
 		try {
 			await this.#transport?.cancelScheduled(emailId);
-			this.newDraft({
-				// Its body already holds the signature.
-				kind: 'draft',
-				from: payload.from,
-				to: payload.to.map((email) => ({ name: '', email, meta: '' })),
-				subject: payload.subject,
-				body: payload.body,
-				bodyHtml: payload.bodyHtml,
-				attachments: payload.attachments?.map((part) => attachmentFromServer(part)),
-				focusTarget: 'subject'
-			});
+			draft.jmapDraftId = emailId;
+			this.#giveBack(draft, null);
 			this.pushToast({ text: 'Scheduled send cancelled', tone: 'info' });
 		} catch {
 			this.pushToast({ text: 'Could not cancel the scheduled message', tone: 'error' });
@@ -900,6 +954,7 @@ class ComposeStore {
 			} catch (cause) {
 				if (classifySendFailure(cause) === 'network') {
 					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
+					void this.#countOutbox();
 					return;
 				}
 				// Refused: handed back with the reason, as a send without the window would be.
@@ -930,14 +985,26 @@ class ComposeStore {
 		this.scheduleDraftSave(draft.id);
 	}
 
-	/** Drain the offline outbox; returns how many queued messages were sent. */
+	/**
+	 * Drain the offline outbox; returns how many queued messages were sent.
+	 * Callers may sit in an `$effect`: nothing reactive is read before the first await.
+	 */
 	async drainOutbox(): Promise<number> {
 		if (this.#draining || !this.#transport) return 0;
 		this.#draining = true;
 		try {
-			return await withOutboxLock(() => this.#drain());
+			const sent = await withOutboxLock(() => this.#drain());
+			// The "saved to the outbox" notice was the last the user heard of it.
+			if (sent) {
+				this.pushToast({
+					text: sent === 1 ? 'Queued message sent' : `${sent} queued messages sent`,
+					tone: 'success'
+				});
+			}
+			return sent;
 		} finally {
 			this.#draining = false;
+			await this.#countOutbox();
 		}
 	}
 

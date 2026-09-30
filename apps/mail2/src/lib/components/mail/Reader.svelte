@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import { renderMessageBody } from '#lib/email/html';
@@ -19,6 +20,7 @@
 		messageChannel
 	} from '#lib/mail/colors';
 	import ActionIcon from './ActionIcon.svelte';
+	import { backLayer } from '#lib/back-layer.svelte.ts';
 	import type { BulkAction } from '../../../routes/mail.remote';
 
 	interface Props {
@@ -75,12 +77,18 @@
 	}: Props = $props();
 
 	let earlierExpanded = $state(false);
+	/** The sender card's address line, opened into the full To / Cc / Bcc. */
+	let recipientsOpen = $state(false);
 
+	// Derived, so a refetch of the same thread (new array, same id) resets nothing.
+	const threadId = $derived(messages?.[0]?.threadId);
 	$effect(() => {
 		// Reset the collapse when a different thread loads.
-		void messages?.[0]?.threadId;
+		void threadId;
 		earlierExpanded = false;
-		previewAt = null;
+		recipientsOpen = false;
+		// Through the layer, so a preview's history entry never outlives the preview.
+		untrack(closePreview);
 	});
 
 	const latest = $derived(messages && messages.length > 0 ? messages[messages.length - 1] : undefined);
@@ -136,9 +144,31 @@
 		(messages ?? []).flatMap((message) => message.attachments).filter((item) => previewKind(item))
 	);
 	let previewAt = $state<number | null>(null);
+	/**
+	 * The preview fills a phone's screen, so there it is a history entry of its
+	 * own: Back closes the preview and leaves the message under it open.
+	 */
+	const previewLayer = backLayer('attachment-preview');
+
+	function openPreview(at: number) {
+		previewAt = at;
+		previewLayer.show();
+	}
+
+	/**
+	 * Reached more than once per close — the button, then the dialog's own
+	 * `close` as it unmounts — and a second `hide()` before the first has landed
+	 * would go back twice, out of the message. Hence the guard.
+	 */
+	function closePreview() {
+		if (previewAt === null) return;
+		previewAt = null;
+		previewLayer.hide();
+	}
+
 	const MAX_THUMB_BYTES = 5 * 1024 * 1024;
 	const chipClass =
-		'flex h-10 items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[var(--z-shadow-tactile)] transition-[border-color] hover:border-[var(--z-faint)]';
+		'flex h-10 max-w-full items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[var(--z-shadow-tactile)] transition-[border-color] hover:border-[var(--z-faint)]';
 
 	const starred = $derived(threadState?.starred ?? false);
 	const unread = $derived(threadState?.unread ?? false);
@@ -152,8 +182,9 @@
 	/** A chip only for state the message carries — see `messageChannel`. */
 	const stateLabel = $derived(starred ? 'Flagged' : important ? 'Important' : null);
 
+	/** The card's one-line summary. Bcc only ever comes back on mail you sent. */
 	function recipientsLabel(message: MessageDetail): string {
-		const others = [...message.to, ...message.cc].filter(
+		const others = [...message.to, ...message.cc, ...message.bcc].filter(
 			(person) => person.email.toLowerCase() !== message.from.email.toLowerCase()
 		);
 		if (others.length === 0) return 'to me';
@@ -161,6 +192,20 @@
 		const rest = others.length - 1;
 		return `to ${first.name || first.email}${rest > 0 ? `, +${rest}` : ''}`;
 	}
+
+	/** The same people in full, one row per header that has anyone in it. */
+	const recipientRows = $derived(
+		latest
+			? (
+					[
+						['From', [latest.from]],
+						['To', latest.to],
+						['Cc', latest.cc],
+						['Bcc', latest.bcc]
+					] as const
+				).filter(([, people]) => people.length > 0)
+			: []
+	);
 
 	/**
 	 * Spam is a move, like Archive: Stalwart learns from the folder a message
@@ -221,10 +266,14 @@
 
 		The way back has to survive the loading, error and empty states too, so the
 		toolbar outlives the message it acts on.
+
+		A touch tablet keeps the desk's layout but not its sizes: icon buttons are
+		40px under any coarse pointer (base.css), so the bar and the reply button
+		grow with them there (`pointer-coarse:`).
 	-->
 	{#if onBack || latest || loading || error}
 		<div
-			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 max-md:h-[60px] max-md:gap-2 max-md:px-2.5"
+			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 max-md:h-[60px] max-md:gap-2 max-md:px-2.5 pointer-coarse:h-[60px]"
 		>
 			{#if onBack}
 				<!--
@@ -254,7 +303,9 @@
 				and the bin are here at every width — junk mail is what you most often
 				open a message only to get rid of, so it outranks Archive for the space.
 				Mark-unread and Archive step into the menu once the pane is too narrow
-				for five, which is every phone and a tablet's second pane.
+				for five, which is every phone and a tablet's second pane. "Narrow" is
+				the pane *or* the viewport: a phone on its side has a wide pane and
+				thumb-sized targets, and the pointer-sized three do not belong beside them.
 			-->
 			{#if onAction && latest}
 				<div class="z-group shrink-0 md:order-3" role="group" aria-label="Message actions">
@@ -270,7 +321,7 @@
 					</button>
 					<button
 						type="button"
-						class="z-icon-btn @max-md:hidden {important ? '!bg-[var(--z-ch-needs-fill)] !text-[var(--z-ch-needs-solid)]' : ''}"
+						class="z-icon-btn max-md:hidden @max-md:hidden {important ? '!bg-[var(--z-ch-needs-fill)] !text-[var(--z-ch-needs-solid)]' : ''}"
 						aria-label={important ? 'Not important' : 'Mark important'}
 						aria-pressed={important}
 						title={important ? 'Not important (i)' : 'Mark important (i)'}
@@ -278,11 +329,11 @@
 					>
 						<ActionIcon name={important ? 'important-filled' : 'important'} class="size-[15px]" />
 					</button>
-					<button type="button" class="z-icon-btn @max-md:hidden" aria-label={unread ? 'Mark read' : 'Mark unread'} title={unread ? 'Mark read' : 'Mark unread'} onclick={() => onAction(unread ? 'read' : 'unread')}>
+					<button type="button" class="z-icon-btn max-md:hidden @max-md:hidden" aria-label={unread ? 'Mark read' : 'Mark unread'} title={unread ? 'Mark read' : 'Mark unread'} onclick={() => onAction(unread ? 'read' : 'unread')}>
 						<ActionIcon name={unread ? 'mail-open' : 'mail'} class="size-[15px]" />
 					</button>
 					{#if archiveTarget}
-						<button type="button" class="z-icon-btn @max-md:hidden" aria-label="Archive" title="Archive (e)" onclick={() => onAction('move', archiveTarget.id)}>
+						<button type="button" class="z-icon-btn max-md:hidden @max-md:hidden" aria-label="Archive" title="Archive (e)" onclick={() => onAction('move', archiveTarget.id)}>
 							<ActionIcon name="archive" class="size-[15px]" />
 						</button>
 					{/if}
@@ -322,10 +373,11 @@
 
 					On a desk it leads the bar, sitting over the left-aligned column it
 					answers; on a phone it trails it, as far from the back arrow as the
-					bar goes. Whether it spells "Reply" is a `@container` question, not a
-					viewport one — a tablet's second pane is as narrow as a phone. How
-					*big* the targets are stays viewport-driven: a narrow pane on a desk
-					is still being pointed at, not tapped.
+					bar goes. Whether it spells "Reply" is a `@container` question — a
+					tablet's second pane is as narrow as a phone — and a viewport one too,
+					because the phone-sized button below is a square with room for the
+					arrow only. How *big* the targets are stays viewport-driven: a narrow
+					pane on a desk is still being pointed at, not tapped.
 				-->
 				<div
 					bind:this={replyEl}
@@ -333,7 +385,7 @@
 				>
 					<button
 						type="button"
-						class="flex h-7 items-center gap-[7px] rounded-l-[7px] px-[11px] text-[13px] font-medium text-[var(--z-body)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0"
+						class="flex h-7 items-center gap-[7px] rounded-l-[7px] px-[11px] text-[13px] font-medium text-[var(--z-body)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0 pointer-coarse:h-11 pointer-coarse:min-w-11 pointer-coarse:justify-center"
 						title="Reply"
 						aria-label="Reply"
 						onclick={() => latest && onCompose('reply', latest, replyAnchor())}
@@ -342,7 +394,7 @@
 							<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
 							<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 						</svg>
-						<span class="@max-md:hidden">Reply</span>
+						<span class="max-md:hidden @max-md:hidden">Reply</span>
 					</button>
 
 					<!-- Hangs from the caret rather than back over the list: the bar's
@@ -350,7 +402,7 @@
 					     to the right of it, and the popper shifts it back in. -->
 					<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 						<Menu.Trigger
-							class="flex h-7 w-[26px] items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-9"
+							class="flex h-7 w-[26px] items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-11 pointer-coarse:h-11 pointer-coarse:w-11"
 							aria-label="More message actions"
 							title="More actions"
 						>
@@ -358,7 +410,9 @@
 						</Menu.Trigger>
 						<Portal>
 							<Menu.Positioner>
-								<Menu.Content class="z-menu z-40 w-56">
+								<!-- The folder list has no upper bound, so the menu is as tall
+								     as the room under the caret and scrolls inside itself. -->
+								<Menu.Content class="z-menu z-40 max-h-[var(--available-height)] w-56 overflow-y-auto overscroll-contain max-md:[&_.z-menu-item]:min-h-11">
 									<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => latest && onCompose('replyAll', latest, replyAnchor())}>
 										Reply all
 									</Menu.Item>
@@ -448,79 +502,19 @@
 	{:else if latest && rendered}
 		<!-- The column is left-aligned, not centred: centring walks the message away
 		     from the list it came from and from the Reply buttons above it. -->
-		<div class="min-h-0 flex-1 overflow-y-auto px-6 py-6 select-text @max-md:px-4 @max-md:py-4 overscroll-contain">
+		<div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-6 select-text @max-md:px-4 @max-md:py-4 overscroll-contain">
 			<div class="flex max-w-[680px] flex-col gap-5">
-				<h1 class="text-[24px] leading-[1.15] font-bold tracking-[-0.02em] text-[var(--z-ink)] @max-md:text-[19px]">
+				<!-- A subject can be one long word (a URL, a ticket id): it breaks
+				     rather than widening the column it heads. -->
+				<h1 class="text-[24px] leading-[1.15] font-bold tracking-[-0.02em] [overflow-wrap:anywhere] text-[var(--z-ink)] @max-md:text-[19px]">
 					{latest.subject}
 				</h1>
 
 				<!--
-					The sender card wears the thread's channel — the row you clicked,
-					grown up. That handoff is what makes list and reader read as one
-					object rather than two panes.
-
-					The card never stacks: when it did, the date slid under the sender on
-					a narrow pane and moved again on a wide one. It belongs in the corner
-					the eye goes to for it, so the row stays a row and the address line
-					truncates instead.
+					What came before comes before: the earlier messages sit above the
+					latest one's card, oldest first, so that card stays attached to its
+					own body and the thread reads top to bottom in the order it was written.
 				-->
-				<div
-					class="z-railed z-hue-wash flex items-start justify-between gap-3 rounded-[10px] border py-3 pr-3 pl-[18px]"
-					style="{channelStyle(channel)};--z-rail-inset:10px"
-				>
-					<div class="flex min-w-0 items-start gap-[11px]">
-						{#if prefs.showAvatars}
-							<span class="z-avatar !size-[34px] !text-[12px] @max-md:!size-8 @max-md:!text-[11px]" style={identityStyle(latest.from.email || latest.from.name)} aria-hidden="true">
-								{initials(latest.from.name || latest.from.email, latest.from.email)}
-							</span>
-						{/if}
-						<div class="min-w-0">
-							<div class="flex items-center gap-2">
-								<span class="truncate text-[14px] font-bold text-[var(--z-ink)]">{latest.from.name || latest.from.email}</span>
-								{#if stateLabel}<span class="z-chip @max-md:hidden">{stateLabel}</span>{/if}
-							</div>
-							<div class="z-mono mt-0.5 truncate text-[11px]" style:color={channel.ink}>
-								{latest.from.email} · {recipientsLabel(latest)}
-							</div>
-						</div>
-					</div>
-					<!--
-						Top right of the card, at every width, and drawn the way the list
-						row draws its time: plain mono, no pill. A white chip on the wash
-						was the brightest thing in the card and read as a control — the
-						date is the one number you look up mid-read, not something to
-						press.
-
-						The state chip the name has no room for on a narrow pane falls in
-						under it.
-					-->
-					<div class="flex shrink-0 flex-col items-end gap-1.5 pt-px">
-						<time
-							class="z-mono text-[11.5px] font-medium"
-							style:color={channel.ink}
-							datetime={latest.receivedAt}
-						>
-							{formatReaderTime(latest.receivedAt)}
-						</time>
-						{#if stateLabel}<span class="z-chip @md:hidden">{stateLabel}</span>{/if}
-					</div>
-				</div>
-
-				{#if mailboxKind === 'scheduled' && onCancelSend}
-					<div class="flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
-						<span class="min-w-0 flex-1">Waiting to be sent. Cancel to take it back as a draft.</span>
-						<button type="button" class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px]" onclick={() => onCancelSend(latest)}>
-							Cancel send
-						</button>
-					</div>
-				{/if}
-
-				{#if shared}
-					<p class="rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] px-3.5 py-2 text-[12.5px] leading-snug text-[var(--z-muted)]">
-						In <span class="font-semibold text-[var(--z-strong)]">{shared.name}</span>, shared with you. Replies go from your own address.
-					</p>
-				{/if}
-
 				<!-- The count here and the count chip on the list row are the same
 				     number about the same thread, so they are the same chip. -->
 				{#if earlier.length > 0 && !earlierExpanded}
@@ -531,12 +525,14 @@
 					>
 						<span class="flex min-w-0 items-center gap-[9px]">
 							<span class="z-count" style="{channelStyle(channel)};background:{channel.fill}">{earlier.length}</span>
+							<!-- The label gives up its tail, then the action its words, before
+							     either is cut mid-word on a narrow pane. -->
 							<span class="truncate text-[13px] font-medium text-[var(--z-strong)]">
-								Earlier {earlier.length === 1 ? 'message' : 'messages'} in this conversation
+								Earlier {earlier.length === 1 ? 'message' : 'messages'}<span class="@max-md:hidden"> in this conversation</span>
 							</span>
 						</span>
 						<span class="flex shrink-0 items-center gap-[5px] text-[12px] font-semibold text-[var(--z-soft)] transition-colors group-hover:text-[var(--z-ink)]">
-							Expand history
+							<span class="@max-sm:sr-only">Expand history</span>
 							<ActionIcon name="chevron" class="size-3" />
 						</span>
 					</button>
@@ -547,7 +543,8 @@
 						<div class="flex items-center gap-2.5" role="separator">
 							<span class="z-caption">History</span>
 							<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
-							<button type="button" class="shrink-0 text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)]" onclick={() => (earlierExpanded = false)}>
+							<!-- The ::before is the thumb's share: a 44px target around an 18px word. -->
+							<button type="button" class="relative shrink-0 text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)] max-md:before:absolute max-md:before:-inset-x-2 max-md:before:-inset-y-[13px] max-md:before:content-['']" onclick={() => (earlierExpanded = false)}>
 								Collapse
 							</button>
 						</div>
@@ -565,13 +562,13 @@
 								<div class="flex items-center justify-between gap-2">
 									<span class="truncate text-[13px] font-semibold text-[var(--z-body)]">{message.from.name || message.from.email}</span>
 									<span class="flex shrink-0 items-center gap-1.5">
-										<time class="z-mono text-[10.5px] text-[var(--z-soft)]" datetime={message.receivedAt}>
+										<time class="z-mono text-[10.5px] text-[var(--z-soft)] max-md:text-[12px]" datetime={message.receivedAt}>
 											{formatReaderTime(message.receivedAt)}
 										</time>
 										<!-- Answering an earlier message quotes that one, not the latest. -->
 										<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 											<Menu.Trigger
-												class="z-icon-btn !size-6 max-md:!size-9"
+												class="z-icon-btn !size-6 max-md:!size-10"
 												data-reply-to={message.id}
 												aria-label="Reply to this message"
 												title="Reply to this message"
@@ -594,7 +591,7 @@
 									</span>
 								</div>
 								<div class="mt-1.5 text-[13px] leading-[1.6] text-[var(--z-strong)]">
-									<EmailHtmlFrame html={item.html} plain={!item.isHtml} />
+									<EmailHtmlFrame html={item.html} plain={!item.isHtml} remote={showImages} />
 								</div>
 								{#if message.attachments.length > 0}
 									<div class="mt-2.5">{@render chips(message.attachments)}</div>
@@ -604,20 +601,128 @@
 					</div>
 				{/if}
 
-				{#if blockedExternal && !showImages}
+				<!--
+					The sender card wears the thread's channel — the row you clicked,
+					grown up. That handoff is what makes list and reader read as one
+					object rather than two panes.
+
+					The card never stacks: when it did, the date slid under the sender on
+					a narrow pane and moved again on a wide one. It belongs in the corner
+					the eye goes to for it, so the row stays a row and the address line
+					truncates instead.
+
+					The address line is the way into everyone the message went to: it
+					opens the full To / Cc / Bcc under the row, names and addresses.
+				-->
+				<div
+					class="z-railed z-hue-wash rounded-[10px] border py-3 pr-3 pl-[18px]"
+					style="{channelStyle(channel)};--z-rail-inset:10px"
+				>
+					<div class="flex items-start justify-between gap-3">
+						<div class="flex min-w-0 items-start gap-[11px]">
+							{#if prefs.showAvatars}
+								<span class="z-avatar !size-[34px] !text-[12px] @max-md:!size-8 @max-md:!text-[11px]" style={identityStyle(latest.from.email || latest.from.name)} aria-hidden="true">
+									{initials(latest.from.name || latest.from.email, latest.from.email)}
+								</span>
+							{/if}
+							<div class="min-w-0">
+								<div class="flex items-center gap-2">
+									<span class="truncate text-[14px] font-bold text-[var(--z-ink)]">{latest.from.name || latest.from.email}</span>
+									{#if stateLabel}<span class="z-chip @max-md:hidden">{stateLabel}</span>{/if}
+								</div>
+								<!-- The ::before grows the target to the card's edge: the line
+								     itself is 18px tall. -->
+								<button
+									type="button"
+									class="z-mono relative mt-0.5 flex w-fit max-w-full items-center gap-1.5 rounded-[3px] text-left text-[11px] before:absolute before:-inset-x-1.5 before:-inset-y-3 before:content-[''] max-md:text-[12px]"
+									style:color={channel.ink}
+									aria-expanded={recipientsOpen}
+									aria-controls="reader-recipients"
+									title={recipientsOpen ? 'Hide recipients' : 'Show all recipients'}
+									onclick={() => (recipientsOpen = !recipientsOpen)}
+								>
+									<span class="truncate">{latest.from.email} · {recipientsLabel(latest)}</span>
+									<ActionIcon name="chevron" class="size-2.5 shrink-0 transition-transform {recipientsOpen ? 'rotate-180' : ''}" />
+								</button>
+							</div>
+						</div>
+						<!--
+							Top right of the card, at every width, and drawn the way the list
+							row draws its time: plain mono, no pill. A white chip on the wash
+							was the brightest thing in the card and read as a control — the
+							date is the one number you look up mid-read, not something to
+							press.
+
+							The state chip the name has no room for on a narrow pane falls in
+							under it.
+						-->
+						<div class="flex shrink-0 flex-col items-end gap-1.5 pt-px">
+							<time
+								class="z-mono text-[11.5px] font-medium max-md:text-[12px]"
+								style:color={channel.ink}
+								datetime={latest.receivedAt}
+							>
+								{formatReaderTime(latest.receivedAt)}
+							</time>
+							{#if stateLabel}<span class="z-chip @md:hidden">{stateLabel}</span>{/if}
+						</div>
+					</div>
+
+					{#if recipientsOpen}
+						<dl
+							id="reader-recipients"
+							class="mt-2.5 grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1.5 border-t pt-2.5 text-[12.5px] leading-[1.45]"
+							style:border-color={channel.stroke}
+						>
+							{#each recipientRows as [label, people] (label)}
+								<dt class="font-medium" style:color={channel.ink}>{label}</dt>
+								<dd class="min-w-0">
+									{#each people as person, at (at)}
+										<div class="[overflow-wrap:anywhere]">
+											<!-- A bare address comes through with itself for a name. -->
+											{#if person.name && person.name !== person.email}<span class="font-medium text-[var(--z-ink)]">{person.name}</span>{/if}
+											<span class="z-mono text-[12px]" style:color={channel.ink}>{person.email}</span>
+										</div>
+									{/each}
+								</dd>
+							{/each}
+						</dl>
+					{/if}
+				</div>
+
+				{#if mailboxKind === 'scheduled' && onCancelSend}
 					<div class="flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
-						<span class="min-w-0 flex-1">Remote images are hidden, so the sender can't see that you opened this.</span>
-						<button type="button" class="shrink-0 text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)]" onclick={() => setPref('showRemoteImages', true)}>
-							Always
-						</button>
-						<button type="button" class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px]" onclick={() => (imagesFor = latest.id)}>
-							Show images
+						<span class="min-w-0 flex-1">Waiting to be sent. Cancel to take it back as a draft.</span>
+						<button type="button" class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px]" onclick={() => onCancelSend(latest)}>
+							Cancel send
 						</button>
 					</div>
 				{/if}
 
+				{#if shared}
+					<p class="rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] px-3.5 py-2 text-[12.5px] leading-snug text-[var(--z-muted)]">
+						In <span class="font-semibold text-[var(--z-strong)]">{shared.name}</span>, shared with you. Replies go from your own address.
+					</p>
+				{/if}
+
+				{#if blockedExternal && !showImages}
+					<!-- The sentence asks for a readable measure; where the pane cannot
+					     give it that beside the buttons, they wrap under it. -->
+					<div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+						<span class="min-w-0 flex-1 basis-52">Remote images are hidden, so the sender can't see that you opened this.</span>
+						<span class="flex shrink-0 items-center gap-3">
+							<button type="button" class="text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)]" onclick={() => setPref('showRemoteImages', true)}>
+								Always
+							</button>
+							<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px]" onclick={() => (imagesFor = latest.id)}>
+								Show images
+							</button>
+						</span>
+					</div>
+				{/if}
+
 				<div class="text-[14px] leading-[1.65] text-[var(--z-body)]">
-					<EmailHtmlFrame html={rendered.html} plain={!rendered.isHtml} />
+					<EmailHtmlFrame html={rendered.html} plain={!rendered.isHtml} remote={showImages} />
 				</div>
 
 				{#if rendered.attachments.length > 0}
@@ -626,7 +731,7 @@
 						<div class="mb-2.5 flex items-center gap-2.5">
 							<span class="z-caption">Attachments</span>
 							<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
-							<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)]">{rendered.attachments.length}</span>
+							<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)] max-md:text-[12px]">{rendered.attachments.length}</span>
 						</div>
 						{@render chips(rendered.attachments)}
 					</div>
@@ -634,8 +739,8 @@
 			</div>
 		</div>
 
-		{#if previewAt !== null && previewable.length > 0}
-			<AttachmentPreview items={previewable} account={shared?.id} bind:index={previewAt} onClose={() => (previewAt = null)} />
+		{#if previewLayer.open && previewAt !== null && previewable.length > 0}
+			<AttachmentPreview items={previewable} account={shared?.id} bind:index={previewAt} onClose={closePreview} />
 		{/if}
 	{:else}
 		<div class="flex flex-1 items-center justify-center p-6 text-center">
@@ -648,7 +753,7 @@
 				</span>
 				<p class="text-[14px] font-bold text-[var(--z-ink)]">No message selected</p>
 				<p class="text-[12.5px] leading-[1.7] text-[var(--z-muted)] max-md:hidden">
-					Pick a conversation, or move with <kbd class="z-kbd !text-[var(--z-strong)]">j</kbd> <kbd class="z-kbd !text-[var(--z-strong)]">k</kbd>
+					Pick a conversation<span class="pointer-coarse:hidden">, or move with <kbd class="z-kbd !text-[var(--z-strong)]">j</kbd> <kbd class="z-kbd !text-[var(--z-strong)]">k</kbd></span>
 				</p>
 			</div>
 		</div>
@@ -657,7 +762,8 @@
 
 {#snippet chips(attachments: MessageAttachment[])}
 	<div class="flex flex-wrap gap-[9px]">
-		{#each attachments as attachment (attachment.blobId)}
+		<!-- Keyed by position: the same file attached twice is one blobId on a content-addressed store. -->
+		{#each attachments as attachment, position (position)}
 			{@const badge = attachmentBadge(attachment.type)}
 			{@const url = attachmentUrl(attachment.blobId, attachment.name, attachment.type, shared?.id)}
 			{@const at = previewable.indexOf(attachment)}
@@ -675,11 +781,11 @@
 						{attachmentKind(attachment.name, attachment.type)}
 					</span>
 				{/if}
-				<span class="max-w-48 truncate text-[13px] font-medium text-[var(--z-body)]">{attachment.name}</span>
-				<span class="z-mono text-[10.5px] text-[var(--z-soft)]">{formatBytes(attachment.size)}</span>
+				<span class="max-w-48 min-w-0 truncate text-[13px] font-medium text-[var(--z-body)]">{attachment.name}</span>
+				<span class="z-mono shrink-0 text-[10.5px] whitespace-nowrap text-[var(--z-soft)] max-md:text-[12px]">{formatBytes(attachment.size)}</span>
 			{/snippet}
 			{#if at >= 0}
-				<button type="button" class={chipClass} title="Open {attachment.name}" onclick={() => (previewAt = at)}>
+				<button type="button" class={chipClass} title="Open {attachment.name}" onclick={() => openPreview(at)}>
 					{@render chip()}
 				</button>
 			{:else}

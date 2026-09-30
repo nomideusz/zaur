@@ -6,9 +6,10 @@ process.env.TZ = 'UTC';
 import {
 	makeRecipient,
 	commitRecipient,
+	highlightedSuggestion,
 	parseAddressList,
 	parseRecipients,
-	recipientEmails,
+	outgoingRecipients,
 	filterContacts
 } from '../src/lib/compose/recipients.ts';
 import {
@@ -26,6 +27,7 @@ import {
 	maximizedRect,
 	openingPosition,
 	clampPanel,
+	fitPanel,
 	PANEL_DEFAULT_W,
 	PANEL_MAX_W,
 	PANEL_TYPICAL_H
@@ -133,6 +135,18 @@ test('commitRecipient: suggestion wins; free-form needs an address; plain words 
 	assert.equal(commitRecipient('bob', null).recipient, null);
 });
 
+test('highlightedSuggestion: a closed list commits nobody, whoever sorts first', () => {
+	const book = [
+		{ name: '42 Ltd', email: 'hello@42.example', meta: 'Contact' },
+		{ name: 'Ada', email: 'ada@x.com', meta: 'recent' }
+	];
+	// Tab or Enter in an empty field: the list is closed, so nobody is added.
+	assert.equal(highlightedSuggestion(false, book, 0), null);
+	assert.equal(commitRecipient('', highlightedSuggestion(false, book, 0)).recipient, null);
+	assert.deepEqual(highlightedSuggestion(true, book, 1), book[1]);
+	assert.equal(highlightedSuggestion(true, [], 0), null);
+});
+
 test('parseAddressList: splits on commas/semicolons and dedupes case-insensitively', () => {
 	assert.deepEqual(parseAddressList('a@x.com, B@Y.com; b@y.com ,c@z.com'), [
 		'a@x.com',
@@ -150,10 +164,17 @@ test('parseRecipients: keeps the names an address list carries, dedupes on addre
 	assert.deepEqual(parseRecipients(''), []);
 });
 
-test('recipientEmails: the wire form of a chip list, deduped case-insensitively', () => {
+test('outgoingRecipients: the wire form of a chip list — deduped case-insensitively, names kept', () => {
 	assert.deepEqual(
-		recipientEmails([chip('Ada@X.com'), chip('ada@x.com'), chip(''), chip('bob@y.com')]),
-		['Ada@X.com', 'bob@y.com']
+		outgoingRecipients([
+			{ name: 'Ada Lovelace', email: 'Ada@X.com', meta: '' },
+			chip('ada@x.com'),
+			chip(''),
+			chip('bob@y.com'),
+			// A chip "named" by its own address has no name worth a header.
+			{ name: 'cara@z.com', email: 'cara@z.com', meta: '' }
+		]),
+		[{ name: 'Ada Lovelace', email: 'Ada@X.com' }, { email: 'bob@y.com' }, { email: 'cara@z.com' }]
 	);
 });
 
@@ -183,22 +204,28 @@ test('replySeed: Re: prefix and webmail 1.0 plain-text quote shape', () => {
 	assert.equal(replySeed(detail({ subject: 'Re: Hello' })).subject, 'Re: Hello');
 });
 
-test('replyAllRecipients: walks the thread, skips me, dedupes case-insensitively', () => {
-	const thread = [
-		detail({ from: { name: 'Ada', email: 'ada@x.com' }, to: [{ name: '', email: 'me@zaur.app' }] }),
-		detail({
-			from: { name: 'Bob', email: 'bob@y.com' },
-			to: [
-				{ name: '', email: 'ada@x.com' },
-				{ name: '', email: 'ME@zaur.app' }
-			],
-			cc: [{ name: 'Cara', email: 'cara@z.com' }]
-		})
-	];
-	assert.deepEqual(
-		replyAllRecipients(thread, new Set(['me@zaur.app'])).map((r) => r.email),
-		['ada@x.com', 'bob@y.com', 'cara@z.com']
-	);
+test('replyAllRecipients: the answered message only — sender and To in To, Cc stays Cc, without me', () => {
+	const me = new Set(['me@zaur.app']);
+	const message = detail({
+		from: { name: 'Bob', email: 'bob@y.com' },
+		to: [
+			{ name: '', email: 'ada@x.com' },
+			{ name: '', email: 'ME@zaur.app' }
+		],
+		cc: [
+			{ name: 'Cara', email: 'cara@z.com' },
+			{ name: '', email: 'Ada@x.com' }
+		]
+	});
+	const all = replyAllRecipients(message, me);
+	assert.deepEqual(all.to.map((r) => r.email), ['bob@y.com', 'ada@x.com']);
+	assert.deepEqual(all.cc.map((r) => r.email), ['cara@z.com']);
+
+	// One I sent goes back to the people I sent it to; a note to myself, to me.
+	const mine = detail({ from: { name: 'Me', email: 'me@zaur.app' }, to: [{ name: 'Ada', email: 'ada@x.com' }] });
+	assert.deepEqual(replyAllRecipients(mine, me).to.map((r) => r.email), ['ada@x.com']);
+	const note = detail({ from: { name: 'Me', email: 'me@zaur.app' }, to: [{ name: 'Me', email: 'me@zaur.app' }] });
+	assert.deepEqual(replyAllRecipients(note, me).to.map((r) => r.email), ['me@zaur.app']);
 });
 
 test('forwardSeed: Fwd: prefix and forwarded header block', () => {
@@ -301,6 +328,24 @@ test('openingPosition: a corner button still opens fully inside the shell', () =
 			assert.ok(y >= 12 && y + PANEL_TYPICAL_H <= 892, `y in shell: ${y}`);
 		}
 	}
+});
+
+test('openingPosition: never over the top bar, even on a short shell', () => {
+	// 1024x700, the sidebar's New message button: the first panel's cascade used to put it at y=39.
+	const { y } = openingPosition({ left: 12, top: 640, right: 228, bottom: 674 }, 1024, 700, 0);
+	assert.ok(y >= 64, `below the 52px bar: ${y}`);
+	assert.equal(openingPosition({ left: 0, top: 0, right: 30, bottom: 30 }, 1024, 700, 0).y, 64);
+});
+
+test('fitPanel: a stored rect slides back into a shrunken shell, and shrinks only if it must', () => {
+	// Room enough: untouched.
+	assert.deepEqual(fitPanel({ x: 278, y: 120, w: 760, h: 460 }, 1440, 900), { x: 278, y: 120, w: 760, h: 460 });
+	// 1440 → 1024: slides left, keeps its width.
+	assert.deepEqual(fitPanel({ x: 278, y: 120, w: 760, h: 460 }, 1024, 700), { x: 256, y: 120, w: 760, h: 460 });
+	// → 800x600: still whole, against the edge.
+	assert.deepEqual(fitPanel({ x: 278, y: 300, w: 760, h: 460 }, 800, 600), { x: 32, y: 132, w: 760, h: 460 });
+	// Smaller than the panel: shrinks to the shell.
+	assert.deepEqual(fitPanel({ x: 278, y: 300, w: 960, h: 800 }, 800, 600), { x: 8, y: 8, w: 784, h: 584 });
 });
 
 test('clampPanel: enforces min size and keeps the panel inside the shell', () => {

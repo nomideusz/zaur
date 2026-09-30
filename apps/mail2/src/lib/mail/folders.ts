@@ -31,3 +31,29 @@ export function withoutBranch<T extends { id: string; depth: number }>(list: T[]
 	while (end < list.length && list[end]!.depth > list[at]!.depth) end += 1;
 	return [...list.slice(0, at), ...list.slice(end)];
 }
+
+/**
+ * Of these messages, the ones still filed in `mailboxId`: all a destroy asked
+ * for from that folder may touch. A row left on screen after an Undo, or after
+ * a move made on another device, names a message that lives somewhere else now.
+ */
+export function stillIn(emails: { id: string; mailboxIds?: Record<string, boolean> }[], mailboxId: string): string[] {
+	return emails.filter((email) => email.mailboxIds?.[mailboxId] === true).map((email) => email.id);
+}
+
+/**
+ * The folder an address names: `?folder=` in your own mailbox or, with
+ * `?shared=`, in that one. The inbox without it, and for an id the mailbox
+ * does not hold. Null while that mailbox is not loaded, or no longer shared.
+ */
+export function mailboxOfUrl<T extends { id: string; kind: string }>(
+	params: URLSearchParams,
+	own: readonly T[] | undefined,
+	shared: readonly { id: string; mailboxes: readonly T[] }[] | undefined
+): { id: string; account: string | null } | null {
+	const account = params.get('shared');
+	const list = account ? shared?.find((one) => one.id === account)?.mailboxes : own;
+	const folder = params.get('folder');
+	const box = list?.find((one) => one.id === folder) ?? list?.find((one) => one.kind === 'inbox') ?? list?.[0];
+	return box ? { id: box.id, account } : null;
+}

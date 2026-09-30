@@ -93,6 +93,56 @@ export const events = query(
 	}
 );
 
+export interface EventParticipant {
+	name: string;
+	email: string;
+	/** What they answered; `needs-action` until they do. */
+	status: 'accepted' | 'declined' | 'tentative' | 'needs-action';
+	organizer: boolean;
+}
+
+interface RawParticipant {
+	name?: string;
+	email?: string;
+	calendarAddress?: string;
+	sendTo?: Record<string, string>;
+	roles?: Record<string, boolean>;
+	participationStatus?: string;
+}
+
+/**
+ * Who an event was sent to and what each answered — read-only, asked for when
+ * an event is opened. mail-core's event list does not carry participants, and
+ * an invitation that arrived by mail should at least say who else is coming.
+ * For an occurrence, pass the series' id: the list is the series'.
+ */
+export const eventParticipants = query(
+	v.object({ id: ID, accountId: ACCOUNT }),
+	async ({ id, accountId }): Promise<EventParticipant[]> => {
+		const client = await connect();
+		if (!client.hasCalendars()) return [];
+		const response = await client.request(
+			[['CalendarEvent/get', { accountId: accountId ?? client.getCalendarAccountId(), ids: [id], properties: ['participants'] }, 'p']],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:calendars']
+		);
+		const [found] = (response.methodResponses?.[0]?.[1]?.list as { participants?: Record<string, RawParticipant> | null }[] | undefined) ?? [];
+		return Object.values(found?.participants ?? {})
+			.map((person): EventParticipant => {
+				// JSCalendar has moved the address around: `email`, then `calendarAddress`, with `sendTo.imip` throughout.
+				const email = (person.email ?? person.calendarAddress ?? person.sendTo?.imip ?? '').replace(/^mailto:/i, '');
+				const status = person.participationStatus;
+				return {
+					name: person.name?.trim() || email,
+					email,
+					status: status === 'accepted' || status === 'declined' || status === 'tentative' ? status : 'needs-action',
+					organizer: Boolean(person.roles?.owner || person.roles?.chair)
+				};
+			})
+			.filter((person) => person.name)
+			.sort((a, b) => Number(b.organizer) - Number(a.organizer) || a.name.localeCompare(b.name));
+	}
+);
+
 const eventInput = v.object({
 	calendarId: ID,
 	accountId: v.optional(v.nullable(v.pipe(v.string(), v.maxLength(200)))),

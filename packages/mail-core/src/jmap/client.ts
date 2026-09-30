@@ -13,7 +13,13 @@ import type {
 } from './types';
 import { allOf, parseSearchQuery } from '../mail/search-query';
 import { emailQueryHasMore } from './email-query';
-import { buildEmailCreateData, type ComposeFormat, type EmailAttachmentInput } from './email-build';
+import {
+	buildEmailCreateData,
+	recipientEmail,
+	type ComposeFormat,
+	type EmailAttachmentInput,
+	type EmailRecipientInput
+} from './email-build';
 import { resolveMailAccountId } from './account';
 import { buildDownloadUrl, buildUploadUrl } from './urls';
 import type {
@@ -2575,9 +2581,9 @@ export class JMAPClient {
 
 	async saveDraft(params: {
 		jmapDraftId?: string;
-		to: string[];
-		cc?: string[];
-		bcc?: string[];
+		to: EmailRecipientInput[];
+		cc?: EmailRecipientInput[];
+		bcc?: EmailRecipientInput[];
 		subject: string;
 		body: string;
 		bodyHtml?: string;
@@ -2667,12 +2673,12 @@ export class JMAPClient {
 	}
 
 	async sendEmail(
-		to: string[],
+		to: EmailRecipientInput[],
 		subject: string,
 		body: string,
 		options?: {
-			cc?: string[];
-			bcc?: string[];
+			cc?: EmailRecipientInput[];
+			bcc?: EmailRecipientInput[];
 			identityId?: string;
 			fromEmail?: string;
 			fromName?: string;
@@ -2749,7 +2755,9 @@ export class JMAPClient {
 				1,
 				Math.round((new Date(options.sendAt).getTime() - Date.now()) / 1000)
 			);
-			const rcptTo = [...new Set([...to, ...(options.cc ?? []), ...(options.bcc ?? [])])];
+			const rcptTo = [
+				...new Set([...to, ...(options.cc ?? []), ...(options.bcc ?? [])].map(recipientEmail))
+			];
 			submission.envelope = {
 				mailFrom: { email: fromEmail, parameters: { holdfor: String(holdSeconds) } },
 				rcptTo: rcptTo.map((email) => ({ email }))

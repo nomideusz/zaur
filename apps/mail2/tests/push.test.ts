@@ -43,7 +43,7 @@ test('incomingMailMessage: one message links to its thread; several link to the 
 		title: 'New mail',
 		body: 'Ada: Hello',
 		url: '/?thread=t%2F1',
-		tag: 'zaur-new-mail-nom@zaur.app',
+		tag: 'zaur-new-mail-nom@zaur.app-t/1',
 		unreadCount: 3
 	});
 
@@ -53,6 +53,7 @@ test('incomingMailMessage: one message links to its thread; several link to the 
 	);
 	assert.equal(many.body, '2 new messages in Inbox');
 	assert.equal(many.url, '/');
+	assert.equal(many.tag, 'zaur-new-mail-nom@zaur.app');
 });
 
 test('incomingMailMessage: with several accounts, says which and switches to it on click', () => {

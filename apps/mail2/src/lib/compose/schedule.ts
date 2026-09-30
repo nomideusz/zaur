@@ -29,7 +29,8 @@ export function buildSchedulePresets(now = Date.now()): SchedulePreset[] {
 	return presets;
 }
 
-const scheduleTimeFormat = new Intl.DateTimeFormat(undefined, {
+// 24-hour, like every other time in Mail (`formatListTime`), whatever the browser's locale.
+const scheduleTimeFormat = new Intl.DateTimeFormat('en-GB', {
 	weekday: 'short',
 	hour: '2-digit',
 	minute: '2-digit'

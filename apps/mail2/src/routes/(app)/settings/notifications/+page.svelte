@@ -15,7 +15,10 @@
 	// Notifications belong to the device: read from the browser each visit.
 	let push = $state<PushStatus | null>(null);
 	let busy = $state(false);
+	// The icon's count needs the Badging API: not in Firefox, and on an iPhone only once installed.
+	let canBadge = $state(true);
 	onMount(() => {
+		canBadge = 'setAppBadge' in navigator;
 		pushStatus()
 			.then((next) => (push = next))
 			.catch(() => (push = 'unsupported'));
@@ -88,13 +91,21 @@
 			</button>
 		{/if}
 	</div>
-	<!-- The count rides on each notification, so it only ever appears with them on; the setting follows the account. -->
-	<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-hairline)] px-4 py-3">
+	<!-- The count follows the inbox while the app is open and rides on each notification; the setting follows the account. -->
+	<label class="flex {canBadge ? 'cursor-pointer' : ''} items-center justify-between gap-4 border-t border-[var(--z-hairline)] px-4 py-3">
 		<span class="min-w-0">
 			<span class="block text-[13.5px] font-medium text-[var(--z-body)]">Unread count on the app icon</span>
-			<span class="mt-[1px] block text-[12px] leading-[1.4] text-[var(--z-soft)]">Off, new mail still notifies, and the icon stays bare.</span>
+			<span class="mt-[1px] block text-[12px] leading-[1.4] text-[var(--z-soft)]">
+				{canBadge ? 'Off, new mail still notifies, and the icon stays bare.' : 'This browser cannot put a count on the icon.'}
+			</span>
 		</span>
-		<input type="checkbox" class="z-check" checked={prefs.appBadge} onchange={(event) => setPref('appBadge', event.currentTarget.checked)} />
+		<input
+			type="checkbox"
+			class="z-check disabled:cursor-default disabled:opacity-60"
+			disabled={!canBadge}
+			checked={prefs.appBadge}
+			onchange={(event) => setPref('appBadge', event.currentTarget.checked)}
+		/>
 	</label>
 	{#if session && muted}
 		<h2 class="z-card-head border-t border-[var(--z-hairline)]">Accounts on this device</h2>

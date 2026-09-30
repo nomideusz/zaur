@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { keyboardFrame } from '../src/lib/keyboard.ts';
+import { keyboardFrame, layoutShrank } from '../src/lib/keyboard.ts';
 
 test('keyboard: a layout that already shrank reports nothing', () => {
 	// Chrome with interactive-widget=resizes-content: innerHeight follows the keyboard.
@@ -18,4 +18,11 @@ test('keyboard: iOS overlay lifts the shell to the visible strip', () => {
 
 test('keyboard: a pan is kept, so the header is not translated twice', () => {
 	assert.deepEqual(keyboardFrame(844, 480, 140), { height: 480, top: 140 });
+});
+
+test('keyboard: Chrome shrinks the layout instead, which counts only while typing', () => {
+	assert.equal(layoutShrank(839, 539, true), true);
+	// A short window, or the toolbar sliding away, is not a keyboard.
+	assert.equal(layoutShrank(839, 539, false), false);
+	assert.equal(layoutShrank(839, 783, true), false);
 });

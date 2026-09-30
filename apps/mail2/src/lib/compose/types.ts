@@ -127,10 +127,16 @@ export interface Draft {
 
 export type ReplyMode = 'reply' | 'replyAll' | 'forward';
 
+/** An address as it goes to the server; the display name rides along when the chip has one. */
+export interface OutgoingRecipient {
+	name?: string;
+	email: string;
+}
+
 export interface SendPayload {
-	to: string[];
-	cc: string[];
-	bcc: string[];
+	to: OutgoingRecipient[];
+	cc: OutgoingRecipient[];
+	bcc: OutgoingRecipient[];
 	subject: string;
 	body: string;
 	bodyHtml?: string;
@@ -160,9 +166,9 @@ export interface DraftSeed {
 export interface DraftSaveInput {
 	jmapDraftId: string | null;
 	from: string;
-	to: string[];
-	cc: string[];
-	bcc: string[];
+	to: OutgoingRecipient[];
+	cc: OutgoingRecipient[];
+	bcc: OutgoingRecipient[];
 	subject: string;
 	body: string;
 	bodyHtml: string;

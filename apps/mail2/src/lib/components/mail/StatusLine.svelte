@@ -3,9 +3,11 @@
 		mailboxName: string | null;
 		unseen: number;
 		quota: { used: number; limit: number } | null | undefined;
+		/** Messages in the outbox, still to go out. */
+		waiting?: number;
 	}
 
-	let { mailboxName, unseen, quota }: Props = $props();
+	let { mailboxName, unseen, quota, waiting = 0 }: Props = $props();
 
 	const gb = (bytes: number) => (bytes / 1024 ** 3).toFixed(1);
 	const storageLabel = $derived(
@@ -14,20 +16,52 @@
 	const storagePct = $derived(
 		quota && quota.limit > 0 ? Math.min(100, Math.round((quota.used / quota.limit) * 100)) : 0
 	);
+
+	/**
+	 * Every key Mail answers to, in the order you would reach for them. The line
+	 * shows as many as fit from the front; `?` opens the whole list.
+	 */
+	const KEYS: [key: string, does: string, long: string][] = [
+		['j/k', 'move', 'Next / previous conversation'],
+		['↵', 'open', 'Open it (also o)'],
+		['x', 'select', 'Select it'],
+		['e', 'archive', 'Archive'],
+		['#', 'delete', 'Delete — forever, in Trash'],
+		['r', 'reply', 'Reply to the open conversation'],
+		['a', 'reply all', 'Reply to everyone'],
+		['f', 'forward', 'Forward'],
+		['s', 'flag', 'Flag, or remove the flag'],
+		['i', 'important', 'Mark important, or not'],
+		['u', 'unread', 'Mark unread, or read'],
+		['c', 'new', 'New message'],
+		['/', 'search', 'Search'],
+		['[', 'sidebar', 'Show or hide the mailboxes'],
+		['esc', 'back', 'Clear the selection or the search; minimise a draft'],
+		['⌘↵', 'send', 'Send the draft in front (Ctrl+Enter)']
+	];
+
+	let sheet = $state<HTMLDialogElement | null>(null);
+
+	/** The `?` key. */
+	export function showKeys() {
+		if (sheet?.open) sheet.close();
+		else sheet?.showModal();
+	}
 </script>
 
 <!--
 	The status line carries the two numbers the mark used to gesture at — how
 	much is unseen, how much is stored — and the keyboard's half of the row's
 	hover buttons. Hidden on a phone, where the folder chip already says the
-	count and 36px of hints is not what a small screen should spend.
+	count and 36px of hints is not what a small screen should spend; the hints
+	alone step out wherever the pointer is a finger, which has no keys to press.
 -->
 <footer
-	class="flex h-9 shrink-0 items-center justify-between border-t border-[var(--z-line)] bg-[var(--z-surface)] px-4 text-[12px] text-[var(--z-soft)] select-none max-md:hidden"
+	class="flex h-9 shrink-0 items-center justify-between gap-4 border-t border-[var(--z-line)] bg-[var(--z-surface)] px-4 text-[12px] text-[var(--z-soft)] select-none max-md:hidden"
 >
-	<div class="flex items-center gap-3">
+	<div class="flex min-w-0 flex-1 items-center gap-3">
 		{#if mailboxName}
-			<div class="flex items-center gap-[7px]">
+			<div class="flex shrink-0 items-center gap-[7px]">
 				<span
 					class="size-[7px] rounded-full border {unseen > 0
 						? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent)]'
@@ -41,23 +75,32 @@
 				<span>{mailboxName}</span>
 			</div>
 
-			<span class="hidden text-[var(--z-line)] md:inline">|</span>
+			{#if waiting > 0}
+				<span class="shrink-0 font-semibold text-[var(--z-ch-needs-ink)]" role="status">{waiting} waiting to send</span>
+			{/if}
 
-			<div class="z-mono hidden items-center gap-[5px] text-[10.5px] md:flex">
-				<kbd class="z-kbd">j/k</kbd> move
-				<kbd class="z-kbd">↵</kbd> open
-				<kbd class="z-kbd">x</kbd> select
-				<kbd class="z-kbd">s</kbd> flag
-				<kbd class="z-kbd">i</kbd> important
-				<kbd class="z-kbd">e</kbd> archive
+			<span class="text-[var(--z-line)] pointer-coarse:hidden">|</span>
+
+			<!-- One line high and wrapping: a hint that does not fit drops to a second
+			     line nobody sees, whole, instead of being cut mid-word. -->
+			<div class="z-mono flex h-[19px] min-w-0 flex-1 flex-wrap items-center gap-x-[9px] overflow-hidden text-[10.5px] pointer-coarse:hidden">
+				{#each KEYS.slice(0, 8) as [key, does] (key)}
+					<span class="flex h-[19px] items-center gap-[5px] whitespace-nowrap"><kbd class="z-kbd">{key}</kbd> {does}</span>
+				{/each}
 			</div>
-		{:else}
-			<span class="z-mono text-[10.5px] text-[var(--z-soft)]">Sign in to load your mail</span>
+			<button
+				type="button"
+				class="z-mono flex shrink-0 items-center gap-[5px] text-[10.5px] hover:text-[var(--z-strong)] pointer-coarse:hidden"
+				title="Keyboard shortcuts (?)"
+				onclick={showKeys}
+			>
+				<kbd class="z-kbd">?</kbd> all keys
+			</button>
 		{/if}
 	</div>
 
 	{#if storageLabel}
-		<div class="flex items-center gap-[9px]">
+		<div class="flex shrink-0 items-center gap-[9px]">
 			<span class="z-mono text-[10.5px]">{storageLabel}</span>
 			<div class="h-[7px] w-20 overflow-hidden rounded-full border border-[var(--z-line)] bg-[var(--z-sunken)]">
 				<div
@@ -68,3 +111,23 @@
 		</div>
 	{/if}
 </footer>
+
+<!-- A click on the backdrop lands on the dialog itself; one inside lands on the card. -->
+<dialog
+	bind:this={sheet}
+	class="m-auto w-[420px] max-w-[calc(100vw-32px)] rounded-[12px] outline-none border border-[var(--z-line)] bg-[var(--z-surface)] p-0 text-[var(--z-ink)] shadow-[var(--z-shadow-panel)] backdrop:bg-[var(--z-scrim)]"
+	aria-label="Keyboard shortcuts"
+	onclick={(event) => {
+		if (event.target === sheet) sheet?.close();
+	}}
+>
+	<div class="px-5 pt-4 pb-5">
+		<h2 class="z-caption mb-3">Keyboard shortcuts</h2>
+		<dl class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-[7px] text-[13px] text-[var(--z-strong)]">
+			{#each KEYS as [key, , long] (key)}
+				<dt><kbd class="z-kbd">{key}</kbd></dt>
+				<dd>{long}</dd>
+			{/each}
+		</dl>
+	</div>
+</dialog>

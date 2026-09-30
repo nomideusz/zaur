@@ -11,12 +11,25 @@ export interface EmailAttachmentInput {
 
 export type ComposeFormat = 'plain' | 'html';
 
+/** A recipient: a bare address, or one with the display name it goes out under. */
+export type EmailRecipientInput = string | { name?: string; email: string };
+
+export function recipientEmail(recipient: EmailRecipientInput): string {
+	return typeof recipient === 'string' ? recipient : recipient.email;
+}
+
+function recipientAddress(recipient: EmailRecipientInput): { name?: string; email: string } {
+	if (typeof recipient === 'string') return { email: recipient };
+	const name = recipient.name?.trim();
+	return { ...(name ? { name } : {}), email: recipient.email };
+}
+
 export interface EmailCreateInput {
 	fromEmail: string;
 	fromName?: string;
-	to: string[];
-	cc?: string[];
-	bcc?: string[];
+	to: EmailRecipientInput[];
+	cc?: EmailRecipientInput[];
+	bcc?: EmailRecipientInput[];
 	subject: string;
 	bodyText: string;
 	bodyHtml?: string;
@@ -32,9 +45,9 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 
 	const data: Record<string, unknown> = {
 		from: [{ ...(fromName ? { name: fromName } : {}), email: input.fromEmail }],
-		to: input.to.map((email) => ({ email })),
-		...(input.cc?.length ? { cc: input.cc.map((email) => ({ email })) } : {}),
-		...(input.bcc?.length ? { bcc: input.bcc.map((email) => ({ email })) } : {}),
+		to: input.to.map(recipientAddress),
+		...(input.cc?.length ? { cc: input.cc.map(recipientAddress) } : {}),
+		...(input.bcc?.length ? { bcc: input.bcc.map(recipientAddress) } : {}),
 		subject: input.subject,
 		mailboxIds: input.mailboxIds,
 		...(input.keywords ? { keywords: input.keywords } : {}),

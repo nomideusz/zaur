@@ -64,7 +64,7 @@
 		{#snippet startAs()}
 			<div class="z-group" role="group" aria-label="New messages start as">
 				{#each [{ plain: false, label: 'Rich text' }, { plain: true, label: 'Plain text' }] as mode (mode.label)}
-					<button type="button" class="z-segment !h-[28px] !px-[10px] !text-[12px]" aria-pressed={prefs.composePlain === mode.plain} onclick={() => setPref('composePlain', mode.plain)}>
+					<button type="button" class="z-segment !h-[28px] !px-[10px] !text-[12px] whitespace-nowrap" aria-pressed={prefs.composePlain === mode.plain} onclick={() => setPref('composePlain', mode.plain)}>
 						{mode.label}
 					</button>
 				{/each}

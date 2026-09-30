@@ -7,7 +7,8 @@ export interface Seed {
 	body: string;
 }
 
-export function formatWhen(iso: string, locale?: string): string {
+/** 24-hour by default, like every other time in Mail, whatever the browser's locale. */
+export function formatWhen(iso: string, locale = 'en-GB'): string {
 	return new Intl.DateTimeFormat(locale, { dateStyle: 'medium', timeStyle: 'short' }).format(
 		new Date(iso)
 	);
@@ -65,29 +66,29 @@ export function replySeed(message: MessageDetail, locale?: string): Seed {
 }
 
 /**
- * Reply-all recipients: every from/to/cc across the thread except my own
- * addresses, deduped case-insensitively, in first-seen order.
+ * Reply-all recipients, taken from the message being answered and nothing
+ * earlier: its sender and the people it was addressed to go in To, its Cc
+ * stays Cc. Whoever was dropped from the conversation along the way stays
+ * dropped. My own addresses are left out — except that a message I sent goes
+ * back to the people I sent it to. Deduped case-insensitively, To before Cc.
  */
 export function replyAllRecipients(
-	thread: MessageDetail[],
+	message: MessageDetail,
 	myEmails: Set<string>
-): { name: string; email: string }[] {
-	const out: { name: string; email: string }[] = [];
+): { to: { name: string; email: string }[]; cc: { name: string; email: string }[] } {
 	const seen = new Set<string>();
 	const isMe = (email: string) => myEmails.has(email.trim().toLowerCase());
-	const push = (person: { name: string; email: string }) => {
-		if (!person.email || isMe(person.email)) return;
-		const key = person.email.toLowerCase();
-		if (seen.has(key)) return;
-		seen.add(key);
-		out.push({ name: person.name, email: person.email });
-	};
-	for (const message of thread) {
-		push(message.from);
-		for (const person of message.to) push(person);
-		for (const person of message.cc) push(person);
-	}
-	return out;
+	const others = (people: { name: string; email: string }[]) =>
+		people.flatMap((person) => {
+			const key = person.email.trim().toLowerCase();
+			if (!key || isMe(key) || seen.has(key)) return [];
+			seen.add(key);
+			return [{ name: person.name, email: person.email }];
+		});
+	const to = others([message.from, ...message.to]);
+	const cc = others(message.cc);
+	// A note to myself has nobody else in it: answer it where it came from.
+	return to.length || cc.length ? { to, cc } : { to: [message.from], cc };
 }
 
 export function forwardSeed(message: MessageDetail, locale?: string): Seed {

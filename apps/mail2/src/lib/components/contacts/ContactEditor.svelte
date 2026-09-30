@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Contact, ContactInput } from '@zaur/mail-core';
 
 	/**
@@ -50,11 +51,22 @@
 	}
 
 	let draft = $state<ContactInput>(blank());
-	// A different contact arriving means a different form, not a patched one.
+	/** The form as it was opened, to tell a touched one from an untouched one. */
+	let opened = '';
+	// A different contact arriving means a different form, not a patched one —
+	// the same one refreshed (a push from the phone) must not wipe what was typed.
 	$effect(() => {
 		contact?.id;
-		draft = seed(contact);
+		untrack(() => {
+			draft = seed(contact);
+			opened = JSON.stringify(draft);
+		});
 	});
+
+	/** Whether closing the form now would lose something. */
+	export function isDirty(): boolean {
+		return JSON.stringify(draft) !== opened;
+	}
 
 	const canSave = $derived(
 		Boolean(
@@ -103,7 +115,15 @@
 			<div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
 				<label>
 					<span class={label}>First name</span>
-					<input class="{field} mt-1" bind:value={draft.given} autocomplete="off" />
+					<!-- A new contact starts at its name; one being edited is left where it was opened. -->
+					<input
+						class="{field} mt-1"
+						bind:value={draft.given}
+						autocomplete="off"
+						{@attach (input) => {
+							if (!untrack(() => contact)) input.focus();
+						}}
+					/>
 				</label>
 				<label>
 					<span class={label}>Last name</span>
@@ -127,9 +147,10 @@
 				<legend class="z-caption">Email</legend>
 				<div class="mt-2 flex flex-col gap-2">
 					{#each draft.emails as email, index (index)}
-						<div class="flex items-center gap-2">
-							<input class="{field} min-w-0 flex-1" type="email" placeholder="name@example.com" bind:value={email.address} />
-							<input class="z-field w-[110px] max-md:text-base" placeholder="work" list="contact-labels" bind:value={email.label} aria-label="Label" />
+						<!-- At 320px an address beside its label shows "…example.com": there it takes the row. -->
+						<div class="flex items-center gap-2 max-[359px]:flex-wrap">
+							<input class="{field} min-w-0 flex-1 max-[359px]:basis-full" type="email" placeholder="name@example.com" bind:value={email.address} />
+							<input class="z-field w-[110px] max-md:text-base max-[359px]:flex-1" placeholder="work" list="contact-labels" bind:value={email.label} aria-label="Label" />
 							<button type="button" class="btn-tactile !size-[30px] !p-0 text-[var(--z-soft)]" aria-label="Remove address" onclick={() => draft.emails.splice(index, 1)} disabled={draft.emails.length === 1 && !email.address}>
 								<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 							</button>

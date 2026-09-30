@@ -1,0 +1,160 @@
+<!doctype html>
+<!--
+	What the service worker answers a page load with when the network does not
+	(src/service-worker/index.ts). It is the ONLY thing the worker caches, so it
+	has to stand alone: no stylesheet, script, font or image of the app's. The
+	card is the sign-in card (AuthCard.svelte) and the colours are tokens.css's,
+	by hand. Change this file → bump OFFLINE_CACHE in the worker.
+-->
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+		<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)" />
+		<title>Offline · Zaur Mail</title>
+		<script>
+			// The chosen theme, as app.html does it; and come back by ourselves when the connection does.
+			try {
+				var theme = JSON.parse(localStorage.getItem('mail2.prefs') || '{}').theme;
+				if (theme === 'light' || theme === 'dark') {
+					document.documentElement.dataset.theme = theme;
+					var bar = theme === 'dark' ? '#0f141a' : '#f6f7f9';
+					document.querySelectorAll('meta[name="theme-color"]').forEach(function (meta) {
+						meta.content = bar;
+					});
+				}
+			} catch (e) {}
+			addEventListener('online', function () {
+				location.reload();
+			});
+		</script>
+		<style>
+			:root {
+				color-scheme: light;
+				--canvas: #f6f7f9;
+				--surface: #ffffff;
+				--ink: #0b1220;
+				--muted: #475569;
+				--line: #cbd5e1;
+				--accent: #2563eb;
+				--accent-edge: #1d4ed8;
+				--shadow: 0 24px 56px rgba(11, 18, 32, 0.14);
+			}
+			@media (prefers-color-scheme: dark) {
+				:root:not([data-theme='light']) {
+					color-scheme: dark;
+					--canvas: #0f141a;
+					--surface: #161d26;
+					--ink: #e8eef6;
+					--muted: #a3b1c2;
+					--line: #2c3949;
+					--accent: #3b82f6;
+					--accent-edge: #2563eb;
+					--shadow: 0 24px 56px rgba(0, 0, 0, 0.5);
+				}
+			}
+			:root[data-theme='dark'] {
+				color-scheme: dark;
+				--canvas: #0f141a;
+				--surface: #161d26;
+				--ink: #e8eef6;
+				--muted: #a3b1c2;
+				--line: #2c3949;
+				--accent: #3b82f6;
+				--accent-edge: #2563eb;
+				--shadow: 0 24px 56px rgba(0, 0, 0, 0.5);
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				min-height: 100svh;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				padding: 40px 24px;
+				background: var(--canvas);
+				color: var(--ink);
+				font-family: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
+				font-size: 14px;
+				font-size-adjust: 0.56;
+				line-height: 1.5;
+				-webkit-font-smoothing: antialiased;
+			}
+			main {
+				width: 100%;
+				max-width: 380px;
+				padding: 24px 22px 22px;
+				border: 1px solid var(--line);
+				border-top: 3px solid var(--accent);
+				border-radius: 12px;
+				background: var(--surface);
+				box-shadow: var(--shadow);
+			}
+			.brand {
+				display: flex;
+				align-items: center;
+				gap: 9px;
+				font-size: 17px;
+				font-weight: 700;
+				letter-spacing: -0.025em;
+			}
+			h1 {
+				margin: 14px 0 0;
+				font-size: 22px;
+				line-height: 1.15;
+				letter-spacing: -0.025em;
+			}
+			p {
+				margin: 8px 0 0;
+				font-size: 13.5px;
+				line-height: 1.6;
+				color: var(--muted);
+			}
+			a {
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				height: 42px;
+				margin-top: 20px;
+				border: 1px solid var(--accent-edge);
+				border-radius: 8px;
+				background: var(--accent);
+				color: #ffffff;
+				font-weight: 600;
+				text-decoration: none;
+				box-shadow: 0 1px 2px rgba(15, 23, 42, 0.18);
+			}
+			a:hover {
+				background: var(--accent-edge);
+			}
+			a:focus-visible {
+				outline: 2px solid var(--accent);
+				outline-offset: 2px;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<div class="brand">
+				<svg width="24" height="24" viewBox="0 0 16 16" aria-hidden="true">
+					<rect width="16" height="16" rx="3.5" fill="#2563eb" />
+					<g fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+						<path d="M2 4V12M14 4V12M2 4L8 8" stroke-opacity="0.45" />
+						<path d="M2 4H14L2 12H14" />
+					</g>
+				</svg>
+				Zaur
+			</div>
+			<h1>You’re offline</h1>
+			<p>
+				Zaur Mail can’t be reached right now: the connection is down, or the server is not answering.
+				This page reloads by itself when the connection is back.
+			</p>
+			<!-- An empty href is this address: the page the person was opening, tried again. -->
+			<a href="">Try again</a>
+		</main>
+	</body>
+</html>

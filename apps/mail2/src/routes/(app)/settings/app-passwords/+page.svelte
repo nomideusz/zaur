@@ -135,8 +135,9 @@
 						</label>
 						<label class="basis-[120px]">
 							<span class="block text-[12px] text-[var(--z-soft)]">Expires</span>
-							<select {...group.form.fields.expiresInDays.as('select')} class="z-field mt-1 w-full">
-								<option value="">Never</option>
+							<!-- "0", not "": the form drops an empty value, and a select with no matching option shows nothing. -->
+							<select {...group.form.fields.expiresInDays.as('select', '0')} class="z-field mt-1 w-full">
+								<option value="0">Never</option>
 								<option value="30">30 days</option>
 								<option value="90">90 days</option>
 								<option value="365">1 year</option>

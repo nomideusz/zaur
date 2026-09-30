@@ -5,6 +5,7 @@
 	import { extractMeetingGroup } from '@zaur/mail-core/utils/meet';
 	import { describeRepeat } from '#lib/calendar/schedule';
 	import MeetIcon from '../meet/MeetIcon.svelte';
+	import { eventParticipants, type EventParticipant } from '../../../routes/calendar.remote';
 
 	/**
 	 * An event as it is, before anyone edits it — what a click on the grid or
@@ -48,6 +49,14 @@
 		describeRepeat(recurrenceFrom(event.recurrenceRule, event.start), event.start) ??
 			(isRecurringInstance(event) ? 'Repeats' : null)
 	);
+	// Guests, read-only: the series' list for an occurrence. A failed load shows nothing.
+	const guests = $derived(eventParticipants({ id: event.baseEventId ?? event.id, accountId: event.accountId }));
+	const answered: Record<EventParticipant['status'], string> = {
+		accepted: 'Going',
+		tentative: 'Maybe',
+		declined: 'Not going',
+		'needs-action': 'No reply yet'
+	};
 	const label = 'z-caption mb-1';
 </script>
 
@@ -106,6 +115,25 @@
 					{#if !writable}
 						<p class="mt-1 text-[12.5px] text-[var(--z-soft)]">You can see this calendar but not change it.</p>
 					{/if}
+				</div>
+			{/if}
+
+			{#if guests.current?.length}
+				<div>
+					<h3 class={label}>Guests</h3>
+					<ul class="flex flex-col gap-1.5" role="list">
+						{#each guests.current as guest (guest.email || guest.name)}
+							<li class="flex items-baseline justify-between gap-3 text-[13.5px] text-[var(--z-body)]">
+								<span class="min-w-0">
+									<span class="block truncate">{guest.name}{guest.organizer ? ' · Organiser' : ''}</span>
+									{#if guest.email && guest.email !== guest.name}
+										<span class="z-mono block truncate text-[11.5px] text-[var(--z-soft)]">{guest.email}</span>
+									{/if}
+								</span>
+								<span class="shrink-0 text-[12.5px] text-[var(--z-soft)]">{answered[guest.status]}</span>
+							</li>
+						{/each}
+					</ul>
 				</div>
 			{/if}
 

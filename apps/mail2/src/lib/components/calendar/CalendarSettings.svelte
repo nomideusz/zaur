@@ -69,6 +69,20 @@
 	const where = $derived({ id: calendar.id, accountId: calendar.accountId });
 	const changed = $derived(name.trim() !== calendar.name || color !== calendar.color);
 	const swatches = $derived(CALENDAR_COLORS.includes(calendar.color) ? CALENDAR_COLORS : [calendar.color, ...CALENDAR_COLORS]);
+	/** What a screen reader says for each swatch; a colour from elsewhere has no name. */
+	const SWATCH_NAMES: Record<string, string> = {
+		'#2563eb': 'Blue',
+		'#7c3aed': 'Violet',
+		'#db2777': 'Pink',
+		'#ea580c': 'Orange',
+		'#16a34a': 'Green',
+		'#0891b2': 'Cyan',
+		'#ca8a04': 'Yellow',
+		'#dc2626': 'Red',
+		'#4f46e5': 'Indigo',
+		'#0d9488': 'Teal'
+	};
+	const swatchName = (swatch: string) => SWATCH_NAMES[swatch.toLowerCase()] ?? 'Current colour';
 	const writable = $derived(calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn);
 	const blocked = $derived(calendarDeleteBlockedReason(calendar, calendars));
 
@@ -158,7 +172,8 @@
 									? 'border-[var(--z-ink)]'
 									: 'border-transparent'}"
 								style:background={swatch}
-								aria-label={swatch}
+								aria-label={swatchName(swatch)}
+								title={swatchName(swatch)}
 								aria-pressed={color === swatch}
 								onclick={() => (color = swatch)}
 							></button>
@@ -209,7 +224,10 @@
 										type="button"
 										class="btn-tactile !h-[28px] shrink-0 text-[12px]"
 										disabled={busy}
-										onclick={() => void run(() => setCalendarShare({ ...where, principalId, role: null }), 'Could not remove their access.')}
+										onclick={async () => {
+											const who = person?.name || person?.email || 'them';
+											if (await run(() => setCalendarShare({ ...where, principalId, role: null }), 'Could not remove their access.')) onDone(`No longer shared with ${who}`);
+										}}
 									>
 										Remove
 									</button>

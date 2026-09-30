@@ -112,8 +112,9 @@
 	{#if current}
 		<div class="flex h-full flex-col">
 			<header class="flex h-[52px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] pr-2.5 pl-4 max-md:h-[60px] max-md:gap-1.5 max-md:pl-3">
+				<!-- The narrowest phones have room for the badge or the size, not both. -->
 				<span
-					class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] border text-[9px] font-bold uppercase"
+					class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] border text-[9px] font-bold uppercase max-[359px]:hidden"
 					style:background-color={badge.bg}
 					style:border-color={badge.border}
 					style:color={badge.text}
@@ -123,7 +124,7 @@
 				</span>
 				<div class="min-w-0 flex-1">
 					<div class="truncate text-[13.5px] font-semibold">{current.name}</div>
-					<div class="z-mono text-[10.5px] text-[var(--z-soft)]">
+					<div class="z-mono truncate text-[10.5px] text-[var(--z-soft)] max-md:text-[12px]">
 						{formatBytes(current.size)}{items.length > 1 ? ` · ${index + 1} of ${items.length}` : ''}
 					</div>
 				</div>

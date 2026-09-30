@@ -5,6 +5,7 @@
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import AttachmentPreview from '#lib/components/mail/AttachmentPreview.svelte';
 	import { messageOf } from '#lib/errors';
+	import { backLayer } from '#lib/back-layer.svelte.ts';
 	import { attachmentKind, uploadFile } from '#lib/compose/attachments';
 	import { attachmentBadge } from '#lib/mail/colors';
 	import { withoutBranch } from '#lib/mail/folders';
@@ -72,7 +73,24 @@
 	let previewAt = $state<number | null>(null);
 	let picker = $state<HTMLInputElement>();
 
-	// A different folder, or a search, closes whatever was open in the last one.
+	/**
+	 * The preview fills a phone's screen, so there it is a history entry of its
+	 * own: Back closes it and leaves the folder under it (as the reader does).
+	 */
+	const previewLayer = backLayer('file-preview');
+	function openPreview(at: number) {
+		previewAt = at;
+		void previewLayer.show();
+	}
+	// Reached twice per close — the button, then the dialog's own `close`.
+	function closePreview() {
+		if (previewAt === null) return;
+		previewAt = null;
+		void previewLayer.hide();
+	}
+
+	// A different folder, or a search, closes whatever was open in the last one
+	// — and what was said about it.
 	$effect(() => {
 		void folderId;
 		void searching;
@@ -80,6 +98,7 @@
 		sharing = null;
 		newFolder = null;
 		previewAt = null;
+		notice = null;
 	});
 
 	const isFolder = (node: FileNode) => node.nodeType === 'directory';
@@ -267,7 +286,7 @@
 				bind:value={shareEmail}
 				placeholder="Their address on this server"
 				aria-label="Share with"
-				class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+				class="z-field min-w-0 flex-1 !h-[30px] max-md:basis-full max-md:text-base"
 				{@attach (input) => input.focus()}
 				onkeydown={(event) => event.key === 'Escape' && (sharing = null)}
 			/>
@@ -283,20 +302,21 @@
 
 <SectionShell title="Files">
 	{#snippet controls()}
-		<div class="relative flex items-center max-md:hidden">
+		<!-- The search gives way first: next to the section tabs the bar is narrow below 1024px. -->
+		<div class="relative flex min-w-0 items-center max-md:hidden">
 			<svg class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
 				<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
 			</svg>
-			{@render searchField('w-[240px] !pl-8')}
+			{@render searchField('w-[240px] min-w-0 !pl-8 max-lg:w-[170px]')}
 		</div>
-		<button type="button" class="btn-tactile gap-1.5" disabled={!canAdd || busy} onclick={() => (newFolder = '')}>
+		<button type="button" class="btn-tactile shrink-0 gap-1.5 whitespace-nowrap" disabled={!canAdd || busy} onclick={() => (newFolder = '')}>
 			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 			</svg>
 			<span class="max-md:sr-only">New folder</span>
 		</button>
-		<button type="button" class="btn-tactile btn-primary" disabled={!canAdd || !!uploading} onclick={() => picker?.click()}>
+		<button type="button" class="btn-tactile btn-primary shrink-0" disabled={!canAdd || !!uploading} onclick={() => picker?.click()}>
 			Upload
 		</button>
 		<input
@@ -312,8 +332,9 @@
 		/>
 	{/snippet}
 
+	<!-- On touch every button and field in the list is a fingertip tall, as the header's are (base.css); a phone's selects are 16px, under which iOS zooms the page on focus. -->
 	<div
-		class="flex min-h-0 flex-1 flex-col transition-colors {dragging ? 'bg-[var(--z-accent-tint)]' : ''}"
+		class="flex min-h-0 flex-1 flex-col transition-colors pointer-coarse:[&_:is(.btn-tactile,.z-segment,.z-field)]:min-h-10 pointer-coarse:[&_:is(.btn-tactile,.z-segment)]:min-w-10 max-md:[&_select]:text-base {dragging ? 'bg-[var(--z-accent-tint)]' : ''}"
 		role="region"
 		aria-label="Files in this folder"
 		ondragover={(event) => {
@@ -335,10 +356,10 @@
 		<div class="border-b border-[var(--z-hairline)] px-4 py-2.5 md:hidden">
 			{@render searchField('w-full max-md:text-base')}
 		</div>
-		<div class="flex min-h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] px-4 py-2.5">
+		<div class="flex min-h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] px-4 py-2.5 max-md:flex-wrap max-md:gap-y-1">
 			{#if searching}
 				<span class="truncate text-[13px] font-semibold text-[var(--z-ink)]" aria-live="polite">
-					{results?.current ? `${items.length >= 50 ? '50+' : items.length} found` : 'Searching…'}
+					{results?.current ? `${items.length >= 50 ? '50+' : items.length} found` : results?.error ? 'Search' : 'Searching…'}
 				</span>
 			{:else}
 				<nav class="flex min-w-0 items-center gap-1.5 text-[13px]" aria-label="Folder path">
@@ -361,7 +382,8 @@
 				{/if}
 			{/if}
 			{#if uploading || notice}
-				<span class="ml-auto truncate text-[12px] font-medium text-[var(--z-muted)]" role="status">{uploading ?? notice}</span>
+				<!-- A phone gives it a line of its own, whole: an error cut to "is alread…" says nothing. -->
+				<span class="ml-auto truncate text-[12px] font-medium text-[var(--z-muted)] max-md:ml-0 max-md:basis-full max-md:whitespace-normal" role="status">{uploading ?? notice}</span>
 			{/if}
 		</div>
 
@@ -394,7 +416,7 @@
 								bind:value={newFolder}
 								placeholder="Folder name"
 								aria-label="New folder name"
-								class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+								class="z-field min-w-0 flex-1 !h-[30px] max-md:basis-[calc(100%-34px)] max-md:text-base"
 								{@attach (input) => input.focus()}
 								onkeydown={(event) => {
 									if (event.key === 'Enter') void createFolder();
@@ -420,7 +442,7 @@
 										maxlength="255"
 										bind:value={editing.name}
 										aria-label="Name"
-										class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+										class="z-field min-w-0 flex-1 !h-[30px] max-md:basis-[calc(100%-34px)] max-md:text-base"
 										disabled={!node.myRights.mayRename}
 										{@attach (input) => input.focus()}
 										onkeydown={(event) => {
@@ -452,25 +474,35 @@
 								<div class="flex items-center gap-3 px-4 hover:bg-[var(--z-hover)]">
 									{#snippet row()}
 										{@render glyph(node)}
-										<span class="min-w-0 flex-1 truncate text-[13.5px] font-medium text-[var(--z-ink)]">
-											{fileRoleLabel(node.role) ?? node.name}
-											{#if owner && (searching || !folderId)}<span class="ml-1.5 text-[12px] font-normal text-[var(--z-soft)]">{owner}</span>{/if}
+										<span class="min-w-0 flex-1">
+											<span class="block truncate text-[13.5px] font-medium text-[var(--z-ink)]">
+												{fileRoleLabel(node.role) ?? node.name}
+												{#if owner && (searching || !folderId)}<span class="ml-1.5 text-[12px] font-normal text-[var(--z-soft)]">{owner}</span>{/if}
+											</span>
+											<!-- A phone's row is the name's: size and "shared" go under it, not beside it. -->
+											{#if !isFolder(node) || isShared(node)}
+												<span class="z-mono block truncate text-[10.5px] text-[var(--z-soft)] md:hidden">
+													{[isFolder(node) ? '' : formatBytes(node.size ?? 0), isShared(node) ? 'Shared' : ''].filter(Boolean).join(' · ')}
+												</span>
+											{/if}
 										</span>
-										{#if isShared(node)}<span class="z-chip" title="Shared with other people">Shared</span>{/if}
+										{#if isShared(node)}<span class="z-chip max-md:hidden" title="Shared with other people">Shared</span>{/if}
 									{/snippet}
 									{#if isFolder(node)}
 										<a href={folderHref(node.id, node.accountId)} class={rowLink}>{@render row()}</a>
 									{:else if at >= 0}
-										<button type="button" class={rowLink} title="Open {node.name}" onclick={() => (previewAt = at)}>{@render row()}</button>
+										<button type="button" class={rowLink} title="Open {node.name}" onclick={() => openPreview(at)}>{@render row()}</button>
 									{:else}
 										<a href={attachmentUrl(node.blobId ?? '', node.name, node.type ?? '')} download={node.name} class={rowLink} title="Download {node.name}">
 											{@render row()}
 										</a>
 									{/if}
-									<span class="shrink-0 text-[12px] text-[var(--z-soft)] tabular-nums max-md:hidden">{day(node.modified)}</span>
-									<span class="z-mono w-[64px] shrink-0 text-right text-[10.5px] text-[var(--z-soft)]">
+									<span class="w-[92px] shrink-0 text-right text-[12px] text-[var(--z-soft)] tabular-nums max-md:hidden">{day(node.modified)}</span>
+									<span class="z-mono w-[64px] shrink-0 text-right text-[10.5px] text-[var(--z-soft)] max-md:hidden">
 										{isFolder(node) ? '' : formatBytes(node.size ?? 0)}
 									</span>
+									<!-- One width whatever a row may do, so the columns before it line up. -->
+									<span class="flex shrink-0 items-center justify-end gap-3 md:w-[120px]">
 									{#if searching}
 										{#if !node.accountId}
 											<a href={folderHref(node.parentId)} class="btn-tactile !h-7 shrink-0 !text-[12px]" title="Open the folder it is in">Folder</a>
@@ -506,6 +538,7 @@
 											</button>
 										{/if}
 									{/if}
+									</span>
 								</div>
 								{#if sharing?.id === node.id && sharing.account === node.accountId}
 									{@render sharePanel(node)}
@@ -519,7 +552,11 @@
 									Nothing called “{query.trim()}”.
 								{:else}
 									{folderId ? 'This folder is empty.' : 'No files yet.'}
-									{canAdd ? 'Drop files here, or use Upload.' : ''}
+									{#if canAdd}
+										<!-- Nothing can be dropped on a touch screen. -->
+										<span class="pointer-coarse:hidden">Drop files here, or use Upload.</span>
+										<span class="hidden pointer-coarse:inline">Use Upload to add files.</span>
+									{/if}
 								{/if}
 							</li>
 						{/if}
@@ -530,6 +567,6 @@
 	</div>
 </SectionShell>
 
-{#if previewAt !== null && previewable.length > 0}
-	<AttachmentPreview items={previewable} bind:index={previewAt} onClose={() => (previewAt = null)} />
+{#if previewLayer.open && previewAt !== null && previewable.length > 0}
+	<AttachmentPreview items={previewable} bind:index={previewAt} onClose={closePreview} />
 {/if}

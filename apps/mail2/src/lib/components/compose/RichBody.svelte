@@ -44,9 +44,11 @@
 		onfiles: (files: File[]) => void;
 		/** Uploads an image written into the text; resolves to the URL it is shown from. */
 		onimage: (file: File) => Promise<string>;
+		/** The editor could not be loaded: there is no box to write in. */
+		onfail: () => void;
 	}
 
-	let { id, toolbar, html, text, class: className = '', height, onchange, onfocus, onfiles, onimage }: Props =
+	let { id, toolbar, html, text, class: className = '', height, onchange, onfocus, onfiles, onimage, onfail }: Props =
 		$props();
 
 	let el = $state<TrixElement | null>(null);
@@ -56,10 +58,11 @@
 
 	onMount(() => {
 		// Trix defines its elements a tick after it loads, so this lands before any editor draws.
-		void import('trix').then(({ default: Trix }) => {
+		// It is a chunk of its own, so it can fail by itself: offline, or a deploy that retired it.
+		import('trix').then(({ default: Trix }) => {
 			// The name and size under an image are editor furniture, not part of the letter.
 			Trix.config.attachments.preview.caption = { name: false, size: false };
-		});
+		}, onfail);
 	});
 
 	$effect(() => {

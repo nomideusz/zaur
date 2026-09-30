@@ -18,6 +18,7 @@
 	import ActionIcon from './ActionIcon.svelte';
 	import { prefs } from '#lib/settings.svelte.ts';
 	import { viewport } from '#lib/viewport.svelte.ts';
+	import { compose } from '#lib/compose/store.svelte.ts';
 
 	interface Props {
 		/** The page hides this pane on a phone while the reader is open. */
@@ -99,6 +100,8 @@
 	}
 
 	let listContainer = $state<HTMLDivElement | undefined>();
+	/** A phone's dock of minimised drafts floats over the end of the list, which makes room for it. */
+	const docked = $derived(compose.drafts.some((draft) => draft.stage === 'minimized'));
 
 	const flatRows = $derived((groups ?? []).flatMap((group) => group.rows));
 	const selectedRows = $derived(flatRows.filter((row) => selection.has(row.threadId)));
@@ -195,14 +198,16 @@
 		that jumps under you the moment you tick a box is the worst time to move
 		it. With a selection up it wears the correspondence fill, so selection
 		reads as one object with the rows it is about. On a phone this bar is
-		hidden — PhoneMailBar is the one row, above the panes.
+		hidden — PhoneMailBar is the one row, above the panes. The height is the
+		bar's, hairline included, and the reader's toolbar beside it has the same
+		(taller under a coarse pointer, where its buttons grow to a fingertip):
+		the two share one bottom line, and rows never move when the bar swaps.
 	-->
-	<div class="shrink-0 border-b border-[var(--z-hairline)] max-md:hidden {selection.size > 0 ? 'p-1.5' : ''}">
+	<div class="z-list-bar h-[46px] shrink-0 border-b border-[var(--z-hairline)] max-md:hidden pointer-coarse:h-[60px] {selection.size > 0 ? 'p-1.5' : ''}">
 		<div
-			class="flex items-center justify-between gap-3 {selection.size > 0
-				? /* 34 + the 6px inset on each side = the plain header's 46, so rows never move */
-					'z-bulk h-[34px] rounded-[10px] border border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)] px-1'
-				: 'h-[46px] px-3.5 max-md:px-3'}"
+			class="flex h-full items-center justify-between gap-3 {selection.size > 0
+				? 'z-bulk rounded-[10px] border border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)] px-1'
+				: 'px-3.5 max-md:px-3'}"
 		>
 			<div class="flex min-w-0 items-center gap-2">
 				<!-- Select menu trigger — the one control both modes keep. -->
@@ -396,7 +401,7 @@
 	<!-- Scrollable list -->
 	<div
 		bind:this={listContainer}
-		class="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3 [scroll-padding-top:34px] max-md:px-3 overscroll-contain"
+		class="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3 [scroll-padding-top:34px] max-md:px-3 overscroll-contain {docked ? 'max-md:pb-[72px]' : ''}"
 	>
 		{#if error}
 			<div
@@ -413,7 +418,7 @@
 					<span class="block text-[13px] font-semibold text-[var(--z-ch-discard-ink)]">Couldn't load messages</span>
 					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">The mail server couldn't be reached.</span>
 				</div>
-				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)]" onclick={onRetry}>Retry</button>
+				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)] max-md:!h-11 max-md:!px-3.5 max-md:!text-[13px]" onclick={onRetry}>Retry</button>
 			</div>
 		{:else if loading && !groups}
 			<div class="flex flex-col gap-2 pt-3" aria-hidden="true">
@@ -448,10 +453,10 @@
 				<p class="z-mono mt-2 max-w-[320px] text-[10.5px] leading-relaxed text-[var(--z-soft)]">{searchOperatorHint()}</p>
 				<div class="mt-3 flex gap-2">
 					{#if !searchAll && onSearchAll}
-						<button type="button" class="btn-tactile btn-primary !h-8" onclick={() => onSearchAll(true)}>Search all folders</button>
+						<button type="button" class="btn-tactile btn-primary !h-8 max-md:!h-11" onclick={() => onSearchAll(true)}>Search all folders</button>
 					{/if}
 					{#if onClearSearch}
-						<button type="button" class="btn-tactile !h-8" onclick={onClearSearch}>Clear search</button>
+						<button type="button" class="btn-tactile !h-8 max-md:!h-11" onclick={onClearSearch}>Clear search</button>
 					{/if}
 				</div>
 			</div>
@@ -469,9 +474,9 @@
 				<p class="text-[14px] font-bold text-[var(--z-ink)]">{emptyCopy.title}</p>
 				<p class="max-w-[260px] text-[12.5px] leading-relaxed text-[var(--z-muted)]">{emptyCopy.hint}</p>
 				{#if filterKeyword(filter)}
-					<button type="button" class="btn-tactile mt-3 !h-8" onclick={() => onFilter('all')}>Show all</button>
+					<button type="button" class="btn-tactile mt-3 !h-8 max-md:!h-11 max-md:!px-4" onclick={() => onFilter('all')}>Show all</button>
 				{:else}
-					<button type="button" class="btn-tactile mt-3 !h-8" onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}>
+					<button type="button" class="btn-tactile mt-3 !h-8 max-md:!h-11" onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}>
 						<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 						</svg>
@@ -485,7 +490,7 @@
 					<span class="min-w-0 flex-1">Empty {mailbox.name} to delete everything in it for good.</span>
 					<button
 						type="button"
-						class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px] hover:!text-[var(--z-ch-discard-ink)]"
+						class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px] hover:!text-[var(--z-ch-discard-ink)] max-md:!h-11 max-md:!px-3.5 max-md:!text-[13px]"
 						disabled={busy}
 						onclick={onEmpty}
 					>
@@ -497,10 +502,10 @@
 				<div class="flex items-center gap-2 pt-3">
 					<span class="z-caption">Search in</span>
 					<div class="z-group min-w-0" role="group" aria-label="Search in">
-						<button type="button" class="z-segment !h-6 max-w-[160px] truncate !px-2.5" aria-pressed={!searchAll} onclick={() => onSearchAll(false)}>
+						<button type="button" class="z-segment !h-6 max-w-[160px] truncate !px-2.5 max-md:!h-10 max-md:!px-3.5" aria-pressed={!searchAll} onclick={() => onSearchAll(false)}>
 							{mailbox?.name ?? 'This folder'}
 						</button>
-						<button type="button" class="z-segment !h-6 shrink-0 !px-2.5" aria-pressed={searchAll} onclick={() => onSearchAll(true)}>
+						<button type="button" class="z-segment !h-6 shrink-0 !px-2.5 max-md:!h-10 max-md:!px-3.5" aria-pressed={searchAll} onclick={() => onSearchAll(true)}>
 							All folders
 						</button>
 					</div>
@@ -515,7 +520,7 @@
 				>
 					<span class="z-caption">{group.label}</span>
 					<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
-					<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)]">{group.rows.length}</span>
+					<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)] max-md:text-[12px]">{group.rows.length}</span>
 				</div>
 
 				<!-- The pixel above is for a selected first row's ring, which the divider would otherwise cover. -->
@@ -541,6 +546,8 @@
 							aria-current={isOpen ? 'true' : undefined}
 							style="{channelStyle(channel)};--z-rail-inset:12px"
 							onclick={() => onOpen(row.threadId)}
+							draggable={viewport.compact ? undefined : true}
+							ondragstart={(event) => event.dataTransfer?.setData('text/x-zaur-thread', row.threadId)}
 							onkeydown={(event) => {
 								if (event.key === 'Enter' || event.key === ' ') {
 									event.preventDefault();
@@ -591,7 +598,7 @@
 											<span class="z-chip @max-[430px]:hidden">{categoryLabel(row.category)}</span>
 										{/if}
 										{#if row.messageCount > 1}
-											<span class="z-chip z-chip-filled !tracking-normal !normal-case" title="{row.messageCount} messages in this conversation">
+											<span class="z-chip z-chip-filled !tracking-normal !normal-case max-md:!text-[12px]" title="{row.messageCount} messages in this conversation">
 												{row.messageCount}
 											</span>
 										{/if}
@@ -604,7 +611,7 @@
 											<ActionIcon name="clip" class="size-3.5 shrink-0 text-[var(--z-faint)]" label="Has attachment" />
 										{/if}
 										<time
-											class="z-mono text-[11px] {row.unread && !isSelected && !isOpen ? 'font-semibold text-[var(--z-strong)]' : isSelected || isOpen ? 'font-medium text-[var(--z-muted)]' : 'font-medium text-[var(--z-soft)]'}"
+											class="z-mono text-[11px] max-md:text-[12px] {row.unread && !isSelected && !isOpen ? 'font-semibold text-[var(--z-strong)]' : isSelected || isOpen ? 'font-medium text-[var(--z-muted)]' : 'font-medium text-[var(--z-soft)]'}"
 											datetime={row.receivedAt}
 										>
 											{formatListTime(row.receivedAt)}
@@ -684,7 +691,7 @@
 			{/each}
 			{#if hasMore && onLoadMore}
 				<div class="flex justify-center pt-1 pb-2" {@attach nearEnd}>
-					<button type="button" class="btn-tactile !h-8" disabled={loading} onclick={onLoadMore}>
+					<button type="button" class="btn-tactile !h-8 max-md:!h-11 max-md:!px-5" disabled={loading} onclick={onLoadMore}>
 						{loading ? 'Loading…' : 'Load more'}
 					</button>
 				</div>
