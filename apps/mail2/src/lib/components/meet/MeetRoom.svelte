@@ -175,6 +175,12 @@
 
 	onMount(() => {
 		const tick = setInterval(() => (now = Date.now()), 1000);
+		// iPhone and iPad (an iPad says it is a Mac, but a Mac has no touch screen).
+		const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+		// Safari 16.4+: the call keeps the audio session it needs from the start, rather than
+		// starting as playback and switching when the mic opens, which restarts the audio hardware.
+		const session = (navigator as { audioSession?: { type: string } }).audioSession;
+		if (iOS && session) session.type = 'play-and-record';
 		void (async () => {
 			LK = await import('livekit-client');
 			if (leaving) return;
@@ -187,6 +193,10 @@
 				videoCaptureDefaults: { deviceId: choice.cam, facingMode: 'user' },
 				audioOutput: { deviceId: choice.speaker }
 			});
+			// LiveKit keeps a Web Audio context running for audio processors and webAudioMix, neither
+			// used here. On iOS an idle context beside the call makes WebKit resample everything that
+			// plays, which is heard as crackling. Without it the <audio> elements play the call as they are.
+			if (iOS) (room as unknown as { acquireAudioContext(): Promise<void> }).acquireAudioContext = async () => {};
 			lk = room;
 			for (const event of [
 				RoomEvent.ParticipantConnected,
@@ -255,6 +265,7 @@
 			clearInterval(tick);
 			leaving = true;
 			void lk?.disconnect();
+			if (iOS && session) session.type = 'auto';
 		};
 	});
 
