@@ -74,10 +74,12 @@
 			// A reply opens on an empty line above its quote, not inside it.
 			node.editor.loadHTML(seed.startsWith('<blockquote') ? `<div><br></div>${seed}` : seed);
 			// Placing the caret focuses the editor. Trix loads lazily, so on the first panel
-			// this runs after the panel focused To or Subject: hand that focus back.
+			// this runs after the panel focused To or Subject: hand that focus back. Only to
+			// a field: a reply wants the body, and until now the focus was still on the list
+			// row or the Reply button, where what is typed would run as shortcuts.
 			const focused = document.activeElement;
 			node.editor.setSelectedRange(0);
-			if (focused instanceof HTMLElement && focused !== document.body && !node.contains(focused)) focused.focus();
+			if (focused instanceof HTMLInputElement || focused instanceof HTMLTextAreaElement) focused.focus();
 			loading = false;
 			known = node.value;
 		};
