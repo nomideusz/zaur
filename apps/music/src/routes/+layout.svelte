@@ -143,7 +143,8 @@
 
 	async function openSearch() {
 		// From Now playing, visit() closes the sheet first: Back is then the page, not the sheet again.
-		if (page.url.pathname !== '/search') await visit('/search');
+		// Already on Search, the same address again: nothing to fetch, only a layer to close.
+		await visit(page.url.pathname === '/search' ? location.href : '/search');
 		main.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
 	}
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 	import { afterNavigate } from '$app/navigation';
 	import { visit } from '#lib/visit.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
@@ -30,6 +30,8 @@
 		clearTimeout(timer);
 		query = asked = data.q;
 	});
+	// Left before the beat was up: the search must not take the next page's address.
+	onDestroy(() => clearTimeout(timer));
 	const nothing = $derived(data.q && !data.artists.length && !data.albums.length && !data.songs.length);
 </script>
 

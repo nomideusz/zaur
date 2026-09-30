@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
 	import { api } from '#lib/api';
+	import { visit } from '#lib/visit.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import SearchField from '#lib/components/SearchField.svelte';
 	import { formatTime } from '#lib/player.svelte';
@@ -90,7 +90,8 @@
 		const [url, text, title] = ['url', 'text', 'title'].map((key) => page.url.searchParams.get(key)?.trim() ?? '');
 		const shared = [url, text, title].filter(Boolean).join(' ');
 		if (!shared) return;
-		replaceState('/add', {});
+		// A real navigation: a shallow replaceState leaves Kit the shared address to come Back to, and the add runs again.
+		void visit('/add', { replace: true });
 		if (isLink(shared)) return void add(shared);
 		// Words with no link (a song's name shared from elsewhere): look them up. What was
 		// shared, or failing that its subject line; both together find nothing.

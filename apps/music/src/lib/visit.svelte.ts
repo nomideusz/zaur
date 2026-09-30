@@ -88,6 +88,7 @@ export async function visit(href: string, options?: Parameters<typeof goto>[1]):
 
 /** The same care for loading this page's data again (invalidateAll, refreshAll): asked first whether anyone is there. */
 export async function reload(again: () => Promise<unknown>): Promise<void> {
-	if (await reachable()) await again().catch(() => {});
-	else unreachable();
+	if (!(await reachable())) return unreachable();
+	reached();
+	await again().catch(() => {});
 }
