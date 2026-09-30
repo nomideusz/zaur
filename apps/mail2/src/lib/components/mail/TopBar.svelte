@@ -107,8 +107,9 @@
 		     that stays put while browsing, so the eye has one place to read.
 		     Only while the mailbox list is closed — open, the list already names
 		     the folder and carries its count. Below `lg` the header's stretch is
-		     a few hundred pixels, and the arrows give theirs to the search field:
-		     the label's menu and the drawer both still switch folders. -->
+		     a few hundred pixels, and the arrows give theirs to the search field
+		     (the label's menu and the drawer both still switch folders) and the
+		     label some of its own, or the Offline glyph cut the field's edge. -->
 		{#if !sidebarOpen}
 			<div
 				class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
@@ -132,7 +133,7 @@
 				{#if mailboxes}
 					<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 						<Menu.Trigger
-							class="flex h-[30px] w-[184px] pointer-coarse:h-10 items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-lg:rounded-[7px] max-md:w-auto max-md:max-w-[46vw] max-md:bg-[var(--z-surface)]"
+							class="flex h-[30px] w-[184px] pointer-coarse:h-10 items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-lg:w-[140px] max-lg:rounded-[7px] max-md:w-auto max-md:max-w-[46vw] max-md:bg-[var(--z-surface)]"
 						>
 							{#if activeMailbox}
 								{@const channel = mailboxChannel(activeMailbox.kind)}

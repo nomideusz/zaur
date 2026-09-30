@@ -1,6 +1,8 @@
 <script lang="ts">
 	import './layout.css';
+	import { online } from 'svelte/reactivity/window';
 	import { afterNavigate } from '$app/navigation';
+	import { updated } from '$app/state';
 	// Imported here for its listener: the browser offers to install once, early.
 	import '#lib/install.svelte.ts';
 	import { installKeyboardInset } from '#lib/keyboard';
@@ -46,6 +48,13 @@
 		const scheme = matchMedia('(prefers-color-scheme: dark)');
 		scheme.addEventListener('change', paintSystemBar);
 		return () => scheme.removeEventListener('change', paintSystemBar);
+	});
+
+	// A phone's "Offline" / "new version" strip (ShellHeader) is a top edge of its own while it shows.
+	$effect(() => {
+		void online.current;
+		void updated.current;
+		paintSystemBar();
 	});
 
 	installKeyboardInset();

@@ -3,15 +3,15 @@
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
 	import { goto, snapshot } from '$app/navigation';
-	import { contactDisplayName, contactLetter, contactMatches } from '@zaur/mail-core';
+	import { contactDisplayName, contactMatches, groupContacts } from '@zaur/mail-core';
 	import type { Contact, ContactInput } from '@zaur/mail-core';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import ContactEditor from '#lib/components/contacts/ContactEditor.svelte';
-	import { contactKeys, parseVCards, toVCards } from '#lib/components/contacts/vcard';
+	import { contactKeys, readVCards, toVCards } from '#lib/components/contacts/vcard';
 	import { identityStyle } from '#lib/mail/colors';
 	import { whoami } from '../../session.remote';
 	import { contacts as contactsRemote, saveContact, deleteContact } from '../../contacts.remote';
-	import { LiveUpdates } from '#lib/mail/live';
+	import { getShell } from '#lib/shell.svelte.ts';
 	import { backLayer } from '#lib/back-layer.svelte.ts';
 
 	const who = whoami();
@@ -25,14 +25,12 @@
 	});
 
 	// Push: a card saved on the phone shows up here without a reload.
-	$effect(() => {
-		if (!session) return;
-		const live = new LiveUpdates();
-		live.start(({ contact }) => {
+	const shell = getShell()!;
+	$effect(() =>
+		shell.onLive(({ contact }) => {
 			if (contact) void resource?.refresh();
-		});
-		return () => live.stop();
-	});
+		})
+	);
 
 	let query = $state('');
 	let selectedId = $state<string | null>(null);
@@ -45,19 +43,8 @@
 	const visible = $derived(all.filter((contact) => contactMatches(contact, query)));
 	const selected = $derived(all.find((contact) => contact.id === selectedId) ?? null);
 
-	/** Letter groups, in the order the sorted list already has them; '#' goes last. */
-	const groups = $derived.by(() => {
-		const out: { letter: string; items: Contact[] }[] = [];
-		for (const contact of visible) {
-			const letter = contactLetter(contact);
-			const last = out[out.length - 1];
-			if (last && last.letter === letter) last.items.push(contact);
-			else out.push({ letter, items: [contact] });
-		}
-		const hash = out.findIndex((group) => group.letter === '#');
-		if (hash > -1) out.push(...out.splice(hash, 1));
-		return out;
-	});
+	/** Letter groups, A–Z and then '#': one per letter, which the list is keyed by. */
+	const groups = $derived(groupContacts(visible));
 
 	function say(text: string, ms = 2500) {
 		notice = text;
@@ -174,7 +161,8 @@
 	async function importCards(file: File) {
 		importing = true;
 		try {
-			const cards = parseVCards(await file.text());
+			// Bytes, not text: `file.text()` reads everything as UTF-8, and an old export is not.
+			const { cards, cutOff, badEmails } = readVCards(new Uint8Array(await file.arrayBuffer()));
 			const known = new Set(all.flatMap(contactKeys));
 			let added = 0;
 			let skipped = 0;
@@ -196,15 +184,15 @@
 			}
 			await resource?.refresh();
 			say(
-				cards.length === 0
-					? 'No contacts found in that file'
-					: [
-							`Imported ${added} ${added === 1 ? 'contact' : 'contacts'}`,
-							skipped && `${skipped} already here or empty`,
-							failed && `${failed} could not be saved`
-						]
-							.filter(Boolean)
-							.join(' · '),
+				[
+					cards.length === 0 ? 'No contacts found in that file' : `Imported ${added} ${added === 1 ? 'contact' : 'contacts'}`,
+					skipped && `${skipped} already here or empty`,
+					failed && `${failed} could not be saved`,
+					cutOff && 'the last card was cut off and left out',
+					badEmails && `${badEmails} ${badEmails === 1 ? 'address that is not an e-mail address' : 'addresses that are not e-mail addresses'} left out`
+				]
+					.filter(Boolean)
+					.join(' · '),
 				// Three numbers take longer to read than "Contact saved".
 				6000
 			);
@@ -228,7 +216,7 @@
 	const detailOpen = $derived(mode !== 'view' || selected !== null);
 </script>
 
-<svelte:head><title>Contacts · Zaur Mail</title></svelte:head>
+<svelte:head><title>{shell.title('Contacts')}</title></svelte:head>
 
 <SectionShell title="Contacts">
 	{#snippet controls()}
@@ -410,7 +398,8 @@
 						{#if selected.emails.length}
 							<h3 class="z-caption mt-6">Email</h3>
 							<ul class="mt-2 divide-y divide-[var(--z-sunken)]">
-								{#each selected.emails as email (email.address)}
+								<!-- By position: a card can hold the same address (or number) twice, and a key must not. -->
+								{#each selected.emails as email, index (index)}
 									<li class="flex items-center justify-between gap-3 py-2">
 										<a href="/?to={encodeURIComponent(email.address)}" class="truncate text-[13.5px] font-medium text-[var(--z-body)] hover:text-[var(--z-accent-edge)] hover:underline">{email.address}</a>
 										{#if email.label}<span class="shrink-0 text-[12px] text-[var(--z-faint)]">{email.label}</span>{/if}
@@ -422,7 +411,7 @@
 						{#if selected.phones.length}
 							<h3 class="z-caption mt-6">Phone</h3>
 							<ul class="mt-2 divide-y divide-[var(--z-sunken)]">
-								{#each selected.phones as phone (phone.number)}
+								{#each selected.phones as phone, index (index)}
 									<li class="flex items-center justify-between gap-3 py-2">
 										<a href="tel:{phone.number.replace(/[^\d+]/g, '')}" class="text-[13.5px] font-medium text-[var(--z-body)] tabular-nums hover:text-[var(--z-accent-edge)] hover:underline">{phone.number}</a>
 										{#if phone.label}<span class="shrink-0 text-[12px] text-[var(--z-faint)]">{phone.label}</span>{/if}

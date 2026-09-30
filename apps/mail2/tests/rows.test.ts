@@ -108,6 +108,7 @@ test('initials: two letters from name or email', () => {
 	assert.equal(initials('Ada Lovelace', 'ada@x.io'), 'AL');
 	assert.equal(initials('', 'ada@zaur.app'), 'AD');
 	assert.equal(initials('Cher', 'cher@x.io'), 'CH');
+	assert.equal(initials('🙂 Emoji', 'e@x.io'), '🙂E');
 	assert.equal(initials('', ''), '?');
 });
 

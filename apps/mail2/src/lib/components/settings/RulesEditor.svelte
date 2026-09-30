@@ -27,12 +27,14 @@
 			  }
 			| undefined;
 		error: unknown;
+		/** Ask for the rules again after a load that failed. */
+		onRetry?: () => void;
 		mailboxes: MailboxDTO[] | undefined;
 		saving: boolean;
 		onSave: (rules: MailRule[], takeOver: boolean) => void;
 	}
 
-	let { data, error, mailboxes, saving, onSave }: Props = $props();
+	let { data, error, mailboxes, saving, onSave, onRetry }: Props = $props();
 
 	/**
 	 * The editor owns a working copy. Rules are a list you rearrange and half
@@ -209,7 +211,10 @@
 		</p>
 
 		{#if error}
-			<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your rules.</p>
+			<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">
+				Could not load your rules.
+				{#if onRetry}<button type="button" class="btn-tactile ml-2 !h-[28px]" onclick={() => onRetry()}>Retry</button>{/if}
+			</p>
 		{:else if !data}
 			<div class="z-skeleton mt-3 h-[72px] rounded-[10px] bg-[var(--z-sunken)]" aria-hidden="true"></div>
 		{:else if !data.supported}

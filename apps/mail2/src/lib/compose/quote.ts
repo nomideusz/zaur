@@ -1,6 +1,6 @@
 import type { MessageDetail } from '@zaur/mail-core';
 import { attachmentFromServer } from './attachments';
-import type { DraftSeed } from './types';
+import type { AnswerLink, DraftSeed } from './types';
 
 export interface Seed {
 	subject: string;
@@ -40,7 +40,11 @@ export function draftSeed(message: MessageDetail): DraftSeed {
 		bodyHtml: message.bodyHtml ?? '',
 		attachments: message.attachments
 			.filter((part) => part.disposition !== 'inline')
-			.map((part) => attachmentFromServer(part))
+			.map((part) => attachmentFromServer(part)),
+		// A reply saved as a draft keeps its headers: finished later, it still threads.
+		...(message.inReplyTo?.[0] && {
+			answers: { messageId: message.inReplyTo[0], references: message.references }
+		})
 	};
 }
 
@@ -65,30 +69,64 @@ export function replySeed(message: MessageDetail, locale?: string): Seed {
 	};
 }
 
+type Person = { name: string; email: string };
+
+/** Who an answer goes to: the message's Reply-To when it names one, else its sender. */
+function answerTo(message: MessageDetail): Person[] {
+	return message.replyTo?.length ? message.replyTo : [message.from];
+}
+
+/**
+ * Plain Reply: to whoever the message says to answer. A message I sent is
+ * answered to the people I sent it to — a reply to it is a follow-up to them,
+ * never a letter to myself (unless it was one).
+ */
+export function replyRecipients(message: MessageDetail, myEmails: Set<string>): Person[] {
+	const isMe = (email: string) => myEmails.has(email.trim().toLowerCase());
+	if (!isMe(message.from.email)) return answerTo(message);
+	const sentTo = message.to.filter((person) => person.email && !isMe(person.email));
+	return sentTo.length ? sentTo : answerTo(message);
+}
+
 /**
  * Reply-all recipients, taken from the message being answered and nothing
- * earlier: its sender and the people it was addressed to go in To, its Cc
- * stays Cc. Whoever was dropped from the conversation along the way stays
- * dropped. My own addresses are left out — except that a message I sent goes
- * back to the people I sent it to. Deduped case-insensitively, To before Cc.
+ * earlier: its sender (its Reply-To, when it names one) and the people it was
+ * addressed to go in To, its Cc stays Cc. Whoever was dropped from the
+ * conversation along the way stays dropped. My own addresses are left out —
+ * except that a message I sent goes back to the people I sent it to. Deduped
+ * case-insensitively, To before Cc.
  */
 export function replyAllRecipients(
 	message: MessageDetail,
 	myEmails: Set<string>
-): { to: { name: string; email: string }[]; cc: { name: string; email: string }[] } {
+): { to: Person[]; cc: Person[] } {
 	const seen = new Set<string>();
 	const isMe = (email: string) => myEmails.has(email.trim().toLowerCase());
-	const others = (people: { name: string; email: string }[]) =>
+	const others = (people: Person[]) =>
 		people.flatMap((person) => {
 			const key = person.email.trim().toLowerCase();
 			if (!key || isMe(key) || seen.has(key)) return [];
 			seen.add(key);
 			return [{ name: person.name, email: person.email }];
 		});
-	const to = others([message.from, ...message.to]);
+	// My own Reply-To is not somebody else to write to.
+	const to = others([...(isMe(message.from.email) ? [] : answerTo(message)), ...message.to]);
 	const cc = others(message.cc);
 	// A note to myself has nobody else in it: answer it where it came from.
-	return to.length || cc.length ? { to, cc } : { to: [message.from], cc };
+	return to.length || cc.length ? { to, cc } : { to: answerTo(message), cc };
+}
+
+/**
+ * What a reply or forward records of the message it is of (`AnswerLink`).
+ * Nothing for a message without a Message-ID: there is nothing to thread under.
+ */
+export function answerLink(message: MessageDetail, forward: boolean): AnswerLink | undefined {
+	const messageId = message.messageId;
+	if (!messageId) return undefined;
+	if (forward) return { emailId: message.id, messageId, forward: true };
+	// RFC 5322 §3.6.4: the parent's References (its In-Reply-To, if it has none), then the parent.
+	const thread = message.references ?? message.inReplyTo ?? [];
+	return { emailId: message.id, messageId, references: [...thread.filter((id) => id !== messageId), messageId] };
 }
 
 export function forwardSeed(message: MessageDetail, locale?: string): Seed {

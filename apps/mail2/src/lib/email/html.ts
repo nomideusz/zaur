@@ -5,7 +5,16 @@ import {
 	findPlainTextQuoteStart,
 	plainTextToSafeHtml
 } from '@zaur/mail-core/email/text';
-import { classifyUrl, classifySrcset, inlineImageSrc, linkAllowed, type UrlKind } from './urls';
+import {
+	classifyUrl,
+	classifySrcset,
+	editorAttribute,
+	inlineImageSrc,
+	linkAllowed,
+	CSS_MAY_FETCH,
+	FETCHING_ATTRS,
+	type UrlKind
+} from './urls';
 
 export {
 	normalizeEmailPlainText,
@@ -310,14 +319,6 @@ function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
 	}
 }
 
-/** The attributes that fetch on their own: <img>/<source>/<video>/<audio>, and table backgrounds. */
-const FETCHING_ATTRS = ['src', 'srcset', 'poster', 'background'];
-
-/**
- * What may fetch from an inline style: url(), image-set() and its bare strings,
- * the drafts' src() and image(), or an escape spelling any of them.
- */
-const CSS_MAY_FETCH = /(url|src|image|image-set)\(|\\/i;
 /** A url() as the browser writes it back: closed, its address free of quotes, brackets and escapes. */
 const CSS_URL = /url\((["']?)([^"'()\\\s]*)\1\)/gi;
 /** What is left once those are accounted for: a url() of another shape, an escape, image-set's strings. */
@@ -542,6 +543,33 @@ export function prepareEmailHtml(
 	ensureReflowHook();
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
 	return postProcessSanitizedHtml(html, options);
+}
+
+/** Trix's own record of an image it wrote; `editorAttribute` reads the first before it is kept. */
+const EDITOR_SANITIZE_CONFIG = {
+	...EMAIL_SANITIZE_CONFIG,
+	ADD_ATTR: [...EMAIL_SANITIZE_CONFIG.ADD_ATTR, 'data-trix-attachment', 'data-trix-attributes', 'data-trix-content-type']
+};
+
+/**
+ * A saved draft's HTML for the compose editor (RichBody), the one place
+ * written HTML enters the app's own document: a draft another client saved, or
+ * one that came in as mail, is as foreign as any message. The reader's
+ * sanitizer, then `editorAttribute` on what is left. Empty when there is no
+ * DOM to do it in; the caller falls back to the draft's text.
+ */
+export function prepareEditorHtml(rawHtml: string): string {
+	if (!browser || typeof DOMPurify?.sanitize !== 'function') return '';
+	const container = parseInert(DOMPurify.sanitize(rawHtml, EDITOR_SANITIZE_CONFIG));
+	for (const element of container.querySelectorAll('*')) {
+		for (const { name, value } of Array.from(element.attributes)) {
+			const kept = editorAttribute(element.localName, name, value, location.origin);
+			if (kept === null) element.removeAttribute(name);
+			else if (kept !== value) element.setAttribute(name, kept);
+		}
+		if (element.localName === 'img' && !element.hasAttribute('src')) element.remove();
+	}
+	return container.innerHTML;
 }
 
 /**

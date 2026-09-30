@@ -1,7 +1,11 @@
 // See https://svelte.dev/docs/kit/types#app.d.ts
 declare global {
 	namespace App {
-		// interface Error {}
+		interface Error {
+			message: string;
+			/** The app's own code could not be fetched (`hooks.client.ts`): the error card waits and retries instead of reporting a fault. */
+			unreachable?: boolean;
+		}
 		// interface Locals {}
 		// interface PageData {}
 		interface PageState {

@@ -13,6 +13,8 @@ const GAP = 14;
 /** Shell chrome a maximized panel must not sit under: top bar and status line. */
 const TOP_CHROME = 52;
 const BOTTOM_CHROME = 36;
+/** The highest a floating panel sits: clear of the top bar, which it used to be parked over. */
+export const PANEL_TOP = TOP_CHROME + EDGE;
 const MARGIN = 12;
 /** How far an opening panel leans from the shell centre toward its button. */
 const CENTRE_PULL = 0.34;
@@ -133,10 +135,10 @@ export function fitPanel(
 	rootH: number
 ) {
 	const w = Math.min(rect.w, Math.max(PANEL_MIN_W, rootW - EDGE * 2));
-	const h = Math.min(rect.h, Math.max(PANEL_MIN_H, rootH - EDGE * 2));
+	const h = Math.min(rect.h, Math.max(PANEL_MIN_H, rootH - PANEL_TOP - EDGE));
 	return {
 		x: clamp(rect.x, EDGE, Math.max(EDGE, rootW - w - EDGE)),
-		y: clamp(rect.y, EDGE, Math.max(EDGE, rootH - h - EDGE)),
+		y: clamp(rect.y, PANEL_TOP, Math.max(PANEL_TOP, rootH - h - EDGE)),
 		w,
 		h
 	};

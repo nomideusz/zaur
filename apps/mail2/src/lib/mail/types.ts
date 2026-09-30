@@ -1,4 +1,7 @@
-import type { MailboxKind } from '@zaur/mail-core';
+import type { MailboxKind, MessageDetail } from '@zaur/mail-core';
+
+/** A message of an open conversation, with the folders it is filed in: an action on the conversation takes those in the open folder. */
+export type ThreadMessageDTO = MessageDetail & { mailboxIds: string[] };
 
 export type MailboxDTO = {
 	id: string;

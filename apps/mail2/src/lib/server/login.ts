@@ -26,6 +26,7 @@ import {
 	createTokenSession,
 	findIdentityEmail
 } from '@zaur/mail-core';
+import { safeNextPath } from '@zaur/server-auth/internal-auth';
 import { createConnectedClient } from '#lib/server/jmap';
 import { reportError } from '#lib/server/report';
 
@@ -161,6 +162,5 @@ export async function attemptLogin(input: {
 
 /** Only same-app relative paths may be used as a post-login redirect target. */
 export function safeNext(raw: string | null | undefined): string {
-	if (raw && raw.startsWith('/') && !raw.startsWith('//')) return raw;
-	return '/';
+	return safeNextPath(raw) ?? '/';
 }

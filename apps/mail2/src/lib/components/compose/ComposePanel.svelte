@@ -1,9 +1,15 @@
+<script module lang="ts">
+	// Said once per outage: offline, every sheet opened would say it again.
+	let editorFailTold = false;
+	if (typeof window !== 'undefined') window.addEventListener('online', () => (editorFailTold = false));
+</script>
+
 <script lang="ts">
 	import { attachmentKind, formatAttachmentSize } from '#lib/compose/attachments';
-	import { EDGE, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, fitPanel, maximizedRect } from '#lib/compose/layout';
+	import { EDGE, PANEL_TOP, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, fitPanel, maximizedRect } from '#lib/compose/layout';
 	import { hasDraftContent } from '#lib/compose/draft-save';
 	import { backLayer } from '#lib/back-layer.svelte.ts';
-	import { filterContacts, highlightedSuggestion, makeRecipient } from '#lib/compose/recipients';
+	import { filterContacts, highlightedSuggestion, makeRecipient, parseRecipients } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
 	import RichBody from './RichBody.svelte';
@@ -13,7 +19,7 @@
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
-	import { flushSync, onMount, untrack } from 'svelte';
+	import { flushSync, onMount, tick, untrack } from 'svelte';
 	import {
 		buildSchedulePresets,
 		customSendTimeMin,
@@ -228,8 +234,17 @@
 		if (!target) return;
 		compose.consumeFocus(draft.id);
 		if (target !== 'body') writing = false;
-		const id = target === 'to' ? fieldId('to') : target === 'subject' ? subjectId : bodyId;
-		requestAnimationFrame(() => document.getElementById(id)?.focus());
+		const id = target === 'subject' ? subjectId : target === 'body' ? bodyId : fieldId(target);
+		requestAnimationFrame(() => {
+			const field = document.getElementById(id);
+			field?.focus();
+			// The first rich editor of a visit is still loading and cannot take focus yet
+			// (it takes the caret itself once it has). Until then the panel holds it: left
+			// on the list row or the Reply button, the first words of a reply ran as shortcuts.
+			if (document.activeElement !== field && !panelEl?.contains(document.activeElement)) {
+				panelEl?.focus({ preventScroll: true });
+			}
+		});
 	});
 
 	// --- window management ---
@@ -270,8 +285,8 @@
 		);
 		const y = clamp(
 			drag.originY + (event.clientY - drag.startY),
-			EDGE,
-			Math.max(EDGE, rootH - liveH - EDGE)
+			PANEL_TOP,
+			Math.max(PANEL_TOP, rootH - liveH - EDGE)
 		);
 		compose.move(draft.id, x, y);
 	}
@@ -330,7 +345,11 @@
 
 	// --- address fields ---
 
+	/** The highlight was moved by hand, so the row under it is a choice and not only the first match. */
+	let steered = false;
+
 	function onRecipientInput(event: Event, field: RecipientField) {
+		steered = false;
 		compose.setRecipientInput(draft.id, field, (event.currentTarget as HTMLInputElement).value);
 	}
 
@@ -344,17 +363,27 @@
 			}
 			const count = Math.max(items.length, 1);
 			const delta = event.key === 'ArrowDown' ? 1 : -1;
+			steered = true;
 			compose.setRecipientHighlight(draft.id, field, (hiOf(field) + delta + count) % count);
 			return;
 		}
-		if (event.key === 'Enter' || event.key === ',' || event.key === 'Tab') {
+		// Send (the page's key): it commits what is typed here itself, in the one press.
+		if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) return;
+		if (event.key === 'Enter' || event.key === ',' || event.key === ';' || event.key === 'Tab') {
 			// Only what can be seen is committed: the row highlighted in an open
 			// list, or a typed address. With neither the key keeps its own job —
 			// Tab and Shift+Tab move on, Enter does nothing.
-			const highlighted = highlightedSuggestion(openOf(field), items, hiOf(field));
+			let highlighted = highlightedSuggestion(openOf(field), items, hiOf(field));
 			const text = inputOf(field);
-			if (!highlighted && !makeRecipient(text)) {
-				if (event.key === ',') event.preventDefault();
+			// A whole address typed by hand is who the mail is for. The first row of
+			// the list only contains it (`ann@corp.com` finds joann@corp.com): it
+			// takes over when it is that same address, or was picked with the arrows.
+			const typed = highlighted && !steered ? makeRecipient(text) : null;
+			if (typed && typed.email.toLowerCase() !== highlighted?.email.toLowerCase()) highlighted = null;
+			if (!highlighted && parseRecipients(text).length === 0) {
+				// Inside a quoted name the comma is a letter: "Doe, Jane" <j@x.io>.
+				const quoting = text.split('"').length % 2 === 0;
+				if ((event.key === ',' || event.key === ';') && !quoting) event.preventDefault();
 				return;
 			}
 			event.preventDefault();
@@ -375,6 +404,38 @@
 			compose.backspaceRemoveRecipient(draft.id, field);
 		}
 	}
+
+	/**
+	 * Tab stays in the panel: past the last button it comes round to the title
+	 * bar's (nothing else reached them going forward), not out onto the page
+	 * underneath, where the next key would be a shortcut.
+	 */
+	function wrapTab(event: KeyboardEvent) {
+		if (event.key !== 'Tab' || event.defaultPrevented || !panelEl) return;
+		const stops = [
+			...panelEl.querySelectorAll<HTMLElement>('button, input, select, textarea, trix-editor, [tabindex]')
+		].filter((el) => el.tabIndex >= 0 && !(el as HTMLButtonElement).disabled && el.getClientRects().length > 0);
+		if (document.activeElement !== stops.at(event.shiftKey ? 0 : -1)) return;
+		event.preventDefault();
+		stops.at(event.shiftKey ? -1 : 0)?.focus();
+	}
+
+	/**
+	 * A pasted list becomes chips at once, however it is separated. One line of
+	 * input would run its lines together, and left as text the whole list was one
+	 * recipient. A single address pastes as text, to be finished or confirmed.
+	 */
+	function onRecipientPaste(event: ClipboardEvent, field: RecipientField) {
+		const text = event.clipboardData?.getData('text/plain') ?? '';
+		if (parseRecipients(text).length < 2 && !/[\n\r]/.test(text.trim())) return;
+		event.preventDefault();
+		compose.addRecipient(draft.id, field, `${inputOf(field)} ${text}`, null);
+	}
+
+	/** The address row being typed in. Text left in any other is not an address (leaving a row commits those). */
+	let typingIn = $state<RecipientField | null>(null);
+	const strayText = (field: RecipientField) =>
+		inputOf(field).trim().length > 0 && (typingIn !== field || !!draft.sendError);
 
 	// Picking a recipient must move focus after the input's own focus
 	// restore, hence the double rAF plus a fresh DOM query (spec). Focus stays
@@ -417,17 +478,30 @@
 	 */
 	let editing = $state<{ field: RecipientField; email: string } | null>(null);
 	let editText = $state('');
+	let editBad = $state(false);
 
 	function startEdit(event: MouseEvent, field: RecipientField, person: Recipient) {
 		event.stopPropagation();
 		editing = { field, email: person.email };
+		editBad = false;
 		// `Name <address>` round-trips through `makeRecipient`, so correcting the
-		// address keeps the name that came with it.
-		editText = person.name.trim() ? `${person.name} <${person.email}>` : person.email;
+		// address keeps the name that came with it — quoted, or a name with a
+		// comma in it ("Doe, Jane") would come back as two entries.
+		const name = person.name.trim().replaceAll('"', '');
+		editText = name ? `${/[,;<>@]/.test(name) ? `"${name}"` : name} <${person.email}>` : person.email;
 	}
 
-	function commitEdit() {
+	/**
+	 * Text that is no address is not a deletion (only emptying the chip is):
+	 * Enter keeps it open and marked, leaving it puts the chip back as it was.
+	 */
+	function commitEdit(leaving = false) {
 		if (!editing) return;
+		if (editText.trim() && parseRecipients(editText).length === 0) {
+			if (leaving) editing = null;
+			else editBad = true;
+			return;
+		}
 		const { field, email } = editing;
 		editing = null;
 		compose.editRecipient(draft.id, field, email, editText);
@@ -436,9 +510,13 @@
 	function onEditKeydown(event: KeyboardEvent) {
 		if (event.key === 'Enter' || event.key === 'Tab') {
 			const field = editing?.field;
-			event.preventDefault();
+			// Send (the page's key) takes the correction with it.
+			const send = event.key === 'Enter' && (event.metaKey || event.ctrlKey);
+			if (!send) event.preventDefault();
 			commitEdit();
-			if (field) focusField(field);
+			// Still open: not an address, so nothing moves on and nothing is sent.
+			if (editing) event.preventDefault();
+			else if (field && !send) focusField(field);
 		} else if (event.key === 'Escape') {
 			// Abandons the edit only — must not minimize the panel.
 			event.preventDefault();
@@ -450,15 +528,27 @@
 	/** An edit starts with the whole address selected: most of them are replacements. */
 	function takeEdit(node: HTMLInputElement) {
 		node.focus();
-		node.select();
+		// After the binding has put the text in: selecting before it selected nothing.
+		void tick().then(() => node.select());
 	}
 
 	function onSubjectKeydown(event: KeyboardEvent) {
-		if (event.key === 'Enter') {
+		// Not Send (the page's key).
+		if (event.key === 'Enter' && !event.metaKey && !event.ctrlKey) {
 			event.preventDefault();
 			compose.patch(draft.id, { bodyOpened: true });
 			document.getElementById(bodyId)?.focus();
 		}
+	}
+
+	/**
+	 * Going plain keeps the words and nothing else, and there is no way back:
+	 * when the message has more than words in it, ask first.
+	 */
+	function togglePlain() {
+		const more = /<(?!\/?(?:div|br|blockquote)\b)[a-z]/i.test(draft.bodyHtml);
+		if (!draft.plain && more && !confirm('Switch to plain text? The formatting and any pictures in the message will be removed.')) return;
+		compose.setPlain(draft.id, !draft.plain);
 	}
 
 	function removeChip(event: MouseEvent, field: RecipientField, email: string) {
@@ -504,7 +594,7 @@
 {#snippet addressRow(field: RecipientField, label: string)}
 	{@const list = draft[field]}
 	{@const items = suggestionsFor(field)}
-	<div class="flex min-h-[28px] items-start gap-2.5 border-b border-[var(--z-hairline)] py-2 max-md:min-h-8 max-md:py-2.5">
+	<div class="flex min-h-[28px] shrink-0 items-start gap-2.5 border-b border-[var(--z-hairline)] py-2 max-md:min-h-8 max-md:py-2.5">
 		<span class="flex h-[26px] shrink-0 items-center max-md:h-8">{@render stepDot(list.length > 0)}</span>
 
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -513,7 +603,8 @@
 			class="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-[6px]"
 			onclick={() => focusField(field)}
 		>
-			{#each list as person (person.email)}
+			<!-- No key: a recipient has no id, and an address that came in twice would be a duplicate one. -->
+			{#each list as person, index (index)}
 				{@const theme = identityTone(person.email || person.name)}
 				{#if editing?.field === field && editing.email === person.email}
 					<!-- The chip, opened. It keeps the chip's shape so the row does not
@@ -522,7 +613,9 @@
 						use:takeEdit
 						bind:value={editText}
 						onkeydown={onEditKeydown}
-						onblur={commitEdit}
+						oninput={() => (editBad = false)}
+						onblur={() => commitEdit(true)}
+						aria-invalid={editBad}
 						size={Math.max(editText.length + 1, 12)}
 						aria-label="Edit {person.name || person.email}"
 						autocomplete="off"
@@ -532,8 +625,8 @@
 						enterkeyhint="done"
 						class="h-[26px] max-w-full min-w-0 rounded-[6px] border px-2 text-[13px] font-medium shadow-[var(--z-shadow-tactile)] focus:outline-none max-md:text-base"
 						style:background-color={theme.fill}
-						style:border-color={theme.stroke}
-						style:color={theme.ink}
+						style:border-color={editBad ? 'var(--z-danger)' : theme.stroke}
+						style:color={editBad ? 'var(--z-danger)' : theme.ink}
 					/>
 				{:else}
 					{@const revealEmail =
@@ -567,7 +660,7 @@
 								</button>
 								<button
 									type="button"
-									class="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] transition-colors hover:bg-black/10"
+									class="relative flex size-[18px] shrink-0 items-center justify-center rounded-[4px] transition-colors hover:bg-black/10 pointer-coarse:after:absolute pointer-coarse:after:-inset-y-[7px] pointer-coarse:after:-right-1.5 pointer-coarse:after:-left-2"
 									aria-label="Remove {person.name || person.email}"
 									onpointerdown={(event) => event.stopPropagation()}
 									onclick={(event) => removeChip(event, field, person.email)}
@@ -607,7 +700,13 @@
 				value={inputOf(field)}
 				oninput={(event) => onRecipientInput(event, field)}
 				onkeydown={(event) => onRecipientKeydown(event, field)}
-				onblur={() => compose.commitPendingRecipient(draft.id, field)}
+				onpaste={(event) => onRecipientPaste(event, field)}
+				onfocus={() => (typingIn = field)}
+				onblur={() => {
+					typingIn = null;
+					compose.commitPendingRecipient(draft.id, field);
+				}}
+				aria-invalid={strayText(field) || undefined}
 				role="combobox"
 				aria-expanded={openOf(field)}
 				aria-autocomplete="list"
@@ -619,7 +718,7 @@
 				autocorrect="off"
 				spellcheck="false"
 				enterkeyhint="done"
-				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent max-[359px]:min-w-[72px] max-[359px]:basis-[72px] text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
+				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent max-[359px]:min-w-[72px] max-[359px]:basis-[72px] text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none aria-invalid:text-[var(--z-danger)] max-md:text-base"
 			/>
 
 			{#if openOf(field)}
@@ -630,7 +729,7 @@
 					contacts" lets the pointer through — the field then loses focus, which
 					closes it.
 				-->
-				{@const typed = items.length === 0 && makeRecipient(inputOf(field)) !== null}
+				{@const typed = items.length === 0 && parseRecipients(inputOf(field)).length > 0}
 				<div
 					id={listboxId(field)}
 					role="listbox"
@@ -657,7 +756,7 @@
 							}}
 						>
 							<span
-								class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[10px] font-bold"
+								class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[10px] font-bold max-md:text-[12px]"
 								style:background-color={theme.fill}
 								style:border="1px solid {theme.stroke}"
 								style:color={theme.ink}
@@ -723,7 +822,7 @@
 				<div class="flex h-[26px] shrink-0 items-center gap-1 max-md:h-8">
 					<button
 						type="button"
-						class="btn-tactile !size-8 !rounded-[8px] !p-0 md:hidden"
+						class="btn-tactile relative !size-8 !rounded-[8px] !p-0 before:absolute before:-inset-[5px] before:content-[''] md:hidden"
 						aria-label="Show Cc and Bcc"
 						title="Cc and Bcc"
 						onclick={() => showFields(draft.ccShown ? ['bcc'] : ['cc', 'bcc'])}
@@ -756,7 +855,7 @@
 			<span class="flex h-[26px] shrink-0 items-center max-md:h-8">
 				<button
 					type="button"
-					class="flex size-[22px] items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-8 max-md:rounded-[8px]"
+					class="relative flex size-[22px] items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-8 max-md:rounded-[8px] max-md:before:absolute max-md:before:-inset-1 max-md:before:content-['']"
 					aria-label="Remove {label}"
 					onclick={() => removing(() => compose.showRecipientField(draft.id, field as 'cc' | 'bcc', false))}
 				>
@@ -857,6 +956,7 @@
 	style:z-index="{draft.z}"
 	onpointerdown={() => compose.raise(draft.id)}
 	onfocusin={() => (compose.keysIn = draft.id)}
+	onkeydown={wrapTab}
 >
 	<!-- Header / drag handle -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -892,7 +992,7 @@
 			</button>
 			<span class="min-w-0 flex-1 truncate pl-1 text-[15px] font-bold text-[var(--z-ink)]">{sheetTitle}</span>
 			{#if saveLabel}
-				<span class="z-mono shrink-0 text-[11px] text-[var(--z-soft)]">{saveLabel}</span>
+				<span class="z-mono shrink-0 text-[12px] text-[var(--z-soft)]">{saveLabel}</span>
 			{/if}
 			<button
 				type="button"
@@ -1007,7 +1107,7 @@
 				<select
 					value={draft.from}
 					onchange={(event) => compose.setFrom(draft.id, event.currentTarget.value)}
-					class="h-7 min-w-0 flex-1 cursor-pointer truncate border-0 bg-transparent text-sm text-[var(--z-ink)] focus:outline-none max-md:text-base"
+					class="h-7 min-w-0 flex-1 cursor-pointer appearance-none truncate border-0 bg-transparent text-sm text-[var(--z-ink)] focus:outline-none max-md:text-base"
 				>
 					{#each compose.identities as identity (identity.email)}
 						<option value={identity.email}>
@@ -1015,6 +1115,10 @@
 						</option>
 					{/each}
 				</select>
+				<!-- Our own arrow: the browser's is off, WebKit drew a grey native box round it. -->
+				<svg class="pointer-events-none size-4 shrink-0 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
 			</label>
 		{/if}
 		{#if !folded}
@@ -1078,7 +1182,8 @@
 				onfail={() => {
 					// The editor is a lazy chunk: offline, or gone after a deploy. The words are kept.
 					compose.patch(draft.id, { plain: true, bodyHtml: '' });
-					compose.pushToast({ text: "Couldn't load the editor — writing in plain text", tone: 'warning' });
+					if (!editorFailTold) compose.pushToast({ text: "Couldn't load the editor — writing in plain text", tone: 'warning' });
+					editorFailTold = true;
 				}}
 				class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
 					? 'opacity-100'
@@ -1089,7 +1194,7 @@
 		{/if}
 
 		{#if draft.sendError}
-			<p class="pb-2 text-xs font-medium text-red-600">{draft.sendError}</p>
+			<p class="pb-2 text-xs font-medium text-[var(--z-danger)]">{draft.sendError}</p>
 		{/if}
 		{#if sheet}{@render attachmentStrip()}{/if}
 	</div>
@@ -1222,7 +1327,7 @@
 				: ''}"
 			aria-pressed={draft.plain}
 			title={draft.plain ? 'Switch to rich text' : 'Switch to plain text — formatting is dropped'}
-			onclick={() => compose.setPlain(draft.id, !draft.plain)}
+			onclick={togglePlain}
 		>
 			Plain
 		</button>

@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mailboxOfUrl, stillIn } from '../src/lib/mail/folders.ts';
+import { acceptsMoves, mailboxOfUrl, stillIn } from '../src/lib/mail/folders.ts';
 
 test('stillIn: a destroy from Trash only takes what is still in Trash', () => {
 	const emails: { id: string; mailboxIds?: Record<string, boolean> }[] = [
@@ -30,4 +30,12 @@ test('mailboxOfUrl: the address says which folder is shown', () => {
 	// Nothing to show yet: the share is gone, or the folders have not loaded.
 	assert.equal(at('?shared=gone&folder=arch'), null);
 	assert.equal(mailboxOfUrl(new URLSearchParams('?folder=arch'), undefined, shared), null);
+});
+
+test('acceptsMoves: mail is never moved into Drafts or Scheduled', () => {
+	const kinds = ['inbox', 'drafts', 'sent', 'archive', 'junk', 'trash', 'scheduled', 'custom'];
+	assert.deepEqual(
+		kinds.filter((kind) => acceptsMoves({ kind })),
+		['inbox', 'sent', 'archive', 'junk', 'trash', 'custom']
+	);
 });

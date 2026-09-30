@@ -25,7 +25,18 @@
 
 		<div class="px-[22px] pt-6 pb-[22px]">
 			<div class="flex items-center gap-[9px]">
-				<img src="/favicon.svg" alt="" class="size-6" />
+				<!-- static/favicon.svg, drawn here: the error card is also what shows when nothing can be fetched. -->
+				<svg class="size-6 shrink-0" viewBox="0 0 16 16" aria-hidden="true">
+					<defs>
+						<linearGradient id="z-mark-sky" x2="0" y2="1"><stop offset="0" stop-color="#3b82f6" /><stop offset="1" stop-color="#1d4ed8" /></linearGradient>
+					</defs>
+					<rect width="16" height="16" rx="3.5" fill="url(#z-mark-sky)" />
+					<g fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="2" y="4" width="12" height="8" fill="#fff" fill-opacity="0.12" stroke="none" />
+						<path d="M2 4V12M14 4V12M2 4L8 8" stroke-opacity="0.45" />
+						<path d="M2 4H14L2 12H14" />
+					</g>
+				</svg>
 				<span class="text-[17px] font-bold tracking-[-0.025em] text-[var(--z-ink)]">Zaur</span>
 				<span class="z-chip z-chip-filled !tracking-[0.06em]" style="--z-fill:var(--z-ch-needs-fill);--z-stroke:var(--z-ch-needs-solid);--z-ink-on:var(--z-ch-needs-ink)">Beta</span>
 			</div>

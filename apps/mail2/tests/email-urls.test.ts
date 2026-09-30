@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { classifyUrl, classifySrcset, inlineImageSrc, linkAllowed } from '../src/lib/email/urls.ts';
+import { classifyUrl, classifySrcset, editorAttribute, inlineImageSrc, linkAllowed } from '../src/lib/email/urls.ts';
 
 const APP = 'https://webmail.zaur.app';
 
@@ -105,4 +105,38 @@ test('mail urls: links keep other sites, and this app only in full and only its 
 	]) {
 		assert.equal(linkAllowed(href, APP), false, href);
 	}
+});
+
+test('compose editor: a draft brings in no picture but an inline image of ours, and nothing else that fetches', () => {
+	const inline = '/api/jmap/download?blobId=b1&name=cat.png&type=image%2Fpng&inline=1';
+	const img = (src: string) => editorAttribute('img', 'src', src, APP);
+	assert.equal(img(inline), inline);
+	assert.equal(img(`${inline}&x=/oidc/logout`), inline);
+	assert.equal(img('data:image/png;base64,AAAA'), 'data:image/png;base64,AAAA');
+	// null: the <img> does not survive (prepareEditorHtml removes one left without a src).
+	for (const src of ['/oidc/logout', '', '?x', 'https://leak.example.com/pixel.png', '//leak.example.com/p.png', '/api/download?blobId=b1', 'https://music.zaur.app/auth/logout', 'cid:gone']) {
+		assert.equal(img(src), null, JSON.stringify(src));
+	}
+	assert.equal(editorAttribute('video', 'src', inline, APP), null);
+	for (const name of ['srcset', 'poster', 'background']) assert.equal(editorAttribute('img', name, inline, APP), null, name);
+	assert.equal(editorAttribute('span', 'style', 'font-weight: bold', APP), 'font-weight: bold');
+	assert.equal(editorAttribute('div', 'style', 'background: url(/oidc/logout)', APP), null);
+	assert.equal(editorAttribute('a', 'href', 'https://example.org/', APP), 'https://example.org/');
+	// A link is the reader's rule too: the app's own address only in full, and only a page (a Meet invitation).
+	assert.equal(editorAttribute('a', 'href', 'https://webmail.zaur.app/meet/zaur-abcdefgh', APP), 'https://webmail.zaur.app/meet/zaur-abcdefgh');
+	assert.equal(editorAttribute('a', 'href', 'mailto:ada@example.com', APP), 'mailto:ada@example.com');
+	for (const href of ['/oidc/logout', '/calendar', 'https://webmail.zaur.app/oidc/logout', '//webmail.zaur.app/settings', '']) {
+		assert.equal(editorAttribute('a', 'href', href, APP), null, JSON.stringify(href));
+	}
+
+	// Trix shows a figure from its JSON: the same rule for the address in there, and no markup.
+	const figure = (attachment: unknown) => editorAttribute('figure', 'data-trix-attachment', JSON.stringify(attachment), APP);
+	assert.equal(figure({ contentType: 'image/png', filename: 'cat.png', url: inline }), JSON.stringify({ contentType: 'image/png', filename: 'cat.png', url: inline }));
+	for (const attachment of [{ url: '/oidc/logout' }, { url: 'https://leak.example.com/p.png' }, { url: inline, content: '<img src="/oidc/logout">' }, { content: '<b>x</b>' }, {}, null, 5]) {
+		assert.equal(figure(attachment), null, JSON.stringify(attachment));
+	}
+	assert.equal(editorAttribute('figure', 'data-trix-attachment', '{not json', APP), null);
+	// Trix wraps the picture in a link to `href`: it goes unless it could be a link in a message.
+	assert.equal(figure({ url: inline, href: '/oidc/logout' }), JSON.stringify({ url: inline }));
+	assert.equal(figure({ url: inline, href: 'https://example.org/' }), JSON.stringify({ url: inline, href: 'https://example.org/' }));
 });

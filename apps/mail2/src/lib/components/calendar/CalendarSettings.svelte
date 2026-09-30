@@ -68,6 +68,10 @@
 
 	const where = $derived({ id: calendar.id, accountId: calendar.accountId });
 	const changed = $derived(name.trim() !== calendar.name || color !== calendar.color);
+	/** Whether closing the panel now would lose a name or colour not saved yet. */
+	export function isDirty(): boolean {
+		return changed;
+	}
 	const swatches = $derived(CALENDAR_COLORS.includes(calendar.color) ? CALENDAR_COLORS : [calendar.color, ...CALENDAR_COLORS]);
 	/** What a screen reader says for each swatch; a colour from elsewhere has no name. */
 	const SWATCH_NAMES: Record<string, string> = {

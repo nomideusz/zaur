@@ -25,7 +25,8 @@ export const prefs = $state<Prefs>(
  * pushed: a fresh tab must not overwrite the account with its own defaults
  * before it has heard what the account already says.
  */
-let push: ((changed: Partial<AccountPrefs>) => void) | null = null;
+let push: ((changed: Partial<AccountPrefs>) => Promise<unknown>) | null = null;
+let notSaved: (cause: unknown) => void = () => {};
 let synced = false;
 
 function persist() {
@@ -33,11 +34,21 @@ function persist() {
 }
 
 export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]) {
+	const before = prefs[key];
 	prefs[key] = value;
 	persist();
 	if (!synced || !push) return;
 	if (!(ACCOUNT_PREF_KEYS as readonly string[]).includes(key)) return;
-	push({ [key]: value } as Partial<AccountPrefs>);
+	// The account's copy wins on the next load, so a change that never reached
+	// it would be undone then without a word. Put back now and said, it is seen.
+	push({ [key]: value } as Partial<AccountPrefs>).catch((cause) => {
+		// Unless it was changed again since: that change has its own push.
+		if (prefs[key] === value) {
+			prefs[key] = before;
+			persist();
+		}
+		notSaved(cause);
+	});
 }
 
 /**
@@ -53,17 +64,21 @@ export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]) {
  */
 export function adoptAccountPrefs(
 	remote: Partial<AccountPrefs> | null,
-	pushChanges: (changed: Partial<AccountPrefs>) => void
+	pushChanges: (changed: Partial<AccountPrefs>) => Promise<unknown>,
+	/** Tells the person a change did not reach the account (and was put back). */
+	onNotSaved: (cause: unknown) => void
 ) {
 	untrack(() => {
 		const merged = mergeAccountPrefs({ ...prefs }, remote);
 		for (const key of ACCOUNT_PREF_KEYS) prefs[key] = merged[key] as never;
 		persist();
 		push = pushChanges;
+		notSaved = onNotSaved;
 		synced = true;
 
 		// First device to sign in seeds the account, so a second one has something
 		// to adopt rather than starting from defaults again.
-		if (!remote) pushChanges(accountPrefsOf(prefs));
+		// Quietly: nothing was changed by hand, and the next device to sign in tries again.
+		if (!remote) void pushChanges(accountPrefsOf(prefs)).catch(() => {});
 	});
 }

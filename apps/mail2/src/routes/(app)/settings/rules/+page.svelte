@@ -62,6 +62,7 @@
 <RulesEditor
 	data={rulesResource?.current}
 	error={rulesResource?.error}
+	onRetry={() => void rulesResource?.refresh()}
 	mailboxes={mailboxesResource?.current}
 	{saving}
 	onSave={(next, takeOver) => void persist(next, takeOver)}

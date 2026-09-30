@@ -27,7 +27,7 @@
 	import EventView from '#lib/components/calendar/EventView.svelte';
 	import { eventsOnDay, shiftMonth, startOfDay } from '#lib/calendar/schedule';
 	import { ZAUR_THEME, sourceOf, toTimelineEvent } from '#lib/calendar/bridge';
-	import { LiveUpdates } from '#lib/mail/live';
+	import { getShell } from '#lib/shell.svelte.ts';
 	import { backLayer } from '#lib/back-layer.svelte.ts';
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import { whoami } from '../../session.remote';
@@ -100,7 +100,6 @@
 	 */
 	let now = $state(new Date());
 	$effect(() => {
-		if (!phone) return;
 		const timer = setInterval(() => (now = new Date()), 30_000);
 		return () => clearInterval(timer);
 	});
@@ -109,6 +108,12 @@
 	const nowRow = $derived(
 		now.getMinutes() <= 10 ? now.getHours() + 1 : now.getMinutes() >= 50 ? now.getHours() + 2 : 0
 	);
+	/**
+	 * The week's gutter has the same trouble in its own numbers: 12px labels on
+	 * 48px hours touch "now" within a quarter of an hour. Its labels are 1a to
+	 * 11p, in order, so the hour is the label's place; midnight has none.
+	 */
+	const weekNowRow = $derived(now.getMinutes() <= 16 ? now.getHours() : now.getMinutes() >= 44 ? now.getHours() + 1 : 0);
 
 	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC';
 	const month = $derived(monthGrid(anchor.getFullYear(), anchor.getMonth(), 'monday'));
@@ -169,17 +174,15 @@
 	const eventsResource = $derived(session && calendarsState?.supported ? eventsRemote(range) : undefined);
 
 	// Push: a change made on the phone shows up here.
-	$effect(() => {
-		if (!session) return;
-		const live = new LiveUpdates();
-		live.start(({ calendar }) => {
+	const shell = getShell()!;
+	$effect(() =>
+		shell.onLive(({ calendar }) => {
 			if (calendar) {
 				void calendarsResource?.refresh();
 				void reload();
 			}
-		});
-		return () => live.stop();
-	});
+		})
+	);
 
 	/**
 	 * JMAP calendar ids are only unique within an account, and a shared calendar
@@ -261,11 +264,14 @@
 					if (untrack(() => query.error)) await query.refresh();
 					list = await query;
 					kept.set(rangeKey(bounds), list);
-					failed = null;
+					// Only the range asked for last says how the grid's load went. The
+					// grid asks for two on the way in, and the first, answered a moment
+					// later from what was kept, cleared the failure of the one it draws.
+					if (gridRange === bounds) failed = null;
 				} catch {
 					// The grid draws a failed load as an empty week; see `kept`.
 					const before = kept.get(rangeKey(bounds));
-					failed = before ? 'kept' : 'nothing';
+					if (gridRange === bounds) failed = before ? 'kept' : 'nothing';
 					list = before ?? [];
 				}
 				return list
@@ -319,11 +325,15 @@
 	 */
 	const panel = backLayer('calendar-panel');
 
-	/** An event form with something typed in it asks before it is dropped. */
+	/** An event form with something typed in it asks before it is dropped; so does a calendar's name. */
 	let editor = $state<ReturnType<typeof EventEditor> | null>(null);
+	let settings = $state<ReturnType<typeof CalendarSettings> | null>(null);
 	const mayLeave = leaveGuard(
-		() => (mode === 'new' || mode === 'edit') && (editor?.isDirty() ?? false),
-		'this event'
+		() =>
+			mode === 'calendar'
+				? (settings?.isDirty() ?? false)
+				: (mode === 'new' || mode === 'edit') && (editor?.isDirty() ?? false),
+		() => (mode === 'calendar' ? 'this calendar' : 'this event')
 	);
 
 	/** Whatever else the rail is asked to hold replaces the form in it: `false` when the person keeps the form. */
@@ -339,6 +349,11 @@
 		untrack(() => {
 			// Back on a phone has already left the entry: staying means putting it back.
 			if (!mayLeave()) return void panel.show();
+			// Out of a calendar's settings Back goes where its Done does: to the list they were opened from.
+			if (mode === 'calendar' && settingsFrom === 'calendars') {
+				mode = 'calendars';
+				return void panel.show();
+			}
 			mode = 'view';
 			editing = null;
 		});
@@ -346,6 +361,13 @@
 
 	function startNew(at: Date = anchor, until: Date | null = null) {
 		if (!openPanel('new')) return;
+		// No time picked (midnight, which the editor reads as 09:00) and the day is
+		// today: the next full hour, rather than a nine o'clock already gone.
+		const hour = new Date().getHours();
+		if (!until && at.getTime() === startOfDay(new Date()).getTime() && hour >= 9 && hour < 23) {
+			at = new Date(at);
+			at.setHours(hour + 1);
+		}
 		anchor = startOfDay(at);
 		draftAt = at;
 		draftEnd = until;
@@ -552,13 +574,17 @@
 	);
 </script>
 
-<svelte:head><title>Calendar · Zaur Mail</title></svelte:head>
+<svelte:head><title>{shell.title('Calendar')}</title></svelte:head>
 
 <svelte:window onkeydown={escape} ononline={() => failed && void reload()} />
 
 {#if nowRow && anchor.getTime() === startOfDay(now).getTime()}
 	<!-- Only the hour rows are numbered, so which one hides is a rule written per minute. -->
 	{@html `<style>.z-cal .mb-hour:nth-child(${nowRow}) .mb-hour-label{visibility:hidden}</style>`}
+{/if}
+{#if weekNowRow}
+	<!-- Only in a week that has "now" in it: the grid draws its label in no other. -->
+	{@html `<style>.z-cal .tw-gutter:has(.tw-gutter-now) .tw-gutter-lb:nth-child(${weekNowRow}){visibility:hidden}</style>`}
 {/if}
 
 <SectionShell title="Calendar">
@@ -779,6 +805,7 @@
 					/>
 				{:else if mode === 'calendar' && settingsCalendar && calendarsState}
 					<CalendarSettings
+						bind:this={settings}
 						calendar={settingsCalendar}
 						calendars={calendarList}
 						own={!calendarsState.primaryAccountId ||
@@ -791,7 +818,7 @@
 							leaveSettings();
 							void reload(); // its events went with it
 						}}
-						onClose={leaveSettings}
+						onClose={() => mayLeave() && leaveSettings()}
 					/>
 				{:else if (mode === 'new' || mode === 'edit') && calendarsState}
 					<EventEditor

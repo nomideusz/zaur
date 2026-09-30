@@ -13,6 +13,8 @@
 	import { onMount, untrack } from 'svelte';
 	import { plainTextToSafeHtml } from '@zaur/mail-core/email/text';
 	import { richToText } from '#lib/compose/plain';
+	import { prepareEditorHtml } from '#lib/email/html';
+	import { loadTrix } from '#lib/compose/trix';
 
 	interface TrixAttachment {
 		file?: File;
@@ -26,6 +28,7 @@
 		editor: {
 			loadHTML(html: string): void;
 			setSelectedRange(range: number): void;
+			getDocument(): { toString(): string };
 		};
 	}
 
@@ -56,20 +59,22 @@
 	let known = '';
 	let loading = false;
 
+	/** The document without the picture sizes Trix writes into it: only ever found in markup. */
+	const unsized = (value: string) =>
+		value.replace(/,?&quot;(?:width|height)&quot;:\d+|(<img [^>]*?) width="\d+" height="\d+"/g, '$1');
+
 	onMount(() => {
-		// Trix defines its elements a tick after it loads, so this lands before any editor draws.
-		// It is a chunk of its own, so it can fail by itself: offline, or a deploy that retired it.
-		import('trix').then(({ default: Trix }) => {
-			// The name and size under an image are editor furniture, not part of the letter.
-			Trix.config.attachments.preview.caption = { name: false, size: false };
-		}, onfail);
+		// A chunk of its own, so it can fail by itself: offline, or a deploy that retired it.
+		loadTrix().catch(onfail);
 	});
 
 	$effect(() => {
 		const node = el;
 		if (!node) return;
 		const init = () => {
-			const seed = html || plainTextToSafeHtml(text);
+			// The one door HTML comes in by. What was written here passes unchanged; a draft
+			// from elsewhere loses what would make this page fetch (`prepareEditorHtml`).
+			const seed = (html && prepareEditorHtml(html)) || plainTextToSafeHtml(text);
 			loading = true;
 			// A reply opens on an empty line above its quote, not inside it.
 			node.editor.loadHTML(seed.startsWith('<blockquote') ? `<div><br></div>${seed}` : seed);
@@ -88,7 +93,11 @@
 			// While the link dialog is up Trix paints the held selection into the document
 			// itself (a highlight span). It is gone on close, which reports again.
 			if (node.value.includes('background-color: highlight')) return;
+			// Trix measures a picture once it has loaded and writes the size in. That is the
+			// editor settling, not the reader writing: a draft only opened is not saved back.
+			const settled = unsized(node.value) === unsized(known);
 			known = node.value;
+			if (settled) return;
 			const body = richToText(node.value);
 			onchange(body, body ? node.value : '');
 		};
@@ -112,6 +121,23 @@
 			);
 		};
 		const focus = () => onfocus?.();
+		// A link in the text is text being edited. The browser does not follow one in an
+		// editor, but SvelteKit's router takes any click on a link to this app: a planted
+		// `/oidc/logout` in a draft signed the reader out. No click here ever navigates.
+		const inert = (event: Event) => {
+			if ((event.target as Element | null)?.closest?.('a')) event.preventDefault();
+		};
+		// A tap on the blank under the text puts the caret at the very end, which is the
+		// signature's last line. What is written goes above the signature.
+		const above = (event: MouseEvent) => {
+			const last = node.lastElementChild;
+			if (event.target !== node || !last || event.clientY < last.getBoundingClientRect().bottom) return;
+			const text = node.editor.getDocument().toString();
+			let at = text.search(/\n--[ \u00a0]\n/);
+			if (at < 0) return;
+			while (at > 0 && text[at - 1] === '\n') at -= 1;
+			node.editor.setSelectedRange(at);
+		};
 		// Once Trix is loaded (a second panel, a switch back from plain) the element
 		// initializes as it connects — before this effect can listen for it. Untracked:
 		// otherwise every keystroke's `html` re-seeds the editor, caret at 0 ("olleh").
@@ -121,12 +147,18 @@
 		node.addEventListener('trix-file-accept', accept);
 		node.addEventListener('trix-attachment-add', upload);
 		node.addEventListener('trix-focus', focus);
+		node.addEventListener('click', inert);
+		node.addEventListener('click', above);
+		node.addEventListener('auxclick', inert);
 		return () => {
 			node.removeEventListener('trix-initialize', init);
 			node.removeEventListener('trix-change', change);
 			node.removeEventListener('trix-file-accept', accept);
 			node.removeEventListener('trix-attachment-add', upload);
 			node.removeEventListener('trix-focus', focus);
+			node.removeEventListener('click', inert);
+			node.removeEventListener('click', above);
+			node.removeEventListener('auxclick', inert);
 		};
 	});
 </script>
@@ -141,6 +173,7 @@
 	aria-label="Message"
 	autocapitalize="sentences"
 	enterkeyhint="enter"
+	data-sveltekit-preload-data="false"
 ></trix-editor>
 
 <style>

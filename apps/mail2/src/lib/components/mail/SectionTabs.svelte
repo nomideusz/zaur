@@ -61,10 +61,15 @@
 			aria-current={current?.href === section.href ? 'page' : undefined}
 			data-sveltekit-preload-data="hover"
 			title={section.label}
-			class="z-segment max-[1099px]:!px-2"
+			class="z-segment max-[1100px]:!px-2"
+			onclick={(event) => {
+				// Already there: a link to the address in the bar is a refresh to Kit, and
+				// offline a refresh that fails takes the whole app down to the error card.
+				if (page.url.pathname === section.href && !page.url.search) event.preventDefault();
+			}}
 		>
 			{@render sectionIcon(section.href, 'size-4 min-[1100px]:hidden')}
-			<span class="max-[1099px]:sr-only">{section.label}</span>
+			<span class="max-[1100px]:sr-only">{section.label}</span>
 		</a>
 	{/each}
 </nav>

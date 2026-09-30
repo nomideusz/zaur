@@ -1,8 +1,9 @@
 # @zaur/mail2 — Zaur Mail 2.0
 
 The Mail 2.0 client (ADR-0005): a clean-room rebuild of the webmail UI on the
-shared packages, following the redesign handoff's resolved variants. **Light
-theme only** for now. Files is built from the shell's own parts (no design of its own yet).
+shared packages, following the redesign handoff's resolved variants. Light and
+dark themes (see [Dark mode](#dark-mode)). Files is built from the shell's own
+parts (no design of its own yet).
 
 ## Status
 
@@ -184,22 +185,24 @@ Cloudflare Access policy on the `*-dev` hostnames. Production runs on
 
 ## Deploying (Dokploy)
 
-Deployed like webmail: a Dokploy service builds `apps/mail2/Dockerfile` from
-the repo root on every push to `main` (git auto-deploy), with
-`.github/workflows/deploy-mail2.yml` as the pre-deploy quality gate.
+A Dokploy service builds `apps/mail2/Dockerfile` from the repo root on every
+push to `main` (git auto-deploy), with `.github/workflows/deploy-mail2.yml` as
+the pre-deploy quality gate. Since 2026-09-26 it serves `webmail.zaur.app` as
+well as `mail2.zaur.app`; the 1.0 webmail service is stopped, with auto-deploy
+off and no domains (see *Taking over webmail.zaur.app* below).
 
-The mail2 container signs in through **its own** `/login` (Stalwart OAuth
-credential flow), but keeps the shared-store mount so 1.0↔2.0 session sharing
-keeps working: both images default `STORE_DB_PATH=/app/.data/store.sqlite` —
-point **both** Dokploy services' `/app/.data` mounts at the **same host
-directory**.
+The container signs in through **its own** `/login` (Stalwart OAuth credential
+flow). It keeps the store mount 1.0 used: `STORE_DB_PATH` defaults to
+`/app/.data/store.sqlite`, and that directory also holds the OIDC signing key,
+so the JWKS that Music, Photos and Bartube trust stays the same across
+redeploys.
 
-Service settings (mirroring the webmail service):
+Service settings:
 
 | Setting | Value |
 | --- | --- |
 | Build type | Dockerfile — path `apps/mail2/Dockerfile`, context: repo root |
-| Domain | `mail2.zaur.app` |
+| Domain | `webmail.zaur.app`, `mail2.zaur.app` |
 | Port | 3000 (`PORT`, `HOST`, `BODY_SIZE_LIMIT=50M` are baked into the image) |
 | Env | `SESSION_SECRET=<same value as the webmail service>` |
 | Env | `SESSION_COOKIE_DOMAIN=.zaur.app` |
@@ -208,21 +211,19 @@ Service settings (mirroring the webmail service):
 | Env | `JMAP_INTERNAL_URL=http://mail:8080` |
 | Env | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — notifications; webmail's values work (`npx web-push generate-vapid-keys` for new ones). Unset, the settings card says so |
 | Env | `PUBLIC_TRACEWAY_DSN=<token>@https://traceway.zaur.app/api/report` — optional; browser and server errors, plus server tracing (`src/lib/server/tracing.ts`) |
-| Volume | same host directory as webmail's `/app/.data` → `/app/.data` |
+| Volume | the host directory 1.0 webmail used for `/app/.data` → `/app/.data` |
 
-`SESSION_COOKIE_DOMAIN` must be set on the **webmail** service too (add it and
-redeploy webmail — the Dockerfile there also needed a `packages/server-auth`
-COPY fix for the next build). Without that variable webmail's cookie stays
-scoped to `webmail.zaur.app` and mail2 never sees the login. `SESSION_SECRET`
-is required in production: session records are sealed with it, and two apps
-sharing one store must share the value.
+`SESSION_SECRET` is required in production: session records are sealed with
+it, so changing it signs everyone out.
 
 ### Taking over webmail.zaur.app
 
-The plan is to point `webmail.zaur.app` at this service rather than move
-people to a new address. That way Meet links, installed PWAs, the Capacitor
-shell's URL, register's `WEBMAIL_URL` and Bartube's OIDC issuer keep working.
-What 1.0 left behind is handled here:
+On 2026-09-26 `webmail.zaur.app` was pointed at this service rather than
+moving people to a new address, so Meet links, installed PWAs, the Capacitor
+shell's URL, register's `WEBMAIL_URL` and the OIDC issuer that Bartube, Photos
+and Music check all kept working. To roll back: delete the `webmail.zaur.app`
+domain from this service in Dokploy, create it again on the webmail service,
+and start that service. What 1.0 left behind is handled here:
 
 - **Old links** — `#lib/legacy-links.ts`, run from `handle`, maps each 1.0 URL
   to its nearest mail2 page:
@@ -243,7 +244,7 @@ What 1.0 left behind is handled here:
   `localStorage` (`zaur:contacts:v2:<accountId>`). Once mail2 serves the same
   origin, compose offers them as "Recent", after the address book, ordered by
   how often each was written to. It reads the list and does not copy it.
-- **Notifications** — these need three steps:
+- **Notifications** — done at the switch, in three steps:
   1. Copy webmail's `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` and `VAPID_SUBJECT`
      into this service and redeploy. It is safe at any time: a browser holding
      a subscription under another key re-subscribes on its next load
@@ -293,6 +294,10 @@ one open for editing at a time and *Use on all N addresses* for aliases that wan
 the primary's name and signature. The password window the security pages share
 is `ConfirmIdentity.svelte`.
 
+A pane that reads from the server (Addresses, Password & sign-in, App passwords,
+Devices, Auto-reply, Folders, Rules, Sharing) says when that load failed and has
+**Retry** beside the message, which asks again without a reload of the page.
+
 Settings has **three** owners, not two; which one a setting belongs to is a real
 decision rather than an accident of where it was easiest to put:
 
@@ -300,14 +305,30 @@ decision rather than an accident of where it was easiest to put:
   through `settings.remote.ts` (`Identity/get` + `Identity/set`), plus the
   account address, quota and sign-out. Mail rules live here too, as a Sieve
   script — see [Rules](#rules).
-- **The Zaur account (our store).** The five preferences that should be the
+- **The Zaur account (our store).** The preferences that should be the
   same wherever you sign in — see
   [Settings that follow the account](#settings-that-follow-the-account).
 - **This browser.** `#lib/settings` still owns the `mail2.prefs` localStorage
   blob (`parsePrefs` merges it over the defaults and drops anything malformed),
   exposed as a `$state` object by `#lib/settings.svelte.ts`. Everything lives
-  here first; the account's copy is merged over it on sign-in, and `listWidth`
-  and `sidebarOpen` never leave.
+  here first; the account's copy is merged over it on sign-in, and `listWidth`,
+  `sidebarOpen` and `theme` never leave.
+
+### Unsaved work asks first
+
+Rules and Auto-reply are saved with a button, and both ask before changes that
+were not saved are dropped. So do the contact editor, the calendar's event
+form, a calendar's settings (a name or colour not saved yet) and the address
+open in Settings → Addresses, whose signature can be many lines; there, opening
+another address asks as well. `leaveGuard(dirty, what)` in `#lib/leave-guard.ts` is the one place that
+asks: a link, a section tab, Back and a reload all reach it through Kit's
+`beforeNavigate`, and when the tab is closed the browser asks in its own words.
+It must be called while the component initialises, as `beforeNavigate` must.
+
+It lets through any navigation that stays on the same path, because that is a
+layer's history entry (the compose sheet opening on a phone) and not a way out.
+The ways out that stay on the page (Escape, a layer's Back, opening something
+else in the form's place) call the function it returns instead.
 
 ## Nothing inert on screen
 
@@ -323,7 +344,7 @@ mockup affordances across from the Hobday prototype; they are gone:
 | List category chips | `inferTag()` guessed "Family"/"Work" from subject keywords |
 | Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert — the actions are back in the reader's toolbar and, since the split Reply button landed, in a menu that runs them (see [Reply is a split button](#reply-is-a-split-button)) |
 | Top-bar search | an input with no handler at all — the slot is wired now, see [Search](#search) |
-| Profile "Keyboard shortcuts" | inert menu item |
+| Profile "Keyboard shortcuts" | inert menu item — the list is back as a sheet the `?` key opens, see [Keys](#keys) |
 
 Attachment chips stay, and they are downloads again: `/api/download` streams
 the blob through the server, mirroring `/api/upload`, because Stalwart's
@@ -350,6 +371,20 @@ centring walked the message away from the list it came from and from its own
 Reply buttons as the pane widened. Slack pools on the right, where nothing
 needs to be reachable, and the toolbar shares the column's `px-8` left edge.
 
+The list's width is the person's, set with the splitter between the panes (380
+to 760px, `listWidth`), but only while the window has room for it: the list
+never takes more than half of what the sidebar leaves, so the message is always
+the wider pane. The limit is in two places that have to agree. The grid caps
+the column in CSS (`min(var(--z-list-w), 50%)` in `.z-shell`), which is what
+holds when a stored width meets a smaller window, and `Splitter.svelte`'s
+`limit()` applies the same half to a drag and to the arrow keys, so the handle
+does not travel past where the column stops.
+
+`.z-shell` is one row, exactly as tall as its slot (`minmax(0, 1fr)`), and each
+pane scrolls inside it. Left to size itself, the row grew to the tallest pane,
+a long folder list for one, and pushed the others and the status line off the
+bottom of the window.
+
 The sign-in card keeps its border and shadow — a centred auth card on a ground
 is a card, not a fake window.
 
@@ -369,6 +404,18 @@ iPad in portrait with a 280px reader. Below 1024 the sidebar leaves the grid
 (`max-lg:absolute`, so it stops being a grid item at all) and slides over the
 panes with a scrim. It sits *under* the top bar rather than over it, so the
 button that opened it is still there to close it.
+
+The server cannot know the width, so it renders the sidebar as the column it is
+on a desk. Below 1024px that markup would be the drawer, open over the list
+until the page hydrates. CSS keeps it away there (`max-lg:hidden`) until the
+drawer has been opened, so a phone never sees it flash on a load.
+
+As a drawer it is modal. Focus moves into it when it opens and back to what
+opened it when it closes, and the panes under the scrim are `inert`, so Tab and a
+screen reader cannot reach what the scrim covers. It is also a history entry
+(see [Back closes the layer on top](#back-closes-the-layer-on-top)), at every
+width below 1024px and not only on a phone, because a tablet's drawer covers the
+list just the same.
 
 A phone gives each kind of navigation one home. Sections are a tab row along
 the bottom (`PhoneTabBar`) on every screen, gone while a thread is open and
@@ -400,6 +447,38 @@ a reload or a copied link reopens it. On a phone the parameter rides on the
 shallow entry, so Back drops it with the reader. `patchQuery` writes every query
 change in turn, each from the URL the last one left — a folder switch that also
 closes the reader is two writes, and in parallel each would undo the other.
+
+### Back closes the layer on top
+
+The reader's entry is one case of a rule: whatever covers the screen on a phone
+is a shallow history entry, so Back closes it rather than leaving the screen
+under it. `backLayer(name)` in `#lib/back-layer.svelte.ts` is the one
+implementation, and the drawer, the compose sheet, the reader's attachment
+preview, a contact, the calendar's panel and a file preview all use it. On
+wider layouts nothing is covered, and the same object is plain state. A layer
+opened over the reader copies the reader's state onto its own entry, so the
+thread is still open underneath.
+
+What to know before adding one:
+
+- **Closing is a step back, and a step back lands late.** `hide()` returns a
+  promise for it. Whatever navigates next has to wait for that promise or go
+  through `inOrder`, or it writes onto the entry being left: picking a folder
+  in the drawer closes the drawer first and changes the folder after, and the
+  drawer's Edit link steps off its entry before going to Settings. Kit has no
+  event for a shallow pop, so `stepBack` polls for it and gives up after half a
+  second.
+- **A reload keeps the entry, not what the layer showed.** A page that can put
+  it back calls `show()` again (Contacts keeps the open contact in a
+  `snapshot`). An entry nobody claims is stepped off once the page has loaded,
+  so that Back is not spent on nothing.
+- **Back on unsaved work has already happened.** By the time a page sees its
+  layer closed, the entry is gone, so "stay" means showing the layer again;
+  Contacts and Calendar do that when `leaveGuard`'s question is answered no
+  (see [Unsaved work asks first](#unsaved-work-asks-first)).
+
+The compose sheet never discards on Back: the draft goes to the dock, and only
+a draft with nothing in it is closed.
 
 ### A screen gets one bar
 
@@ -439,9 +518,26 @@ it goes through the same `bulk` command Archive does and the toast says what
 was meant ("marked as spam") rather than how it was carried out. Inside Junk
 the same button means the opposite, and files the message back to the inbox.
 
-A move now also refreshes the **destination** folder's cached list. Without
-that, opening the folder you just moved something into showed it as it was
-before, which reads as a move that did not happen.
+**Reply goes where the message says to answer** (`replyRecipients` in
+`#lib/compose/quote.ts`): its Reply-To when it names one, else its sender. A
+message you sent is answered to the people you sent it to, because a reply to
+it is a follow-up to them and not a letter to yourself.
+
+**Reply all answers the message in hand and nothing earlier**
+(`replyAllRecipients`, same file). Its sender (its Reply-To, when it names one)
+and the people it was addressed to go in To, and its Cc stays Cc. Whoever was dropped from the
+conversation along the way stays dropped, which collecting addresses from the
+whole thread would undo. Your own addresses are left out, with two exceptions
+that would otherwise leave nobody: a message you sent goes back to the people
+you sent it to, and a note to yourself goes back where it came from.
+
+Only the open folder's list follows live changes; every other folder's is kept
+from the last visit. So a move refreshes the **destination** folder's cached
+list, its Undo refreshes the folder the messages were taken back out of, and a
+folder asks again whenever it is returned to. Without the first, the folder you
+just moved something into showed it as it was before, which reads as a move
+that did not happen. Without the second, a row stayed behind in that folder
+and offered to delete a message that was no longer in it.
 
 ### Compose is a sheet
 
@@ -460,6 +556,19 @@ repeating it, truncated. A window keeps the subject as its title — several can
 be open at once and it is the only thing that tells them apart — so the panel
 carries a `kind` and the two headers read it differently.
 
+On a phone the sheet is a whole screen, so it is a history entry (see
+[Back closes the layer on top](#back-closes-the-layer-on-top)): Back puts the
+draft in the dock instead of leaving Mail from under it.
+
+The sheet also gives way to the keyboard. A phone on its side with the
+keyboard up leaves it some 150px, and its two bars alone are 124. While the
+message has the focus and the shell is under 300px tall, the address rows and
+the subject step out; under 240px the action bar goes too, and the sheet is its
+header (with Send) and the message. They return with the height. The
+attachment strip scrolls with the message in a sheet, where a window pins it
+above the action bar: pinned, one file and the keyboard left the message no
+height at all.
+
 **Cc and Bcc left the chip row.** They used to sit inside it, so the first
 recipient pushed them onto a line of their own; they hold the row's right edge
 now. On a phone they are one chevron rather than two words, and it opens both:
@@ -470,11 +579,41 @@ and each row carries its own ✕ for whichever you did not want.
 
 To, Cc and Bcc are the same field, so they are the same component: a chip list
 with completion over the same address book, the same identity tones, the same
-Enter/comma/Tab commit and the same Backspace. Cc and Bcc used to be bare
+Enter/comma/semicolon/Tab commit and the same Backspace. Cc and Bcc used to be bare
 comma-separated text that was only parsed at send — no completion, no chip, and
 no way to correct one address out of four. They are `Recipient[]` on the draft
 now, like To has always been, and `RecipientField` is what every store method
 takes so none of it exists three times over.
+
+Enter, Tab, a comma and a semicolon commit a suggestion only when it is
+highlighted in a list that is open, that is, one the writer can see
+(`highlightedSuggestion`). A closed list still has a first row, whoever sorts
+first in the address book, and committing it added a stranger to a message from
+an empty field. A whole address typed by hand is not replaced by the first row
+either: that row only contains it (`ann@corp.com` finds joann@corp.com), so it
+takes over when it is the same address or was picked with the arrows.
+
+A chip opened for editing starts with its text selected. Text that is no
+address is not a deletion: Enter keeps the editor open and marked, and leaving
+it or Escape puts the chip back as it was. Only emptying a chip removes it.
+
+**Every way in splits a list.** Those keys, leaving the field, a paste and Send
+all end in `splitRecipients` (`#lib/compose/recipients.ts`), which reads one
+entry or many, separated by commas, semicolons, new lines or only spaces, each
+`a@b.com`, `Name <a@b.com>` or `Name a@b.com`. A pasted list becomes as many
+chips at once; it used to become one chip named after all of it, and only its
+last address got the mail. Duplicates collapse whatever their case, and an
+address lives in one row only: added to Cc, it leaves To. What is not an
+address stays in the field, and Send refuses to go around it. The row is
+marked and says "… is not an email address", where sending around it dropped
+that person without a word.
+
+A chip's name travels with its address. Send and draft payloads carry
+`{ name?, email }` (`outgoingRecipients`), so the header reads
+`"Annie Hobday" <annie@…>` and not the bare address. The server's
+`cleanRecipients` still accepts a bare string, because an outbox entry queued
+by an older build carries those. A message needs one recipient in any of the
+three rows: Cc only or Bcc only is a message that can be sent.
 
 **A chip hands its text back.** Clicking the name opens the chip in place as an
 input holding `Name <address>`, selected: Enter or blur commits it through the
@@ -497,9 +636,13 @@ action bar. Every compose field is 16px on a phone, below which iOS Safari
 zooms the viewport on focus and throws the sheet off-centre.
 
 Minimised drafts keep working: the dock becomes one horizontally scrolling
-strip on the bottom edge (`justify-start` — with `justify-end` the overflow
-spills past the unscrollable start edge), and chip reordering is skipped for
-touch pointers, where the same drag is the strip's scroll.
+strip (`justify-start` — with `justify-end` the overflow spills past the
+unscrollable start edge). It is a row of the page under the panes, not a float
+over them, so the last row of whichever pane is showing is never under a chip.
+Chip reordering is skipped for touch pointers, where the same drag is the
+strip's scroll. A click or a tap anywhere on a chip reopens its draft, and a
+press that moves more than 4px is a reorder and reopens nothing. On a phone the
+chip is therefore its own way back in, and the one icon it keeps is Close.
 
 ### Smaller things, and what was left out
 
@@ -512,7 +655,22 @@ touch pointers, where the same drag is the strip's scroll.
   though — a narrow pane on a desk is still being pointed at, not tapped.
 - The status line is hidden below 768px: 36px of keyboard hints and a storage
   meter is not what a phone should spend its height on, and the top bar's
-  folder chip already carries the unread count.
+  folder chip already carries the unread count. The key hints alone step out
+  wherever the pointer is a finger (`pointer-coarse`), a touch laptop or a
+  tablet with the status line on screen included.
+- What the whole app should say once, it says in the shell header: that the
+  connection is gone ("Offline"), that messages are waiting in the outbox ("N
+  waiting to send") and that a newer build is waiting ("Reload to update"). The
+  outbox has no folder to look in and sends from every section, so its count
+  shows in every section and not in Mail's status line. From 768px the three
+  sit next to the section tabs, the count as a chip in the needs-you channel
+  (below 1024px the number alone, with the words as its tooltip). A phone's
+  header has no room, so there they are a strip above it, in the flow, so it
+  covers nothing.
+- Touch sizes are one unlayered rule in `base.css`, under
+  `@media (hover: none) and (pointer: coarse)`: `kbd` hints hide, and icon
+  buttons and header controls get a 40px minimum. It is keyed on the pointer
+  and not the width, so a tablet gets it and a narrow desktop window does not.
 - Selection actions live in the list header rather than a bar of their own, so
   they cost no height and need no wrapping (see "Bulk actions"). At the 380px
   minimum list width the word "selected" drops to `sr-only` and the row of
@@ -540,7 +698,11 @@ It replaced the `ZAUR` stamp pill, which replaced the pixel dinosaur. The mark
 never carries a count: unread lives in the mailbox list and the status line,
 and never twice in one view — so the Unseen filter tab has no badge, and the
 header's folder switcher only appears (with its count) while the mailbox list
-is collapsed. The sprite stays a mascot for `@zaur/sprite`.
+is collapsed. The tab's title is the one place outside the view that says it,
+for a pinned tab: `(3) Inbox · Zaur Mail`, the inbox's unseen count and the
+folder that is open. Every section's title carries the count (`shell.title`,
+from the `shell.unread` the `(app)` layout keeps), so a tab pinned on Calendar
+reads `(3) Calendar · Zaur Mail`. The sprite stays a mascot for `@zaur/sprite`.
 
 ## Design system v2: pastel channels, tactile controls
 
@@ -649,7 +811,8 @@ Those were left for discussion, decided together, and landed in this order:
 - **`@zaur/sprite` dropped.** The ZA/UR logomark is the mark; mail2 imported nothing
   from the package any more.
 - **A Flagged filter, and a Labels group under Mailboxes.** The list header is
-  All / Unseen / Flagged plus a Label… select. Each goes to the server as one
+  All / Unseen / Flagged plus a Label… select (on a list narrower than 430px
+  Flagged moves into the Label… menu). Each goes to the server as one
   JMAP `FilterCondition` (`notKeyword: '$seen'`, `hasKeyword: <keyword>`), not a
   client-side sieve of the loaded page, so it is right across the whole folder.
   The design's Channels group became **Labels** (`src/lib/mail/labels.ts`):
@@ -668,9 +831,9 @@ Those were left for discussion, decided together, and landed in this order:
   has already landed in the inbox. The Newsletters rule template does the same
   sorting on the server, on delivery, for every device.
 - **Dark mode** — below.
-- **Parked: the ⌘K palette.** Everything it would reach has a key already
-  (`/`, `c`, `j` `k`, `e`, `s`); it earns its place when there are more
-  destinations than keys.
+- **Parked: the ⌘K palette.** Everything it would reach has a key already (see
+  [Keys](#keys)); it earns its place when there are more destinations than
+  keys.
 
 ### Dark mode
 
@@ -700,9 +863,14 @@ with one dependency, loaded on the client only. `RichToolbar.svelte` is Trix's t
 own buttons: Trix fills an *empty* `<trix-toolbar>` with its markup and sprite sheet, and given
 children it only reads their `data-trix-*` attributes. Trix's stylesheet is not imported.
 
+The editor is a chunk of its own, loaded through `loadTrix` in `#lib/compose/trix.ts`: by the
+first panel, or before it by the Mail page once it is idle (`requestIdleCallback`, a 2 s timer in
+Safari). Fetched only when the first panel opened, it arrived after the first keys of the first
+reply, and those keys were lost. A load that fails is forgotten, so the next call tries again.
+
 The toolbar has bold, italic, strike, link, bullets, numbers, quote, heading (`h1`), code block
 (`pre`), *Insert image* and undo/redo — all Trix's own `data-trix-attribute` / `data-trix-action`
-buttons, no handlers of ours. *Insert image* is Trix's `attachFiles` picker, so what it picks goes
+buttons; the only handlers of ours are for the keyboard (below). *Insert image* is Trix's `attachFiles` picker, so what it picks goes
 through the same path as a paste: images into the text, anything else to the attachment strip.
 The paperclip still attaches everything, images included. Trix disables undo/redo when there is
 nothing to undo, and block buttons inside a code block.
@@ -716,15 +884,27 @@ something is written, so an untouched reply is not an edit and does not autosave
 message goes out `multipart/alternative`; without it, plain, as before.
 
 The quoted original is seeded from plain text (`replySeed`) and lives inside the editor as a
-blockquote, so it can be answered inline. Nobody else's HTML is ever loaded into Trix — only a
-reopened draft's, which Trix wrote. Things that bit:
+blockquote, so it can be answered inline. The only HTML ever loaded into Trix is a reopened
+draft's, and that is not trusted either: another client may have saved it, so it goes through the
+reader's sanitizer first (`prepareEditorHtml`, see [HTML mail](#html-mail)). If the editor's chunk
+cannot be loaded (offline, or gone after a deploy), the draft switches to plain text with a notice
+and keeps its words.
+
+**Links in the editor are inert.** A link in the text is text being edited, and the browser does
+not follow one in an editor, but Kit's router takes any click on a link to this app: a planted
+`/oidc/logout` in a draft signed its reader out. `RichBody` cancels every click and middle-click
+on a link, so no click in the editor navigates.
 
 **Plain ⇄ rich.** The `Plain` button in the action bar switches a draft (`draft.plain`,
 `compose.setPlain`) between Trix and a monospace textarea. Going plain keeps the words and drops
-the formatting — `body` already is the plain reading — and the message is sent `text/plain` only;
-going rich reseeds the editor from the text. The switch is per draft. What new messages start as
+the formatting and the pictures — `body` already is the plain reading — and the message is sent
+`text/plain` only; going rich reseeds the editor from the text. There is no way back to what was
+dropped, so when the message holds more than words and quotes the button asks first. The switch
+is per draft. What new messages start as
 is Settings → *New messages start as* (`composePlain`, one of the prefs that travel with the
 account); a draft that was saved rich reopens rich regardless.
+
+Things that bit:
 
 - A `<trix-editor>` looks its toolbar up **as it connects** and throws if it is not in the document
   yet, leaving a dead element. So the toolbar is never unmounted in plain mode, only hidden.
@@ -733,10 +913,18 @@ account); a draft that was saved rich reopens rich regardless.
   second panel, or a switch back from plain, opened empty. That seeding is `untrack`ed: tracked,
   every keystroke's `bodyHtml` re-seeded the editor with the caret at 0, and typing came out
   reversed.
-- Seeding places the caret, which focuses the editor. On the first panel Trix loads after the
-  panel has focused its field, so `RichBody` hands focus back to whatever had it.
+- Seeding places the caret, which focuses the editor. On the first panel Trix may load after the
+  panel has focused To or Subject, so `RichBody` hands the focus back, but only to a field. A
+  reply wants the body, and what held the focus until then was the list row or the Reply button,
+  where what is typed next would run as shortcuts.
 - Trix injects an unlayered `trix-toolbar { display: block }`. Tailwind utilities are layered and
   lose to it, so the toolbar's `display: flex` is declared unlayered in the component.
+- Trix acts on `mousedown`, which Enter and Space on a focused button never send. The toolbar's
+  `press` sends one for a click that came from the keyboard (`detail === 0`). The toolbar is one
+  tab stop, and the left and right arrows walk its buttons.
+- The link dialog's field is an `<input type="url">`, which refused `example.org/page` with
+  nothing but a red field. An address typed without a scheme gets one before Trix checks it:
+  `mailto:` when it is an email address, `https://` otherwise.
 - `trix-change` fires during `loadHTML`; loading is not writing, so it is ignored.
 - While the link dialog is open Trix paints the held selection *into the document* (a
   `background-color: highlight` span). Changes carrying it are not reported; closing reports again.
@@ -759,9 +947,22 @@ are not ours (remote URLs, `data:`) are dropped, and Send waits while an upload 
 **Forwarding** carries the original's attachments as chips, pointing at the blobs already in the
 account, so nothing is downloaded or uploaded again; drop a chip to leave that file out.
 
+**A reply threads, and marks what it answers.** A reply or a forward records the message it is of
+(`answerLink` in `#lib/compose/quote.ts`), and that travels as `answers` on the draft and in the
+send and draft-save payloads. A reply goes out with `In-Reply-To` and `References` (the parent's
+chain, then the parent, as RFC 5322 §3.6.4 has it; `answerHeaders` in mail-core's
+`email-build.ts`), and a forward starts a thread of its own. Once the message has gone, the
+original is flagged `$answered` or `$forwarded`; a flag that could not be set is not a failed
+send. A reply saved as a draft keeps its headers, so finished later it still threads, and the
+message to flag is then found by its Message-ID. The server takes none of it on trust:
+`cleanAnswers` in `compose.remote.ts` passes on only well-formed Message-IDs and the last 50
+references, and the flag goes only on a message whose own Message-ID matches.
+
 **Focus.** A new message and a forward start in To; a reply starts in the body, above the quote.
 The panel focuses a frame late: a menu that opened it (Reply all, Forward) hands focus back to its
-trigger as it closes, in a microtask after the panel's effect.
+trigger as it closes, in a microtask after the panel's effect. Tab stays in the panel (`wrapTab`):
+past the last control it comes round to the title bar's buttons, and Shift+Tab goes the other
+way, rather than out onto the page underneath, where the next key would be a shortcut.
 
 ## Compose panel geometry
 
@@ -783,6 +984,23 @@ trigger as it closes, in a microtask after the panel's effect.
 - **Maximize** fills the content pane — everything between the top bar and the
   status line — capped at `PANEL_MAX_W`, and the message box flexes to fill
   the extra height instead of stopping at a fixed step.
+- **The stored rect is a wish, not a position.** It is what the person chose
+  in a window that may since have shrunk, so a panel is drawn through
+  `fitPanel`: slid back inside the shell as it is now, and shrunk only when
+  the shell is smaller than the panel. The stored rect is left alone, so the
+  panel returns to it when the window grows. A drag starts from where the
+  panel is drawn, which may not be where the draft says.
+- **A panel stays under the top bar.** `fitPanel` draws none higher than
+  `PANEL_TOP`, whatever its stored rect says, where a panel could be parked
+  over the bar and the tabs. An opening panel is never placed over it either,
+  which on a short shell the cascade used to do.
+- **Toasts sit above every panel** (`compose.zTop + 2`, which climbs each time
+  a panel is raised). Undo send is a toast's button, and a tall panel reaches
+  the bottom centre where toasts are. At most three show at once (`pushToast`
+  in the compose store): every action says something, and six of them stood
+  over the list. A notice said again, as by a key held down, replaces itself,
+  and the oldest go first, one with a button last of all, which is an Undo
+  still good for its few seconds. Quick triage leaves the last three Undos.
 
 ## Live updates
 
@@ -806,6 +1024,10 @@ not what was built on it. It is true now:
   folder list with it, because unread counts move with mail whether or not
   Stalwart bumps `Mailbox` too. The open thread is deliberately **not**
   refreshed — a message you are reading should not reflow under you.
+- **One stream, held by the `(app)` layout**, not one per section. It stays
+  open across section switches, so the inbox count (and the app badge) keeps
+  moving in Calendar or Settings as it does in Mail. A section hears what
+  changed for as long as it is mounted: `$effect(() => shell.onLive(…))`.
 
 It is much smaller than webmail 1.0's `PushListener` because there is no local
 database to reconcile: 1.0 diffed `Email/changes` against RxDB, a remote `query`
@@ -832,8 +1054,9 @@ and **Escape clears** back to the folder. `/` focuses it, and on a phone the
 field swaps in for the folder switcher rather than crowding it.
 
 The query language is `parseSearchQuery` in `@zaur/mail-core` — `from:` `to:`
-`cc:` `subject:` `has:attachment` `is:unseen` `is:highlighted` `before:`
-`after:` — so a query means the same thing in 1.0 and here. It was already in
+`cc:` `subject:` `has:attachment` `is:unseen` `is:flagged` `is:important`
+`before:` `after:` — so a query means the same thing in 1.0 and here (1.0's
+names, `is:starred` and `is:highlighted`, are still read). It was already in
 the shared package, along with `searchEmails` on the client; it simply was not
 exported from the package index, which is the whole of what "port search" turned
 out to be.
@@ -895,8 +1118,11 @@ The rest of the row:
   flag, mark read/unread, archive, delete, the same four the selection header
   runs on a batch. Pointer only (`@media (hover: hover)`; on a touch screen
   `:hover` sticks), and out of the tab order, because 50 rows × 4 stops is not
-  a tab order. Sighted keyboard users get `s` / `e` / `#` on the cursor row,
-  which the status line spells out.
+  a tab order. Keyboard users get the same actions on the cursor row (`s`, `u`,
+  `e`, `#`; see [Keys](#keys)), which the status line spells out.
+- **Whose name:** received mail shows the sender; mail I sent shows "To …"
+  (To, then Cc), "Bcc …" when it had only Bcc recipients, and an empty draft
+  "No recipients". That is why list fetches ask for `bcc` too.
 - **Group dividers stick,** with the caption on the left and a mono count on
   the right of the rule, so `TODAY · 4` pins while its rows pass under it.
 - **On a phone** the checkbox column goes: the row is tile plus text, and
@@ -933,6 +1159,15 @@ The rest of the pane follows from the same rule:
 - **Thread history** is a stack of cards, each railed by *its* sender's
   identity tone at a third strength, so a thread with three people in it is
   scannable at a glance. Expanding it used to be one-way; it collapses now.
+  The history sits **above** the latest message's card, oldest first: that
+  card stays attached to its own body, and the thread reads top to bottom in
+  the order it was written.
+- **The address line opens.** Collapsed, it names one recipient and counts the
+  rest: "to me, +3", with you as "me" and named first wherever you appear. It
+  is a button, and under the row it lists everyone in full, From, To, Cc and
+  Bcc, with names and addresses, and **Reply to** when the message names one,
+  which is where a reply goes when that is not who wrote it. The line itself
+  truncates, so this is the way to the rest.
 - The card that opens history is a plain tactile card, and its count is the
   **same chip** the list row wears, because it is the same number about the
   same thread.
@@ -942,6 +1177,86 @@ The rest of the pane follows from the same rule:
 - **Empty and error states are cards too.** Nothing open is a correspondence
   tile with the `j` `k` keys; a load that failed is a discard-channel card with
   the one action worth having, Retry.
+
+## HTML mail
+
+A message's HTML is somebody else's page, shown inside ours with our cookies
+one request away. Three things hold it, each assuming the one before it failed:
+
+1. **The sanitizer** (`#lib/email/html.ts`). DOMPurify, then our own passes over
+   what is left. Untrusted markup is only ever parsed into a document with no
+   browsing context (`parseInert`), because a node made by the live `document`
+   starts fetching its images the moment it is parsed, and WebKit does so even
+   for a detached `<div>`. With no DOM, or with DOMPurify not loaded,
+   `prepareEmailHtml` returns nothing: an empty message, never the raw one.
+2. **The frame.** The body renders in an `<iframe srcdoc>` whose sandbox has no
+   `allow-scripts`. It cannot size itself, so the parent measures it.
+3. **The frame's own CSP**, a `<meta>` in the `srcdoc` (`frameCsp` in
+   `#lib/email/frame.ts`): `default-src 'none'`, inline styles, and images from
+   `data:`, `blob:` and the one path that serves inline images. It can only
+   narrow the app's policy, which the frame inherits.
+
+**Remote images are off until asked for.** A tracking pixel is a remote image,
+so another server's content waits for the reader's yes: *Show images* on the
+notice for this message, or *Always* (`showRemoteImages`, also in Settings →
+Reading & writing). `blockFetchesInDocument` takes out every attribute that
+fetches by itself (`src`, `srcset`, `poster`, `background`) and every `url()` in
+an inline style. It reads the style as the browser wrote it back
+(`element.style.cssText`), where escapes such as `\75rl(` are already resolved,
+and a style that may still fetch in a form it did not read loses the whole
+attribute. A blocked image leaves an empty box of the size the mail gave it,
+so the layout holds. The yes is kept by message id and not reset in an effect,
+so the next message never renders once with the last one's yes.
+
+**The app's own addresses are never the mail's to use**, asked or not. The
+frame resolves a mail's URLs against the app and sends the reader's cookies
+with them: `<img src="/oidc/logout">` was a sign-out on open. So:
+
+- `classifyUrl` in `#lib/email/urls.ts` decides where a URL goes by resolving
+  it the way the frame does, not by testing a prefix. `HTTPS://`, a leading
+  space, `//host`, `\\host`, `?x` and the empty string are all requests
+  somewhere. What the parser cannot read is treated as the app's.
+- The one app address a body may hold is an inline image,
+  `/api/jmap/download` with a `blobId`, an `image/*` type and `inline=1`, as
+  the mapper writes it in place of `cid:`. `inlineImageSrc` rebuilds it from
+  those parts, so nothing else rides along.
+- The frame's CSP never says `'self'`, for the same reason.
+- A link into this app keeps its address only when the mail names it in full
+  and it is a page (our own Meet invitations are). A relative link was never
+  written for this origin, and an endpoint is one click from acting. The
+  endpoint test is a list of today's `+server.ts` directories (`/api`, `/oidc`,
+  `/auth`): a new one has to be added to `APP_ENDPOINT`. The real guard is
+  that an endpoint does not act on a bare GET. Two have to answer one, because
+  other apps send the browser there: `/oidc/logout` and `/auth/claim`. They act
+  only when the request is a navigation (`isNavigation` in
+  `@zaur/server-auth/oidc` reads `Sec-Fetch-Dest`), so an `<img>`, a `fetch` or
+  a frame pointed at them gets a 400. A browser too old to send the header is
+  let through.
+- Known ceiling: once images are allowed the CSP says `https:`, which cannot
+  leave out the app's own host, so at that point the sanitizer alone keeps a
+  mail off it.
+
+Every link opens in a new tab, since the sandbox does not let the frame
+navigate the app it sits in and is not widened for that. A `mailto:` link
+becomes this app's compose link, `/?to=`, and opens a draft here instead of in
+the system's mail client. `/?to=` takes a comma-separated list, as `mailto:`
+does, and each address becomes a chip.
+
+A saved draft's HTML goes through the same sanitizer on its way into the
+compose editor (`prepareEditorHtml`, then `editorAttribute`). The editor is the
+app's own document, with no frame and no CSP around it, and a draft another
+client saved, or one that arrived as mail, is as foreign as any message. The
+rule is the reader's without the "show images": a picture stays only when it
+is one of our inline images (or `data:` / `blob:`), a link keeps its `href` by
+the rule above, so a relative address or one of the app's endpoints loses it,
+and a style that may fetch goes. Trix draws an image from its
+`data-trix-attachment` JSON and not from the `<img>` inside, so that JSON is
+read the same way. What was written here passes unchanged.
+
+One trap in `EmailHtmlFrame.svelte`: whether the shell is dark is read before
+the first render and not in an effect. A `srcdoc` that changes right after
+mount is a second navigation of the frame, WebKit files it in history, and
+Back then had to be pressed twice to leave a plain-text message in dark mode.
 
 ## Bulk actions
 
@@ -953,6 +1268,14 @@ view holds. Everything funnels through one `bulk` command in `mail.remote.ts` �
 they are all an `Email/set` over a batch of ids. Delete means move-to-Trash
 everywhere except Trash, where it destroys (and the bin turns red at rest there,
 since the icon carries no label).
+
+The reader's toolbar goes through the same command, but takes the open
+conversation's message ids from the reader (the thread query says which folders
+each message is in), not from the list: a conversation opened by link, or one
+past the loaded page, has no row to look up, and its actions used to do nothing.
+A conversation opened by link may also have been filed elsewhere since. Then
+nothing of it is in this folder to act on, and the toolbar says so ("This
+conversation is no longer in Inbox") instead of being a row of dead buttons.
 
 It swaps rather than opening a second bar because a bar pushes the list down,
 and the moment you tick a box is the worst possible moment to move the rows you
@@ -985,15 +1308,85 @@ selection when there is one, and falls back to the row under the cursor.
   out of Scheduled, and the toast says "not sent":
 - **A message that leaves Scheduled stops being sent.** `bulk` cancels any
   pending submission (`cancelPendingSends`) before a move or a delete; left alone,
-  Stalwart sends it at its time from Trash. Scheduled is not offered as a
-  destination either: nothing filed there is sent. The reader shows a scheduled
+  Stalwart sends it at its time from Trash. The reader shows a scheduled
   message with **Cancel send**, which takes it back to Drafts and opens it.
+- **Drafts and Scheduled take no moves** (`acceptsMoves` in
+  `#lib/mail/folders.ts`). Whatever is in Drafts opens as your own draft, and
+  its first autosave replaces the original; nothing filed in Scheduled is
+  sent. Every way to move mail asks that one function, the Move to menus of the
+  list, the reader and the phone's bar and a drop on the sidebar, so they
+  cannot disagree, and `runBulk` refuses whatever else asks ("Mail can't be
+  moved to Drafts").
 - **Important** is in the reader's menu (`$important`, and the Important folder
   too where the server has one, as in 1.0).
 - **Trash and Spam can be emptied** from a bar at the top of their list
   (`emptyFolder`, which refuses any other folder).
 - A **discarded draft** can be had back from its toast: Undo writes it again as a
   new draft, since the saved copy is already gone.
+
+**Delete forever names its folder.** A destroy cannot be undone, and the list
+it is asked from can be behind: a message moved out of Trash in another tab, or
+by an Undo, may still have a row there. So `bulk` refuses a delete that does
+not say which folder it was asked in (`sourceMailboxId`, else a 400), reads the
+messages again, and destroys only the ones still filed there (`stillIn`). It
+answers with how many went. When that is none the toast says "Not deleted — no
+longer in Trash" and nothing is lost.
+
+Smaller rules the same code keeps:
+
+- Toasts count what the person acted on. A move says conversations ("3
+  conversations archived"), because rows are threads; a destroy says messages,
+  because that is what is gone.
+- After an action takes the cursor's row out of the folder, the cursor steps to
+  the row that took its place, so `e` `e` `e` works down a list. A row opened
+  with the mouse becomes the cursor row too (not on a phone, which has no
+  cursor).
+- A row can be dragged onto one of your own folders in the sidebar (one that
+  takes moves), and dragging a selected row takes the whole selection. It is the same `move`
+  with the same Undo. Rows are not draggable below 1024px, where the sidebar
+  is a drawer, and the sidebar takes no drop while a shared mailbox is open.
+- Picking a folder clears the search and puts the filter back to its default.
+  A folder you picked is a folder you want to see, not one narrowed to a label
+  it may not hold.
+
+## Keys
+
+Mail's keys are one list, `KEYS` in `StatusLine.svelte`. The status line shows
+the first eight and `?` opens the whole list in a sheet, so a key added to the
+page's `keydown` handler goes in that list too or nobody finds it:
+
+| Key | Does |
+| --- | --- |
+| `j` `k` | next, previous conversation; `j` past the last row loads more |
+| `↵`, `o` | open it |
+| `x` | select it |
+| `e`, `#` | archive; delete (forever, in Trash) |
+| `s`, `i`, `u` | flag, important, unread, each a toggle |
+| `r`, `a`, `f` | reply, reply all, forward, from the open thread's latest message, as its toolbar does; pressed before the conversation has arrived, the reply opens when it does, and what is typed meanwhile is not run as shortcuts |
+| `c`, `/`, `[` | new message; search; show or hide the mailboxes |
+| `esc` | close the drawer, else minimise the draft in front, else clear the selection, else the search (the open conversation stays) |
+| `⌘↵` / `Ctrl+↵` | send the draft in front |
+| `?` | all keys; `?` or `esc` again closes the sheet |
+
+Delete is `#` and not the Delete key on purpose: in Trash it destroys. With no
+cursor row (a phone, or a conversation opened by link), `e` `#` `s` `i` `u` act on
+the conversation being read.
+
+Who a key press belongs to is the part that kept going wrong, so it is decided
+in one place, the mail page's `handleKeydown`, in this order:
+
+- A press something else already handled (`defaultPrevented`) is left alone.
+- An open menu, popover, Trix link dialog or `<dialog>` keeps Escape and the
+  letters typed into it. The open drawer is modal and keeps them as well.
+- A compose panel owns the keyboard wherever in it the focus is. It still owns
+  it when the focus has fallen out of the panel to `<body>`, which happens when
+  the focused control removes itself (an attachment chip's ✕): `compose.keysIn`
+  remembers the panel the keyboard was last in until something outside the
+  panels is clicked or focused. Before that, the next letters typed for the
+  message archived mail.
+- A field is typing, and a chord with ⌘, Ctrl or Alt is the browser's.
+- Enter on a focused link or button presses it. `o` is the key that always
+  opens the cursor row.
 
 ## Rules
 
@@ -1037,7 +1430,12 @@ The details that are easy to get wrong, and are tested:
 
 Every script is put through `SieveScript/validate` **before** it is stored, and
 activated in the same `SieveScript/set` via `onSuccessActivateScript`, so there
-is never a window where the rules exist but nothing is filtering.
+is never a window where the rules exist but nothing is filtering. A script the
+server refuses reaches the person as "The server did not accept these rules.
+Nothing was saved." (`saveRules` turns the failure into a 502 with that text);
+left alone it arrived as "Internal Error". The editor asks before rules that
+were not saved are left
+([Unsaved work asks first](#unsaved-work-asks-first)).
 
 The editor reads as **cards**, one per rule: its name, a chip per condition,
 and an action chip in the channel of what the action does — file is digest,
@@ -1056,10 +1454,13 @@ landed — see [Design follow-ups](#design-follow-ups).
 ## Sections
 
 The top bar's segmented control is the shell's map: **Mail · Contacts ·
-Calendar · Settings**. It is one component (`SectionTabs`), and the current
-section is read from the URL, so a page cannot claim to be one it is not. Below
-`sm` the tabs hide and the account menu carries the same four entries, because
-a phone's top bar has no room for a fifth control.
+Calendar · Files · Settings**. It is one component (`SectionTabs`), and the
+current section is read from the URL, so a page cannot claim to be one it is
+not. Below 1100px five words cost the section's own controls a third of the
+header, so each tab becomes its glyph and keeps the word for screen readers and
+as its tooltip. Below 768px the tabs leave the header and the phone's tab row
+(`PhoneTabBar`) is the map; it imports the same list and the same glyphs, so
+the two cannot drift.
 
 ### One header, in the layout
 
@@ -1076,7 +1477,14 @@ closes over the component that declares it, so Mail's search field lives in the
 layout's header and still belongs to `TopBar`'s state. `SectionShell` is now
 just that registration — a title and a `controls` snippet. The
 layout also exposes the app column (`shell.frame`), which Mail's floating
-compose panels are placed against.
+compose panels are placed against. The stretch a section fills clips sideways
+(`overflow-x-clip`): controls that do not fit are cut at its edge and no longer
+slide under the tabs.
+
+The layout owns what has to outlive a section switch as well: the one live
+event stream (see [Live updates](#live-updates)), compose's way to the server
+and its toasts (see [Architecture](#architecture)), the app badge, and the
+hand-off from a tapped notification.
 
 Two things in `useShellBar` are deliberate. Who holds the bar is a plain field,
 not state: **an effect's teardown reads state as it was before the change that
@@ -1180,16 +1588,60 @@ addresses, tested.
 
 `/contacts` is the pane: letter-grouped list with sticky dividers (the list's
 own vocabulary), search, a detail card with the person's identity tile on a neutral surface (a hue on a
-surface means a channel, never a person), and an editor. "Write" opens Mail with
+surface means a channel, never a person), and an editor. The letters are base
+letters (`groupContacts` and `contactLetter` in mail-core's `contact-map.ts`):
+a Latin letter outside A–Z files under the one it sorts with, Ł under L and Ż
+under Z, so a Polish address book is not one long `#`. Digits, punctuation and
+other scripts share a single `#` group, which comes last, and there is one
+group per letter whatever order the cards arrive in. "Write" opens Mail with
 `/?to=address`, which the mail page consumes once and strips from the URL, so a
 reload does not open a second draft. Push subscribes to `ContactCard` and
 `AddressBook`, so a card saved on the phone shows up without a reload.
 
+On a phone the detail covers the list, so it is a Back layer (see
+[Back closes the layer on top](#back-closes-the-layer-on-top)). The open
+contact is also kept in a `snapshot`: Write leaves for Mail, and Back from
+there returns to the contact it was written from. An editor with something
+typed in it asks before it is dropped
+([Unsaved work asks first](#unsaved-work-asks-first)).
+
+**vCard in and out** (`#lib/components/contacts/vcard.ts`) is just enough vCard to move an
+address book: the fields the editor has (name, nickname, organisation, title,
+emails, phones, a note) and nothing else. Photos, addresses and birthdays are
+not carried. It writes 3.0, which Google, iCloud and Thunderbird all read, and
+reads 2.1, 3.0 and 4.0.
+
+- **Export** is built in the browser from the directory that is already
+  loaded, as one `contacts.vcf`. There is no server endpoint for it. Lines are
+  folded at 75 octets (RFC 6350 §3.2), counted in bytes and never through the
+  middle of a character.
+- **Import** reads the file in the browser and saves one card at a time
+  through the same `saveContact` the editor uses. It reads the file's bytes and
+  not its text (`readVCards`): as UTF-8 when that is what they are, otherwise
+  line by line, each in the `CHARSET=` it names and Windows-1252 where it names
+  none, which is what an old phone's or Outlook's export is. 2.1's
+  quoted-printable, which Android writes for any name that is not ASCII, is
+  decoded in the same charset. A card whose address is
+  already in the book is skipped, as is one with no address whose name is, so
+  importing the same file twice adds nothing. The notice afterwards counts what
+  was left out: cards already here or empty, cards that could not be saved, a
+  last card the file ends in the middle of, and addresses that are not e-mail
+  addresses. It is one request per card, in
+  turn, which is fine for a personal address book and slow for thousands; a
+  batch command is the upgrade.
+
 ## Calendar
 
-`/calendar` is a month grid (Monday first), a calendar list with visibility
-toggles, and an agenda for the selected day that turns into the editor. It sits
-on the JMAP Calendars client mail-core already carried for 1.0, with two
+`/calendar` is a grid, a calendar list with visibility toggles, and a rail on
+the right that holds whatever is open: the day's list, an event, the editor, a
+calendar's settings. The grid is `@nomideusz/svelte-calendar`; the header is
+ours and drives it through `view` and `currentDate`, so the geometry is the
+package's and the controls are the shell's. The views are Day, Week, Roll (a
+scrolling week) and Month. It opens on Week, or on Day below 640px, where seven
+columns do not fit; a phone offers Day and Month only. That choice is made once,
+on the way in, and the switcher is the person's after that.
+
+It sits on the JMAP Calendars client mail-core already carried for 1.0, with two
 changes:
 
 - **Recurrences are expanded by the server** (`expandRecurrences`, which the
@@ -1213,7 +1665,8 @@ to the right one.
   rail: name and colour, make it the default (`onSuccessSetIsDefault`), share
   it, delete it. Deleting asks twice when the server says it still has events
   (`calendarHasEvent`, then `onDestroyRemoveEvents`); the default calendar
-  cannot be deleted.
+  cannot be deleted. A name or colour not saved yet asks before it is dropped
+  ([Unsaved work asks first](#unsaved-work-asks-first)).
 - **Sharing is by address**, but JMAP shares with a principal, so the address
   goes through `Principal/query` first — 1.0's rule, in `pickPrincipal`: an
   exact address wins, otherwise exactly one other person must match, never
@@ -1221,7 +1674,31 @@ to the right one.
   removes). Offered only when the session has the principals capability and
   the calendar grants `mayShare`.
 - **Phones get the list from the header's calendar button**, in the rail
-  where the sidebar would be — no extra bar.
+  where the sidebar would be — no extra bar. The same button stands in for the
+  calendar list below 1280px while the rail is open, where the two together
+  would leave the grid too little.
+- **A day picked in Month** fills the day's list in the rail beside the grid.
+  Below 1024px there is no room for that list (it would leave seven columns
+  half the screen), so there the month keeps the width and picking a day goes
+  to the Day view. The page handles the click itself (`pickDay`): left alone,
+  the grid swaps in its own day planner while the header still says Month.
+- **On a phone the rail's panel covers the screen**, so it is a Back layer (see
+  [Back closes the layer on top](#back-closes-the-layer-on-top)). Escape closes
+  what the rail holds, and an event form with something typed in it asks first
+  ([Unsaved work asks first](#unsaved-work-asks-first)).
+- **A failed load must not look like an empty calendar.** The grid draws one as
+  an empty week, so the page keeps what each range last answered (`kept`). A
+  refresh that fails shows that again under a line that says so, with Retry;
+  with nothing kept, the failure stands where the events would.
+- **Guests are shown, not edited.** Opening an event asks for its participants
+  and what each answered (`eventParticipants`; for one occurrence, the series'
+  list), so an invitation that arrived by mail says who else is coming.
+  Inviting people from here is not built.
+- In the editor, moving the start carries the end along, so the event keeps
+  its length.
+- A new event with no time picked starts at 09:00. When the day is today and
+  nine has passed, it starts at the next full hour instead, not at a nine
+  o'clock already gone.
 
 ## Meet (video calls)
 
@@ -1301,6 +1778,8 @@ Keys: `m` mic, `v` camera, `h` hand, `p` people. Env: `LIVEKIT_URL`,
   other half of the cap: raise both together. Past that means `Blob/upload`
   chunking (Stalwart takes 7.5 MB a piece, 10 MB a request) or WebDAV; neither
   is built.
+- **A file's preview fills a phone's screen**, so there it is a Back layer (see
+  [Back closes the layer on top](#back-closes-the-layer-on-top)).
 
 ## Installable app (PWA)
 
@@ -1320,12 +1799,88 @@ It is `--z-surface` now, in the manifest and in the two `prefers-color-scheme`
 under it and there is nothing left to blur. iOS owns that strip either way;
 what we control is whether it has any contrast to work with.
 
-The service worker (`src/service-worker/`, registered by Kit as a module) does
-two things: show a push, and open its link. It has **no fetch handler and no
-cache** — offline reading is not planned, and an app-shell cache is how a
-deploy ends up serving yesterday's JavaScript. It is typechecked against
-`$app/tsconfig/service-worker` in its own folder; the root tsconfig excludes it
-and `pnpm check` runs both.
+Those two tags are only the starting values. The colour that is right is
+whatever the page has under its top edge: the header's surface in the app, the
+canvas on sign-in and on the error card, each in the theme that is showing, and
+a chosen Dark is not what `prefers-color-scheme` says. A table per screen and
+theme is how a chosen Dark came to sit under a white bar. So `app.html` sets
+both tags from the stored theme before first paint, and the root layout's
+`paintSystemBar` reads the first solid background under the top edge off the
+page and writes it to both, after every navigation, on a theme change and when
+the OS changes its scheme.
+
+**The app runs under the notch.** `viewport-fit=cover` lets the page reach the
+screen's edges, and `.z-safe` (unlayered, in `base.css`) pads the shell by the
+safe-area insets and paints those strips in the surface colour. With no insets
+(a desk, Android, any ordinary tab) every length in it is zero.
+
+The service worker (`src/service-worker/`, registered by Kit as a module) shows
+a push, opens its link, and answers a page load that has no network. It has
+**no app-shell cache**: offline reading is not planned, and a cached shell is
+how a deploy ends up serving yesterday's JavaScript. Its fetch handler touches
+navigations only, always asks the network first, and has exactly one thing to
+fall back on, `/offline.html`, so an installed app started without a connection
+shows its own screen and not the browser's error.
+
+- `static/offline.html` has to stand alone: no stylesheet, script, font or
+  image of the app's, because none of them is cached. It repeats the sign-in
+  card's look and the tokens it needs by hand, so a change to either has to be
+  copied there, and it reloads itself when the connection returns.
+- The page is cached when the worker installs. **Bump `OFFLINE_CACHE` in the
+  worker when `offline.html` changes**: a changed worker reinstalls, and
+  installing fetches the page afresh. Without the bump, installed copies keep
+  the old page.
+- The sections' code, and every settings page's, is fetched once the page is
+  idle (`preloadCode` by route id in the `(app)` layout), so one first opened
+  offline opens and says what it could not load. A link to the address already
+  in the bar (the logo, a tab) is a refresh to Kit, which offline cannot
+  succeed: `beforeNavigate` there cancels it. A section opened offline within
+  two seconds of the first load still
+  fails differently: its code is a chunk fetched when first needed, so the
+  root error page gets it. It says "You're offline" in that case and reloads
+  when the connection is back.
+- The same failure with a connection means the server is away (`handleError`
+  in `hooks.client.ts` marks it `unreachable`, by `codeNotLoaded` in
+  `#lib/errors.ts`). The card says "Can't reach Zaur Mail" and tries the page
+  again once, a moment later. WebKit can go on failing the same file for a
+  while with the connection back, so this card also offers *Back to Mail*. A
+  second failure within half a minute waits for the person, so there is no
+  loop of reloads against a server that is down.
+
+The worker is typechecked against `$app/tsconfig/service-worker` in its own
+folder; the root tsconfig excludes it and `pnpm check` runs both.
+
+**The root error page** (`src/routes/+error.svelte`) is drawn on the sign-in
+card, since an error takes the whole page and the shell with it. An installed
+app has no address bar and no reload button, so the ways out are on the card:
+*Back to Mail* and *Try again* (a 404 has no *Try again*, a `/meet/` page says
+*Open Zaur Mail*, and the offline card has only *Try again*). Both are full page
+loads, because if the app's own scripts are what failed, a client-side
+navigation fails the same way.
+
+*Try again* loads the address now in the bar, and so does every step through
+history while the card is up. The card took the place of the whole app, and a
+step to another entry of the page that was there before it would change the
+address and leave the card. Each of those reloads waits for the lock the outbox
+sends under (`withOutboxLock`): the outbox sends on `online` too, and a reload
+between its send and its crossing-off would send the message again on the next
+load.
+
+**Pages are never kept by the browser.** `hooks.server.ts` sends every HTML
+response `cache-control: no-store`, and the `(app)` layout reloads a page that
+the back/forward cache brought back whole (`pageshow` with `persisted`). A page
+is one person's mail: after a sign-out or an account switch, Back must ask the
+server who is signed in, not redraw the last copy.
+
+**Install.** Chromium fires `beforeinstallprompt` once per page load, early,
+and only while the app is not installed. `#lib/install.svelte.ts` attaches its
+listener when the module first loads, which is why the root layout imports it,
+and keeps the event for Settings → Appearance, where the *Install Zaur Mail*
+row is. The row shows only when there is something to offer: the kept event,
+or an iPhone or iPad in a browser tab, which has no install dialog and gets the
+sentence about Share → Add to Home Screen. The manifest's `shortcuts` (New
+message, Calendar, Contacts) are ordinary URLs the app already answers;
+New message is `/?to=`, the same link Contacts' Write uses.
 
 ## New-mail notifications (Web Push)
 
@@ -1366,10 +1921,44 @@ them under *New mail*: unticking one mutes it **on this device** (the row's
 muted accounts. The same browser in another session keeps its own list.
 
 A notification opens `/?thread=<id>` (plus `&account=<key>` when the session
-holds more than one), which the mail page consumes once: it switches account if
-needed (a reload), cleans the URL with a replacing navigation — not
+holds more than one), which the mail page consumes once per link: it switches
+account if needed (a reload), cleans the URL with a replacing navigation — not
 `replaceState`, since on a phone the reader pushes a shallow entry relative to
-the page URL — and opens the thread in the inbox.
+the page URL — and opens the thread, in `?folder=`'s folder or the inbox. "Once per link" and not once
+per page: a notification tapped while Mail is open arrives as a navigation, not
+a load, so the two flags are put back after each link.
+
+**A tap with the app already open does not load it again.** The worker
+focuses an open window (never a `/meet/` one: navigating that hangs up on
+everyone in the call) and asks it, over a `MessageChannel`, to show the link
+itself (`zaur:open`). The `(app)` layout answers at once and navigates inside
+the app. The worker waits half a second for that answer, then navigates the
+window itself, and opens a new one if it cannot. Both ends refuse a URL that
+is not this origin's.
+
+On Mail already, the link takes the place of what is open instead of stacking
+on it (`show` in the `(app)` layout). A phone reading a conversation, or with a
+sheet over it, first steps off those entries, and the list's entry becomes the
+link's. Back from the conversation the notification opened is then the list,
+once, and not the list, the conversation before, and the list again.
+
+Because a link can now arrive while another folder is showing, the list follows
+the address: an effect on `page.url` (which every real navigation and every
+step through history sets, and the shallow patches that mirror a pick do not)
+shows the folder the address names. Without it a notification tapped while
+Drafts was open opened its thread as a draft.
+
+**One notification per thread.** The tag is
+`zaur-new-mail-<account>-<thread>`, so a second sender does not wipe the first
+from the tray; a batch shares the account's. A notification that replaces one
+with the same tag arrives silently unless told otherwise, hence `renotify`.
+
+**The badge has two writers.** A push writes the unread count while the app is
+closed. While it is open the `(app)` layout follows the inbox's unread from the
+same `mailboxes` query Mail shows its counts from, so reading mail takes the
+number down instead of leaving the last pushed one. It is only asked for where
+the Badging API exists; the switch is `appBadge` in Settings → Notifications,
+and turning it off clears a badge already on the icon.
 
 ## Several accounts
 
@@ -1386,7 +1975,9 @@ the page URL — and opens the thread in the inbox.
   reload too. The session is shared, so the active account changes for every tab
   at once — webmail 1.0's tabs included, which cannot be told.
 - **Sign out** offers *this account* (`signOutAccount`) and *all accounts* once
-  there are two.
+  there are two. Signing out and switching both await `compose.flush()` first,
+  so a draft still waiting out its autosave pause is saved before the session
+  goes (a save already under way is not waited for).
 - **The outbox follows its author.** Every send carries the account that wrote
   it; the drain skips another account's queued messages (a wait, not one of the
   five failed attempts that delete a message), and `send` refuses a mismatch
@@ -1475,15 +2066,16 @@ first run against the real server is still a test — see the table below.
 
 ## Settings that follow the account
 
-Five of the seven preferences travel with the account. **Two deliberately do
-not**, and this is the part worth stating plainly, because syncing them would
-have been a regression dressed as a feature:
+Most preferences travel with the account. **Three deliberately do not**, and
+this is the part worth stating plainly, because syncing them would have been a
+regression dressed as a feature:
 
 | Preference | Where it lives | Why |
 | --- | --- | --- |
-| `pageSize`, `markReadOnOpen`, `showPreview`, `showAvatars`, `unseenByDefault` | account | Behaviour and workflow — the same answer is right on every device |
+| `pageSize`, `markReadOnOpen`, `showPreview`, `showAvatars`, `unseenByDefault`, `showRemoteImages`, `composePlain`, `undoSendSeconds`, `appBadge`, and the four `ai*` categorisation settings | account | Behaviour and workflow — the same answer is right on every device |
 | `listWidth` | device | A pixel width for one screen. Push 760px from a wide monitor and it eats the reader on a laptop |
 | `sidebarOpen` | device | A column on a desktop, an overlay drawer on a phone — not the same question |
+| `theme` | device | It defers to the OS setting, and a desk and a phone differ (see [Dark mode](#dark-mode)) |
 
 `ACCOUNT_PREF_KEYS` is the list, and the server sanitises against it too: a
 device-shaped key smuggled into the payload is dropped at the boundary rather
@@ -1511,22 +2103,30 @@ browsers, but they live on **this deployment** rather than in the mail account,
 so they do not travel to a different server and are lost if the store is wiped.
 Preferences are not mail; the cost of losing them is one trip to this page.
 
-Merging is per key and the device wins: the account fills in what this browser
-has never been told, but a preference changed here is the newer intent. The
+Merging is per key (`mergeAccountPrefs`): when the account's copy is adopted,
+each key it has an answer for replaces what this browser holds, and a key it
+has never been told keeps the device's value. A preference changed here is
+pushed at once, which is how it becomes the account's answer. The
 first device to sign in seeds the account, so the second has something to adopt
 rather than starting from defaults again. Nothing is pushed until the account's
 copy has been heard, or a fresh tab would overwrite the account with its own
 defaults.
 
+A change that does not reach the account is put back and said (`setPref`, then
+`prefNotSaved`): "You're offline — the setting was not saved". Kept on the
+device alone, it would be undone without a word the next time the account's
+copy was adopted. A setting changed again in the meantime is left as it is,
+since that change has its own push.
+
 ## Checks
 
 ```sh
 pnpm --filter @zaur/mail2 check     # svelte-check
-pnpm --filter @zaur/mail2 test      # 83 tests
+pnpm --filter @zaur/mail2 test      # node --test
 pnpm --filter @zaur/mail2 build
 
-pnpm --filter @zaur/mail-core check && pnpm --filter @zaur/mail-core test    # 48
-pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test # 45
+pnpm --filter @zaur/mail-core check && pnpm --filter @zaur/mail-core test
+pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test
 ```
 
 `apps/webmail` currently reports **3 pre-existing `check` errors** — a duplicate
@@ -1616,12 +2216,52 @@ Two smaller notes:
   `/api/events` holds a stream open for hours. All three proxy Stalwart because
   the credentials they need stay on the server.
 - The offline outbox is a lightweight IndexedDB queue (`#lib/compose/outbox`)
-  that drains on load and on reconnect. Drafts autosave to the server's Drafts
-  mailbox (debounced, 1.5 s), and each save writes the draft to the same
-  database's `drafts` store first; the copy is dropped once the server has it.
-  What is left there on load or reconnect is settled by `recoverLocalDrafts`:
-  drafts closed offline go to Drafts, and drafts a reload interrupted come back
-  to the dock. Typing in the last 1.5 s before the tab dies is not kept.
+  that looks after itself. The compose store tries it again every 20 s for as
+  long as anything waits in it, and at once when the network comes back or the
+  tab is shown again. `navigator.onLine` is not trusted to say when: a server
+  out of reach never flips it. A network failure stops the drain and never
+  deletes a message; any other failure deletes it, with a notice, once the
+  message has failed five times in all. A proxy answering for a server that is
+  away is a network failure too (`classifySendFailure`): a send that meets a
+  502, 503 or 504 is queued like an offline send, and not handed back as
+  refused. While something waits, the shell header says "N waiting to send" in
+  every section (a chip from 768px, a strip on a phone), since the outbox has
+  no folder.
+- **Compose's way to the server belongs to the `(app)` layout**, not to the
+  Mail page: `compose.setTransport` and the toasts are mounted there, so a
+  queued message goes out, and says so, whichever section is open. The lists
+  are still Mail's, so Mail registers `shell.mailChanged` while it is on show
+  and the transport calls it after a send or a draft save. The panels and the
+  dock are still rendered by the Mail page only, so Undo on a "Sending…" toast
+  pressed in another section (or a send the server refused) says "the draft is
+  back in Mail" and offers Open, which goes there.
+- Drafts autosave to the server's Drafts mailbox after a 1.5 s pause in the
+  typing, and at most 5 s after a change, because steady typing never pauses
+  that long. The copy on this device does not wait for either: what is typed is
+  written to the same database's `drafts` store within about 300 ms, and the
+  server's answer removes it. When the page is hidden, which is the last a
+  phone may hear before it is put away or closed, whatever is waiting is saved
+  at once (`compose.flush`). What is left in the store on load or reconnect is
+  settled by `recoverLocalDrafts`: drafts closed offline go to Drafts, and
+  drafts a reload interrupted come back to the dock, so a reload costs a
+  fraction of a second of typing at most.
+  A draft's saves go one at a time (`#saves` in the compose store). The server
+  save is create-new and destroy-old, so two on their way with the same old id
+  left two copies. Close and Discard wait for the save on its way and act on
+  the copy it left; Send does not wait (a save that never answers must not
+  hold a message back) and removes that copy afterwards, so a sent message is
+  not also in Drafts. Nothing waits for a save longer than `SAVE_WAIT_MS`.
+  Opening a saved draft does not rewrite it. It starts out as saved, and the
+  picture sizes Trix writes in once an image has loaded are the editor
+  settling, not an edit.
+  Opening a saved draft that already has a panel (or a chip in the dock) brings
+  that one forward: two panels on one saved draft would save over each other.
+- **A failed action says which failure it was.** `messageOf` in
+  `#lib/errors.ts` turns a failed remote call into words: the server's own
+  sentence when it sent one, else the caller's. A call that never reached the
+  app, by the browser's account or a proxy's 502, 503 or 504, reads "You're
+  offline — …" or "Can't reach the server — …" with the caller's words after
+  it, and never "Failed to fetch".
 - **Undo send** (Settings → *Undo send*: off, 5, 10 or 20 s, 5 by default; it
   travels with the account) is the same queue: a send is written to the outbox
   with `holdUntil` and the draft's server copy (`draftId`), the panel closes, and
@@ -1636,11 +2276,11 @@ Two smaller notes:
   with its Sieve compiler (`sieve-rules.ts`). What stays in mail2 is the shell:
   the push listener, the remote functions and the UI.
 - Styling is design system v2: `styles/tokens.css` carries the surfaces, ink ramp,
-  six channels, elevations and the (unwired) dark ramp; `styles/base.css` owns the
+  six channels, elevations and the dark ramp; `styles/base.css` owns the
   shared primitives (`.btn-tactile` / `.btn-primary` / `.btn-danger`, `.z-icon-btn`,
   `.z-group` / `.z-segment`, `.z-check`, `.z-field`, `.z-kbd`, `.z-avatar`, `.z-chip`,
   `.z-count`, `.z-railed` / `.z-hue-wash`, `.z-menu`, `.z-caption`) and the `.z-shell`
   grid; `#lib/mail/colors` owns the channel and identity models (`messageChannel`,
-  `mailboxChannel`, `identityTone`, `attachmentBadge`). Components use the v2 hex
-  values directly, like the design file does — moving them onto the tokens is the
-  first step of the dark pass.
+  `mailboxChannel`, `identityTone`, `attachmentBadge`). Components read
+  the tokens (`var(--z-*)`) rather than hex values, which is what lets one set of
+  tokens carry both themes (see [Dark mode](#dark-mode)).

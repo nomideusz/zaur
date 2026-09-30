@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { messageOf } from '#lib/errors';
+	import { leaveGuard } from '#lib/leave-guard';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import { identityStyle } from '#lib/mail/colors';
 	import { initials } from '#lib/mail/rows';
@@ -24,7 +25,11 @@
 	const openRow = $derived(open ? list.find((row) => row.id === open!.id) : undefined);
 	const dirty = $derived(!!open && !!openRow && (open.name !== openRow.name || open.signature !== openRow.signature));
 
+	// A signature can be many lines: leaving, Escape and opening another row ask first. Cancel says it itself.
+	const mayLeave = leaveGuard(() => dirty, 'this address');
+
 	function toggle(row: IdentityDTO) {
+		if (!mayLeave()) return;
 		open = open?.id === row.id ? null : { id: row.id, name: row.name, signature: row.signature };
 	}
 
@@ -83,7 +88,10 @@
 	</div>
 
 	{#if identitiesResource?.error}
-		<p class="z-card-body text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your addresses.</p>
+		<p class="z-card-body text-[13px] text-[var(--z-ch-discard-ink)]">
+			Could not load your addresses.
+			<button type="button" class="btn-tactile ml-2 !h-[28px]" onclick={() => identitiesResource?.refresh()}>Retry</button>
+		</p>
 	{:else if !identitiesResource?.current}
 		<div class="z-card-body z-skeleton flex flex-col gap-2.5" aria-hidden="true">
 			<div class="h-[40px] rounded-[8px] bg-[var(--z-sunken)]"></div>
@@ -132,7 +140,7 @@
 									class="z-field mt-1 w-full max-md:text-base"
 									onkeydown={(event) => {
 										if (event.key === 'Enter' && dirty) void save();
-										if (event.key === 'Escape') open = null;
+										if (event.key === 'Escape' && mayLeave()) open = null;
 									}}
 								/>
 							</label>

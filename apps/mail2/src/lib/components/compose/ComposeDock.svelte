@@ -63,9 +63,12 @@
 </script>
 
 {#if minimized.length > 0}
+	<!-- On a phone the dock is a row of the page, under the panes, not a float over
+	     them: whatever pane is showing (list, drawer, reader) ends above it, so
+	     its last row is never under a chip. -->
 	<div
 		bind:this={dockEl}
-		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5 max-md:right-3 max-md:bottom-[calc(var(--z-tabbar-h,0px)+12px)] max-md:left-3 max-md:max-w-none max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto"
+		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5 max-md:static max-md:max-w-none max-md:shrink-0 max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto max-md:border-t max-md:border-[var(--z-line)] max-md:px-3 max-md:py-2"
 	>
 		{#each minimized as draft (draft.id)}
 			<!-- A dock chip: 44px, the menu's shadow, a status dot ringed in the
@@ -75,7 +78,7 @@
 				role="button"
 				tabindex="0"
 				aria-label="Minimized draft: {chipTitle(draft)}. Activate to reopen."
-				class="flex h-11 w-[220px] shrink-0 cursor-grab items-center gap-[9px] rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] pr-1.5 pl-[11px] shadow-[var(--z-shadow-menu)] select-none max-md:pr-0.5 transition-[transform,border-color,box-shadow] duration-[150ms] hover:border-[var(--z-faint)] max-md:w-[190px] max-md:cursor-default {compose.trayDragId ===
+				class="flex h-11 w-[220px] shrink-0 cursor-grab items-center gap-[9px] rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] pr-1.5 pl-[11px] shadow-[var(--z-shadow-menu)] select-none max-md:pr-0.5 transition-[transform,border-color,box-shadow] duration-[150ms] hover:border-[var(--z-faint)] max-md:w-auto max-md:min-w-[140px] max-md:flex-1 max-md:cursor-default {compose.trayDragId ===
 				draft.id
 					? '-translate-y-1 shadow-[var(--z-shadow-panel)]'
 					: ''}"
@@ -100,7 +103,7 @@
 				></span>
 				<span class="min-w-0 flex-1">
 					<span class="block truncate text-[12px] font-bold text-[var(--z-body)]">{chipTitle(draft)}</span>
-					<span class="z-mono block truncate text-[10px] text-[var(--z-soft)]">{chipMeta(draft)}</span>
+					<span class="z-mono block truncate text-[10px] text-[var(--z-soft)] max-md:text-[12px]">{chipMeta(draft)}</span>
 				</span>
 				<!-- On a phone the chip itself is the way back in, so the one icon left is a thumb-sized Close. -->
 				<button

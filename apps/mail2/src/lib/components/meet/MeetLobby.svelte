@@ -242,7 +242,8 @@
 					<!-- Mirrored, as a mirror is what people expect of themselves. -->
 					<video bind:this={preview} class="size-full -scale-x-100 object-cover" autoplay muted playsinline></video>
 				{:else}
-					<div class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+					<!-- Centred above the buttons on a phone: at 320px the line under the tile ran into them. -->
+					<div class="absolute inset-0 flex flex-col items-center justify-center gap-3 max-md:pb-14">
 						<span
 							class="z-avatar !size-[84px] !rounded-[18px] !text-[26px]"
 							style={identityStyle(you?.email ?? guestName ?? 'guest')}

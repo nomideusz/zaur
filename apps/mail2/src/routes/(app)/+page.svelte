@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { onMount, untrack } from 'svelte';
-	import { browser } from '$app/environment';
-	import { goto } from '$app/navigation';
+	import { browser } from '$app/env';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { resyncPush } from '#lib/push';
-	import { makeRecipient } from '#lib/compose/recipients';
+	import { messageOf } from '#lib/errors';
+	import { parseRecipients } from '#lib/compose/recipients';
+	import { loadTrix } from '#lib/compose/trix';
 	import { isMeetGroupId, meetingJoinPath } from '@zaur/mail-core/utils/meet';
 	import { switchAccount, whoami } from '../session.remote';
 	import { mailboxes, sharedMailboxes, threads, thread, quota, bulk, emptyFolder, labelCounts, copyAttachments,
@@ -24,10 +26,10 @@
 	import ComposePanel from '#lib/components/compose/ComposePanel.svelte';
 	import ComposeDock from '#lib/components/compose/ComposeDock.svelte';
 	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
-	import { mailboxOfUrl } from '#lib/mail/folders';
+	import { acceptsMoves, mailboxOfUrl } from '#lib/mail/folders';
+	import { announce, onAccountChange, prefNotSaved } from '#lib/accounts';
 	import { patchQuery, readerThread } from '#lib/mail/reader-thread.svelte.ts';
 	import { backLayer, inOrder } from '#lib/back-layer.svelte.ts';
-	import { LiveUpdates } from '#lib/mail/live';
 	import {
 		prefs,
 		setPref,
@@ -157,10 +159,13 @@
 			void searchResource?.refresh();
 			return;
 		}
+		// A search cleared leaves the conversation opened from its results where it is:
+		// the folder searched holds it. (One found in another folder goes with the results.)
+		const keep = next === '' && !searchAll && !viewport.phone ? openThreadId : null;
 		searchQuery = next;
-		cursorId = null;
+		cursorId = keep;
 		selection = new Set();
-		reader.close();
+		if (!keep) reader.close();
 	}
 
 	const who = whoami();
@@ -188,13 +193,7 @@
 	 * account, the others (told over a BroadcastChannel) so none keeps showing,
 	 * or composing in, the account that is no longer active.
 	 */
-	let accountChannel: BroadcastChannel | null = null;
-	onMount(() => {
-		if (typeof BroadcastChannel === 'undefined') return;
-		accountChannel = new BroadcastChannel('zaur-mail2-account');
-		accountChannel.onmessage = () => location.reload();
-		return () => accountChannel?.close();
-	});
+	onMount(() => onAccountChange(() => location.reload()));
 
 	async function useAccount(key: string, then = '/') {
 		try {
@@ -203,7 +202,7 @@
 			compose.pushToast({ text: 'Could not switch accounts', tone: 'error' });
 			return;
 		}
-		accountChannel?.postMessage('changed');
+		announce();
 		location.assign(then);
 	}
 
@@ -295,7 +294,6 @@
 		// Whose Inbox it is goes wherever its name is shown.
 		return box && activeShared ? { ...box, name: `${box.name} · ${activeShared.name}` } : box;
 	});
-	const inboxUnseen = $derived(mailboxesResource?.current?.find((box) => box.kind === 'inbox')?.unread ?? 0);
 	/** Every mail query and action takes this: absent for your own mailbox. */
 	const account = $derived(mailAccount ?? undefined);
 
@@ -403,12 +401,7 @@
 	 */
 	$effect(() => {
 		if (!session || accountPrefsResource?.loading !== false) return;
-		adoptAccountPrefs(accountPrefsResource.current ?? null, (changed) => {
-			void setAccountPrefs(changed).catch(() => {
-				// A preference that failed to travel is not worth interrupting for;
-				// it is still correct on this device and will go up on the next change.
-			});
-		});
+		adoptAccountPrefs(accountPrefsResource.current ?? null, setAccountPrefs, prefNotSaved);
 	});
 
 	const rowGroups = $derived.by(() => {
@@ -482,24 +475,22 @@
 	});
 
 	/**
-	 * Push: Stalwart tells us what changed, we re-run the queries that cover it.
-	 * The thread in the reader is deliberately not refreshed on every Email
-	 * change — the pane you are reading should not reflow under you — but a
-	 * mailbox you are looking at should show mail as it lands.
+	 * Push (the layout's stream): Stalwart tells us what changed, we re-run the
+	 * queries that cover it. The thread in the reader is deliberately not
+	 * refreshed on every Email change — the pane you are reading should not
+	 * reflow under you — but a mailbox you are looking at should show mail as
+	 * it lands.
 	 */
-	$effect(() => {
-		if (!session) return;
-		const live = new LiveUpdates();
-		live.start(({ email, mailbox, contact }) => {
+	$effect(() =>
+		shell.onLive(({ email, mailbox, contact }) => {
 			if (email) void listResource?.refresh();
 			if (mailbox) {
 				void mailboxesResource?.refresh();
 				void sharedResource?.refresh();
 			}
 			if (contact) void contactsResource?.refresh();
-		});
-		return () => live.stop();
-	});
+		})
+	);
 
 	// What the last visit left behind: drafts that a dead connection kept on
 	// this device go up when it returns. (The outbox is the layout's to drain.)
@@ -559,28 +550,35 @@
 	 * `/?to=ada@example.com` opens a draft to that address — the Contacts pane's
 	 * "Write" link. `/?invite=zaur-…` opens one inviting to that Meet call — the
 	 * call's "Email an invite". The parameter is consumed once and taken off the
-	 * URL, so a reload does not open a second draft.
+	 * URL, so a reload does not open a second draft. Once per link followed,
+	 * so the next one is taken up too; never on Back, which hands the entry its
+	 * URL as it was opened, parameter and all.
 	 */
-	let composeLinkHandled = false;
+	let composeLink = $state<URL | null>(null);
+	afterNavigate(({ type, to }) => {
+		const url = to?.url;
+		if (type !== 'popstate' && url && (url.searchParams.has('to') || url.searchParams.has('invite'))) composeLink = url;
+	});
 	$effect(() => {
+		const link = composeLink;
 		// After the identities load, or the draft has no From and no signature.
-		if (!session || composeLinkHandled || identitiesResource?.loading !== false) return;
-		const to = page.url.searchParams.get('to');
-		const invite = page.url.searchParams.get('invite');
-		if (to === null && invite === null) return;
-		composeLinkHandled = true;
+		if (!link || !session || identitiesResource?.loading !== false) return;
+		composeLink = null;
+		const to = link.searchParams.get('to');
+		const invite = link.searchParams.get('invite');
 		if (to !== null) {
-			const recipient = makeRecipient(to, 'Contact');
+			// mailto: may name several, comma-separated.
+			const recipients = parseRecipients(to, 'Contact');
 			compose.newDraft({
 				...panelPosition(),
-				to: recipient ? [recipient] : [],
-				focusTarget: recipient ? 'subject' : 'to'
+				to: recipients,
+				focusTarget: recipients.length ? 'subject' : 'to'
 			});
 		} else if (invite && isMeetGroupId(invite)) {
 			compose.newDraft({
 				...panelPosition(),
 				subject: 'Join me on Zaur Meet',
-				body: `Join me on Zaur Meet:\n${page.url.origin}${meetingJoinPath(invite)}\n\nNo account needed: open the link, type your name and join.`,
+				body: `Join me on Zaur Meet:\n${link.origin}${meetingJoinPath(invite)}\n\nNo account needed: open the link, type your name and join.`,
 				focusTarget: 'to'
 			});
 		}
@@ -610,7 +608,45 @@
 		compose.reply(message, myEmails, mode, position);
 	}
 
+	/**
+	 * `r`, `a` or `f` pressed before the opened conversation has arrived — on a
+	 * real connection, the normal gap after a click. The reply opens when the
+	 * conversation does; the key used to be dropped, and the sentence typed
+	 * after it ran as shortcuts on the list.
+	 */
+	let awaitedReply = $state<{ mode: 'reply' | 'replyAll' | 'forward'; threadId: string } | null>(null);
+	$effect(() => {
+		const awaited = awaitedReply;
+		if (!awaited) return;
+		const latest = threadResource?.current?.at(-1);
+		// Gone, failed, or arrived with nothing in it: the keys go back to the list.
+		if (awaited.threadId !== openThreadId || threadResource?.error || threadResource?.current?.length === 0) awaitedReply = null;
+		else if (latest) {
+			awaitedReply = null;
+			untrack(() => void openReply(awaited.mode, latest, null));
+		}
+	});
+
 	const selectedIds = $derived(selectedEmailIds(listData?.rows, selection));
+
+	/** What the reader holds of the open conversation in this folder — all of it, where the list has only a page. */
+	const openThreadHere = $derived(
+		threadResource?.current?.filter(
+			(message) => message.threadId === openThreadId && !!activeMailbox && message.mailboxIds.includes(activeMailbox.id)
+		) ?? []
+	);
+
+	/**
+	 * The messages an action on these rows takes. The open conversation's row
+	 * need not be loaded (a `?thread=` link, a notification, a thread past the
+	 * first page), so it also takes what the reader holds of it here. Results
+	 * from every folder act on the hits, which are always rows.
+	 */
+	function rowEmailIds(scope: Set<string>): string[] {
+		const ids = selectedEmailIds(listData?.rows, scope);
+		if (acrossFolders || !openThreadId || !scope.has(openThreadId)) return ids;
+		return [...new Set([...ids, ...openThreadHere.map((message) => message.id)])];
+	}
 
 	function markThreadRead(threadId: string) {
 		const ids = selectedEmailIds(listData?.rows, new Set([threadId])).filter(
@@ -635,10 +671,22 @@
 	 */
 	async function runBulk(action: BulkAction, mailboxId?: string, threadIds?: string[]) {
 		const scope = threadIds ? new Set(threadIds) : selection;
-		const emailIds = threadIds
-			? selectedEmailIds(listData?.rows, scope)
-			: selectedIds;
-		if (emailIds.length === 0 || bulkBusy) return;
+		const emailIds = threadIds ? rowEmailIds(scope) : selectedIds;
+		if (bulkBusy) return;
+		// The menus and the sidebar do not offer these; whatever else asks is refused here.
+		const into = action === 'move' ? mailboxList?.find((box) => box.id === mailboxId) : undefined;
+		if (into && !acceptsMoves(into)) {
+			compose.pushToast({ text: `Mail can't be moved to ${into.name}`, tone: 'info' });
+			return;
+		}
+		if (emailIds.length === 0) {
+			// A link can open a conversation that has since been filed elsewhere:
+			// nothing of it is in this folder to act on, and a dead button says so.
+			if (threadIds && openThreadId && scope.has(openThreadId)) {
+				compose.pushToast({ text: `This conversation is no longer in ${activeMailbox?.name ?? 'this folder'}`, tone: 'info' });
+			}
+			return;
+		}
 		// Results from every folder have no one folder to leave: a move replaces
 		// where each message lives, and a delete only ever goes to Trash.
 		let payload = { action, emailIds, mailboxId, sourceMailboxId: acrossFolders ? undefined : activeMailbox?.id, account };
@@ -657,6 +705,11 @@
 			payload.action === 'move' ? mailboxList?.find((box) => box.id === payload.mailboxId)?.kind : undefined;
 		const verbs: Partial<Record<BulkAction, string>> = {
 			move: 'moved',
+			delete: 'deleted',
+			read: 'marked read',
+			unread: 'marked unread',
+			star: 'flagged',
+			unstar: 'unflagged',
 			important: 'marked important',
 			unimportant: 'marked not important'
 		};
@@ -684,6 +737,8 @@
 			(id) => mailboxList?.find((box) => box.id === id)?.kind === 'scheduled'
 		);
 		const undoable = origins.size > 0 && !unscheduled;
+		// Undo puts the cursor back on the row it was on, not on the neighbour it stepped to.
+		const cursorWas = cursorId && scope.has(cursorId) ? cursorId : null;
 		bulkBusy = true;
 		try {
 			const { count } = await bulk(payload);
@@ -698,6 +753,8 @@
 			if (!threadIds) selection = new Set();
 			void listResource?.refresh();
 			void foldersResource?.refresh();
+			// Without a row the reader's buttons read the thread itself, so it is fetched again.
+			if (!leavesFolder && openThreadId && scope.has(openThreadId) && !openListRow) void threadResource?.refresh();
 			// The folder that just received these keeps a cached list of its own, so
 			// without this, opening it straight after a move shows it as it was
 			// before — which reads as a move that did not happen.
@@ -719,20 +776,24 @@
 			const destination = payload.mailboxId!;
 			compose.pushToast(
 				undoable
-					? { text, tone: 'success', actionLabel: 'Undo', action: () => void undoMove(origins, destination, payload.account) }
+					? { text, tone: 'success', actionLabel: 'Undo', action: () => void undoMove(origins, destination, payload.account, cursorWas) }
 					: { text, tone: 'success' }
 			);
+			// The newest notice is first. Noted with where the mail went, so
+			// emptying that folder can take back an Undo with nothing left to undo.
+			const notice = compose.toasts[0];
+			if (undoable && notice?.text === text) undoInto.set(notice.id, destination);
 		} catch (cause) {
-			compose.pushToast({
-				text: cause instanceof Error ? cause.message : 'Action failed',
-				tone: 'error'
-			});
+			compose.pushToast({ text: messageOf(cause, `Not ${verb}`), tone: 'error' });
 		} finally {
 			bulkBusy = false;
 		}
 	}
 
 	/** Trash and Spam: every message in the folder, gone for good. */
+	/** Undo notices still up, by the folder their mail went to. */
+	const undoInto = new Map<string, string>();
+
 	async function emptyOpenFolder() {
 		const box = activeMailbox;
 		if (!box || bulkBusy) return;
@@ -741,15 +802,17 @@
 		bulkBusy = true;
 		try {
 			const { count } = await emptyFolder({ mailboxId: box.id, account });
+			for (const [id, into] of undoInto) {
+				if (into !== box.id) continue;
+				compose.dismissToast(id);
+				undoInto.delete(id);
+			}
 			reader.close();
 			selection = new Set();
 			void listResource?.refresh();
 			compose.pushToast({ text: `${box.name} emptied — ${count} ${count === 1 ? 'message' : 'messages'} deleted`, tone: 'success' });
 		} catch (cause) {
-			compose.pushToast({
-				text: cause instanceof Error ? cause.message : `Could not empty ${box.name}`,
-				tone: 'error'
-			});
+			compose.pushToast({ text: messageOf(cause, `Could not empty ${box.name}`), tone: 'error' });
 		} finally {
 			bulkBusy = false;
 		}
@@ -760,10 +823,7 @@
 		try {
 			await cancelScheduled({ emailId: message.id });
 		} catch (cause) {
-			compose.pushToast({
-				text: cause instanceof Error ? cause.message : 'Could not cancel the send',
-				tone: 'error'
-			});
+			compose.pushToast({ text: messageOf(cause, 'Could not cancel the send'), tone: 'error' });
 			return;
 		}
 		reader.close();
@@ -774,23 +834,21 @@
 	}
 
 	/** A move's Undo: each message back to the folder it came from. */
-	async function undoMove(origins: Map<string, string[]>, from: string, account: string | undefined) {
+	async function undoMove(origins: Map<string, string[]>, from: string, account: string | undefined, cursor: string | null) {
 		try {
 			await Promise.all(
 				[...origins].map(([mailboxId, emailIds]) =>
 					bulk({ action: 'move', emailIds, mailboxId, sourceMailboxId: from, account })
 				)
 			);
+			if (cursor) cursorId = cursor;
 			void listResource?.refresh();
 			void foldersResource?.refresh();
 			// The folder they were taken back out of must stop listing them: a row
 			// left there would offer to delete a message that is no longer in it.
 			refreshFolder(from);
 		} catch (cause) {
-			compose.pushToast({
-				text: cause instanceof Error ? cause.message : 'Could not undo the move',
-				tone: 'error'
-			});
+			compose.pushToast({ text: messageOf(cause, 'Could not undo the move'), tone: 'error' });
 		}
 	}
 
@@ -800,13 +858,29 @@
 	 */
 	function runRowShortcut(action: BulkAction, mailboxId?: string) {
 		if (selection.size > 0) return void runBulk(action, mailboxId);
-		if (!cursorId) return;
-		void runBulk(action, mailboxId, [cursorId]);
+		// No cursor (a phone, or a thread opened by link): the keys act on what is being read.
+		const target = cursorId ?? openThreadId;
+		if (!target) return;
+		void runBulk(action, mailboxId, [target]);
 	}
 
-	const cursorRow = $derived(flatRows.find((row) => row.threadId === cursorId));
-	/** The open thread's row — the reader's toolbar flips its icons off it. */
-	const openRowState = $derived(flatRows.find((row) => row.threadId === openThreadId) ?? null);
+	const openListRow = $derived(flatRows.find((row) => row.threadId === openThreadId) ?? null);
+	/**
+	 * The open thread's state — the reader's toolbar flips its icons off it: its
+	 * row, or without one what the reader holds of it here, as a row would say.
+	 */
+	const openRowState = $derived(
+		openListRow ??
+			(openThreadHere.length > 0
+				? {
+						starred: openThreadHere.some((message) => message.starred),
+						unread: openThreadHere.some((message) => message.unread),
+						important: openThreadHere.some((message) => message.important)
+					}
+				: null)
+	);
+	// What the s, i and u keys read: the cursor row, or without a cursor the conversation being read.
+	const cursorRow = $derived(cursorId ? flatRows.find((row) => row.threadId === cursorId) : (openRowState ?? undefined));
 	const archiveTarget = $derived(
 		mailboxList?.find((box) => box.kind === 'archive' && box.id !== activeMailbox?.id) ?? null
 	);
@@ -846,6 +920,10 @@
 	// A subscribed browser checks in on every load, so its push row does not age out.
 	onMount(() => {
 		resyncPush().catch(() => {});
+		// The editor is a chunk of its own, fetched when the first panel opens: the
+		// first keys of the first reply were typed before it was there, and lost.
+		// Fetched once the page is idle instead (no idle callback in Safari: a timer).
+		(window.requestIdleCallback ?? ((run: () => void) => setTimeout(run, 2000)))(() => void loadTrix().catch(() => {}));
 	});
 
 	async function openRow(threadId: string) {
@@ -886,6 +964,8 @@
 	function moveCursor(delta: number) {
 		if (flatRowIds.length === 0) return;
 		const index = cursorId ? flatRowIds.indexOf(cursorId) : -1;
+		// Past the last row there is more of the folder before there is its top again.
+		if (delta > 0 && index === flatRowIds.length - 1 && listData?.hasMore) return loadMore();
 		const next = index === -1
 			? flatRowIds[delta > 0 ? 0 : flatRowIds.length - 1]!
 			: flatRowIds[(index + delta + flatRowIds.length) % flatRowIds.length]!;
@@ -939,6 +1019,11 @@
 		if (target?.closest?.('[role="dialog"]') || (target === document.body && compose.holdsKeys())) return;
 		if (target && (target.matches?.('input, textarea, select') || target.isContentEditable)) return;
 		if (event.metaKey || event.ctrlKey || event.altKey) return;
+		// A reply is about to open: what is typed meanwhile is for it, not for the list.
+		if (awaitedReply) {
+			if (event.key !== 'Escape') return;
+			awaitedReply = null;
+		}
 
 		switch (event.key) {
 			case 'c':
@@ -997,10 +1082,12 @@
 			case 'r':
 			case 'a':
 			case 'f': {
+				const mode = event.key === 'r' ? 'reply' : event.key === 'a' ? 'replyAll' : 'forward';
 				const latest = threadResource?.current?.at(-1);
-				if (!latest) break;
+				if (latest) void openReply(mode, latest, null);
+				else if (openThreadId && !threadResource?.error) awaitedReply = { mode, threadId: openThreadId };
+				else break;
 				event.preventDefault();
-				void openReply(event.key === 'r' ? 'reply' : event.key === 'a' ? 'replyAll' : 'forward', latest, null);
 				break;
 			}
 			// Deliberately shift-# and not Delete: in Trash this one destroys.
@@ -1031,7 +1118,7 @@
 
 <svelte:window onkeydown={handleKeydown} />
 <!-- A pinned tab says how much is waiting in the inbox, and which folder it is on. -->
-<svelte:head><title>{inboxUnseen > 0 ? `(${inboxUnseen}) ` : ''}{activeMailbox?.name ?? 'Mail'} · Zaur Mail</title></svelte:head>
+<svelte:head><title>{shell.title(activeMailbox?.name ?? 'Mail')}</title></svelte:head>
 
 <!--
 	A phone reading a thread gets one bar, not two: the reader's own toolbar
@@ -1067,7 +1154,7 @@
 			bind:this={phoneBar}
 			mailboxes={mailboxList}
 			{activeMailbox}
-			sidebarOpen={sidebarVisible}
+			sidebarOpen={drawerOpen}
 			onToggleSidebar={toggleSidebar}
 			{searchQuery}
 			onSearch={runSearch}
@@ -1079,7 +1166,6 @@
 			onBulk={(action, mailboxId) => void runBulk(action, mailboxId)}
 			busy={bulkBusy}
 			onNewMessage={(anchor) => openCompose(anchor)}
-			waiting={compose.outboxCount}
 		/>
 	{/if}
 	<main
@@ -1101,12 +1187,16 @@
 					onclick={() => void drawer.hide()}
 				></button>
 			{/if}
+			<!-- The server cannot know the width and renders the sidebar as the column it
+			     is on a desk. Below 1024px that markup would be the drawer, open over the
+			     list until the page hydrates: unless the drawer was opened, CSS keeps it
+			     away there. -->
 			<div
 				bind:this={drawerEl}
 				data-drawer
 				role={viewport.compact ? 'dialog' : undefined}
 				aria-label={viewport.compact ? 'Mailboxes' : undefined}
-				class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
+				class="{drawerOpen ? '' : 'max-lg:hidden'} max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
 			>
 				<Sidebar
 					mailboxes={mailboxesResource?.current ?? undefined}
@@ -1174,6 +1264,7 @@
 			inTrash={activeMailbox?.kind === 'trash'}
 			onCancelSend={mailAccount ? undefined : (message) => void cancelSend(message)}
 			shared={activeShared}
+			{myEmails}
 		/>
 	</main>
 
@@ -1187,7 +1278,6 @@
 
 <StatusLine
 	bind:this={statusLine}
-	waiting={compose.outboxCount}
 	mailboxName={activeMailbox?.name ?? null}
 	unseen={activeMailbox?.unread ?? 0}
 	quota={quotaResource?.current}

@@ -13,7 +13,8 @@ import {
 	verifyPkceS256,
 	type AuthCodeData,
 	postLogoutTarget,
-	parseOidcClients
+	parseOidcClients,
+	isNavigation
 } from '../src/oidc.ts';
 
 const CLAIMS = { sub: '125', preferred_username: 'user@zaur.app', email: 'user@zaur.app' };
@@ -115,5 +116,19 @@ describe('parseOidcClients', () => {
 			]
 		);
 		assert.deepEqual(parseOidcClients('not json', {}), []);
+	});
+});
+
+describe('isNavigation', () => {
+	it('lets the browser arrive, and nothing a page embeds', () => {
+		const dest = (value?: string) => isNavigation(new Headers(value === undefined ? {} : { 'sec-fetch-dest': value }));
+		// A relying party's redirect, a link, a form: a navigation.
+		assert.equal(dest('document'), true);
+		// A browser that does not send the header behaves as before.
+		assert.equal(dest(), true);
+		// <img src="/oidc/logout">, fetch(), a frame, a prefetch.
+		for (const embedded of ['image', 'empty', 'iframe', 'frame', 'script', 'style', 'video', 'embed', 'object', '']) {
+			assert.equal(dest(embedded), false, embedded);
+		}
 	});
 });

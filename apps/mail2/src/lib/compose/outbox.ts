@@ -120,7 +120,10 @@ export type FailureKind = 'network' | 'fatal';
  */
 export function classifySendFailure(cause: unknown): FailureKind {
 	if (cause instanceof TypeError) return 'network';
-	const message = cause instanceof Error ? cause.message : String(cause);
+	// A remote call's failure is an HttpError, not an Error: a proxy answering for
+	// a server that is restarting says so in `body.message` ("Bad Gateway").
+	const message =
+		cause instanceof Error ? cause.message : ((cause as { body?: { message?: string } })?.body?.message ?? String(cause));
 	if (
 		/fetch failed|failed to fetch|networkerror|network error|socket|econn|timed? ?out|unreachable|bad gateway|service unavailable|gateway time-?out|\b5(02|03|04)\b/i.test(
 			message

@@ -8,15 +8,14 @@ function previewSenderLabel(
 	isMe: (email: string) => boolean,
 	showSenderEmailInList: boolean
 ): SenderLabel {
-	if (
-		isMe(message.from.email) &&
-		folderRouteId !== 'inbox' &&
-		message.to &&
-		message.to.length > 0
-	) {
-		const recipient = message.to[0];
+	if (isMe(message.from.email) && folderRouteId !== 'inbox') {
+		// Whoever it went to, under the header that names them: a Bcc-only message
+		// is "Bcc …", not your own name, and a draft to nobody says so.
+		const open = [...(message.to ?? []), ...(message.cc ?? [])];
+		const recipient = open[0] ?? message.bcc?.[0];
+		if (!recipient) return { label: 'No recipients', email: '' };
 		const email = recipient.email?.trim() ?? '';
-		return { label: `To ${recipient.name?.trim() || email}`, email };
+		return { label: `${open.length > 0 ? 'To' : 'Bcc'} ${recipient.name?.trim() || email}`, email };
 	}
 	const email = message.from.email?.trim() ?? '';
 	const name = message.from.name?.trim();

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { online } from 'svelte/reactivity/window';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
@@ -6,6 +7,7 @@
 	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
 	import { CATEGORIES, CATEGORY_OTHER, categoryLabel } from '@zaur/mail-core';
 	import { filterKeyword, filterName } from '#lib/mail/labels';
+	import { acceptsMoves } from '#lib/mail/folders';
 	import { formatListTime, initials } from '#lib/mail/rows';
 	import {
 		CHANNELS,
@@ -18,7 +20,6 @@
 	import ActionIcon from './ActionIcon.svelte';
 	import { prefs } from '#lib/settings.svelte.ts';
 	import { viewport } from '#lib/viewport.svelte.ts';
-	import { compose } from '#lib/compose/store.svelte.ts';
 
 	interface Props {
 		/** The page hides this pane on a phone while the reader is open. */
@@ -100,8 +101,6 @@
 	}
 
 	let listContainer = $state<HTMLDivElement | undefined>();
-	/** A phone's dock of minimised drafts floats over the end of the list, which makes room for it. */
-	const docked = $derived(compose.drafts.some((draft) => draft.stage === 'minimized'));
 
 	const flatRows = $derived((groups ?? []).flatMap((group) => group.rows));
 	const selectedRows = $derived(flatRows.filter((row) => selection.has(row.threadId)));
@@ -110,7 +109,7 @@
 	const allStarred = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.starred));
 	const allImportant = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.important));
 	const moveTargets = $derived(
-		(mailboxes ?? []).filter((box) => box.id !== mailbox?.id && box.kind !== 'drafts' && box.kind !== 'scheduled')
+		(mailboxes ?? []).filter((box) => box.id !== mailbox?.id && acceptsMoves(box))
 	);
 	/** Archive is the one move worth a button of its own on the row. */
 	const archiveTarget = $derived(
@@ -172,8 +171,11 @@
 		trash: { title: 'Trash is empty', hint: 'Deleted messages stay here before final removal.' }
 	};
 
-	/** A label (not Flagged, which has its own segment) is narrowing the folder. */
-	const labelled = $derived(filter === 'important' || filter.startsWith('cat:'));
+	/** The list's own width: under 430px the Flagged segment has no room and moves into the Label select. */
+	let width = $state(0);
+	const narrow = $derived(width > 0 && width < 430);
+	/** A label (not Flagged while it has its own segment) is narrowing the folder. */
+	const labelled = $derived(filter === 'important' || filter.startsWith('cat:') || (narrow && filter === 'flagged'));
 
 	// An empty label is not an empty folder: "Inbox zero" over a filtered inbox would lie.
 	const emptyCopy = $derived(
@@ -190,6 +192,7 @@
 </script>
 
 <section
+	bind:clientWidth={width}
 	class="@container flex h-full min-h-0 flex-col overflow-hidden bg-[var(--z-surface)] select-none {className}"
 	aria-label="Message list"
 >
@@ -265,9 +268,11 @@
 						<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={filter === 'unseen'} onclick={() => onFilter('unseen')}>
 							Unseen
 						</button>
-						<button type="button" class="z-segment !h-6 !px-2.5 @max-[430px]:hidden" aria-pressed={filter === 'flagged'} onclick={() => onFilter('flagged')}>
-							Flagged
-						</button>
+						{#if !narrow}
+							<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={filter === 'flagged'} onclick={() => onFilter('flagged')}>
+								Flagged
+							</button>
+						{/if}
 						<!--
 							The rest of the sidebar's Labels, in one select to keep the group
 							short — so a label ticked there is never a filter this header hides.
@@ -280,6 +285,7 @@
 							onchange={(event) => onFilter((event.currentTarget.value || 'all') as ListFilter)}
 						>
 							<option value="">Label…</option>
+							{#if narrow}<option value="flagged">Flagged</option>{/if}
 							<option value="important">Important</option>
 							{#each CATEGORIES as category (category.id)}
 								<option value="cat:{category.id}">{category.label}</option>
@@ -342,8 +348,9 @@
 
 					{#if moveTargets.length > 0}
 						<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
-							<Menu.Trigger class="btn-tactile !h-7 shrink-0 gap-1 !border-[var(--z-accent-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-accent-ink)] @max-[430px]:hidden" disabled={busy}>
-								Move to
+							<Menu.Trigger class="btn-tactile !h-7 shrink-0 gap-1 !border-[var(--z-accent-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-accent-ink)]" disabled={busy}>
+								<!-- A narrow column (a laptop with the sidebar open) keeps the action and drops a word. -->
+								Move<span class="@max-[430px]:hidden">&nbsp;to</span>
 								<ActionIcon name="chevron" class="size-[11px]" />
 							</Menu.Trigger>
 							<Portal>
@@ -401,7 +408,7 @@
 	<!-- Scrollable list -->
 	<div
 		bind:this={listContainer}
-		class="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3 [scroll-padding-top:34px] max-md:px-3 overscroll-contain {docked ? 'max-md:pb-[72px]' : ''}"
+		class="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3 [scroll-padding-top:34px] max-md:px-3 overscroll-contain"
 	>
 		{#if error}
 			<div
@@ -416,7 +423,7 @@
 				</svg>
 				<div class="min-w-0 flex-1">
 					<span class="block text-[13px] font-semibold text-[var(--z-ch-discard-ink)]">Couldn't load messages</span>
-					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">The mail server couldn't be reached.</span>
+					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">{online.current === false ? "You're offline." : "The mail server couldn't be reached."}</span>
 				</div>
 				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)] max-md:!h-11 max-md:!px-3.5 max-md:!text-[13px]" onclick={onRetry}>Retry</button>
 			</div>
@@ -450,7 +457,7 @@
 					Nothing in {searchAll ? 'any folder' : (mailbox?.name ?? 'this folder')} matches
 					<span class="font-medium text-[var(--z-strong)]">{searchQuery}</span>.
 				</p>
-				<p class="z-mono mt-2 max-w-[320px] text-[10.5px] leading-relaxed text-[var(--z-soft)]">{searchOperatorHint()}</p>
+				<p class="z-mono mt-2 max-w-[320px] text-[10.5px] leading-relaxed max-md:text-[12px] text-[var(--z-soft)]">{searchOperatorHint()}</p>
 				<div class="mt-3 flex gap-2">
 					{#if !searchAll && onSearchAll}
 						<button type="button" class="btn-tactile btn-primary !h-8 max-md:!h-11" onclick={() => onSearchAll(true)}>Search all folders</button>

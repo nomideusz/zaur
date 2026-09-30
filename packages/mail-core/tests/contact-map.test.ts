@@ -6,6 +6,7 @@ import {
 	buildContactPatch,
 	contactLetter,
 	contactMatches,
+	groupContacts,
 	mapAddressBook,
 	mapContactCard
 } from '../src/jmap/contact-map.ts';
@@ -139,11 +140,33 @@ test('contactLetter files non-letters under #', () => {
 	assert.equal(contactLetter(contact), 'A');
 	assert.equal(contactLetter({ name: '42 Ltd', emails: [], organization: '' }), '#');
 	assert.equal(contactLetter({ name: '', emails: [{ address: 'zed@x.y', label: '', preferred: true }], organization: '' }), 'Z');
+	// Latin letters outside A–Z go with the letter they sort beside; other scripts do not.
+	const named = (name: string) => contactLetter({ name, emails: [], organization: '' });
+	assert.deepEqual(['Łukasz', 'Żaneta', 'Śliwa', 'Øyvind', 'émile', 'Яна', '', '😀 Emoji'].map(named), ['L', 'Z', 'S', 'O', 'E', '#', 'U', '#']);
+});
+
+test('groupContacts never returns the same letter twice, whatever the order', () => {
+	const names = ['Łukasz', 'Marek', 'Żaneta', '42 Ltd', 'Яна', 'Adam', 'zoe', 'Lena', '_x'];
+	const list = names.map((name) => ({ name, emails: [], organization: '' }));
+	// Sorted as the server sorts, as typed, and backwards: the groups are the same set each time.
+	const collator = new Intl.Collator(undefined, { sensitivity: 'base' });
+	const sorted = [...list].sort((a, b) => collator.compare(a.name, b.name));
+	for (const order of [sorted, list, [...list].reverse()]) {
+		const groups = groupContacts(order);
+		const letters = groups.map((group) => group.letter);
+		assert.equal(new Set(letters).size, letters.length, `duplicate group in ${letters.join('')}`);
+		assert.deepEqual(letters, ['A', 'L', 'M', 'Z', '#']);
+		assert.equal(groups.flatMap((group) => group.items).length, list.length);
+	}
+	assert.deepEqual(groupContacts(sorted).find((group) => group.letter === 'L')!.items.map((one) => one.name), ['Lena', 'Łukasz']);
+	assert.deepEqual(groupContacts([]), []);
 });
 
 test('contactMatches is a prefix match on words and addresses', () => {
 	const contact = mapContactCard(card);
 	assert.equal(contactMatches(contact, 'lov'), true);
+	assert.equal(contactMatches({ ...contact, name: 'Łukasz Żuk', given: 'Łukasz', surname: 'Żuk' }, 'luk'), true);
+	assert.equal(contactMatches({ ...contact, name: 'Łukasz Żuk', given: 'Łukasz', surname: 'Żuk' }, 'zu'), true);
 	assert.equal(contactMatches(contact, 'ada@ho'), true);
 	assert.equal(contactMatches(contact, 'analytical'), true);
 	assert.equal(contactMatches(contact, 'count'), true);

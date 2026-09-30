@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-import { redirect, type RequestHandler } from '@sveltejs/kit';
+import { error, redirect, type RequestHandler } from '@sveltejs/kit';
 import { getStoreDb, recordSessionDevice, unsealSession, writeSession, type SessionData } from '@zaur/server-auth';
-import { consumeOneTimeCode } from '@zaur/server-auth/oidc';
+import { consumeOneTimeCode, isNavigation } from '@zaur/server-auth/oidc';
 import type { HandoffPayload } from '@zaur/server-auth/internal-auth';
 import { getClientAddress } from '#lib/server/login';
 
@@ -10,6 +10,8 @@ import { getClientAddress } from '#lib/server/login';
  * OIDC authorize URL when signup began in another app) or the inbox. A used
  * or expired token is just a sign-in, with a welcome. */
 export const GET: RequestHandler = ({ url, cookies, request }) => {
+	// A sign-in by GET: only as a navigation, so nothing embedded in a page can swap the session.
+	if (!isNavigation(request.headers)) error(400, 'Not a page navigation');
 	const token = url.searchParams.get('token') ?? '';
 	const payload = token ? consumeOneTimeCode<HandoffPayload>(getStoreDb(), token) : null;
 	const data = payload ? (unsealSession(payload.sealed) as SessionData | null) : null;

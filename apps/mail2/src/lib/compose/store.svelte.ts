@@ -1,4 +1,6 @@
+import { goto } from '$app/navigation';
 import { outgoingHtml } from './html';
+import { messageOf } from '../errors';
 import { prefs } from '../settings.svelte.ts';
 import type { MessageDetail } from '@zaur/mail-core';
 import { inlineImageDownloadUrl } from '@zaur/mail-core/email/inline-images';
@@ -29,9 +31,10 @@ import {
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
 import { formatScheduleTime } from './schedule';
-import { commitRecipient, isDuplicate, makeRecipient, outgoingRecipients } from './recipients';
-import { forwardSeed, replyAllRecipients, replySeed, signatureBlock, withSignature } from './quote';
+import { commitRecipient, isDuplicate, outgoingRecipients, splitRecipients, uniqueRecipients } from './recipients';
+import { answerLink, forwardSeed, replyAllRecipients, replyRecipients, replySeed, signatureBlock, withSignature } from './quote';
 import type {
+	AnswerLink,
 	ComposeContact,
 	ComposeIdentity,
 	ComposeTransport,
@@ -48,6 +51,23 @@ import type {
 } from './types';
 
 const DRAFT_SAVE_DEBOUNCE_MS = 1500;
+// Steady typing never pauses that long: a change waits this much at most.
+const DRAFT_SAVE_MAX_WAIT_MS = 5000;
+// The copy on this device is written this soon: a reload costs this much typing at most.
+const DRAFT_LOCAL_COPY_MS = 300;
+const MAX_TOASTS = 3;
+// How long anything waits for a draft save that is out: see `#savedCopy`.
+const SAVE_WAIT_MS = 8000;
+const settled = (save: Promise<unknown> | undefined) =>
+	Promise.race([save, new Promise((resolve) => setTimeout(resolve, SAVE_WAIT_MS))]);
+
+/**
+ * A failure `classifySendFailure` calls the network's, in errors.ts's words for
+ * which of the two it was: no connection here, or a server that is not
+ * answering (online, it is not "offline"). Handed a stand-in, because the
+ * decision is already made and the browser's own wording varies.
+ */
+const unreachable = (then: string) => messageOf(new TypeError('Failed to fetch'), then);
 /** How often a waiting outbox is tried again, whatever the browser says about the network. */
 const OUTBOX_RETRY_MS = 20_000;
 
@@ -92,6 +112,7 @@ export interface NewDraftOptions {
 	jmapDraftId?: string | null;
 	/** Send-as address; the account's first (primary) address when omitted. */
 	from?: string;
+	answers?: AnswerLink;
 }
 
 
@@ -117,7 +138,16 @@ class ComposeStore {
 	#draining = false;
 	#recovering = false;
 	#saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
+	/** When each draft's oldest unsaved change was made. */
+	#unsavedSince = new Map<string, number>();
 	#savedSignatures = new Map<string, string>();
+	/**
+	 * The save each draft has on its way. A server save is create-new +
+	 * destroy-old, so two out at once with the same old id leave two copies:
+	 * every save of a draft queues behind the one before it.
+	 */
+	#saves = new Map<string, Promise<void>>();
+	#localTimers = new Map<string, ReturnType<typeof setTimeout>>();
 	/** Keyed by outbox entry id. */
 	#held = new Map<string, HeldSend>();
 	#watching = false;
@@ -146,6 +176,9 @@ class ComposeStore {
 		window.addEventListener('online', retry);
 		document.addEventListener('visibilitychange', () => {
 			if (document.visibilityState === 'visible') retry();
+			// Hidden is the last the page may hear before it is closed or put away
+			// (a phone gives no other warning): what was typed is saved now.
+			else void this.flush();
 		});
 		void this.#countOutbox();
 	}
@@ -205,11 +238,11 @@ class ComposeStore {
 			kind: options.kind ?? 'new',
 			from,
 			signature,
-			to: options.to ?? [],
+			to: uniqueRecipients(options.to ?? []),
 			toInput: '',
 			toOpen: false,
 			toHi: 0,
-			cc: options.cc ?? [],
+			cc: uniqueRecipients(options.cc ?? []),
 			ccInput: '',
 			ccOpen: false,
 			ccHi: 0,
@@ -225,6 +258,7 @@ class ComposeStore {
 			// A draft that was written rich reopens rich, whatever the preference says now.
 			plain: options.bodyHtml ? false : prefs.composePlain,
 			attachments: options.attachments ?? [],
+			...(options.answers && { answers: options.answers }),
 			sendAt: null,
 			// A saved draft has been written in (an image in it would not fit the closed box).
 			bodyOpened: !!options.jmapDraftId,
@@ -262,7 +296,7 @@ class ComposeStore {
 		let to: Recipient[] = [];
 		let cc: Recipient[] = [];
 		if (mode === 'reply') {
-			to = [{ name: message.from.name, email: message.from.email, meta: '' }];
+			to = replyRecipients(message, myEmails).map((person) => ({ ...person, meta: '' }));
 		} else if (mode === 'replyAll') {
 			const all = replyAllRecipients(message, myEmails);
 			to = all.to.map((person) => ({ ...person, meta: '' }));
@@ -278,6 +312,7 @@ class ComposeStore {
 			body: seed.body,
 			// A forward carries the files: the blobs are already the account's, so nothing re-uploads.
 			attachments: mode === 'forward' ? message.attachments.map(attachmentFromServer) : undefined,
+			answers: answerLink(message, mode === 'forward'),
 			// A reply is addressed and titled already: straight to writing. A forward still needs a To.
 			focusTarget: mode === 'forward' ? 'to' : 'body'
 		});
@@ -293,7 +328,10 @@ class ComposeStore {
 			clearTimeout(timer);
 			this.#saveTimers.delete(id);
 		}
+		this.#unsavedSince.delete(id);
 		this.#savedSignatures.delete(id);
+		clearTimeout(this.#localTimers.get(id));
+		this.#localTimers.delete(id);
 		this.drafts = this.drafts.filter((draft) => draft.id !== id);
 	}
 
@@ -305,7 +343,8 @@ class ComposeStore {
 	 */
 	close(id: string) {
 		const draft = this.#find(id);
-		if (!draft) return;
+		// Being sent: it is no longer a draft to keep, or to throw away.
+		if (!draft || draft.sending) return;
 		const transport = this.#transport;
 		if (hasDraftContent(draft)) {
 			const signature = draftContentSignature(draft);
@@ -315,21 +354,23 @@ class ComposeStore {
 				void (async () => {
 					await putLocalDraft(record).catch(() => {});
 					try {
+						record.draft.jmapDraftId = await this.#savedCopy(draft);
 						await transport.saveDraft(buildDraftSaveInput(record.draft));
 						await removeLocalDraft(id);
 					} catch (cause) {
 						this.pushToast(
 							classifySendFailure(cause) === 'network'
-								? { text: "You're offline — the draft is kept on this device until it can be saved", tone: 'warning' }
+								? { text: unreachable('The draft is kept on this device until it can be saved'), tone: 'warning' }
 								: { text: 'Draft could not be saved', tone: 'error' }
 						);
 					}
 				})();
 				return;
 			}
-		} else if (draft.jmapDraftId && transport) {
-			const emailId = draft.jmapDraftId;
-			void transport.deleteDraft(emailId).catch(() => {});
+		} else if (transport) {
+			void this.#savedCopy(draft)
+				.then((emailId) => emailId && transport.deleteDraft(emailId))
+				.catch(() => {});
 		}
 		this.#removeInternal(id);
 		void removeLocalDraft(id).catch(() => {});
@@ -337,6 +378,7 @@ class ComposeStore {
 
 	discard(id: string) {
 		const draft = this.#find(id);
+		if (draft?.sending) return;
 		this.#removeInternal(id);
 		void removeLocalDraft(id).catch(() => {});
 		// Undo writes it again as a new draft: the saved copy is gone by then.
@@ -346,19 +388,38 @@ class ComposeStore {
 			tone: 'info' as const,
 			...(kept && { actionLabel: 'Undo', action: () => this.#restoreDiscarded(kept) })
 		};
-		if (draft?.jmapDraftId) {
-			void this.#transport
-				?.deleteDraft(draft.jmapDraftId)
-				.then(() => this.pushToast(discarded))
-				.catch(() =>
-					this.pushToast({
-						text: 'Draft discarded — the saved copy could not be deleted',
-						tone: 'warning'
-					})
-				);
-		} else {
+		const transport = this.#transport;
+		void (async () => {
+			const emailId = draft && (await this.#savedCopy(draft));
+			if (emailId) await transport?.deleteDraft(emailId);
 			this.pushToast(discarded);
-		}
+		})().catch(() =>
+			this.pushToast({
+				text: 'Draft discarded — the saved copy could not be deleted',
+				tone: 'warning'
+			})
+		);
+	}
+
+	/**
+	 * The id of a draft's saved copy, once the save on its way (if any) has
+	 * answered. A save that never answers is not waited out: a copy left in
+	 * Drafts beats a Discard, a Close or a sign-out that never happens.
+	 */
+	async #savedCopy(draft: Draft): Promise<string | null> {
+		await settled(this.#saves.get(draft.id));
+		return draft.jmapDraftId;
+	}
+
+	/**
+	 * After a send: the saved draft goes, and a save that was on its way when
+	 * Send was pressed has replaced it, so it is that one's copy. Send itself
+	 * does not wait for it.
+	 */
+	#dropSavedCopy(draft: Draft, transport: ComposeTransport) {
+		void this.#savedCopy(draft)
+			.then((emailId) => emailId && transport.deleteDraft(emailId))
+			.catch(() => {});
 	}
 
 	#restoreDiscarded(kept: Draft) {
@@ -448,7 +509,12 @@ class ComposeStore {
 	 * text. This draft only — what new messages start as is a setting.
 	 */
 	setPlain(id: string, plain: boolean) {
-		this.patch(id, { plain, bodyHtml: '', focusTarget: 'body' });
+		const draft = this.#find(id);
+		if (!draft) return;
+		// A picture has no place in plain text: the "[image]" line that stood for it
+		// in the text reading of the rich message goes with it.
+		const body = plain ? draft.body.replace(/^(?:> ?)*\[image\]\n?/gm, '') : draft.body;
+		this.patch(id, { plain, body, bodyHtml: '', focusTarget: 'body' });
 	}
 
 	consumeFocus(id: string) {
@@ -493,6 +559,8 @@ class ComposeStore {
 		draft[INPUT[field]] = value;
 		draft[OPEN[field]] = value.trim().length > 0;
 		draft[HI[field]] = 0;
+		// What Send objected to is being corrected.
+		draft.sendError = null;
 	}
 
 	setRecipientOpen(id: string, field: RecipientField, open: boolean, highlighted = 0) {
@@ -507,6 +575,11 @@ class ComposeStore {
 		if (draft) draft[HI[field]] = highlighted;
 	}
 
+	/**
+	 * Every way an address gets in — Enter, a comma, leaving the field, a paste,
+	 * Send — ends here: the highlighted suggestion, or every address in the text
+	 * (a list is as many chips). What is not an address stays in the field.
+	 */
 	addRecipient(
 		id: string,
 		field: RecipientField,
@@ -515,27 +588,33 @@ class ComposeStore {
 	) {
 		const draft = this.#find(id);
 		if (!draft) return;
-		const { recipient } = commitRecipient(input, highlighted);
-		draft[INPUT[field]] = '';
+		const { recipients, remaining } = commitRecipient(input, highlighted);
+		draft[INPUT[field]] = remaining;
 		draft[OPEN[field]] = false;
 		draft[HI[field]] = 0;
-		if (recipient && !isDuplicate(draft[field], recipient.email)) {
-			draft[field].push(recipient);
-			this.scheduleDraftSave(id);
+		for (const recipient of recipients) {
+			// One row per person: an address added here leaves the row it was in.
+			for (const other of RECIPIENT_FIELDS) {
+				if (other !== field && isDuplicate(draft[other], recipient.email)) {
+					draft[other] = draft[other].filter((r) => r.email.toLowerCase() !== recipient.email.toLowerCase());
+				}
+			}
+			if (!isDuplicate(draft[field], recipient.email)) draft[field].push(recipient);
 		}
+		if (recipients.length) this.scheduleDraftSave(id);
 	}
 
 	/**
-	 * Commit a complete address still sitting in a recipient input. Blurring the
+	 * Commit the addresses still sitting in a recipient input. Blurring the
 	 * field and sending both route through here, so a recipient typed without
-	 * pressing Enter is never silently dropped. Partial text that is not an
-	 * address yet is left alone for the user to finish.
+	 * pressing Enter is never silently dropped. Text with no address in it is
+	 * left alone for the user to finish — Send refuses to go around it.
 	 */
 	commitPendingRecipient(id: string, field: RecipientField) {
 		const draft = this.#find(id);
 		if (!draft) return;
 		const input = draft[INPUT[field]];
-		if (makeRecipient(input)) this.addRecipient(id, field, input, null);
+		if (splitRecipients(input).recipients.length) this.addRecipient(id, field, input, null);
 		else draft[OPEN[field]] = false;
 	}
 
@@ -558,10 +637,12 @@ class ComposeStore {
 		if (!draft) return;
 		const index = draft[field].findIndex((r) => r.email === email);
 		if (index === -1) return;
-		const replacement = makeRecipient(next, draft[field][index]?.meta ?? '');
 		const rest = draft[field].filter((_, at) => at !== index);
-		if (!replacement || isDuplicate(rest, replacement.email)) draft[field] = rest;
-		else draft[field] = draft[field].map((r, at) => (at === index ? replacement : r));
+		// Usually one address for one; a list typed into the chip takes its place, all of it.
+		const replacements = splitRecipients(next, draft[field][index]?.meta ?? '').recipients.filter(
+			(recipient) => !isDuplicate(rest, recipient.email)
+		);
+		draft[field] = [...rest.slice(0, index), ...replacements, ...rest.slice(index)];
 		this.scheduleDraftSave(id);
 	}
 
@@ -710,19 +791,69 @@ class ComposeStore {
 	scheduleDraftSave(id: string): void {
 		const draft = this.#find(id);
 		if (!draft || draft.sending || !this.#transport) return;
+		this.#keepLocal(id);
 		const existing = this.#saveTimers.get(id);
 		if (existing) clearTimeout(existing);
+		const since = this.#unsavedSince.get(id) ?? Date.now();
+		this.#unsavedSince.set(id, since);
 		this.#saveTimers.set(
 			id,
-			setTimeout(() => {
-				this.#saveTimers.delete(id);
-				void this.saveDraftNow(id);
-			}, DRAFT_SAVE_DEBOUNCE_MS)
+			setTimeout(
+				() => {
+					this.#saveTimers.delete(id);
+					this.#unsavedSince.delete(id);
+					void this.saveDraftNow(id);
+				},
+				Math.max(0, Math.min(DRAFT_SAVE_DEBOUNCE_MS, since + DRAFT_SAVE_MAX_WAIT_MS - Date.now()))
+			)
 		);
 	}
 
+	/**
+	 * The server save waits for a pause in the typing; the copy on this device
+	 * does not. A reload, or a tab the phone throws away, inside that wait finds
+	 * the draft in the dock again (`recoverLocalDrafts`). The server's answer
+	 * removes the copy.
+	 */
+	#keepLocal(id: string) {
+		if (this.#localTimers.has(id)) return;
+		this.#localTimers.set(
+			id,
+			setTimeout(() => {
+				this.#localTimers.delete(id);
+				const draft = this.#find(id);
+				if (!draft || draft.sending || !this.#transport || !hasDraftContent(draft)) return;
+				// Saved while this waited: a copy written now would come back as a second draft.
+				if (draftContentSignature(draft) === this.#savedSignatures.get(id)) return;
+				void putLocalDraft(localDraft(draft, this.#transport.account, false)).catch(() => {});
+			}, DRAFT_LOCAL_COPY_MS)
+		);
+	}
+
+	/**
+	 * Save now what is waiting out the debounce: before a sign-out or an account
+	 * switch ends the session it would be saved into, and the page reloads.
+	 */
+	async flush(): Promise<void> {
+		const ids = [...new Set([...this.#saveTimers.keys(), ...this.#saves.keys()])];
+		for (const id of ids) clearTimeout(this.#saveTimers.get(id));
+		this.#saveTimers.clear();
+		this.#unsavedSince.clear();
+		await settled(Promise.all(ids.map((id) => this.saveDraftNow(id))));
+	}
+
 	/** Persist the draft to the Drafts mailbox; reschedules if it changed mid-save. */
-	async saveDraftNow(id: string): Promise<void> {
+	saveDraftNow(id: string): Promise<void> {
+		const run = (this.#saves.get(id) ?? Promise.resolve()).then(() => this.#save(id));
+		this.#saves.set(id, run);
+		void run.then(() => {
+			if (this.#saves.get(id) === run) this.#saves.delete(id);
+		});
+		return run;
+	}
+
+	/** Never rejects: the queue behind it, and whoever waits for the saved copy, go on. */
+	async #save(id: string): Promise<void> {
 		const draft = this.#find(id);
 		if (!draft || draft.sending || !this.#transport) return;
 		if (!hasDraftContent(draft)) return;
@@ -735,10 +866,11 @@ class ComposeStore {
 			// On this device first, so a reload while the server is out of reach keeps it.
 			await putLocalDraft(record).catch(() => {});
 			const { emailId } = await transport.saveDraft(buildDraftSaveInput(record.draft));
-			this.#savedSignatures.set(id, signature);
+			// Also when the panel went meanwhile: Send, Close and Discard wait for this id.
+			draft.jmapDraftId = emailId;
 			const current = this.#find(id);
 			if (current) {
-				current.jmapDraftId = emailId;
+				this.#savedSignatures.set(id, signature);
 				current.draftSavedAt = Date.now();
 				if (draftContentSignature(current) !== signature) this.scheduleDraftSave(id);
 				else await removeLocalDraft(id).catch(() => {});
@@ -772,12 +904,13 @@ class ComposeStore {
 			bodyHtml: seed.bodyHtml,
 			attachments: seed.attachments,
 			jmapDraftId: seed.jmapDraftId,
+			answers: seed.answers,
 			focusTarget: seed.to.length === 0 ? 'to' : seed.subject.trim() ? 'body' : 'subject'
 		});
 		const draft = this.#find(id);
 		if (draft) {
-			draft.cc = seed.cc;
-			draft.bcc = seed.bcc;
+			draft.cc = uniqueRecipients(seed.cc);
+			draft.bcc = uniqueRecipients(seed.bcc);
 			draft.ccShown = seed.cc.length > 0;
 			draft.bccShown = seed.bcc.length > 0;
 			this.#savedSignatures.set(id, draftContentSignature(draft));
@@ -806,6 +939,15 @@ class ComposeStore {
 		const draft = this.#find(id);
 		if (!draft || draft.sending) return;
 		for (const field of RECIPIENT_FIELDS) this.commitPendingRecipient(id, field);
+		// Text left in an address row was meant to be somebody. Sending around it
+		// dropped them without a word: the row is shown, marked, and says why.
+		const stray = RECIPIENT_FIELDS.find((field) => draft[INPUT[field]].trim());
+		if (stray) {
+			if (draft.stage === 'minimized') this.restore(id);
+			draft.sendError = `“${draft[INPUT[stray]].trim()}” is not an email address — correct it or remove it.`;
+			draft.focusTarget = stray;
+			return;
+		}
 		const to = outgoingRecipients(draft.to);
 		const cc = outgoingRecipients(draft.cc);
 		const bcc = outgoingRecipients(draft.bcc);
@@ -838,6 +980,7 @@ class ComposeStore {
 			sendAt: draft.sendAt ?? undefined,
 			attachments: outgoingAttachments(draft.attachments),
 			from: draft.from || undefined,
+			answers: $state.snapshot(draft.answers),
 			account: this.#transport?.account ?? undefined
 		};
 
@@ -856,10 +999,7 @@ class ComposeStore {
 		try {
 			const result = await transport.send(payload);
 			// The sent copy lives in Sent — the saved draft must not linger too.
-			const savedDraftId = draft.jmapDraftId;
-			if (savedDraftId) {
-				void transport.deleteDraft(savedDraftId).catch(() => {});
-			}
+			this.#dropSavedCopy(draft, transport);
 			this.#removeInternal(id);
 			void removeLocalDraft(id).catch(() => {});
 			if (payload.sendAt && result.emailId) {
@@ -879,16 +1019,15 @@ class ComposeStore {
 					await enqueueOutbox(payload, { draftId: draft.jmapDraftId ?? undefined });
 					this.#removeInternal(id);
 					void removeLocalDraft(id).catch(() => {});
-					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
+					this.pushToast({ text: unreachable('Message saved to the outbox'), tone: 'warning' });
 					void this.#countOutbox();
 				} catch {
 					draft.sending = false;
-					draft.sendError = "You're offline and the message couldn't be stored. Try again.";
+					draft.sendError = unreachable("The message couldn't be stored. Try again.");
 				}
 			} else {
 				draft.sending = false;
-				draft.sendError =
-					cause instanceof Error ? cause.message : 'The message could not be sent.';
+				draft.sendError = messageOf(cause, 'The message could not be sent.');
 			}
 		}
 	}
@@ -901,8 +1040,7 @@ class ComposeStore {
 		try {
 			await this.#transport?.cancelScheduled(emailId);
 			draft.jmapDraftId = emailId;
-			this.#giveBack(draft, null);
-			this.pushToast({ text: 'Scheduled send cancelled', tone: 'info' });
+			if (!this.#giveBack(draft, null)) this.pushToast({ text: 'Scheduled send cancelled', tone: 'info' });
 		} catch {
 			this.pushToast({ text: 'Could not cancel the scheduled message', tone: 'error' });
 		}
@@ -949,17 +1087,19 @@ class ComposeStore {
 			try {
 				await transport.send(entry.payload);
 				await removeOutboxEntry(entryId);
-				if (entry.draftId) void transport.deleteDraft(entry.draftId).catch(() => {});
+				// ponytail: a tab closed inside the undo window sends from the entry alone, which
+				// knows the copy as it was at Send; one saved after that stays in Drafts.
+				this.#dropSavedCopy(held.draft, transport);
 				this.pushToast({ text: 'Message sent', tone: 'success' });
 			} catch (cause) {
 				if (classifySendFailure(cause) === 'network') {
-					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
+					this.pushToast({ text: unreachable('Message saved to the outbox'), tone: 'warning' });
 					void this.#countOutbox();
 					return;
 				}
 				// Refused: handed back with the reason, as a send without the window would be.
 				await removeOutboxEntry(entryId);
-				this.#giveBack(held.draft, cause instanceof Error ? cause.message : 'The message could not be sent.');
+				this.#giveBack(held.draft, messageOf(cause, 'The message could not be sent.'));
 			}
 		});
 	}
@@ -976,13 +1116,34 @@ class ComposeStore {
 		this.#giveBack(held.draft, null);
 	}
 
-	/** The same panel, where it was, with what was written — and saved again, locally and to Drafts. */
-	#giveBack(draft: Draft, sendError: string | null) {
+	/**
+	 * The same panel, where it was, with what was written — and saved again, locally and to Drafts.
+	 * Panels are drawn on the Mail page only: from any other section the draft comes
+	 * back out of sight, so a notice says where it is. True when it did.
+	 */
+	#giveBack(draft: Draft, sendError: string | null): boolean {
 		draft.sending = false;
 		draft.sendError = sendError;
 		if (draft.stage !== 'minimized') draft.z = ++this.zTop;
 		this.drafts = [...this.drafts, draft];
 		this.scheduleDraftSave(draft.id);
+		if (location.pathname === '/') return false;
+		// Open that a leave-guard turned back (an unsaved event) is offered again:
+		// the notice was the only thing saying where the draft went.
+		const offer = () =>
+			this.pushToast({
+				text: sendError ? 'Could not send — the draft is back in Mail' : 'Not sent — the draft is back in Mail',
+				tone: sendError ? 'error' : 'info',
+				actionLabel: 'Open',
+				action: () =>
+					void goto('/')
+						.catch(() => {})
+						.then(() => {
+							if (location.pathname !== '/') offer();
+						})
+			});
+		offer();
+		return true;
 	}
 
 	/**
@@ -1026,7 +1187,7 @@ class ComposeStore {
 				sent += 1;
 			} catch (cause) {
 				entry.attempts += 1;
-				entry.lastError = cause instanceof Error ? cause.message : String(cause);
+				entry.lastError = messageOf(cause, 'The message could not be sent.');
 				await updateOutboxEntry(entry);
 				if (classifySendFailure(cause) === 'network') break;
 				if (entry.attempts >= 5) {
@@ -1102,7 +1263,16 @@ class ComposeStore {
 		duration?: number;
 	}) {
 		const id = crypto.randomUUID();
-		this.toasts.unshift({ id, ...toast });
+		// Three notices at most: every action says something, and six of them stood
+		// over the list. One said again (a key held down) replaces itself, and the
+		// oldest go first — a notice with a button last of all, being an Undo still
+		// good for its few seconds. Quick triage leaves the last three Undos.
+		const kept = this.toasts.filter((old) => old.action || old.text !== toast.text);
+		for (let over = kept.length + 1 - MAX_TOASTS; over > 0; over -= 1) {
+			const oldest = kept.findLastIndex((old) => !old.action);
+			kept.splice(oldest < 0 ? kept.length - 1 : oldest, 1);
+		}
+		this.toasts = [{ id, ...toast }, ...kept];
 		setTimeout(() => this.dismissToast(id), duration ?? (toast.action ? 9000 : 5000));
 	}
 

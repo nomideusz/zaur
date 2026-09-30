@@ -48,8 +48,10 @@ export function verifyInternalSignature(input: InternalSignatureInput): boolean 
 
 /** Only same-origin relative paths may be used as post-login destinations. */
 export function safeNextPath(next: unknown): string | undefined {
-	if (typeof next !== 'string' || next.length > 2048) return undefined;
-	return next.startsWith('/') && !next.startsWith('//') && !next.startsWith('/\\') ? next : undefined;
+	if (typeof next !== 'string' || next.length > 2048 || !next.startsWith('/')) return undefined;
+	// As a browser reads it: `//host`, `/\host` and `/<tab>/host` all leave the site.
+	const here = 'http://app.invalid';
+	return URL.canParse(next, here) && new URL(next, here).origin === here ? next : undefined;
 }
 
 /** Signup handoff: a sealed SessionData parked behind a one-time claim token. */

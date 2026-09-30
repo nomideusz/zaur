@@ -6,6 +6,7 @@
 	import AttachmentPreview from '#lib/components/mail/AttachmentPreview.svelte';
 	import { messageOf } from '#lib/errors';
 	import { backLayer } from '#lib/back-layer.svelte.ts';
+	import { getShell } from '#lib/shell.svelte.ts';
 	import { attachmentKind, uploadFile } from '#lib/compose/attachments';
 	import { attachmentBadge } from '#lib/mail/colors';
 	import { withoutBranch } from '#lib/mail/folders';
@@ -32,6 +33,7 @@
 	 * sits at the top level under your own; the search looks through both.
 	 */
 
+	const shell = getShell()!;
 	const who = whoami();
 	const session = $derived(who.current ?? null);
 
@@ -215,7 +217,7 @@
 	const rowLink = 'flex min-w-0 flex-1 items-center gap-3 py-2.5 text-left';
 </script>
 
-<svelte:head><title>Files · Zaur Mail</title></svelte:head>
+<svelte:head><title>{shell.title('Files')}</title></svelte:head>
 
 {#snippet glyph(node: FileNode)}
 	{#if isFolder(node)}
@@ -451,8 +453,9 @@
 										}}
 									/>
 									{#if node.myRights.mayRename}
+										<!-- On a phone the folder picker takes what the buttons leave, so Delete stays on their row. -->
 										<select
-											class="z-field min-w-0 !h-[30px]"
+											class="z-field min-w-0 !h-[30px] max-md:flex-1 max-md:basis-0"
 											aria-label="Inside"
 											value={editing.parentId}
 											disabled={!foldersResource?.current}

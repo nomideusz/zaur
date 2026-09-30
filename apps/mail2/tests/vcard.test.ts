@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import type { Contact } from '@zaur/mail-core';
-import { contactKeys, parseVCards, toVCards } from '../src/lib/components/contacts/vcard.ts';
+import { contactKeys, parseVCards, readVCards, toVCards } from '../src/lib/components/contacts/vcard.ts';
 
 test('parseVCards reads 3.0 and 4.0 cards, folded lines, groups and escapes', () => {
 	const cards = parseVCards(
@@ -117,4 +117,60 @@ test('contactKeys matches on any address, or on the name when there is none', ()
 	assert.deepEqual(contactKeys({ given: 'Ada', surname: 'L', organization: '', emails: [{ address: ' Ada@Example.com ', label: '' }] }), ['ada@example.com']);
 	assert.deepEqual(contactKeys({ given: 'Ada', surname: 'L', organization: '', emails: [] }), ['name:ada l']);
 	assert.deepEqual(contactKeys({ given: '', surname: '', organization: '', emails: [{ address: 'nope', label: '' }] }), []);
+});
+
+test('readVCards reads bytes: UTF-8, or Windows-1252 and each line\'s CHARSET when the file is not UTF-8', () => {
+	const bytes = (...chunks: (string | number[])[]) =>
+		Uint8Array.from(chunks.flatMap((chunk) => (typeof chunk === 'string' ? [...new TextEncoder().encode(chunk)] : chunk)));
+	// UTF-8, with the byte order mark Windows tools put in front.
+	const utf8 = readVCards(bytes([0xef, 0xbb, 0xbf], 'BEGIN:VCARD\r\nFN:Żaneta Łoś\r\nEND:VCARD\r\n'));
+	assert.equal(utf8.cards[0]!.given, 'Żaneta Łoś');
+	// "Jörg Müller" as Outlook writes it: ö is F6, ü is FC — not UTF-8.
+	// Cut in the middle of a letter: the cards before the cut are still UTF-8.
+	const cut = readVCards(bytes('BEGIN:VCARD\nFN:Żółć Pierwszy\nEND:VCARD\nBEGIN:VCARD\nFN:Dr', [0xc3]));
+	assert.equal(cut.cards[0]?.given, 'Żółć Pierwszy');
+	const wide = readVCards(new Uint8Array([0xff, 0xfe, ...[...'BEGIN:VCARD\nFN:Ł\nEND:VCARD\n'].flatMap((c) => [c.charCodeAt(0) & 0xff, c.charCodeAt(0) >> 8])]));
+	assert.equal(wide.cards[0]?.given, 'Ł');
+	const latin = readVCards(bytes('BEGIN:VCARD\nFN:J', [0xf6], 'rg M', [0xfc], 'ller\nNOTE:5 ', [0x80], '\nEND:VCARD\n'));
+	assert.equal(latin.cards[0]!.given, 'Jörg Müller');
+	assert.equal(latin.cards[0]!.note, '5 €');
+	// 2.1 naming its charset on the line: "Żółw" in ISO-8859-2 is AF F3 B3 77.
+	const named = readVCards(bytes('BEGIN:VCARD\nN;CHARSET=ISO-8859-2:', [0xaf, 0xf3, 0xb3], 'w;Jan\nORG;CHARSET=nonsense:Caf', [0xe9], '\nEND:VCARD\n'));
+	assert.equal(named.cards[0]!.surname, 'Żółw');
+	assert.equal(named.cards[0]!.organization, 'Café');
+});
+
+test('readVCards counts what it leaves out: a card cut off at the end, an address that is not one', () => {
+	const file = readVCards(
+		[
+			'BEGIN:VCARD', 'FN:Good', 'EMAIL:good@example.com', 'EMAIL:not an address', 'EMAIL:two@@example.com', 'END:VCARD',
+			'BEGIN:VCARD', 'FN:Only Bad', 'EMAIL:nope', 'END:VCARD',
+			'BEGIN:VCARD', 'FN:Cut Off', 'EMAIL:cut@example.com'
+		].join('\n')
+	);
+	assert.deepEqual(file.cards.map((card) => [card.given, card.emails.map((email) => email.address)]), [
+		['Good', ['good@example.com']],
+		['Only Bad', []]
+	]);
+	assert.equal(file.cutOff, 1);
+	assert.equal(file.badEmails, 3);
+	assert.deepEqual(readVCards('BEGIN:VCARD\nFN:Whole\nEND:VCARD\n'), {
+		cards: [{ given: 'Whole', surname: '', nickname: '', organization: '', title: '', emails: [], phones: [], note: '' }],
+		cutOff: 0,
+		badEmails: 0
+	});
+});
+
+test('toVCards folds lines at 75 octets, never through a character, and reads them back', () => {
+	const note = 'Zażółć gęślą jaźń — '.repeat(12) + '😀'.repeat(30);
+	const contact = {
+		id: 'c1', accountId: null, uid: '', addressBookIds: [], name: 'Long', given: 'Long', surname: '', nickname: '',
+		organization: '', title: '', emails: [], phones: [], note, created: null, updated: null
+	} as Contact;
+	const file = toVCards([contact]);
+	for (const line of file.split('\r\n')) {
+		assert.ok(new TextEncoder().encode(line).length <= 75, `${new TextEncoder().encode(line).length} octets: ${line}`);
+		assert.ok(!line.includes('\uFFFD'));
+	}
+	assert.equal(parseVCards(file)[0]!.note, note);
 });

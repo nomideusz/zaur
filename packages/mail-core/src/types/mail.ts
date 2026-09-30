@@ -27,6 +27,9 @@ export interface MessagePreview {
 	mailboxId: string;
 	from: { name: string; email: string };
 	to?: { name: string; email: string }[];
+	cc?: { name: string; email: string }[];
+	/** Only ever there on mail you sent. */
+	bcc?: { name: string; email: string }[];
 	subject: string;
 	preview: string;
 	receivedAt: string;
@@ -43,6 +46,12 @@ export interface MessageDetail extends MessagePreview {
 	to: { name: string; email: string }[];
 	cc: { name: string; email: string }[];
 	bcc: { name: string; email: string }[];
+	/** Where the sender asks for answers, when that is not the From address. */
+	replyTo?: { name: string; email: string }[];
+	/** The message's own Message-ID and its thread so far, without angle brackets: what a reply's headers are built from. */
+	messageId?: string;
+	inReplyTo?: string[];
+	references?: string[];
 	bodyHtml?: string;
 	bodyText: string;
 	attachments: MessageAttachment[];

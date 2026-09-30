@@ -33,6 +33,16 @@ export function withoutBranch<T extends { id: string; depth: number }>(list: T[]
 }
 
 /**
+ * Can mail be moved into this folder by hand — a drop, a "Move to" menu, the
+ * bulk bar? Not into Drafts: whatever is there opens as your own draft, and
+ * its first autosave replaces the original. Not into Scheduled: nothing filed
+ * there is sent. Every way to move mail asks here, so they cannot disagree.
+ */
+export function acceptsMoves(box: { kind: string }): boolean {
+	return box.kind !== 'drafts' && box.kind !== 'scheduled';
+}
+
+/**
  * Of these messages, the ones still filed in `mailboxId`: all a destroy asked
  * for from that folder may touch. A row left on screen after an Undo, or after
  * a move made on another device, names a message that lives somewhere else now.

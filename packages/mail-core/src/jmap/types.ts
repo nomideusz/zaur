@@ -79,6 +79,11 @@ export interface JMAPEmail {
 	to?: JMAPEmailAddress[];
 	cc?: JMAPEmailAddress[];
 	bcc?: JMAPEmailAddress[];
+	replyTo?: JMAPEmailAddress[] | null;
+	/** Message-IDs, without their angle brackets (RFC 8621 §4.1.2.3). */
+	messageId?: string[] | null;
+	inReplyTo?: string[] | null;
+	references?: string[] | null;
 	subject?: string;
 	preview?: string;
 	textBody?: JMAPEmailBodyPart[];

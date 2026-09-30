@@ -122,7 +122,8 @@
 				<div>
 					<h3 class={label}>Guests</h3>
 					<ul class="flex flex-col gap-1.5" role="list">
-						{#each guests.current as guest (guest.email || guest.name)}
+						<!-- By position: an invitation can list one address twice, and a key must not. -->
+						{#each guests.current as guest, index (index)}
 							<li class="flex items-baseline justify-between gap-3 text-[13.5px] text-[var(--z-body)]">
 								<span class="min-w-0">
 									<span class="block truncate">{guest.name}{guest.organizer ? ' · Organiser' : ''}</span>

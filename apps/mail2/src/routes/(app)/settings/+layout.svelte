@@ -5,11 +5,14 @@
 	import { SETTINGS_GROUPS, settingsSection } from '#lib/settings/sections';
 	import { CHANNELS, channelStyle } from '#lib/mail/colors';
 	import { adoptAccountPrefs } from '#lib/settings.svelte.ts';
+	import { getShell } from '#lib/shell.svelte.ts';
+	import { prefNotSaved } from '#lib/accounts';
 	import { whoami } from '../../session.remote';
 	import { accountPrefs, setAccountPrefs } from '../../settings.remote';
 
 	let { children }: { children: Snippet } = $props();
 
+	const shell = getShell()!;
 	const current = $derived(settingsSection(page.url.pathname));
 	const isRoot = $derived(current.href === '/settings');
 
@@ -18,15 +21,13 @@
 	const accountPrefsResource = $derived(who.current ? accountPrefs() : undefined);
 	$effect(() => {
 		if (!who.current || accountPrefsResource?.loading !== false) return;
-		adoptAccountPrefs(accountPrefsResource.current ?? null, (changed) => {
-			void setAccountPrefs(changed).catch(() => {});
-		});
+		adoptAccountPrefs(accountPrefsResource.current ?? null, setAccountPrefs, prefNotSaved);
 	});
 
 	const selected = channelStyle(CHANNELS.correspondence);
 </script>
 
-<svelte:head><title>{isRoot ? 'Settings' : `${current.label} · Settings`} · Zaur Mail</title></svelte:head>
+<svelte:head><title>{shell.title(isRoot ? 'Settings' : `${current.label} · Settings`)}</title></svelte:head>
 
 <SectionShell title="Settings">
 	<!-- On touch every button, switch and field on a settings page is a fingertip tall, as the header's are (base.css); a phone's selects are 16px, under which iOS zooms the page on focus. -->

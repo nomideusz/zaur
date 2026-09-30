@@ -202,10 +202,41 @@ export function contactDisplayName(contact: Pick<Contact, 'name' | 'emails' | 'o
 	return contact.name || contact.organization || contact.emails[0]?.address || 'Unnamed contact';
 }
 
-/** The letter a contact files under: A–Z, else '#'. */
+const LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+const BASE_LETTERS = new Intl.Collator('en', { sensitivity: 'base' });
+
+/**
+ * The letter a contact files under: A–Z, else '#'. A Latin letter outside
+ * A–Z files under the one it sorts with — Ł under L, Ż under Z, Ø under O —
+ * so a Polish address book is not one long '#'. Digits, punctuation and
+ * other scripts are '#'.
+ */
 export function contactLetter(contact: Pick<Contact, 'name' | 'emails' | 'organization'>): string {
-	const letter = contactDisplayName(contact).trim().charAt(0).toUpperCase();
-	return /[A-Z]/.test(letter) ? letter : '#';
+	const initial = [...contactDisplayName(contact).trim()][0] ?? '';
+	if (!/\p{Script=Latin}/u.test(initial)) return '#';
+	let letter = '#';
+	for (const candidate of LETTERS) if (BASE_LETTERS.compare(candidate, initial) <= 0) letter = candidate;
+	return letter;
+}
+
+/**
+ * Contacts under their letters, A–Z and then '#'. One group per letter
+ * whatever order the contacts come in — a list keyed by letter must never see
+ * the same one twice — and inside a group the order given is kept.
+ */
+export function groupContacts<T extends Pick<Contact, 'name' | 'emails' | 'organization'>>(
+	contacts: readonly T[]
+): { letter: string; items: T[] }[] {
+	const groups = new Map<string, T[]>();
+	for (const contact of contacts) {
+		const letter = contactLetter(contact);
+		const items = groups.get(letter);
+		if (items) items.push(contact);
+		else groups.set(letter, [contact]);
+	}
+	return [...groups]
+		.map(([letter, items]) => ({ letter, items }))
+		.sort((a, b) => Number(a.letter === '#') - Number(b.letter === '#') || (a.letter < b.letter ? -1 : 1));
 }
 
 /**
@@ -230,7 +261,8 @@ export function contactMatches(
 		.join(' ')
 		.toLowerCase();
 	if (haystack.includes(q) && q.includes('@')) return true;
+	// Letters as the grouping reads them: "luk" finds Łukasz, who is under L.
 	return haystack
 		.split(/[\s@._\-()]+/)
-		.some((word) => word.startsWith(q)) || contact.emails.some((email) => email.address.toLowerCase().startsWith(q));
+		.some((word) => BASE_LETTERS.compare(word.slice(0, q.length), q) === 0) || contact.emails.some((email) => email.address.toLowerCase().startsWith(q));
 }

@@ -14,7 +14,7 @@ export type DraftStage = 'default' | 'maximized' | 'minimized';
  */
 export type DraftKind = 'new' | 'reply' | 'replyAll' | 'forward' | 'draft';
 
-export type FocusTarget = 'to' | 'subject' | 'body' | null;
+export type FocusTarget = 'to' | 'cc' | 'bcc' | 'subject' | 'body' | null;
 
 /** The three address fields. They are the same field three times over. */
 export type RecipientField = 'to' | 'cc' | 'bcc';
@@ -31,6 +31,21 @@ export interface ComposeContact {
 	name: string;
 	email: string;
 	meta: string;
+}
+
+/**
+ * What a reply or a forward is of. A reply carries the headers that thread it
+ * under that message (`In-Reply-To`, `References`), and once sent the message is
+ * flagged answered — or forwarded.
+ */
+export interface AnswerLink {
+	/** The message's server id; absent on a draft reopened from the server, which then flags nothing. */
+	emailId?: string;
+	/** Its Message-ID, without the angle brackets. */
+	messageId: string;
+	forward?: boolean;
+	/** A reply's `References`: the thread so far, this message last. */
+	references?: string[];
 }
 
 export type AttachmentStatus = 'uploading' | 'ready' | 'error';
@@ -102,6 +117,8 @@ export interface Draft {
 	/** Written in a plain textarea and sent as text/plain only; `bodyHtml` stays empty. */
 	plain: boolean;
 	attachments: DraftAttachment[];
+	/** The message this replies to or forwards, when it is one. */
+	answers?: AnswerLink;
 	/** Images in the text still uploading (rich compose); the draft does not send until they land. */
 	inlineUploads?: number;
 	/** UTC ISO for a delayed send, or null to send immediately. Ephemeral — not persisted. */
@@ -143,6 +160,7 @@ export interface SendPayload {
 	sendAt?: string;
 	attachments?: OutgoingAttachment[];
 	from?: string;
+	answers?: AnswerLink;
 	/**
 	 * The account that wrote it (its lowercased address). A message waiting in the
 	 * outbox is only ever sent from that account; the server refuses anything else.
@@ -161,6 +179,7 @@ export interface DraftSeed {
 	body: string;
 	bodyHtml: string;
 	attachments: DraftAttachment[];
+	answers?: AnswerLink;
 }
 
 export interface DraftSaveInput {
@@ -173,6 +192,8 @@ export interface DraftSaveInput {
 	body: string;
 	bodyHtml: string;
 	attachments: OutgoingAttachment[];
+	/** Kept on the saved copy, so a reply finished from Drafts still threads. */
+	answers?: AnswerLink;
 }
 
 export interface ComposeTransport {

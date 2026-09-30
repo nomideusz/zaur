@@ -9,8 +9,8 @@ import { beforeNavigate } from '$app/navigation';
  *
  * Call it while the component initialises, as `beforeNavigate` must be.
  */
-export function leaveGuard(dirty: () => boolean, what: string): () => boolean {
-	const ask = () => confirm(`Leave without saving ${what}?`);
+export function leaveGuard(dirty: () => boolean, what: string | (() => string)): () => boolean {
+	const ask = () => confirm(`Leave without saving ${typeof what === 'string' ? what : what()}?`);
 	beforeNavigate((navigation) => {
 		// A layer's history entry (the compose sheet on a phone) stays on this page.
 		if (!dirty() || navigation.to?.url.pathname === navigation.from?.url.pathname) return;

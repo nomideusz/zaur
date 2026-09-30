@@ -64,6 +64,48 @@ export function inlineImageSrc(raw: string, appOrigin: string): string | null {
 	}
 }
 
+/** The attributes that fetch on their own: <img>/<source>/<video>/<audio>, and table backgrounds. */
+export const FETCHING_ATTRS = ['src', 'srcset', 'poster', 'background'];
+
+/**
+ * What may fetch from an inline style: url(), image-set() and its bare strings,
+ * the drafts' src() and image(), or an escape spelling any of them.
+ */
+export const CSS_MAY_FETCH = /(url|src|image|image-set)\(|\\/i;
+
+/**
+ * One attribute of a saved draft on its way into the compose editor: the value
+ * it keeps, or null when it goes. The editor is the app's own document — no
+ * frame, no CSP — and its parser loads what it is handed, so the rule is the
+ * reader's without the "show images": a picture is an inline image of ours or
+ * `data:`/`blob:`, and nothing else fetches. Another server's image would not
+ * be sent from here anyway (inline-images.ts).
+ */
+export function editorAttribute(tag: string, name: string, value: string, appOrigin: string): string | null {
+	if (name === 'src' && tag === 'img') {
+		return inlineImageSrc(value, appOrigin) ?? (/^(data|blob):/i.test(value.trim()) ? value : null);
+	}
+	if (FETCHING_ATTRS.includes(name)) return null;
+	if (name === 'style') return CSS_MAY_FETCH.test(value) ? null : value;
+	// The reader's rule for links: a relative address, or one of the app's endpoints, was
+	// never the writer's to point at. Our own Meet invitations name their page in full and stay.
+	if (name === 'href') return linkAllowed(value, appOrigin) ? value : null;
+	if (name === 'data-trix-attachment') {
+		// Trix shows the image from this JSON, not from the <img> inside, draws `content` as
+		// markup, and wraps the picture in a link to `href`.
+		try {
+			const { href, ...attachment } = JSON.parse(value);
+			const url = editorAttribute('img', 'src', String(attachment.url ?? ''), appOrigin);
+			if (!url || 'content' in attachment) return null;
+			const link = typeof href === 'string' && linkAllowed(href, appOrigin) ? { href } : {};
+			return JSON.stringify({ ...attachment, ...link, url });
+		} catch {
+			return null;
+		}
+	}
+	return value;
+}
+
 // ponytail: today's `+server.ts` directories; a new one needs adding here. The
 // real guard is the endpoint not acting on a bare GET.
 const APP_ENDPOINT = /^\/+(api|oidc|auth)(\/|$)/i;

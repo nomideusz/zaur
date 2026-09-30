@@ -40,6 +40,18 @@
 			?.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
 	}
 
+	/**
+	 * `example.org/page` is an address to everyone but <input type="url">, which refused
+	 * it with nothing but a red field. It gets its scheme before Trix checks it.
+	 */
+	function scheme(event: Event & { currentTarget: HTMLElement }) {
+		if (event instanceof KeyboardEvent ? event.key !== 'Enter' : !(event.target as Element).matches('[data-trix-method="setAttribute"]')) return;
+		const input = event.currentTarget.querySelector<HTMLInputElement>('input[name="href"]');
+		const value = input?.value.trim();
+		if (!input || !value || /^[a-z][a-z0-9+.-]*:/i.test(value)) return;
+		input.value = (/^[^\s/@]+@[^\s/@]+$/.test(value) ? 'mailto:' : 'https://') + value;
+	}
+
 	const tools = [
 		{ attribute: 'bold', key: 'b', label: 'Bold', glyph: 'B', style: 'font-weight:700' },
 		{ attribute: 'italic', key: 'i', label: 'Italic', glyph: 'I', style: 'font-style:italic;font-family:var(--font-serif, serif)' },
@@ -57,6 +69,8 @@
 	class:z-rich-tools--off={off}
 	onkeydown={rove}
 	onclick={press}
+	onkeydowncapture={scheme}
+	onclickcapture={scheme}
 >
 	{#each tools as tool, index (tool.attribute)}
 		<button

@@ -29,7 +29,8 @@ export function buildDraftSaveInput(draft: DraftContent): DraftSaveInput {
 		subject: draft.subject,
 		body: draft.body,
 		bodyHtml: draft.bodyHtml,
-		attachments: outgoingAttachments(draft.attachments)
+		attachments: outgoingAttachments(draft.attachments),
+		...(draft.answers && { answers: draft.answers })
 	};
 }
 
@@ -81,6 +82,7 @@ const LOCAL_KEYS = [
 	'bodyHtml',
 	'plain',
 	'attachments',
+	'answers',
 	'jmapDraftId'
 ] as const satisfies readonly (keyof Draft)[];
 

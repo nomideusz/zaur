@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
 import { command } from '$app/server';
 import { accountKey } from '@zaur/server-auth';
-import { resolveSendFrom, type JMAPClient } from '@zaur/mail-core';
+import { resolveSendFrom, type EmailAnswerInput, type JMAPClient } from '@zaur/mail-core';
 import { connect, refuse, requireAccount } from '#lib/server/account';
 import { inlineImages } from '#lib/server/inline-images';
 
@@ -42,6 +42,8 @@ export interface SendInput {
 	account?: string;
 	/** One of the account's own addresses (an alias); omit for the primary. */
 	from?: string;
+	/** The message this replies to or forwards: threads the reply, and flags that message once sent. */
+	answers?: EmailAnswerInput;
 }
 
 export interface SendResult {
@@ -84,6 +86,23 @@ async function sender(client: JMAPClient, from: string | undefined) {
 		identityId: resolved.identity?.id,
 		fromEmail: resolved.email,
 		fromName: resolved.identity?.name?.trim() || primary?.name?.trim() || undefined
+	};
+}
+
+/** A Message-ID as JMAP takes it: one token, no angle brackets, nothing that could break a header. */
+const MESSAGE_ID = /^[^\s<>,]{1,512}$/;
+
+/** What a reply is of, as the client says: only well-formed ids are passed on, and the thread's tail. */
+function cleanAnswers(raw: EmailAnswerInput | undefined): EmailAnswerInput | undefined {
+	if (!raw || typeof raw !== 'object' || typeof raw.messageId !== 'string' || !MESSAGE_ID.test(raw.messageId)) return undefined;
+	const references = Array.isArray(raw.references)
+		? raw.references.filter((id) => typeof id === 'string' && MESSAGE_ID.test(id)).slice(-50)
+		: undefined;
+	return {
+		emailId: typeof raw.emailId === 'string' && raw.emailId.length <= 512 ? raw.emailId : undefined,
+		messageId: raw.messageId,
+		forward: raw.forward === true,
+		references
 	};
 }
 
@@ -132,6 +151,7 @@ export const send = command(schema<SendInput>(), async (input: SendInput): Promi
 		bodyHtml: inline.html || undefined,
 		sendAt: input.sendAt,
 		attachments: [...sanitizeAttachments(input.attachments), ...inline.parts],
+		answers: cleanAnswers(input.answers),
 		onEmailCreated: (id) => {
 			emailId = id;
 		}
@@ -159,6 +179,7 @@ export interface DraftSavePayload {
 	bodyHtml?: string;
 	attachments?: OutgoingAttachmentDTO[];
 	from?: string;
+	answers?: EmailAnswerInput;
 }
 
 export const saveDraft = command(
@@ -191,7 +212,8 @@ export const saveDraft = command(
 			...(await sender(client, input.from)),
 			attachments: attachments.length ? attachments : undefined,
 			format: input.bodyHtml ? 'html' : 'plain',
-			bodyHtml: inline.html || undefined
+			bodyHtml: inline.html || undefined,
+			answers: cleanAnswers(input.answers)
 		});
 		return { emailId };
 	}

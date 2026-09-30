@@ -1,6 +1,7 @@
 import { init, captureException, DEFAULT_IGNORE_PATTERNS } from '@tracewayapp/frontend';
 import { PUBLIC_TRACEWAY_DSN } from '$app/env/public';
 import type { HandleClientError } from '@sveltejs/kit/hooks';
+import { codeNotLoaded } from '#lib/errors';
 
 /*
  * Error tracking via self-hosted Traceway (traceway.zaur.app), as in webmail 1.0.
@@ -22,6 +23,9 @@ if (PUBLIC_TRACEWAY_DSN) {
 
 export const handleError: HandleClientError = ({ kind, error }) => {
 	if (kind !== 'unknown') return;
+	// Not a fault of the app's: the connection or the server is away. The error
+	// card says so and tries again by itself (routes/+error.svelte).
+	if (codeNotLoaded(error)) return { message: 'Internal Error', unreachable: true };
 	console.error(error);
 	captureException(error instanceof Error ? error : new Error(String(error)));
 };

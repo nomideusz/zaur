@@ -1,4 +1,4 @@
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { viewport } from '#lib/viewport.svelte.ts';

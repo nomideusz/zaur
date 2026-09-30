@@ -71,14 +71,16 @@ export function buildRowGroups(
 
 	rows.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 
-	const groups: RowGroup[] = [];
+	// One group per label, in the order first met: the list is keyed by it, and a
+	// date that cannot be read would otherwise start a second group of the same name.
+	const groups = new Map<string, ListRow[]>();
 	for (const row of rows) {
 		const label = dayLabel(row.receivedAt, now);
-		const last = groups[groups.length - 1];
-		if (last && last.label === label) last.rows.push(row);
-		else groups.push({ label, rows: [row] });
+		const group = groups.get(label);
+		if (group) group.push(row);
+		else groups.set(label, [row]);
 	}
-	return groups;
+	return [...groups].map(([label, rows]) => ({ label, rows }));
 }
 
 /** List time: HH:MM today, weekday within a week, otherwise a short date. */
@@ -116,8 +118,10 @@ export function initials(name: string, email: string): string {
 		return source.slice(0, source.indexOf('@')).slice(0, 2).toUpperCase();
 	}
 	const parts = source.split(/[\s@._-]+/).filter(Boolean);
-	if (parts.length === 1) return parts[0]!.slice(0, 2).toUpperCase();
-	return ((parts[0]![0] ?? '') + (parts[1]![0] ?? '')).toUpperCase();
+	// By character, not by half of one: a name that starts with an emoji.
+	const letters = (part: string, count: number) => [...part].slice(0, count).join('');
+	if (parts.length === 1) return letters(parts[0]!, 2).toUpperCase();
+	return (letters(parts[0]!, 1) + letters(parts[1]!, 1)).toUpperCase();
 }
 
 export function formatBytes(size: number): string {

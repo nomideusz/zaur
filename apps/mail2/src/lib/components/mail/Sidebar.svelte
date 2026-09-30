@@ -4,6 +4,7 @@
 	import { channelStyle, identityStyle, labelChannel, mailboxChannel, type Channel } from '#lib/mail/colors';
 	import { LABEL_FILTERS, filterName, type ListFilter } from '#lib/mail/labels';
 	import { initials } from '#lib/mail/rows';
+	import { acceptsMoves } from '#lib/mail/folders';
 	import { whoami } from '../../../routes/session.remote';
 
 	interface Props {
@@ -22,7 +23,7 @@
 		onNewMessage: () => void;
 		/** Set when the sidebar is a drawer: on a phone it gets a header and a way to close. Settled once it is shut. */
 		onClose?: () => void | Promise<void>;
-		/** A list row dragged onto one of your own folders. */
+		/** A list row dragged onto one of your own folders (one that takes moves: `acceptsMoves`). */
 		onDropThread?: (mailboxId: string, threadId: string) => void;
 	}
 
@@ -156,7 +157,7 @@
 					{@const isSelected = !activeAccount && mailbox.id === activeMailboxId}
 					<li>
 						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
-							onSelectMailbox(mailbox.id, null), false, mailbox.depth, isSelected ? null : mailbox.id
+							onSelectMailbox(mailbox.id, null), false, mailbox.depth, isSelected || !acceptsMoves(mailbox) ? null : mailbox.id
 						)}
 					</li>
 				{/each}

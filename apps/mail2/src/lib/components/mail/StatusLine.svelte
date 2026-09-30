@@ -3,11 +3,9 @@
 		mailboxName: string | null;
 		unseen: number;
 		quota: { used: number; limit: number } | null | undefined;
-		/** Messages in the outbox, still to go out. */
-		waiting?: number;
 	}
 
-	let { mailboxName, unseen, quota, waiting = 0 }: Props = $props();
+	let { mailboxName, unseen, quota }: Props = $props();
 
 	const gb = (bytes: number) => (bytes / 1024 ** 3).toFixed(1);
 	const storageLabel = $derived(
@@ -37,7 +35,7 @@
 		['/', 'search', 'Search'],
 		['[', 'sidebar', 'Show or hide the mailboxes'],
 		['esc', 'back', 'Clear the selection or the search; minimise a draft'],
-		['⌘↵', 'send', 'Send the draft in front (Ctrl+Enter)']
+		['ctrl ↵', 'send', 'Send the draft in front (⌘↵ on a Mac)']
 	];
 
 	let sheet = $state<HTMLDialogElement | null>(null);
@@ -74,10 +72,6 @@
 				<span class="text-[var(--z-line)]">·</span>
 				<span>{mailboxName}</span>
 			</div>
-
-			{#if waiting > 0}
-				<span class="shrink-0 font-semibold text-[var(--z-ch-needs-ink)]" role="status">{waiting} waiting to send</span>
-			{/if}
 
 			<span class="text-[var(--z-line)] pointer-coarse:hidden">|</span>
 
@@ -120,9 +114,18 @@
 	onclick={(event) => {
 		if (event.target === sheet) sheet?.close();
 	}}
+	onkeydown={(event) => {
+		// The key that opened it closes it: the page's own handler leaves an open dialog's keys alone.
+		if (event.key === '?') sheet?.close();
+	}}
 >
 	<div class="px-5 pt-4 pb-5">
-		<h2 class="z-caption mb-3">Keyboard shortcuts</h2>
+		<div class="mb-3 flex items-center justify-between">
+			<h2 class="z-caption">Keyboard shortcuts</h2>
+			<button type="button" class="z-mono flex items-center gap-[5px] text-[10.5px] text-[var(--z-soft)] hover:text-[var(--z-strong)]" onclick={() => sheet?.close()}>
+				<kbd class="z-kbd">esc</kbd> close
+			</button>
+		</div>
 		<dl class="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-3.5 gap-y-[7px] text-[13px] text-[var(--z-strong)]">
 			{#each KEYS as [key, , long] (key)}
 				<dt><kbd class="z-kbd">{key}</kbd></dt>

@@ -6,6 +6,7 @@
 	import type { ListRow } from '#lib/mail/rows';
 	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
 	import { filterName } from '#lib/mail/labels';
+	import { acceptsMoves } from '#lib/mail/folders';
 	import { COUNT_BADGE, mailboxChannel } from '#lib/mail/colors';
 	import ActionIcon from './ActionIcon.svelte';
 
@@ -34,8 +35,6 @@
 		onBulk: (action: BulkAction, mailboxId?: string) => void;
 		busy?: boolean;
 		onNewMessage: (anchor: { left: number; top: number; right: number; bottom: number }) => void;
-		/** Messages in the outbox, still to go out. */
-		waiting?: number;
 	}
 
 	let {
@@ -53,8 +52,7 @@
 		onSetSelection,
 		onBulk,
 		busy = false,
-		onNewMessage,
-		waiting = 0
+		onNewMessage
 	}: Props = $props();
 
 	let searchEl = $state<HTMLInputElement | null>(null);
@@ -71,7 +69,7 @@
 	const allRead = $derived(selectedRows.length > 0 && selectedRows.every((row) => !row.unread));
 	const allStarred = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.starred));
 	const moveTargets = $derived(
-		(mailboxes ?? []).filter((box) => box.id !== activeMailbox?.id && box.kind !== 'drafts' && box.kind !== 'scheduled')
+		(mailboxes ?? []).filter((box) => box.id !== activeMailbox?.id && acceptsMoves(box))
 	);
 	const archiveTarget = $derived(
 		(mailboxes ?? []).find((box) => box.kind === 'archive' && box.id !== activeMailbox?.id)
@@ -388,12 +386,3 @@
 		</div>
 	{/if}
 </header>
-{#if waiting > 0}
-	<!-- The outbox has no folder; this is the one place a queued message shows. -->
-	<p
-		class="shrink-0 border-b border-[var(--z-ch-needs-stroke)] bg-[var(--z-ch-needs-fill)] px-3.5 py-1.5 text-[12.5px] font-semibold text-[var(--z-ch-needs-ink)] md:hidden"
-		role="status"
-	>
-		{waiting} waiting to send
-	</p>
-{/if}

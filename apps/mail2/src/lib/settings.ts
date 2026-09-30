@@ -120,9 +120,9 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 }
 
 /**
- * Take the account's copy over the defaults, then let anything already set on
- * this device win — a preference the person changed here is the newer intent,
- * and only what they touch is pushed back up.
+ * The account's copy wins over this device's for every setting it holds: the
+ * settings follow the account from one device to the next. What is changed
+ * here is pushed up as it is changed, so the account's copy is the newer one.
  */
 export function mergeAccountPrefs(local: Prefs, remote: Partial<AccountPrefs> | null): Prefs {
 	if (!remote) return local;

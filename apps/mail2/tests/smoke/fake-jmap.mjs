@@ -56,7 +56,7 @@ const session = {
 
 const mailboxes = [
 	{ id: 'inbox', name: 'Inbox', role: 'inbox', totalEmails: 7, unreadEmails: 3, sortOrder: 0 },
-	{ id: 'drafts', name: 'Drafts', role: 'drafts', totalEmails: 0, unreadEmails: 0, sortOrder: 1 },
+	{ id: 'drafts', name: 'Drafts', role: 'drafts', totalEmails: 1, unreadEmails: 0, sortOrder: 1 },
 	{ id: 'sent', name: 'Sent', role: 'sent', totalEmails: 1, unreadEmails: 0, sortOrder: 2 },
 	{ id: 'archive', name: 'Archive', role: 'archive', totalEmails: 1, unreadEmails: 0, sortOrder: 3 },
 	{ id: 'junk', name: 'Junk', role: 'junk', totalEmails: 1, unreadEmails: 1, sortOrder: 4 },
@@ -307,6 +307,47 @@ const emails = new Map(
 			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }], to: [{ name: 'Annie Hobday', email: 'annie@example.com' }],
 			subject: 'Weekly notes', receivedAt: at(6), hasAttachment: false,
 			preview: 'Went out this morning.', ...text('1', 'Went out this morning.')
+		},
+		{
+			// A draft another client saved. Opened in compose, only its inline (cid:) image may
+			// load: the editor is the app's own page, so the rest would be fetched with the
+			// reader's cookies. `draft-probe` names every address that must never be asked for:
+			// the planted link is one too, since the app's router follows a click on it.
+			id: 'm12', threadId: 't12', mailboxIds: { drafts: true }, keywords: { $seen: true, $draft: true },
+			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			// The same address twice, as another client may save it: compose shows one chip.
+			to: [{ name: 'Annie Hobday', email: 'annie@example.com' }, { email: 'ANNIE@example.com' }],
+			subject: 'Started in another client', receivedAt: at(3), hasAttachment: false,
+			preview: 'Started elsewhere.',
+			...html('1', '<style>@import url("https://example.com/draft-probe.css");</style><div>Started elsewhere.<br><img src="cid:logo@zaur" alt="logo"><img src="https://example.com/draft-probe.png" width="1" height="1"><img src="/api/download?blobId=draft-probe"><img srcset="/api/download?blobId=draft-probe-set 2x"><figure data-trix-attachment=\'{"contentType":"image/png","url":"/api/download?blobId=draft-probe-trix"}\'></figure><figure data-trix-attachment=\'{"contentType":"text/html","content":"&lt;img src=/api/download?blobId=draft-probe-content&gt;"}\'></figure><video poster="https://example.com/draft-probe-poster.png"></video><div style="background:url(https://example.com/draft-probe-bg.png)">End.</div><a href="/oidc/logout?draft-probe">planted link</a> <a href="https://example.org/">outside link</a></div>'),
+			bodyStructure: {
+				type: 'multipart/related',
+				subParts: [
+					{ partId: '1', type: 'text/html' },
+					{ partId: '2', blobId: 'blob-logo', type: 'image/svg+xml', name: 'logo.svg', cid: '<logo@zaur>', disposition: 'inline', size: 200 }
+				]
+			}
+		},
+		{
+			// A sender that asks for answers elsewhere: Reply goes to Reply-To, not From.
+			id: 'm14', threadId: 't14', mailboxIds: { inbox: true }, keywords: { $seen: true },
+			from: [{ name: 'Shop Robot', email: 'noreply@shop.example' }], replyTo: [{ name: 'Shop Support', email: 'support@shop.example' }],
+			to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }, { name: 'Ada Lovelace', email: 'ada@example.com' }],
+			cc: [{ name: 'Grace Hopper', email: 'grace@example.com' }],
+			subject: 'Your order has a Reply-To', receivedAt: at(28), hasAttachment: false,
+			preview: 'Answers to this address are not read; write to support.',
+			references: ['order-1@shop.example'], inReplyTo: ['order-1@shop.example'],
+			...text('1', 'Answers to this address are not read; write to support.')
+		},
+		{
+			// Mine, to two people: a plain Reply is a follow-up to them, not a letter to me.
+			id: 'm15', threadId: 't15', mailboxIds: { sent: true }, keywords: { $seen: true },
+			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			to: [{ name: 'Annie Hobday', email: 'annie@example.com' }, { name: 'Ada Lovelace', email: 'ada@example.com' }],
+			cc: [{ name: 'Grace Hopper', email: 'grace@example.com' }],
+			subject: 'Sent to two, with a Cc', receivedAt: at(27), hasAttachment: false,
+			preview: 'A message of my own.',
+			...text('1', 'A message of my own.')
 		}
 	].map((email) => [email.id, email])
 );
@@ -388,6 +429,9 @@ const teamEmails = new Map(
 		}
 	].map((email) => [email.id, email])
 );
+
+// Every message has a Message-ID: what a reply's In-Reply-To and References are built from.
+for (const email of [...emails.values(), ...teamEmails.values()]) email.messageId ??= [`${email.id}@smoke.example`];
 
 /** Sieve scripts (RFC 9661): none to begin with; Settings → Rules saves one. */
 const sieveScripts = [];
@@ -613,6 +657,8 @@ function handle([name, args, callId]) {
 				if (filter.from && !has(filter.from, addr(email.from))) return false;
 				if (filter.to && !has(filter.to, addr(email.to))) return false;
 				if (filter.subject && !has(filter.subject, email.subject)) return false;
+				// Only the one header mail2 asks for: the message a reopened reply answers.
+				if (filter.header && !(filter.header[0] === 'Message-ID' && has(filter.header[1], (email.messageId ?? []).join(' ')))) return false;
 				if (filter.after && Date.parse(email.receivedAt) < Date.parse(filter.after)) return false;
 				if (filter.before && Date.parse(email.receivedAt) > Date.parse(filter.before)) return false;
 				if (filter.text && !has(filter.text, `${email.subject} ${email.preview} ${addr(email.from)} ${addr(email.to)}`)) return false;
@@ -645,9 +691,9 @@ function handle([name, args, callId]) {
 				const id = `out-${randomUUID().slice(0, 6)}`;
 				// The part tree Stalwart would build, so a reopened draft finds its attachments and cid images.
 				const bodyStructure = { type: 'multipart/mixed', subParts: [...(data.textBody ?? []), ...(data.htmlBody ?? []), ...(data.attachments ?? [])] };
-				emails.set(id, { threadId: id, keywords: {}, receivedAt: new Date().toISOString(), preview: '', to: [], cc: [], bodyStructure, ...data, id });
+				emails.set(id, { threadId: id, keywords: {}, receivedAt: new Date().toISOString(), preview: '', to: [], cc: [], bodyStructure, messageId: [`${id}@smoke.example`], ...data, id });
 				createdEmails[key] = { id, blobId: id, threadId: id, size: 1 };
-				log('Email created', id, JSON.stringify({ from: data.from, subject: data.subject }));
+				log('Email created', id, JSON.stringify({ from: data.from, to: data.to, cc: data.cc, bcc: data.bcc, subject: data.subject, inReplyTo: data.inReplyTo, references: data.references }));
 			}
 			const updated = {};
 			for (const [id, patch] of Object.entries(args.update ?? {})) {
@@ -955,7 +1001,7 @@ http
 				const input = body ? JSON.parse(body) : {};
 				const id = `m-${randomUUID().slice(0, 8)}`;
 				emails.set(id, {
-					id, threadId: `t-${id}`, mailboxIds: { inbox: true }, keywords: {},
+					id, threadId: `t-${id}`, mailboxIds: { inbox: true }, keywords: {}, messageId: [`${id}@smoke.example`],
 					from: [{ name: input.fromName ?? 'Ada Lovelace', email: input.from ?? 'ada@example.com' }],
 					to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
 					subject: input.subject ?? 'Notes on the engine', receivedAt: new Date().toISOString(), hasAttachment: false,

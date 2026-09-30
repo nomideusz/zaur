@@ -51,7 +51,10 @@
 {#if vacationResource?.current?.supported === false}
 	<section class="z-card p-4 text-[13px] text-[var(--z-muted)]">This server does not offer an auto-reply.</section>
 {:else if vacationResource?.error}
-	<section class="z-card p-4 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your auto-reply.</section>
+	<section class="z-card p-4 text-[13px] text-[var(--z-ch-discard-ink)]">
+		Could not load your auto-reply.
+		<button type="button" class="btn-tactile ml-2 !h-[28px]" onclick={() => vacationResource?.refresh()}>Retry</button>
+	</section>
 {:else if !away}
 	<section class="z-card z-skeleton h-[180px]" aria-hidden="true"></section>
 {:else}

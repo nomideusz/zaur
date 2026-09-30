@@ -153,6 +153,19 @@ export function discoveryDocument(origin: string): Record<string, unknown> {
 }
 
 /**
+ * Whether a request is the browser arriving at a page, not something a page
+ * embeds. Signing out (and the signup handoff's sign-in) answer a plain GET,
+ * because relying parties send the browser there as a navigation — so an
+ * <img>, a fetch() or a frame pointed at the same address must not count:
+ * `<img src="/oidc/logout">` in a mail was a sign-out on open. Browsers say
+ * which it is in `Sec-Fetch-Dest`; one too old to send it is let through, as before.
+ */
+export function isNavigation(headers: Headers): boolean {
+	const dest = headers.get('sec-fetch-dest');
+	return dest === null || dest === 'document';
+}
+
+/**
  * Where to send the browser after RP-initiated logout: the requested
  * post_logout_redirect_uri if its origin matches a registered redirect_uri
  * (so a stray link can't bounce a signed-out user to an attacker), else null.

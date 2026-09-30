@@ -1,4 +1,4 @@
-import { extractInlineImages, inlineImageName, rewriteInlineCidImages } from '../email/inline-images';
+import { extractInlineImages, inlineImageName, rewriteInlineCidImages } from '../email/inline-images.ts';
 import type { JMAPEmail, JMAPBodyPart } from './types';
 import type { Mailbox, MessageAttachment, MessageDetail, MessagePreview } from '../types/mail';
 import { categoryOf } from '../mail/categories.ts';
@@ -141,6 +141,8 @@ export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): Messa
 		mailboxId: routeMailboxId,
 		from: firstAddress(email.from),
 		to: mapAddresses(email.to),
+		cc: mapAddresses(email.cc),
+		bcc: mapAddresses(email.bcc),
 		subject: email.subject?.trim() || '(no subject)',
 		preview: email.preview?.trim() || '',
 		receivedAt: email.receivedAt,
@@ -162,6 +164,10 @@ export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): Messag
 		to: mapAddresses(email.to),
 		cc: mapAddresses(email.cc),
 		bcc: mapAddresses(email.bcc),
+		...(email.replyTo?.length ? { replyTo: mapAddresses(email.replyTo) } : {}),
+		...(email.messageId?.[0] ? { messageId: email.messageId[0] } : {}),
+		...(email.inReplyTo?.length ? { inReplyTo: email.inReplyTo } : {}),
+		...(email.references?.length ? { references: email.references } : {}),
 		bodyHtml: rawHtml ? rewriteInlineCidImages(rawHtml, inlineImages) : undefined,
 		bodyText: extractBodyText(email),
 		attachments: extractAttachments(email.bodyStructure)

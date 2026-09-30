@@ -9,13 +9,18 @@ import {
 	highlightedSuggestion,
 	parseAddressList,
 	parseRecipients,
+	splitRecipients,
+	uniqueRecipients,
 	outgoingRecipients,
 	filterContacts
 } from '../src/lib/compose/recipients.ts';
 import {
 	formatWhen,
 	replySeed,
+	replyRecipients,
 	replyAllRecipients,
+	answerLink,
+	draftSeed,
 	forwardSeed,
 	signatureBlock,
 	withSignature
@@ -124,15 +129,67 @@ test('makeRecipient: bare email, angle form, space form, rejects non-addresses',
 
 test('commitRecipient: suggestion wins; free-form needs an address; plain words commit nothing', () => {
 	assert.deepEqual(
-		commitRecipient('ad', { name: 'Ada', email: 'ada@x.com', meta: 'recent' }).recipient,
-		{ name: 'Ada', email: 'ada@x.com', meta: 'recent' }
+		commitRecipient('ad', { name: 'Ada', email: 'ada@x.com', meta: 'recent' }).recipients,
+		[{ name: 'Ada', email: 'ada@x.com', meta: 'recent' }]
 	);
-	assert.deepEqual(commitRecipient('bob@y.com', null).recipient, {
-		name: '',
-		email: 'bob@y.com',
-		meta: ''
+	assert.deepEqual(commitRecipient('bob@y.com', null), {
+		recipients: [{ name: '', email: 'bob@y.com', meta: '' }],
+		remaining: ''
 	});
-	assert.equal(commitRecipient('bob', null).recipient, null);
+	// Not an address: nobody is added, and the text stays in the field.
+	assert.deepEqual(commitRecipient('bob', null), { recipients: [], remaining: 'bob' });
+});
+
+test('splitRecipients: a pasted or typed list is one chip per address, however it is separated', () => {
+	const emails = (text: string) => splitRecipients(text).recipients.map((r) => r.email);
+	const three = ['a@x.io', 'b@x.io', 'c@x.io'];
+	assert.deepEqual(emails('a@x.io, b@x.io; c@x.io'), three);
+	assert.deepEqual(emails('a@x.io b@x.io  c@x.io'), three);
+	assert.deepEqual(emails('a@x.io\nb@x.io\r\nc@x.io\n'), three);
+	assert.deepEqual(emails('a@x.io,b@x.io;c@x.io;'), three);
+	assert.deepEqual(emails('<a@x.io> <b@x.io>, mailto:c@x.io'), three);
+	// Names ride with their own address, never with a neighbour's.
+	assert.deepEqual(splitRecipients('Bob Builder <bob@x.io>, carol@x.io; "Hobday, Annie" <annie@x.io> Dave dave@x.io').recipients, [
+		{ name: 'Bob Builder', email: 'bob@x.io', meta: '' },
+		{ name: '', email: 'carol@x.io', meta: '' },
+		{ name: 'Hobday, Annie', email: 'annie@x.io', meta: '' },
+		{ name: 'Dave', email: 'dave@x.io', meta: '' }
+	]);
+	// Outlook's list: with semicolons between the entries, the commas are in the names.
+	assert.deepEqual(splitRecipients('Doe, Jane <j@x.io>; Smith, John <s@x.io>'), {
+		recipients: [
+			{ name: 'Doe, Jane', email: 'j@x.io', meta: '' },
+			{ name: 'Smith, John', email: 's@x.io', meta: '' }
+		],
+		rest: ''
+	});
+	assert.deepEqual(emails('a@x.io, Bob <b@x.io>; c@x.io'), three);
+	// An address as it stands in running text, and one used as a name.
+	assert.deepEqual(emails('Jane Doe (a@x.io), mailto:b@x.io?subject=Hi, write to c@x.io!'), three);
+	assert.deepEqual(splitRecipients('john@work <john@x.io>').recipients, [{ name: 'john@work', email: 'john@x.io', meta: '' }]);
+	// The single-chip reader refuses a list: it used to name one chip after all of it.
+	assert.equal(makeRecipient('a@x.io, b@x.io'), null);
+	assert.equal(makeRecipient('a@x.io b@x.io'), null);
+});
+
+test('uniqueRecipients: an address that came in twice is one chip, whatever its case', () => {
+	const ada = { name: 'Ada', email: 'ada@x.io', meta: '' };
+	assert.deepEqual(uniqueRecipients([ada, { name: '', email: 'ADA@x.io', meta: '' }, { name: 'Bob', email: 'bob@x.io', meta: '' }, ada]), [
+		ada,
+		{ name: 'Bob', email: 'bob@x.io', meta: '' }
+	]);
+	// The split path never makes one in the first place.
+	assert.equal(splitRecipients('ada@x.io, Ada <ADA@x.io>; ada@x.io').recipients.length, 1);
+});
+
+test('splitRecipients: what is not an address is handed back, not dropped', () => {
+	assert.deepEqual(splitRecipients('a@x.io, not-an-address'), {
+		recipients: [{ name: '', email: 'a@x.io', meta: '' }],
+		rest: 'not-an-address'
+	});
+	assert.deepEqual(splitRecipients('Bob Builder'), { recipients: [], rest: 'Bob Builder' });
+	assert.deepEqual(splitRecipients('bob@, @x.io, a@b@c'), { recipients: [], rest: 'bob@, @x.io, a@b@c' });
+	assert.deepEqual(splitRecipients('  '), { recipients: [], rest: '' });
 });
 
 test('highlightedSuggestion: a closed list commits nobody, whoever sorts first', () => {
@@ -142,7 +199,7 @@ test('highlightedSuggestion: a closed list commits nobody, whoever sorts first',
 	];
 	// Tab or Enter in an empty field: the list is closed, so nobody is added.
 	assert.equal(highlightedSuggestion(false, book, 0), null);
-	assert.equal(commitRecipient('', highlightedSuggestion(false, book, 0)).recipient, null);
+	assert.deepEqual(commitRecipient('', highlightedSuggestion(false, book, 0)).recipients, []);
 	assert.deepEqual(highlightedSuggestion(true, book, 1), book[1]);
 	assert.equal(highlightedSuggestion(true, [], 0), null);
 });
@@ -226,6 +283,41 @@ test('replyAllRecipients: the answered message only — sender and To in To, Cc 
 	assert.deepEqual(replyAllRecipients(mine, me).to.map((r) => r.email), ['ada@x.com']);
 	const note = detail({ from: { name: 'Me', email: 'me@zaur.app' }, to: [{ name: 'Me', email: 'me@zaur.app' }] });
 	assert.deepEqual(replyAllRecipients(note, me).to.map((r) => r.email), ['me@zaur.app']);
+});
+
+test('replyRecipients: Reply-To over From; my own message goes to the people I sent it to', () => {
+	const mine = new Set(['me@zaur.app', 'alias@zaur.app']);
+	const me = { name: 'Me', email: 'me@zaur.app' };
+	const bob = { name: 'Bob', email: 'bob@y.com' };
+	const support = { name: 'Support', email: 'support@shop.example' };
+	const robot = { name: 'Robot', email: 'noreply@shop.example' };
+	assert.deepEqual(replyRecipients(detail({ to: [me] }), mine), [{ name: 'Ada', email: 'ada@example.com' }]);
+	assert.deepEqual(replyRecipients(detail({ from: robot, replyTo: [support], to: [me] }), mine), [support]);
+	// Sent by me (from an alias too): a follow-up to its To, not a letter to myself.
+	assert.deepEqual(replyRecipients(detail({ from: { name: 'Me', email: 'Alias@zaur.app' }, to: [bob, me], cc: [support] }), mine), [bob]);
+	// A note to myself has nobody else.
+	assert.deepEqual(replyRecipients(detail({ from: me, to: [me] }), mine), [me]);
+
+	// Reply all: Reply-To takes the sender's place, the rest is unchanged.
+	assert.deepEqual(replyAllRecipients(detail({ from: robot, replyTo: [support], to: [me, bob], cc: [{ name: 'Cara', email: 'cara@z.com' }] }), mine), {
+		to: [support, bob],
+		cc: [{ name: 'Cara', email: 'cara@z.com' }]
+	});
+});
+
+test('answerLink: a reply threads under the message; a forward only names it; a draft keeps the link', () => {
+	const parent = detail({ id: 'e9', messageId: 'c@host', references: ['a@host', 'b@host'], inReplyTo: ['b@host'] });
+	assert.deepEqual(answerLink(parent, false), { emailId: 'e9', messageId: 'c@host', references: ['a@host', 'b@host', 'c@host'] });
+	assert.deepEqual(answerLink(parent, true), { emailId: 'e9', messageId: 'c@host', forward: true });
+	// No References on the parent: its In-Reply-To stands in (RFC 5322 §3.6.4).
+	assert.deepEqual(answerLink(detail({ messageId: 'c@host', inReplyTo: ['b@host'] }), false)?.references, ['b@host', 'c@host']);
+	assert.deepEqual(answerLink(detail({ messageId: 'c@host' }), false)?.references, ['c@host']);
+	assert.equal(answerLink(detail(), false), undefined);
+
+	// A reply saved to Drafts and reopened: the headers it was saved with come back.
+	const saved = detail({ id: 'd1', messageId: 'draft@host', inReplyTo: ['c@host'], references: ['a@host', 'b@host', 'c@host'] });
+	assert.deepEqual(draftSeed(saved).answers, { messageId: 'c@host', references: ['a@host', 'b@host', 'c@host'] });
+	assert.equal(draftSeed(detail()).answers, undefined);
 });
 
 test('forwardSeed: Fwd: prefix and forwarded header block', () => {
@@ -345,7 +437,9 @@ test('fitPanel: a stored rect slides back into a shrunken shell, and shrinks onl
 	// → 800x600: still whole, against the edge.
 	assert.deepEqual(fitPanel({ x: 278, y: 300, w: 760, h: 460 }, 800, 600), { x: 32, y: 132, w: 760, h: 460 });
 	// Smaller than the panel: shrinks to the shell.
-	assert.deepEqual(fitPanel({ x: 278, y: 300, w: 960, h: 800 }, 800, 600), { x: 8, y: 8, w: 784, h: 584 });
+	assert.deepEqual(fitPanel({ x: 278, y: 300, w: 960, h: 800 }, 800, 600), { x: 8, y: 60, w: 784, h: 532 });
+	// Parked over the top bar (search, the section tabs): it comes down under it.
+	assert.deepEqual(fitPanel({ x: 8, y: 8, w: 760, h: 460 }, 1440, 900), { x: 8, y: 60, w: 760, h: 460 });
 });
 
 test('clampPanel: enforces min size and keeps the panel inside the shell', () => {
@@ -372,6 +466,9 @@ test('classifySendFailure: connectivity failures queue, server rejections do not
 	assert.equal(classifySendFailure(new Error('Failed to send email')), 'fatal');
 	assert.equal(classifySendFailure(new Error('No sent mailbox found')), 'fatal');
 	assert.equal(classifySendFailure('weird'), 'fatal');
+	// What a remote command throws: a proxy's 502 while the app restarts queues, the app's own refusal does not.
+	assert.equal(classifySendFailure({ status: 502, body: { message: 'Bad Gateway' } }), 'network');
+	assert.equal(classifySendFailure({ status: 502, body: { message: 'The server refused the message.' } }), 'fatal');
 });
 
 // --- scheduling ---

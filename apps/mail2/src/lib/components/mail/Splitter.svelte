@@ -69,8 +69,8 @@
 	aria-valuemin={min}
 	aria-valuemax={max}
 	tabindex="0"
-	class="group relative w-px shrink-0 cursor-col-resize touch-none bg-line transition-colors duration-[120ms] max-md:hidden hover:bg-accent-tint focus:bg-accent-tint focus:outline-none {dragging
-		? 'bg-accent-tint'
+	class="group relative w-px shrink-0 cursor-col-resize touch-none bg-line transition-colors duration-[120ms] max-md:hidden hover:bg-accent-line focus:outline-none focus-visible:bg-accent focus-visible:shadow-[0_0_0_1px_var(--z-accent)] {dragging
+		? 'bg-accent-line'
 		: ''}"
 	onpointerdown={handlePointerDown}
 	onpointermove={handlePointerMove}

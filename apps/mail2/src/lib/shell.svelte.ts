@@ -1,4 +1,5 @@
 import { getContext, setContext, type Snippet } from 'svelte';
+import type { ChangedTypes } from '#lib/mail/live';
 
 /**
  * The shell's header belongs to the `(app)` layout, so the mark, the section
@@ -16,6 +17,12 @@ export class Shell {
 	tabs = $state(true);
 	/** The app column, for whoever positions floating things against it. */
 	frame = $state<HTMLElement | null>(null);
+	/** Unread in the inbox, kept by the layout so every section's tab can say it. */
+	unread = $state(0);
+	/** A section's tab title: a pinned tab says how much is waiting in the inbox, whichever section it is on. */
+	title(name: string): string {
+		return `${this.unread > 0 ? `(${this.unread}) ` : ''}${name} · Zaur Mail`;
+	}
 	/**
 	 * Who holds the bar — deliberately not state. An effect's teardown reads
 	 * state as it was before the change that ran it, so a section leaving would
@@ -28,6 +35,19 @@ export class Shell {
 	 * lists are Mail's, and only while it is the section on show.
 	 */
 	mailChanged: ((anyList: boolean) => void) | undefined;
+	/**
+	 * Push. The stream is the layout's — one, whichever section is open, so the
+	 * inbox count keeps moving in all of them — and a section hears what changed
+	 * for as long as it is mounted: `$effect(() => shell.onLive(…))`.
+	 */
+	#live = new Set<(changed: ChangedTypes) => void>();
+	onLive(listener: (changed: ChangedTypes) => void): () => void {
+		this.#live.add(listener);
+		return () => void this.#live.delete(listener);
+	}
+	tellLive(changed: ChangedTypes): void {
+		for (const listener of this.#live) listener(changed);
+	}
 }
 
 // A string, not a Symbol: Vite's HMR can hold two instances of this module at

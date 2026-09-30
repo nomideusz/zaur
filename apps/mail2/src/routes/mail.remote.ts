@@ -14,10 +14,9 @@ import type {
 	JMAPMailbox,
 	JMAPMailboxRights,
 	MailboxKind,
-	MessageDetail,
 	MessagePreview
 } from '@zaur/mail-core';
-import type { MailboxDTO, SharedMailboxDTO, ThreadListDTO } from '#lib/mail/types';
+import type { MailboxDTO, SharedMailboxDTO, ThreadListDTO, ThreadMessageDTO } from '#lib/mail/types';
 import { connect, connectMail, refuse, requireAccount, requireAccountKey } from '#lib/server/account';
 import { pickPrincipal } from '#lib/share';
 import { aiSettings, categorizeInBackground } from '#lib/server/categorize';
@@ -260,7 +259,11 @@ export const search = query(
 			mailboxId: mailboxId ?? '',
 			// Results can come from any folder, so a row is labelled by the
 			// mailbox it is actually in rather than the one we searched from.
-			rows: emails.filter(isMail).map((email) => mapEmailPreview(email, mailboxId ?? '')),
+			rows: emails
+				.filter(isMail)
+				.map((email) =>
+					mapEmailPreview(email, mailboxId ?? Object.keys(email.mailboxIds ?? {}).find((id) => email.mailboxIds?.[id]) ?? '')
+				),
 			hasMore
 		};
 	}
@@ -268,11 +271,14 @@ export const search = query(
 
 export const thread = query(
 	schema<{ threadId: string; account?: string | null }>(),
-	async ({ threadId, account }): Promise<MessageDetail[]> => {
+	async ({ threadId, account }): Promise<ThreadMessageDTO[]> => {
 		const client = await connectMail(account);
 		const emails = await client.getThreadEmails(threadId);
 		return emails
-			.map((email) => mapEmailDetail(email, ''))
+			.map((email) => ({
+				...mapEmailDetail(email, ''),
+				mailboxIds: Object.keys(email.mailboxIds ?? {}).filter((id) => email.mailboxIds?.[id])
+			}))
 			// Inline images come through /api/jmap/download, which has to be told whose they are.
 			.map((detail) =>
 				account && detail.bodyHtml

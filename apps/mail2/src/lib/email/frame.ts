@@ -52,7 +52,7 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 	/* Only what can be followed looks like a link: html.ts takes the address off some. */
 	a:any-link { color: ${palette.link}; text-decoration: underline; text-underline-offset: 2px; }
 	a:any-link:hover { color: ${palette.linkHover}; }
-	img { max-width: 100%; height: auto; }
+	img, video { max-width: 100%; height: auto; }
 	/* A remote image that was not fetched (html.ts): a quiet box of the size it was given. */
 	img[data-blocked-src] { background: ${palette.well}; outline: 1px dashed ${palette.rule}; outline-offset: -1px; border-radius: 4px; }
 	table { max-width: 100%; }

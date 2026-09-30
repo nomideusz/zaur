@@ -61,7 +61,10 @@
 	</div>
 
 	{#if sharingResource?.error}
-		<p class="z-card-body text-[13px] text-[var(--z-ch-discard-ink)]">Could not load who this mailbox is shared with.</p>
+		<p class="z-card-body text-[13px] text-[var(--z-ch-discard-ink)]">
+			Could not load who this mailbox is shared with.
+			<button type="button" class="btn-tactile ml-2 !h-[28px]" onclick={() => sharingResource?.refresh()}>Retry</button>
+		</p>
 	{:else if !sharingResource?.current}
 		<div class="z-card-body z-skeleton h-[60px]" aria-hidden="true"></div>
 	{:else}

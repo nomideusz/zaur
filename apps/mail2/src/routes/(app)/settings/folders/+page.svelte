@@ -32,9 +32,23 @@
 		}
 	}
 
+	/**
+	 * No two folders of one name side by side — the mail server's rule (and
+	 * "Inbox" beside the Inbox is one of them), said here in the page's words
+	 * before the server has to refuse in its own.
+	 */
+	function taken(name: string, parentId: string, self?: string): boolean {
+		const wanted = name.trim().toLowerCase();
+		const clash = (mailboxesResource?.current ?? []).some(
+			(box) => box.id !== self && (box.parentId ?? '') === parentId && box.name.trim().toLowerCase() === wanted
+		);
+		if (clash) status = { text: `There is already a folder called “${name.trim()}” there`, error: true };
+		return clash;
+	}
+
 	async function add() {
 		const name = fresh.name.trim();
-		if (!name) return;
+		if (!name || taken(name, fresh.parentId)) return;
 		if (await act(() => createFolder({ name, parentId: fresh.parentId || null }), `Created ${name}`)) {
 			fresh = { name: '', parentId: '' };
 		}
@@ -42,7 +56,7 @@
 
 	async function save() {
 		const edit = editing;
-		if (!edit) return;
+		if (!edit || taken(edit.name, edit.parentId, edit.id)) return;
 		if (await act(() => updateFolder({ id: edit.id, name: edit.name, parentId: edit.parentId || null }), 'Folder saved')) {
 			editing = null;
 		}
@@ -84,7 +98,10 @@
 	</div>
 
 	{#if mailboxesResource?.error}
-		<p class="z-card-body text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your folders.</p>
+		<p class="z-card-body text-[13px] text-[var(--z-ch-discard-ink)]">
+			Could not load your folders.
+			<button type="button" class="btn-tactile ml-2 !h-[28px]" onclick={() => mailboxesResource?.refresh()}>Retry</button>
+		</p>
 	{:else if !mailboxesResource?.current}
 		<div class="z-card-body z-skeleton h-[80px]" aria-hidden="true"></div>
 	{:else}

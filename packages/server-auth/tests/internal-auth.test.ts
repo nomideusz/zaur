@@ -40,6 +40,8 @@ describe('safeNextPath', () => {
 	it('allows same-origin relative paths only', () => {
 		assert.equal(safeNextPath('/oidc/authorize?client_id=x'), '/oidc/authorize?client_id=x');
 		assert.equal(safeNextPath('//evil.example'), undefined);
+		assert.equal(safeNextPath('/\\evil.example'), undefined);
+		assert.equal(safeNextPath('/\t/evil.example'), undefined);
 		assert.equal(safeNextPath('https://evil.example/'), undefined);
 		assert.equal(safeNextPath(42), undefined);
 	});

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { online } from 'svelte/reactivity/window';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import { renderMessageBody } from '#lib/email/html';
@@ -8,6 +9,7 @@
 	import { prefs, setPref } from '#lib/settings.svelte.ts';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
 	import { attachmentUrl, formatBytes, formatReaderTime, initials, previewKind } from '#lib/mail/rows';
+	import { acceptsMoves } from '#lib/mail/folders';
 	import AttachmentPreview from './AttachmentPreview.svelte';
 	import { attachmentKind } from '#lib/compose/attachments';
 	import {
@@ -55,6 +57,8 @@
 		onCancelSend?: (message: MessageDetail) => void;
 		/** Set when the thread is in a mailbox someone shares with you. */
 		shared?: { id: string; name: string } | null;
+		/** Your own addresses, lower-cased: the address line calls them "me". */
+		myEmails?: ReadonlySet<string>;
 	}
 
 	let {
@@ -73,7 +77,8 @@
 		currentMailboxId = null,
 		inTrash = false,
 		onCancelSend,
-		shared = null
+		shared = null,
+		myEmails
 	}: Props = $props();
 
 	let earlierExpanded = $state(false);
@@ -184,13 +189,20 @@
 
 	/** The card's one-line summary. Bcc only ever comes back on mail you sent. */
 	function recipientsLabel(message: MessageDetail): string {
-		const others = [...message.to, ...message.cc, ...message.bcc].filter(
-			(person) => person.email.toLowerCase() !== message.from.email.toLowerCase()
-		);
-		if (others.length === 0) return 'to me';
-		const first = others[0]!;
+		const everyone = [...message.to, ...message.cc, ...message.bcc];
+		if (everyone.length === 0) return 'no recipients';
+		const notSender = (person: { email: string }) => person.email.toLowerCase() !== message.from.email.toLowerCase();
+		const open = [...message.to, ...message.cc].filter(notSender);
+		const others = [...open, ...message.bcc.filter(notSender)];
+		// You are "me" wherever you appear, and named first: "to me, +3", as a note to yourself is "to me".
+		const isMe = (person: { email: string }) => myEmails?.has(person.email.toLowerCase()) ?? false;
+		const named = (person: { name: string; email: string }) => (isMe(person) ? 'me' : person.name || person.email);
+		// Sent to nobody but its sender: a note to yourself, or a list that writes to itself.
+		if (others.length === 0) return `to ${myEmails ? named(message.from) : 'me'}`;
+		// A Bcc-only message names its first hidden recipient as one.
+		const shown = open.length > 0 ? open : others;
 		const rest = others.length - 1;
-		return `to ${first.name || first.email}${rest > 0 ? `, +${rest}` : ''}`;
+		return `${open.length > 0 ? 'to' : 'bcc'} ${named(shown.find(isMe) ?? shown[0]!)}${rest > 0 ? `, +${rest}` : ''}`;
 	}
 
 	/** The same people in full, one row per header that has anyone in it. */
@@ -199,6 +211,8 @@
 			? (
 					[
 						['From', [latest.from]],
+						// Where a reply goes, when that is not who wrote it.
+						['Reply to', latest.replyTo ?? []],
 						['To', latest.to],
 						['Cc', latest.cc],
 						['Bcc', latest.bcc]
@@ -228,11 +242,13 @@
 			(box) =>
 				box.id !== currentMailboxId &&
 				box.id !== spamTarget?.id &&
+				acceptsMoves(box) &&
 				!MOVE_EXCLUDED.has(box.kind)
 		)
 	);
 
-	const MOVE_EXCLUDED = new Set(['drafts', 'sent', 'scheduled', 'trash', 'junk']);
+	/** On top of what no move may go into (`acceptsMoves`). */
+	const MOVE_EXCLUDED = new Set(['sent', 'trash', 'junk']);
 
 	let replyEl = $state<HTMLElement | null>(null);
 
@@ -474,7 +490,7 @@
 				</svg>
 				<div class="min-w-0 flex-1">
 					<span class="block text-[13px] font-semibold text-[var(--z-ch-discard-ink)]">Couldn't load the conversation</span>
-					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">The mail server couldn't be reached.</span>
+					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">{online.current === false ? "You're offline." : "The mail server couldn't be reached."}</span>
 				</div>
 				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)]" onclick={onRetry}>Retry</button>
 			</div>
@@ -528,7 +544,7 @@
 							<!-- The label gives up its tail, then the action its words, before
 							     either is cut mid-word on a narrow pane. -->
 							<span class="truncate text-[13px] font-medium text-[var(--z-strong)]">
-								Earlier {earlier.length === 1 ? 'message' : 'messages'}<span class="@max-md:hidden"> in this conversation</span>
+								Earlier {earlier.length === 1 ? 'message' : 'messages'} <span class="@max-md:hidden">in this conversation</span>
 							</span>
 						</span>
 						<span class="flex shrink-0 items-center gap-[5px] text-[12px] font-semibold text-[var(--z-soft)] transition-colors group-hover:text-[var(--z-ink)]">
@@ -641,7 +657,13 @@
 									title={recipientsOpen ? 'Hide recipients' : 'Show all recipients'}
 									onclick={() => (recipientsOpen = !recipientsOpen)}
 								>
-									<span class="truncate">{latest.from.email} · {recipientsLabel(latest)}</span>
+									<!-- Two spans: a long sender address gives way first, and who it was sent to stays readable on a phone. -->
+									<span class="min-w-[4ch] truncate">{latest.from.email}</span>
+									<!-- The count is what is cut last: "to Bob Buil…, +2". -->
+									<span class="flex max-w-[62%] shrink-0">
+										<span class="truncate">· {recipientsLabel(latest).replace(/, \+\d+$/, '')}</span>
+										<span class="shrink-0">{recipientsLabel(latest).match(/, \+\d+$/)?.[0]}</span>
+									</span>
 									<ActionIcon name="chevron" class="size-2.5 shrink-0 transition-transform {recipientsOpen ? 'rotate-180' : ''}" />
 								</button>
 							</div>
@@ -707,14 +729,15 @@
 
 				{#if blockedExternal && !showImages}
 					<!-- The sentence asks for a readable measure; where the pane cannot
-					     give it that beside the buttons, they wrap under it. -->
+					     give it that beside the buttons, they wrap under it. Under a
+					     finger the two are as tall as the toolbar's buttons. -->
 					<div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
 						<span class="min-w-0 flex-1 basis-52">Remote images are hidden, so the sender can't see that you opened this.</span>
 						<span class="flex shrink-0 items-center gap-3">
-							<button type="button" class="text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)]" onclick={() => setPref('showRemoteImages', true)}>
+							<button type="button" class="text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)] pointer-coarse:px-2 pointer-coarse:py-3 pointer-coarse:text-[13px]" onclick={() => setPref('showRemoteImages', true)}>
 								Always
 							</button>
-							<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px]" onclick={() => (imagesFor = latest.id)}>
+							<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px] pointer-coarse:!h-11 pointer-coarse:!px-3.5 pointer-coarse:!text-[13px]" onclick={() => (imagesFor = latest.id)}>
 								Show images
 							</button>
 						</span>

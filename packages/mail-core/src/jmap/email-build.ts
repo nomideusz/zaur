@@ -1,4 +1,4 @@
-import { plainTextToSafeHtml } from '../email/text';
+import { plainTextToSafeHtml } from '../email/text.ts';
 
 export interface EmailAttachmentInput {
 	blobId: string;
@@ -37,6 +37,33 @@ export interface EmailCreateInput {
 	mailboxIds: Record<string, boolean>;
 	keywords?: Record<string, boolean>;
 	attachments?: EmailAttachmentInput[];
+	/** A reply's threading headers: Message-IDs without angle brackets (RFC 8621 §4.1.2.3). */
+	inReplyTo?: string[];
+	references?: string[];
+}
+
+/**
+ * The message a reply answers or a forward carries: its headers thread the
+ * reply under it, and once the reply is sent it is flagged `$answered` (or
+ * `$forwarded`).
+ */
+export interface EmailAnswerInput {
+	/** Server id of that message, to flag it; without one nothing is flagged. */
+	emailId?: string;
+	/** Its Message-ID, without angle brackets. */
+	messageId: string;
+	forward?: boolean;
+	/** A reply's `References`: the thread so far, this message last. */
+	references?: string[];
+}
+
+/** `In-Reply-To` and `References` for a reply; a forward starts a thread of its own. */
+export function answerHeaders(answers: EmailAnswerInput | undefined): { inReplyTo?: string[]; references?: string[] } {
+	if (!answers?.messageId || answers.forward) return {};
+	return {
+		inReplyTo: [answers.messageId],
+		references: answers.references?.length ? answers.references : [answers.messageId]
+	};
 }
 
 export function buildEmailCreateData(input: EmailCreateInput): Record<string, unknown> {
@@ -49,6 +76,8 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		...(input.cc?.length ? { cc: input.cc.map(recipientAddress) } : {}),
 		...(input.bcc?.length ? { bcc: input.bcc.map(recipientAddress) } : {}),
 		subject: input.subject,
+		...(input.inReplyTo?.length ? { inReplyTo: input.inReplyTo } : {}),
+		...(input.references?.length ? { references: input.references } : {}),
 		mailboxIds: input.mailboxIds,
 		...(input.keywords ? { keywords: input.keywords } : {}),
 		...(input.format === 'html'

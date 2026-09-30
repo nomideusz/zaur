@@ -14,9 +14,11 @@ import type {
 import { allOf, parseSearchQuery } from '../mail/search-query';
 import { emailQueryHasMore } from './email-query';
 import {
+	answerHeaders,
 	buildEmailCreateData,
 	recipientEmail,
 	type ComposeFormat,
+	type EmailAnswerInput,
 	type EmailAttachmentInput,
 	type EmailRecipientInput
 } from './email-build';
@@ -154,6 +156,7 @@ const EMAIL_LIST_PROPERTIES = [
 	'from',
 	'to',
 	'cc',
+	'bcc',
 	'subject',
 	'preview',
 	'hasAttachment'
@@ -169,6 +172,10 @@ const EMAIL_DETAIL_PROPERTIES = [
 	'to',
 	'cc',
 	'bcc',
+	'replyTo',
+	'messageId',
+	'inReplyTo',
+	'references',
 	'subject',
 	'preview',
 	'textBody',
@@ -2591,6 +2598,8 @@ export class JMAPClient {
 		fromName?: string;
 		attachments?: EmailAttachmentInput[];
 		format?: ComposeFormat;
+		/** What a reply draft answers: kept in its headers, so it still threads when finished later. */
+		answers?: EmailAnswerInput;
 	}): Promise<string> {
 		const mailboxes = await this.getMailboxes();
 		const draftsMailbox = mailboxes.find((mb) => mb.role === 'drafts');
@@ -2609,7 +2618,8 @@ export class JMAPClient {
 			format: params.format,
 			mailboxIds: { [draftsMailbox.id]: true },
 			keywords: { $draft: true, $seen: true },
-			attachments: params.attachments
+			attachments: params.attachments,
+			...answerHeaders(params.answers)
 		});
 
 		if (params.jmapDraftId) {
@@ -2691,6 +2701,8 @@ export class JMAPClient {
 			jmapEmailId?: string;
 			/** Called with the server email id once the outgoing email exists, before submission. */
 			onEmailCreated?: (emailId: string) => void | Promise<void>;
+			/** The message this replies to or forwards: threads the reply, and flags that message once sent. */
+			answers?: EmailAnswerInput;
 		}
 	): Promise<void> {
 		const mailboxes = await this.getMailboxes();
@@ -2740,7 +2752,8 @@ export class JMAPClient {
 				format: options?.format,
 				mailboxIds: { [holdingMailboxId]: true },
 				keywords: options?.sendAt ? { $draft: true } : { $seen: true },
-				attachments: options?.attachments
+				attachments: options?.attachments,
+				...answerHeaders(options?.answers)
 			});
 			emailId = await this.createOutgoingEmail(emailData);
 			await options?.onEmailCreated?.(emailId);
@@ -2791,6 +2804,37 @@ export class JMAPClient {
 			await this.destroyEmails([emailId]).catch(() => undefined);
 		}
 		this.throwOnSetErrors(response, 'Failed to send email');
+		// The message has gone; a flag that could not be set is not a failed send.
+		if (options?.answers) await this.markAnswered(options.answers).catch(() => undefined);
+	}
+
+	/**
+	 * Flag the message a sent reply answers, or a forward carries. Whatever is
+	 * found is checked against the Message-ID first: an id taken from a shared
+	 * mailbox names nothing in this account, or some other message.
+	 */
+	private async markAnswered(answers: EmailAnswerInput): Promise<void> {
+		if (!answers.messageId) return;
+		const get = { accountId: this.accountId, properties: ['messageId'] };
+		// A reply reopened from Drafts knows its message only by Message-ID: look it up.
+		// ponytail: a server that refuses the header filter leaves the flag unset (the send stands).
+		const response = await this.request(
+			answers.emailId
+				? [['Email/get', { ...get, ids: [answers.emailId] }, 'g']]
+				: [
+						['Email/query', { accountId: this.accountId, filter: { header: ['Message-ID', answers.messageId] }, limit: 10 }, 'q'],
+						['Email/get', { ...get, '#ids': { resultOf: 'q', name: 'Email/query', path: '/ids' } }, 'g']
+					]
+		);
+		const list = (response.methodResponses?.find(([name]) => name === 'Email/get')?.[1]?.list ?? []) as JMAPEmail[];
+		const keyword = answers.forward ? '$forwarded' : '$answered';
+		await this.patchKeywords(
+			Object.fromEntries(
+				list
+					.filter((email) => email.messageId?.includes(answers.messageId))
+					.map((email) => [email.id, { [keyword]: true as const }])
+			)
+		);
 	}
 
 	/**
