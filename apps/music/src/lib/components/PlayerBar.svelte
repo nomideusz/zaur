@@ -6,10 +6,17 @@
 	/** The mini player along the bottom; tapping the song opens Now playing. */
 	const song = $derived(player.current);
 	const progress = $derived(player.duration ? (player.time / player.duration) * 100 : 0);
-	// While the thumb is held the slider shows where it is; the audio seeks once, on release.
+	// While the thumb is held the slider shows where it is; the audio seeks once, on release
+	// (`change` alone is not enough: a touch does not always fire it).
 	let drag = $state<number>();
 	const shown = $derived(drag ?? player.time);
+	function release() {
+		if (drag !== undefined) player.seek(drag);
+		drag = undefined;
+	}
 	const repeatLabel = $derived(`Repeat: ${{ off: 'off', all: 'all', one: 'this song' }[player.repeat]}`);
+	// The slider at zero is as silent as muted: the button shows, says and undoes both.
+	const silent = $derived(player.muted || !player.volume);
 </script>
 
 {#if song}
@@ -53,7 +60,13 @@
 			>
 				<Icon name={player.playing ? 'pause' : 'play'} class="size-4" />
 			</button>
-			<button class="z-icon-btn !size-9" type="button" aria-label="Next" disabled={!player.hasNext} onclick={() => player.next()}>
+			<button
+				class="z-icon-btn !size-9 pointer-coarse:!size-11"
+				type="button"
+				aria-label="Next"
+				disabled={!player.hasNext}
+				onclick={() => player.next()}
+			>
 				<Icon name="next" />
 			</button>
 			<button
@@ -79,11 +92,9 @@
 				aria-label="Position"
 				aria-valuetext="{formatTime(shown)} of {formatTime(player.duration)}"
 				oninput={(event) => (drag = Number(event.currentTarget.value))}
-				onchange={(event) => {
-					player.seek(Number(event.currentTarget.value));
-					drag = undefined;
-				}}
-				onpointerup={() => setTimeout(() => (drag = undefined))}
+				onchange={release}
+				onpointerup={release}
+				onpointercancel={release}
 			/>
 			<span class="z-mono">{formatTime(player.duration)}</span>
 		</div>
@@ -94,11 +105,11 @@
 				class="z-icon-btn !size-9"
 				type="button"
 				aria-label="Mute"
-				aria-pressed={player.muted}
-				title={player.muted ? 'Unmute' : 'Mute'}
+				aria-pressed={silent}
+				title={silent ? 'Unmute' : 'Mute'}
 				onclick={() => player.toggleMute()}
 			>
-				<Icon name={player.muted || !player.volume ? 'mute' : 'volume'} />
+				<Icon name={silent ? 'mute' : 'volume'} />
 			</button>
 			<input
 				type="range"
@@ -205,8 +216,19 @@
 			transform: rotate(360deg);
 		}
 	}
+	/* A toggle that is on: the accent, and a dot so it is not told by colour alone. */
 	.on {
-		color: var(--z-accent-ink);
+		position: relative;
+		color: var(--z-accent);
+	}
+	.on::after {
+		content: '';
+		position: absolute;
+		bottom: 3px;
+		width: 4px;
+		height: 4px;
+		border-radius: 999px;
+		background: currentColor;
 	}
 	.scrub {
 		display: flex;
@@ -232,6 +254,16 @@
 	@media (pointer: coarse) {
 		.vol {
 			display: none;
+		}
+		.play {
+			width: 44px;
+			height: 44px;
+		}
+	}
+	/* A narrow window: the volume gives before the seek bar does. */
+	@media (max-width: 899px) {
+		.vol input {
+			width: 56px;
 		}
 	}
 	@media (max-width: 767px) {

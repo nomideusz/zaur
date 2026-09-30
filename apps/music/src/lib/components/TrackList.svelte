@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { tick } from 'svelte';
 	import { formatTime, isStarred, player, toggleStar } from '#lib/player.svelte';
 	import type { Song } from '#lib/types';
 	import Cover from './Cover.svelte';
@@ -20,13 +21,22 @@
 		by,
 		limit,
 		onremove
-	}: { songs: Song[]; numbered?: boolean; by?: string; limit?: number; onremove?: (index: number) => void } = $props();
+	}: { songs: Song[]; numbered?: boolean; by?: string; limit?: number; onremove?: (index: number) => unknown } = $props();
 
 	let menu: SongMenu;
+	let list = $state<HTMLElement>();
+
+	// A removed row takes the focus with it. For someone on the keyboard it goes to the row that
+	// came up into its place (the last, when that one went).
+	async function remove(index: number, keyboard: boolean) {
+		await onremove!(index);
+		await tick();
+		if (keyboard) [...(list?.querySelectorAll<HTMLElement>('.main') ?? [])].at(Math.min(index, songs.length - 1))?.focus();
+	}
 	const discs = $derived(numbered && new Set(songs.map((song) => song.discNumber ?? 1)).size > 1);
 </script>
 
-<ol class="tracks">
+<ol class="tracks" bind:this={list}>
 	{#each limit ? songs.slice(0, limit) : songs as song, i (`${song.id}-${i}`)}
 		{@const current = player.current?.id === song.id}
 		{@const starred = isStarred(song)}
@@ -71,7 +81,7 @@
 		</li>
 	{/each}
 </ol>
-<SongMenu bind:this={menu} album={!numbered} {onremove} />
+<SongMenu bind:this={menu} album={!numbered} onremove={onremove && remove} />
 
 <style>
 	.tracks {
@@ -86,8 +96,11 @@
 		padding-right: 8px;
 		border-radius: 10px;
 	}
-	.track:hover {
-		background: var(--z-hover);
+	/* Where there is a hover to show: after a tap it would stay on the row. */
+	@media (hover: hover) {
+		.track:hover {
+			background: var(--z-hover);
+		}
 	}
 	.disc {
 		padding: 14px 8px 4px;

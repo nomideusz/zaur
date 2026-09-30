@@ -40,6 +40,10 @@
 		height: 36px;
 		padding-right: 38px;
 	}
+	/* WebKit still draws its cancel glyph with the appearance stripped: ours is the one. */
+	input::-webkit-search-cancel-button {
+		display: none;
+	}
 	button {
 		position: absolute;
 		top: 0;

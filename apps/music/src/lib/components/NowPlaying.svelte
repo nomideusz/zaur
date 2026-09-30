@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { notice } from '#lib/notice.svelte';
+	import { tick } from 'svelte';
 	import { formatTime, isStarred, player, toggleStar } from '#lib/player.svelte';
 	import type { Song } from '#lib/types';
 	import Cover from './Cover.svelte';
@@ -12,39 +12,72 @@
 	 * opener, and Esc closes; `player.open` is a history entry, so Back does too.
 	 */
 	const song = $derived(player.current);
-	const close = () => (player.open = false);
 	let dialog = $state<HTMLDialogElement>();
-	// While the thumb is held the slider shows where it is; the audio seeks once, on release.
+	/** The songs before this one are folded away until asked for. */
+	let earlier = $state(false);
+	function close() {
+		player.open = false;
+		earlier = false;
+	}
+	// While the thumb is held the slider shows where it is; the audio seeks once, on release
+	// (`change` alone is not enough: a touch does not always fire it).
 	let drag = $state<number>();
 	const shown = $derived(drag ?? player.time);
+	function release() {
+		if (drag !== undefined) player.seek(drag);
+		drag = undefined;
+	}
 	const repeatLabel = $derived(`Repeat: ${{ off: 'off', all: 'all', one: 'this song' }[player.repeat]}`);
+
+	// A control that goes away with what it did (a queue row, Clear) would drop the focus onto the
+	// page under the sheet: the sheet takes it back.
+	async function settle() {
+		await tick();
+		if (!dialog?.contains(document.activeElement)) dialog?.focus();
+	}
+	async function remove(button: HTMLElement, i: number) {
+		// From the keyboard the focus stays in place, on the song that moves up; after a tap that would only draw a ring.
+		const list = button.matches(':focus-visible') ? button.closest('ol') : null;
+		const at = list ? [...list.children].indexOf(button.parentElement!) : 0;
+		player.remove(i);
+		await tick();
+		const next = list?.children[Math.min(at, list.children.length - 1)]?.querySelector<HTMLElement>('.z-icon-btn');
+		(next ?? dialog)?.focus();
+	}
 
 	$effect(() => {
 		if (!dialog) return;
 		if (player.open && song) {
-			if (!dialog.open) dialog.showModal();
+			if (dialog.open) return;
+			dialog.showModal();
+			// The sheet itself takes focus, not its first button: no focus ring on the chevron after a tap.
+			dialog.focus();
 		} else if (dialog.open) dialog.close();
 	});
 </script>
 
 {#snippet row(item: Song, i: number)}
 	<li>
-		<button class="row" type="button" onclick={() => player.jump(i)}>
+		<button class="row" type="button" onclick={() => (player.jump(i), settle())}>
 			<Cover id={item.coverArt} size={96} class="w-9 shrink-0 !rounded-md" />
 			<span class="text">
 				<span class="title">{item.title}</span>
 				<span class="meta">{item.artist ?? ''}</span>
 			</span>
 		</button>
-		<button class="z-icon-btn !size-8 pointer-coarse:!size-10" type="button" aria-label="Remove from queue" onclick={() => player.remove(i)}>
+		<button
+			class="z-icon-btn !size-8 pointer-coarse:!size-11"
+			type="button"
+			aria-label="Remove from queue"
+			onclick={(event) => remove(event.currentTarget, i)}
+		>
 			<Icon name="close" class="size-3.5" />
 		</button>
 	</li>
 {/snippet}
 
 <!-- A click that lands on the dialog itself is on the backdrop: everything inside is covered by its children. -->
-<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
-<dialog bind:this={dialog} class="sheet" aria-label="Now playing" onclose={close} onclick={(event) => event.target === dialog && close()}>
+<dialog bind:this={dialog} class="sheet" tabindex="-1" aria-label="Now playing" onclose={close} onclick={(event) => event.target === dialog && close()}>
 	{#if player.open && song}
 		<header>
 			<button class="z-icon-btn !size-9 pointer-coarse:!size-11" type="button" aria-label="Close" onclick={close}>
@@ -61,13 +94,16 @@
 					<div class="about">
 						<div class="min-w-0">
 							<h2>{song.title}</h2>
-							<!-- replacestate: the page takes the sheet's history entry, so Back does not reopen it. -->
+							<!-- A line each, so a long artist cannot push the album out of reach.
+							     replacestate: the page takes the sheet's history entry, so Back does not reopen it. -->
 							<p>
-								{#if song.artistId}<a href="/artist/{song.artistId}" data-sveltekit-replacestate>{song.artist}</a>{:else}{song.artist ?? ''}{/if}
-								{#if song.album}
-									· {#if song.albumId}<a href="/album/{song.albumId}" data-sveltekit-replacestate>{song.album}</a>{:else}{song.album}{/if}
-								{/if}
+								{#if song.artistId}<a href="/artist/{song.artistId}" data-sveltekit-replacestate>{song.artist}</a>{:else}<span>{song.artist ?? ''}</span>{/if}
 							</p>
+							{#if song.album}
+								<p>
+									{#if song.albumId}<a href="/album/{song.albumId}" data-sveltekit-replacestate>{song.album}</a>{:else}<span>{song.album}</span>{/if}
+								</p>
+							{/if}
 						</div>
 						<button
 							class="z-icon-btn !size-9 shrink-0 pointer-coarse:!size-11"
@@ -91,11 +127,9 @@
 						aria-label="Position"
 						aria-valuetext="{formatTime(shown)} of {formatTime(player.duration)}"
 						oninput={(event) => (drag = Number(event.currentTarget.value))}
-						onchange={(event) => {
-							player.seek(Number(event.currentTarget.value));
-							drag = undefined;
-						}}
-						onpointerup={() => setTimeout(() => (drag = undefined))}
+						onchange={release}
+						onpointerup={release}
+						onpointercancel={release}
 					/>
 					<div class="times z-mono">
 						<span>{formatTime(shown)}</span>
@@ -104,7 +138,7 @@
 
 					<div class="transport">
 						<button
-							class="z-icon-btn !size-10"
+							class="z-icon-btn !size-10 pointer-coarse:!size-11"
 							class:on={player.shuffling}
 							type="button"
 							aria-label="Shuffle"
@@ -131,7 +165,7 @@
 							<Icon name="next" class="size-5" />
 						</button>
 						<button
-							class="z-icon-btn !size-10"
+							class="z-icon-btn !size-10 pointer-coarse:!size-11"
 							class:on={player.repeat !== 'off'}
 							type="button"
 							aria-label={repeatLabel}
@@ -146,19 +180,23 @@
 
 			<section class="queue">
 				{#if player.index > 0}
-					<details class="played">
-						<summary class="z-caption">Played · {player.index}</summary>
-						<ol>
+					<!-- "Earlier", not "Played": starting an album at its fourth song puts three before it unheard. -->
+					<button class="fold z-caption" type="button" aria-expanded={earlier} onclick={() => (earlier = !earlier)}>
+						<Icon name={earlier ? 'chevron-down' : 'chevron-right'} class="size-3" />
+						Earlier · {player.index}
+					</button>
+					{#if earlier}
+						<ol class="earlier">
 							{#each player.queue as item, i (`${item.id}-${i}`)}
 								{#if i < player.index}{@render row(item, i)}{/if}
 							{/each}
 						</ol>
-					</details>
+					{/if}
 				{/if}
 				<div class="queue-head">
 					<h3 class="z-caption">Up next</h3>
 					{#if player.index < player.queue.length - 1}
-						<button class="clear" type="button" onclick={() => player.clear()}>Clear</button>
+						<button class="clear" type="button" onclick={() => (player.clear(), settle())}>Clear</button>
 					{/if}
 				</div>
 				{#if player.index >= player.queue.length - 1}
@@ -170,11 +208,6 @@
 					{/each}
 				</ol>
 			</section>
-		</div>
-
-		<!-- The layout's status line is under this sheet (a modal dialog is above everything), so it is said here too. -->
-		<div class="notice" role="status">
-			{#if notice.text}<p class="z-railed">{notice.text}</p>{/if}
 		</div>
 	{/if}
 </dialog>
@@ -192,6 +225,7 @@
 		flex-direction: column;
 		background: var(--z-surface);
 		color: inherit;
+		outline: none;
 	}
 	/* Not on .sheet: that would show the closed dialog. */
 	.sheet[open] {
@@ -237,16 +271,13 @@
 		gap: 12px;
 		margin-top: 20px;
 	}
-	h2,
-	.about p {
+	h2 {
 		display: -webkit-box;
+		margin: 0;
 		overflow: hidden;
 		-webkit-box-orient: vertical;
 		-webkit-line-clamp: 2;
 		line-clamp: 2;
-	}
-	h2 {
-		margin: 0;
 		color: var(--z-ink);
 		font-size: 20px;
 		font-weight: 650;
@@ -255,6 +286,19 @@
 	.about p {
 		margin: 4px 0 0;
 		color: var(--z-muted);
+	}
+	.about p + p {
+		margin-top: 0;
+	}
+	/* The link itself is the box that cuts its text short: its focus ring and what a click hits
+	   are what is seen (and a box that clipped a focused link would scroll to it and stay there). */
+	.about p > * {
+		display: inline-block;
+		max-width: 100%;
+		overflow: hidden;
+		vertical-align: bottom;
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 	.about a {
 		color: inherit;
@@ -285,8 +329,19 @@
 		max-width: 340px;
 		margin: 10px auto 0;
 	}
+	/* A toggle that is on: the accent, and a dot so it is not told by colour alone. */
 	.on {
-		color: var(--z-accent-ink);
+		position: relative;
+		color: var(--z-accent);
+	}
+	.on::after {
+		content: '';
+		position: absolute;
+		bottom: 3px;
+		width: 4px;
+		height: 4px;
+		border-radius: 999px;
+		background: currentColor;
 	}
 	.play {
 		position: relative;
@@ -322,19 +377,45 @@
 		}
 	}
 
-	/* A wide, tall window: a panel over the page, the queue beside the cover. */
+	/* A wide, tall window: a panel over the page and clear of the player bar (64px), the queue beside the cover. */
 	@media (min-width: 900px) and (min-height: 501px) {
 		.sheet {
+			inset: 24px 0 calc(88px + env(safe-area-inset-bottom));
 			width: min(880px, 92vw);
-			height: 90vh;
-			margin: auto;
+			margin: 0 auto;
+			padding: 0;
 			border-radius: 14px;
 			box-shadow: var(--z-shadow-panel);
 			overflow: hidden;
 		}
+		/* The queue scrolls by itself; the player beside it stays put. */
 		.body {
 			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-			align-items: start;
+			grid-template-rows: minmax(0, 1fr);
+			padding-bottom: 0;
+			overflow: visible;
+		}
+		.stage,
+		.queue {
+			min-height: 0;
+			padding-bottom: 24px;
+			overflow-y: auto;
+		}
+		/* Out to the panel's edge and into the gap, or the scroller would cut the cover's shadow… */
+		.stage {
+			width: auto;
+			max-width: none;
+			margin: 0 -24px;
+			padding-inline: 24px;
+		}
+		/* …and the focus rings along the queue's edge. */
+		.queue {
+			margin: -4px -4px 0;
+			padding: 4px 4px 24px;
+		}
+		/* Here the window's height is the limit: what is left of it once the controls have theirs. */
+		.stage :global(.art) {
+			width: min(100%, 100dvh - 430px);
 		}
 	}
 	/* A phone on its side: the cover beside the controls, or they would be a screen down. */
@@ -380,15 +461,31 @@
 	.clear:hover {
 		background: var(--z-hover);
 	}
-	.played {
-		margin-bottom: 8px;
-	}
-	.played summary {
-		padding: 4px 0;
+	.fold {
+		display: flex;
+		align-items: center;
+		gap: 4px;
+		padding: 4px 8px 4px 0;
+		border: 0;
+		border-radius: 6px;
+		background: none;
 		cursor: pointer;
 	}
-	/* Already heard: dimmed, still there to go back to. */
-	.played li {
+	@media (pointer: coarse) {
+		.clear,
+		.fold {
+			min-height: 44px;
+		}
+	}
+	/* Behind the listener: quieter, still there to go back to (and still readable). */
+	.queue .earlier {
+		margin: 0 0 8px;
+	}
+	.earlier .title {
+		color: var(--z-muted);
+		font-weight: 400;
+	}
+	.earlier :global(.cover) {
 		opacity: 0.6;
 	}
 	.queue ol {
@@ -403,7 +500,6 @@
 	}
 	.queue li:hover {
 		background: var(--z-hover);
-		opacity: 1;
 	}
 	.row {
 		display: flex;
@@ -439,30 +535,5 @@
 	.empty {
 		margin: 6px 0 0;
 		color: var(--z-soft);
-	}
-
-	/* The same status line as the layout's, along the sheet's bottom edge. */
-	.notice {
-		position: absolute;
-		right: 12px;
-		bottom: calc(16px + env(safe-area-inset-bottom));
-		left: 12px;
-		display: flex;
-		justify-content: center;
-		pointer-events: none;
-	}
-	.notice p {
-		--z-rail: var(--z-accent);
-		--z-rail-inset: 9px;
-		max-width: 380px;
-		margin: 0;
-		padding: 9px 14px 9px 18px;
-		border: 1px solid var(--z-line);
-		border-radius: 10px;
-		background: var(--z-surface);
-		color: var(--z-body);
-		font-size: 13px;
-		font-weight: 500;
-		box-shadow: var(--z-shadow-menu);
 	}
 </style>

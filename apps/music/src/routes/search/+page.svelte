@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate } from '$app/navigation';
+	import { visit } from '#lib/visit.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
 	import Cover from '#lib/components/Cover.svelte';
 	import SearchField from '#lib/components/SearchField.svelte';
@@ -18,7 +19,7 @@
 		clearTimeout(timer);
 		timer = setTimeout(() => {
 			asked = query.trim();
-			goto(asked ? `?q=${encodeURIComponent(asked)}` : '?', { replace: true, reset: false });
+			void visit(asked ? `?q=${encodeURIComponent(asked)}` : '?', { replace: true, reset: false });
 		}, 250);
 	}
 	// A query the field did not ask for — the Search tab tapped again, Back to

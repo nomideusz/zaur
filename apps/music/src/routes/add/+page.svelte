@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { replaceState } from '$app/navigation';
 	import { page } from '$app/state';
+	import { api } from '#lib/api';
 	import Icon from '#lib/components/Icon.svelte';
+	import SearchField from '#lib/components/SearchField.svelte';
 	import { formatTime } from '#lib/player.svelte';
 	import type { AddJob, YouTubeResult } from '#lib/types';
 
@@ -13,21 +15,39 @@
 	let sending = $state(false);
 
 	const isLink = (text: string) => /https?:\/\/\S/.test(text);
+	// The download is in; ffmpeg is tagging the file.
+	const finishing = (job: AddJob) => job.status === 'downloading' && job.progress === 100;
 	// jobs is newest first: the newest job for a video wins.
 	const jobFor = $derived(new Map(jobs.toReversed().map((job) => [job.videoId, job])));
 
 	async function refresh() {
-		const response = await fetch('/api/add');
-		if (response.ok) jobs = await response.json();
+		const response = await api('/api/add').catch(() => null);
+		if (response?.ok) jobs = await response.json();
+	}
+
+	async function dismiss(job: AddJob, { currentTarget, detail }: MouseEvent) {
+		const row = (currentTarget as HTMLElement).closest('li')!;
+		const list = row.parentElement!;
+		const at = [...list.children].indexOf(row);
+		const response = await api(`/api/add?id=${encodeURIComponent(job.id)}`, { method: 'DELETE' }).catch(() => null);
+		if (!response?.ok) return;
+		jobs = await response.json();
+		// The row takes the focus with it. For someone on the keyboard (detail is 0 for a key press)
+		// it goes to the row that came up into its place, or back to the field.
+		if (detail) return;
+		await tick();
+		// (When it was the last row the whole list has gone, still holding it.)
+		const next = list.isConnected && (list.children[at] ?? list.lastElementChild)?.querySelector<HTMLElement>('button, a');
+		(next || document.querySelector<HTMLElement>('.add input'))?.focus();
 	}
 
 	async function search(words: string) {
 		problem = '';
 		sending = true;
 		try {
-			const response = await fetch(`/api/add/search?${new URLSearchParams({ q: words })}`);
-			if (!response.ok) {
-				problem = (await response.json().catch(() => null))?.message ?? 'Search did not work. Try again?';
+			const response = await api(`/api/add/search?${new URLSearchParams({ q: words })}`).catch(() => null);
+			if (!response?.ok) {
+				problem = (await response?.json().catch(() => null))?.message ?? 'Search did not work. Try again?';
 				return;
 			}
 			results = await response.json();
@@ -40,13 +60,13 @@
 		problem = '';
 		sending = true;
 		try {
-			const response = await fetch('/api/add', {
+			const response = await api('/api/add', {
 				method: 'POST',
 				headers: { 'content-type': 'application/json', accept: 'application/json' },
 				body: JSON.stringify({ url: input })
-			});
-			if (!response.ok) {
-				problem = (await response.json().catch(() => null))?.message ?? 'That did not work. Try again?';
+			}).catch(() => null);
+			if (!response?.ok) {
+				problem = (await response?.json().catch(() => null))?.message ?? 'That did not work. Try again?';
 				return false;
 			}
 			await refresh();
@@ -67,11 +87,15 @@
 		refresh();
 		// Shared from another app through the installed app's share target: the
 		// link comes as url, or inside text (YouTube's app sends it that way).
-		const shared = ['url', 'text', 'title'].map((key) => page.url.searchParams.get(key)).filter(Boolean).join(' ');
-		if (shared) {
-			replaceState('/add', {});
-			add(shared);
-		}
+		const [url, text, title] = ['url', 'text', 'title'].map((key) => page.url.searchParams.get(key)?.trim() ?? '');
+		const shared = [url, text, title].filter(Boolean).join(' ');
+		if (!shared) return;
+		replaceState('/add', {});
+		if (isLink(shared)) return void add(shared);
+		// Words with no link (a song's name shared from elsewhere): look them up. What was
+		// shared, or failing that its subject line; both together find nothing.
+		query = text || title;
+		search(query);
 	});
 </script>
 
@@ -89,13 +113,11 @@
 			else search(query.trim());
 		}}
 	>
-		<input
-			class="z-field"
-			type="search"
+		<SearchField
+			class="min-w-0 flex-1"
 			enterkeyhint="search"
 			placeholder="Search YouTube, or paste a link"
 			aria-label="Search YouTube, or paste a video link"
-			autocomplete="off"
 			bind:value={query}
 		/>
 		<button class="btn-tactile btn-primary tall" type="submit" disabled={sending || !query.trim()}>
@@ -119,14 +141,15 @@
 						<img class="thumb" src="https://i.ytimg.com/vi/{result.videoId}/mqdefault.jpg" alt="" loading="lazy" />
 						<span class="text">
 							<span class="title">{result.title}</span>
-							<span class="meta">{result.author} · {formatTime(result.seconds)}</span>
+							<span class="meta by"><span class="who">{result.author}</span><span>{formatTime(result.seconds)}</span></span>
+							{#if job?.status === 'failed'}<span class="meta why">{job.error ?? 'Failed'}</span>{/if}
 						</span>
 						{#if job?.status === 'done'}
 							<span class="state done" title="Added"><Icon name="check" /></span>
 						{:else if job && job.status !== 'failed'}
-							<span class="z-caption">{job.status === 'queued' ? 'Waiting…' : `${job.progress ?? 0}%`}</span>
+							<span class="z-caption">{job.status === 'queued' ? 'Waiting…' : finishing(job) ? 'Finishing…' : `${job.progress ?? 0}%`}</span>
 						{:else}
-							<button class="btn-tactile" type="button" disabled={sending} onclick={() => add(result.videoId)}>
+							<button class="btn-tactile tall" type="button" disabled={sending} onclick={() => add(result.videoId)}>
 								{job ? 'Retry' : 'Add'}
 							</button>
 						{/if}
@@ -138,7 +161,7 @@
 
 	{#if jobs.length}
 		<section class="section">
-			<div class="section-head"><h2>Added this session</h2></div>
+			<div class="section-head"><h2>Recent adds</h2></div>
 			<ul class="jobs">
 				{#each jobs as job (job.id)}
 					<li class="job">
@@ -149,8 +172,9 @@
 						</span>
 						<span class="text">
 							<span class="title">{job.title ?? `youtu.be/${job.videoId}`}</span>
-							<span class="meta">
+							<span class="meta" class:why={job.status === 'failed'}>
 								{#if job.status === 'queued'}Waiting…
+								{:else if finishing(job)}Finishing…
 								{:else if job.status === 'downloading'}Downloading{job.progress !== undefined ? ` · ${job.progress}%` : '…'}
 								{:else if job.status === 'failed'}{job.error ?? 'Failed'}
 								{:else}{job.error ?? `Added${job.artist ? ` · ${job.artist}` : ''}`}{/if}
@@ -162,7 +186,10 @@
 						{#if job.status === 'done' && job.title}
 							<a class="link" href="/search?q={encodeURIComponent(job.title)}">Find it</a>
 						{:else if job.status === 'failed'}
-							<button class="btn-tactile" type="button" onclick={() => add(job.videoId)}>Retry</button>
+							<button class="btn-tactile tall" type="button" disabled={sending} onclick={() => add(job.videoId)}>Retry</button>
+							<button class="z-icon-btn dismiss" type="button" aria-label="Dismiss" title="Dismiss" onclick={(event) => dismiss(job, event)}>
+								<Icon name="close" />
+							</button>
 						{/if}
 					</li>
 				{/each}
@@ -175,11 +202,6 @@
 	.add {
 		display: flex;
 		gap: 8px;
-	}
-	.add input {
-		flex: 1;
-		min-width: 0;
-		height: 36px;
 	}
 	.hint {
 		max-width: 60ch;
@@ -250,9 +272,49 @@
 		color: var(--z-ink);
 		font-weight: 600;
 	}
+	/* On the narrowest phones one line is a few words, and the results read alike: two. */
+	@media (max-width: 400px) {
+		.title {
+			display: -webkit-box;
+			-webkit-line-clamp: 2;
+			line-clamp: 2;
+			-webkit-box-orient: vertical;
+			white-space: normal;
+		}
+	}
+	/* muted, not soft: this sits on the canvas, where soft falls under 4.5:1. */
 	.meta {
-		color: var(--z-soft);
+		color: var(--z-muted);
 		font-size: 12.5px;
+	}
+	/* A long channel name gives way; the duration stays. */
+	.by {
+		display: flex;
+	}
+	.who {
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+	.who::after {
+		content: '·';
+		margin: 0 0.35em;
+	}
+	/* Why it failed is read in full. */
+	.why {
+		white-space: normal;
+	}
+	/* As tall as Retry beside it. */
+	.dismiss {
+		width: 36px;
+		height: 36px;
+		flex-shrink: 0;
+	}
+	@media (pointer: coarse) {
+		.dismiss {
+			width: 44px;
+			height: 44px;
+			margin: 0 -8px 0 -6px;
+		}
 	}
 	.bar {
 		height: 3px;

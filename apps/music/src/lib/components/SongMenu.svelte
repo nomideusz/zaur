@@ -11,7 +11,7 @@
 	 * came from. `album` is off on the album's own page; `onremove` adds "Remove
 	 * from playlist" (the playlist page passes it for a playlist you own).
 	 */
-	let { album = true, onremove }: { album?: boolean; onremove?: (index: number) => void } = $props();
+	let { album = true, onremove }: { album?: boolean; onremove?: (index: number, keyboard: boolean) => void } = $props();
 	let sheet: Sheet;
 	let picker: PlaylistPicker;
 	let song = $state<Song>();
@@ -37,19 +37,21 @@
 			<span class="truncate font-semibold text-[var(--z-ink)]">{song.title}</span>
 			<span class="z-caption truncate">{song.artist ?? ''}</span>
 		</p>
-		<button class="z-menu-item" type="button" onclick={() => queue(true)}><Icon name="queue" /> Play next</button>
+		<button class="z-menu-item" type="button" onclick={() => queue(true)}><Icon name="next" /> Play next</button>
 		<button class="z-menu-item" type="button" onclick={() => queue(false)}><Icon name="plus" /> Add to queue</button>
 		<button class="z-menu-item" type="button" onclick={() => (sheet.close(), picker.open([song!]))}>
 			<Icon name="playlist" /> Add to playlist…
 		</button>
+		<!-- The links take the menu's history entry (see Sheet); it closes when their page has come. -->
 		{#if album && song.albumId}
-			<a class="z-menu-item" href="/album/{song.albumId}" onclick={() => sheet.close()}><Icon name="album" /> Go to album</a>
+			<a class="z-menu-item" href="/album/{song.albumId}"><Icon name="album" /> Go to album</a>
 		{/if}
 		{#if song.artistId}
-			<a class="z-menu-item" href="/artist/{song.artistId}" onclick={() => sheet.close()}><Icon name="artist" /> Go to artist</a>
+			<a class="z-menu-item" href="/artist/{song.artistId}"><Icon name="artist" /> Go to artist</a>
 		{/if}
 		{#if onremove}
-			<button class="z-menu-item" type="button" onclick={() => (sheet.close(), onremove(index))}>
+			<!-- detail is 0 for a click that was a key press. -->
+			<button class="z-menu-item" type="button" onclick={async ({ detail }) => (await sheet.close(), onremove(index, detail === 0))}>
 				<Icon name="close" /> Remove from playlist
 			</button>
 		{/if}

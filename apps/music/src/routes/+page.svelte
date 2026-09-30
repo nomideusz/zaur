@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { api } from '#lib/api';
+	import { api, submit } from '#lib/api';
 	import { notify } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
 	import Cover from '#lib/components/Cover.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import TrackList from '#lib/components/TrackList.svelte';
-	import type { Song } from '#lib/types';
+	import type { Album, Song } from '#lib/types';
 
 	let { data } = $props();
 
@@ -16,12 +16,39 @@
 		const response = await api('/api/shuffle').catch(() => null);
 		const songs = response?.ok ? ((await response.json()) as Song[]) : null;
 		shuffling = false;
-		if (songs?.length) player.play(songs);
+		if (songs?.length) player.shuffle(songs);
 		else notify(songs ? 'The library is empty.' : 'Could not load songs to shuffle. Try again?');
+	}
+
+	// A shelf's previous and next: a row's width of tiles at a time.
+	function turn(event: MouseEvent, by: number) {
+		const row = (event.currentTarget as HTMLElement).closest('section')!.querySelector('.album-row')!;
+		row.scrollBy({ left: by * row.clientWidth });
 	}
 </script>
 
 <svelte:head><title>Zaur Music</title></svelte:head>
+
+{#snippet shelf(title: string, sort: string, albums: Album[])}
+	<section class="section">
+		<div class="section-head">
+			<h2>{title}</h2>
+			<!-- ponytail: there even when every tile fits; measure the row to hide them if that bothers. -->
+			<span class="turn">
+				<button class="z-icon-btn" type="button" aria-label="{title}: previous" onclick={(event) => turn(event, -1)}>
+					<Icon name="chevron-left" />
+				</button>
+				<button class="z-icon-btn" type="button" aria-label="{title}: next" onclick={(event) => turn(event, 1)}>
+					<Icon name="chevron-right" />
+				</button>
+			</span>
+			<a href="/albums?sort={sort}">See all</a>
+		</div>
+		<div class="album-row">
+			{#each albums as album (album.id)}<AlbumTile {album} />{/each}
+		</div>
+	</section>
+{/snippet}
 
 <div class="page">
 	<header class="page-head">
@@ -30,41 +57,27 @@
 			<button class="btn-tactile btn-primary tall" type="button" onclick={shuffleAll} disabled={shuffling}>
 				<Icon name="shuffle" /> Shuffle all
 			</button>
-			<!-- The phone's tab row has Add but no room for these two; the sidebar has all three. -->
-			<a class="btn-tactile tall md:!hidden" href="/playlists"><Icon name="playlist" /> Playlists</a>
-			<a class="btn-tactile tall md:!hidden" href="/favourites"><Icon name="heart" /> Favourites</a>
-			<a class="btn-tactile tall max-md:!hidden" href="/add"><Icon name="add" /> Add from YouTube</a>
+			<a class="btn-tactile tall max-md:hidden" href="/add"><Icon name="add" /> Add from YouTube</a>
 		</div>
 	</header>
+	<!-- The phone's tab row has no room for these two (the sidebar has them on a wide screen). -->
+	<nav class="shortcuts" aria-label="Your music">
+		<a class="btn-tactile tall" href="/playlists"><Icon name="playlist" /> Playlists</a>
+		<a class="btn-tactile tall" href="/favourites"><Icon name="heart" /> Favourites</a>
+	</nav>
 
-	{#if data.recent.length}
+	{#if data.recent.length}{@render shelf('Recently played', 'recent', data.recent)}{/if}
+
+	{#if data.newest.length}
+		{@render shelf('Recently added', 'newest', data.newest)}
+	{:else}
 		<section class="section">
-			<div class="section-head"><h2>Recently played</h2><a href="/albums?sort=recent">See all</a></div>
-			<div class="album-row">
-				{#each data.recent as album (album.id)}<AlbumTile {album} />{/each}
-			</div>
-		</section>
-	{/if}
-
-	<section class="section">
-		<div class="section-head"><h2>Recently added</h2><a href="/albums?sort=newest">See all</a></div>
-		{#if data.newest.length}
-			<div class="album-row">
-				{#each data.newest as album (album.id)}<AlbumTile {album} />{/each}
-			</div>
-		{:else}
+			<div class="section-head"><h2>Recently added</h2><a href="/albums?sort=newest">See all</a></div>
 			<p class="empty-note">The library is empty. <a class="link" href="/add">Add something from YouTube</a>.</p>
-		{/if}
-	</section>
-
-	{#if data.frequent.length}
-		<section class="section">
-			<div class="section-head"><h2>Most played</h2><a href="/albums?sort=frequent">See all</a></div>
-			<div class="album-row">
-				{#each data.frequent as album (album.id)}<AlbumTile {album} />{/each}
-			</div>
 		</section>
 	{/if}
+
+	{#if data.frequent.length}{@render shelf('Most played', 'frequent', data.frequent)}{/if}
 
 	{#if data.playlists.length}
 		<section class="section">
@@ -92,13 +105,34 @@
 		{/if}
 	</section>
 
-	<form class="signout" method="POST" action="/auth/logout">
+	<form class="signout" method="POST" action="/auth/logout" onsubmit={submit}>
 		<span class="z-caption">Signed in as <span class="z-mono">{data.user.email}</span></span>
-		<button class="btn-tactile" type="submit"><Icon name="logout" /> Sign out</button>
+		<button class="btn-tactile tall" type="submit"><Icon name="logout" /> Sign out</button>
 	</form>
 </div>
 
 <style>
+	/* For a mouse with no sideways wheel. A finger swipes the row. */
+	.turn {
+		display: none;
+	}
+	@media (pointer: fine) {
+		.turn {
+			display: flex;
+			align-self: center;
+			margin: 0 10px 0 auto;
+		}
+	}
+	.shortcuts {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+	@media (min-width: 768px) {
+		.shortcuts {
+			display: none;
+		}
+	}
 	.lists {
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));

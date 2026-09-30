@@ -97,10 +97,32 @@
 	}
 	.empty-note {
 		padding: 24px 0;
-		color: var(--z-soft);
+		color: var(--z-muted);
 	}
 	.btn-tactile.tall {
 		height: 36px;
 		padding: 0 14px;
+	}
+	/* A fingertip's height on a touch screen, like the fields these sit beside. */
+	@media (pointer: coarse) {
+		.btn-tactile.tall {
+			height: 44px;
+		}
+	}
+	/* The shared placeholder is --z-faint, under 3:1 on a field; here it is often the only label. */
+	.z-field::placeholder {
+		color: var(--z-muted);
+	}
+	/* A tap leaves :hover on a button until the next tap lands elsewhere; a touch screen has no hover to show. */
+	@media (hover: none) {
+		.z-icon-btn:hover {
+			background: transparent;
+			color: var(--z-muted);
+		}
+	}
+	@media (prefers-reduced-motion: no-preference) {
+		.album-row {
+			scroll-behavior: smooth;
+		}
 	}
 }

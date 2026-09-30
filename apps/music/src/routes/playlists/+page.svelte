@@ -21,7 +21,8 @@
 			body: JSON.stringify({ name })
 		}).catch(() => null);
 		busy = false;
-		sheet.close();
+		// Waited for: the card's history entry going would cut the navigation below short.
+		await sheet.close();
 		if (!response?.ok) return notify('Could not make the playlist.');
 		goto(`/playlist/${encodeURIComponent((await response.json()).id)}`);
 	}
@@ -51,7 +52,7 @@
 
 <Sheet bind:this={sheet} label="New playlist" heading>
 	<form class="flex flex-col gap-4" onsubmit={create}>
-		<input class="z-field name" placeholder="Name" aria-label="Playlist name" maxlength="200" autocomplete="off" bind:value={name} />
+		<input class="z-field" placeholder="Name" aria-label="Playlist name" maxlength="200" autocomplete="off" bind:value={name} />
 		<div class="actions justify-end">
 			<button class="btn-tactile tall" type="button" onclick={() => sheet.close()}>Cancel</button>
 			<button class="btn-tactile btn-primary tall" type="submit" disabled={busy || !name.trim()}>Create</button>
@@ -65,15 +66,5 @@
 		flex-direction: column;
 		min-width: 0;
 		text-decoration: none;
-	}
-	.name {
-		height: 36px;
-	}
-	@media (pointer: coarse) {
-		/* Under 16px, iOS zooms the page when the field takes focus. */
-		.name {
-			height: 44px;
-			font-size: 16px;
-		}
 	}
 </style>

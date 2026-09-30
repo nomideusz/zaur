@@ -7,11 +7,20 @@
 	// Which id failed, not a flag: the next song's cover gets its own try.
 	let failedId = $state<string>();
 	const src = $derived(id === failedId ? undefined : coverUrl(id, size));
+
+	// A listener, not an onerror attribute: the server render would write that one inline, which the CSP blocks
+	// — and an image that broke before hydration never fires again, so look at it once as well.
+	function failing(img: HTMLImageElement) {
+		const fail = () => (failedId = id);
+		if (img.complete && !img.naturalWidth) fail();
+		img.addEventListener('error', fail);
+		return () => img.removeEventListener('error', fail);
+	}
 </script>
 
 <span class="cover {className}">
 	{#if src}
-		<img {src} alt="" loading="lazy" decoding="async" onerror={() => (failedId = id)} />
+		<img {src} alt="" loading="lazy" decoding="async" {@attach failing} />
 	{:else}
 		<Icon name="note" class="size-[40%] text-[var(--z-faint)]" />
 	{/if}

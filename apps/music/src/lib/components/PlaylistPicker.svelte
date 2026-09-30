@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { api, post } from '#lib/api';
+	import { api, post, unreachable } from '#lib/api';
 	import { notify } from '#lib/notice.svelte';
 	import type { Playlist, Song } from '#lib/types';
 	import Cover from './Cover.svelte';
@@ -18,10 +18,13 @@
 		name = '';
 		sheet.open();
 		const response = await api('/api/playlists').catch(() => null);
-		lists = response?.ok ? await response.json() : [];
+		if (response?.ok) return void (lists = await response.json());
+		// No answer is not "no playlists": say so, rather than show a card with none.
+		void sheet.close();
+		unreachable();
 	}
 
-	// Done or failed, the sheet closes: the status line says which, and sits under it on a phone.
+	// Done or failed, the card closes and the status line says which.
 	async function addTo(list: { id: string; name: string }) {
 		busy = true;
 		const ok = await post(`/api/playlist/${encodeURIComponent(list.id)}`, { add: songs.map((song) => song.id) });
@@ -58,11 +61,13 @@
 				</button>
 			{/each}
 		</div>
+		<!-- Here, not above the loading note: opened with only this field in it, the dialog
+		     would focus it and raise a phone's keyboard over the list. -->
+		<form onsubmit={create}>
+			<input class="z-field" placeholder="New playlist" aria-label="New playlist name" maxlength="200" autocomplete="off" bind:value={name} />
+			<button class="btn-tactile btn-primary tall" type="submit" disabled={busy || !name.trim()}>Create</button>
+		</form>
 	{/if}
-	<form onsubmit={create}>
-		<input class="z-field" placeholder="New playlist" aria-label="New playlist name" maxlength="200" autocomplete="off" bind:value={name} />
-		<button class="btn-tactile tall" type="submit" disabled={busy || !name.trim()}>Create</button>
-	</form>
 </Sheet>
 
 <style>
@@ -78,7 +83,7 @@
 		margin-left: auto;
 	}
 	.note {
-		margin: 0 0 8px;
+		margin: 0;
 	}
 	form {
 		display: flex;
@@ -88,16 +93,5 @@
 	input {
 		flex: 1;
 		min-width: 0;
-		height: 36px;
-	}
-	@media (pointer: coarse) {
-		/* Under 16px, iOS zooms the page when the field takes focus. */
-		input {
-			height: 44px;
-			font-size: 16px;
-		}
-		form button {
-			height: 44px;
-		}
 	}
 </style>

@@ -98,4 +98,13 @@
 	.starred {
 		color: var(--z-ch-flagged-solid);
 	}
+	/* On the narrowest phones the four fit one row only with a little less air. */
+	@media (max-width: 359px) {
+		.actions {
+			gap: 6px;
+		}
+		.actions .tall {
+			padding: 0 12px;
+		}
+	}
 </style>

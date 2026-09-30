@@ -1,19 +1,24 @@
 <script lang="ts">
 	import './layout.css';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
 	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
 	import { navigating, page } from '$app/state';
-	import { notice, notify } from '#lib/notice.svelte';
+	import { submit } from '#lib/api';
+	import { notice } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
+	import { visit, way } from '#lib/visit.svelte';
 	import Icon, { type IconName } from '#lib/components/Icon.svelte';
 	import Mark from '#lib/components/Mark.svelte';
 	import NowPlaying from '#lib/components/NowPlaying.svelte';
 	import PlayerBar from '#lib/components/PlayerBar.svelte';
+	import { sheetOpen } from '#lib/components/Sheet.svelte';
 
 	let { data, children } = $props();
 	let audio: HTMLAudioElement;
 	let main: HTMLElement;
+	let dock: HTMLElement;
+	let line: HTMLElement;
 
 	// Where this window was opened: the launch below that matches it is the one that opened it.
 	let opened = page.url.href;
@@ -29,7 +34,12 @@
 				if (targetURL && !first) void goto(targetURL);
 			}
 		);
-		return player.attach(audio);
+		// Pages set their own <title>, and not only when they are gone to (a playlist renamed, an
+		// error page that loads after all): whenever they do, the playing song goes back in front.
+		const titles = new MutationObserver(retitle);
+		titles.observe(document.head, { subtree: true, childList: true, characterData: true });
+		const detach = player.attach(audio);
+		return () => (titles.disconnect(), detach());
 	});
 
 	// .main scrolls, not the window, so Kit's own scroll handling never sees it. A new page opens
@@ -38,26 +48,64 @@
 	snapshot({ id: 'scroll', capture: () => main.scrollTop, restore: (top) => (main.scrollTop = top) });
 	afterNavigate(({ from, to, type }) => {
 		if (from && type !== 'popstate' && from.url.pathname !== to?.url.pathname) main.scrollTop = 0;
-		retitle();
 	});
 
-	// Offline, a page cannot load its data and Kit would fall back to a full page load: the
-	// browser's error page in place of the app, and the music gone with it. Stay put instead.
-	beforeNavigate(({ to, willUnload, cancel }) => {
-		if (navigator.onLine || willUnload || !to) return;
+	// A page whose data cannot be fetched would cost the one that is playing (see visit.svelte.ts),
+	// so every navigation is held until its data is in, then made again. Out of reach, it is not made.
+	// ponytail: a second tap while Kit is still putting a fetched page up is not held (Kit asks
+	// nobody then); the window is a few milliseconds.
+	beforeNavigate((navigation) => {
+		const { from, to, willUnload, cancel } = navigation;
+		// Not for this: leaving the app, a sheet's history entry, the same page again, and the navigation made again below.
+		if (willUnload || !to || navigation.shallow || to.url.href === from?.url.href || way.fetched(to.url)) return;
 		cancel();
-		notify("You're offline");
+		const link = navigation.type === 'link' && navigation.event.target instanceof Element ? navigation.event.target.closest('a') : null;
+		void way.fetch(to.url).then((ok) => {
+			if (!ok) return;
+			if (navigation.type === 'popstate') history.go(navigation.delta);
+			// Clicked again, a link keeps what it asks of Kit (replace the entry, stay scrolled).
+			else if (link?.isConnected) link.click();
+			else void goto(to.url);
+		});
 	});
 
-	// The song in the tab's title while it plays. Pages set their own <title>, so theirs is
-	// remembered after every navigation and put back on pause.
+	// A reload, or Forward, into the history entry a menu or a card had: nothing is open to go
+	// with it, so step over it rather than leave a Back that does nothing.
+	$effect(() => {
+		if (page.state.sheet && !sheetOpen()) history.back();
+	});
+
+	// The song in the tab's title while it plays; the page's own is remembered and put back on pause.
 	let pageTitle = '';
 	function retitle() {
 		if (!document.title.startsWith('▶ ')) pageTitle = document.title;
 		const song = player.playing ? player.current : undefined;
-		document.title = song ? `▶ ${song.title}${song.artist ? ` — ${song.artist}` : ''} · Zaur Music` : pageTitle;
+		const title = song ? `▶ ${song.title}${song.artist ? ` — ${song.artist}` : ''} · Zaur Music` : pageTitle;
+		// Only when it differs: setting it is itself a change to <head>, and would call this again.
+		if (document.title !== title) document.title = title;
 	}
 	$effect(retitle);
+
+	// The status line sits just above the dock, but a menu, a card and Now playing are in the
+	// browser's top layer, over everything in the page. Shown again as a popover the line is put
+	// on top of them, and it is lifted clear of whichever covers the dock.
+	let lift = $state('');
+	function place() {
+		const open = [...document.querySelectorAll('dialog[open]')].map((dialog) => dialog.getBoundingClientRect());
+		line.hidePopover?.();
+		if (open.length) line.showPopover?.();
+		// Whichever reaches down to where the line would be (56px: the line and the gaps around it).
+		const over = open.filter((box) => box.bottom > innerHeight - dock.offsetHeight - 56).sort((a, b) => b.top - a.top)[0];
+		if (!over) lift = `${dock.offsetHeight}px`;
+		// Above a sheet that rises from the bottom; inside the bottom edge of a tall one.
+		else if (over.top > innerHeight / 3) lift = `${innerHeight - over.top}px`;
+		else lift = `calc(${innerHeight - over.bottom + 6}px + env(safe-area-inset-bottom))`;
+	}
+	$effect(() => {
+		// Again when a sheet opens or closes under a line that is still up.
+		void page.state;
+		if (notice.text) void tick().then(place);
+	});
 
 	interface Section {
 		href: string;
@@ -76,45 +124,56 @@
 		{ href: '/add', label: 'Add', icon: 'add', tab: true }
 	];
 	// While a page loads, the one it is going to: the tapped section lights at once.
-	const path = $derived((navigating.to?.url ?? page.url).pathname);
+	const path = $derived((way.to ?? navigating.to?.url ?? page.url).pathname);
 	// /album/x lights Albums, /artist/x Artists, /playlist/x Playlists.
 	const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href.replace(/s$/, '')}/`));
 	// The phone's row has no Playlists or Favourites: they hang off Home, so Home is lit for them.
 	const isCurrentTab = (href: string) => isCurrent(href) || (href === '/' && (isCurrent('/playlists') || isCurrent('/favourites')));
 
 	async function openSearch() {
-		if (page.url.pathname !== '/search') await goto('/search');
+		// From Now playing, Search takes the sheet's place in history: Back is then the page, not the sheet again.
+		if (page.url.pathname !== '/search') await visit('/search', { replace: Boolean(page.state.nowPlaying) });
 		main.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
 	}
 
+	// What the pointer last pressed. A control focused by a click is only where the focus came to
+	// rest, the way a clicked song row is; one reached with Tab is about to be used.
+	let pressed: EventTarget | null = null;
+
+	// The one rule for the keys. While a menu or a card is up they are its own, wherever in it
+	// the focus is (Now playing is a dialog too, but the keys drive it), and typing is typing.
+	// Otherwise a focused control keeps only the keys it uses itself: Space presses a button or
+	// opens a <summary>, the arrows move a slider. Everything else is the player's.
 	function shortcut(event: KeyboardEvent) {
+		if (event.key === 'Tab') pressed = null;
 		if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
 		const target = event.target as HTMLElement;
-		// Typing, or a menu that has the keyboard.
-		if (target.closest('input, textarea, select, [contenteditable], dialog')) return;
-		// Space and the arrows already mean something on a button, a link or a slider.
-		const free = !target.closest('button, a, [role="slider"]');
+		if (sheetOpen() || target.closest('input:not([type="range"]), textarea, select, [contenteditable]')) return;
+		const resting = pressed instanceof Node && target.contains(pressed);
+		const space = resting || !target.closest('button, summary');
+		const arrows = !target.closest('input, [role="slider"]');
 		let key = event.key.toLowerCase();
 		if (event.shiftKey && key.startsWith('arrow')) key = `shift+${key}`;
 		const keys: Record<string, (() => unknown) | false> = {
 			'/': openSearch,
 			p: () => player.previous(),
 			n: () => player.next(),
-			' ': free && (() => player.toggle()),
-			arrowleft: free && (() => player.seekBy(-5)),
-			arrowright: free && (() => player.seekBy(5)),
-			'shift+arrowleft': free && (() => player.previous()),
-			'shift+arrowright': free && (() => player.next())
+			' ': space && (() => player.toggle()),
+			arrowleft: arrows && (() => player.seekBy(-5)),
+			arrowright: arrows && (() => player.seekBy(5)),
+			'shift+arrowleft': arrows && (() => player.previous()),
+			'shift+arrowright': arrows && (() => player.next())
 		};
 		// With nothing loaded there is nothing to drive; Space stays the browser's.
 		const act = (key === '/' || player.current) && Object.hasOwn(keys, key) && keys[key];
 		if (!act) return;
 		event.preventDefault();
-		act();
+		// A held key is one press; only seeking repeats.
+		if (!event.repeat || key.startsWith('arrow')) act();
 	}
 </script>
 
-<svelte:window onkeydown={shortcut} />
+<svelte:window onkeydown={shortcut} onpointerdown={(event) => (pressed = event.target)} />
 
 <div class="shell">
 	<aside class="side">
@@ -130,7 +189,7 @@
 				</a>
 			{/each}
 		</nav>
-		<form class="account" method="POST" action="/auth/logout">
+		<form class="account" method="POST" action="/auth/logout" onsubmit={submit}>
 			<span class="who">
 				<span class="name">{data.user.name}</span>
 				<span class="email z-mono">{data.user.email}</span>
@@ -144,11 +203,11 @@
 	<main class="main" bind:this={main}>
 		{@render children()}
 	</main>
-	{#if navigating.to}<div class="loading"></div>{/if}
+	{#if way.to || navigating.to}<div class="loading"></div>{/if}
 
-	<div class="dock">
+	<div class="dock" bind:this={dock}>
 		<!-- The live region is always there; what it says comes and goes. -->
-		<div class="notice" role="status">
+		<div class="notice" role="status" popover="manual" bind:this={line} style:--lift={lift}>
 			{#if notice.text}
 				<p class="z-railed" transition:fade={{ duration: 120 }}>{notice.text}</p>
 			{/if}
@@ -214,15 +273,21 @@
 		padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 		background: var(--z-surface);
 	}
-	/* The status line floats just above the dock, over Now playing too, and takes no taps. */
+	/* The status line floats just above the dock (or the sheet over it) and takes no taps.
+	   The rest undoes what a browser gives a popover: a centred, bordered box, hidden until shown. */
 	.notice {
-		position: absolute;
-		right: 12px;
-		bottom: calc(100% + 10px);
-		left: 12px;
-		z-index: calc(var(--z-panel) + 1);
+		position: fixed;
+		inset: auto 12px calc(var(--lift, 0px) + 10px);
+		z-index: 1;
 		display: flex;
 		justify-content: center;
+		width: auto;
+		height: auto;
+		margin: 0;
+		padding: 0;
+		overflow: visible;
+		border: 0;
+		background: none;
 		pointer-events: none;
 	}
 	.notice p {

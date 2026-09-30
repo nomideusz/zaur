@@ -3,7 +3,7 @@
  * page. The queue and the spot in it survive a reload (localStorage); the
  * phone's lock screen and headphone buttons drive it through Media Session.
  */
-import { pushState } from '$app/navigation';
+import { goto } from '$app/navigation';
 import { page } from '$app/state';
 import { SvelteMap } from 'svelte/reactivity';
 import { api, post } from '#lib/api';
@@ -20,6 +20,8 @@ interface Saved {
 	time: number;
 	listened?: number;
 	scrobbled?: boolean;
+	/** While shuffling: the ids of the songs to come, in the order they had before. */
+	straight?: string[];
 }
 interface Prefs {
 	volume?: number;
@@ -97,13 +99,18 @@ class Player {
 		return this.index < this.queue.length - 1 || this.repeat !== 'off';
 	}
 
-	/** The Now playing sheet. It is a history entry of its own, so Back closes it. */
+	/**
+	 * The Now playing sheet. It is a history entry of its own, so Back closes it — and one that
+	 * keeps its state over a reload, or the entry would still be there with no sheet to close.
+	 * Opening is a shallow navigation: the layout's beforeNavigate sees it (`shallow: true`)
+	 * and has to let it pass.
+	 */
 	get open(): boolean {
 		return Boolean(page.state.nowPlaying);
 	}
 	set open(value: boolean) {
 		if (value === this.open) return;
-		if (value) pushState('', { nowPlaying: true });
+		if (value) void goto('', { state: { nowPlaying: true }, shallow: true, persistState: true });
 		else history.back();
 	}
 
@@ -183,8 +190,14 @@ class Player {
 		if (this.shuffling) this.#mix();
 	}
 
+	/** The same shuffle as the toggle's, so it shows as on and off puts the songs back in order. */
 	shuffle(songs: Song[]): void {
-		this.play(shuffled(songs));
+		if (!songs.length) return;
+		this.shuffling = true;
+		this.#savePrefs();
+		// Any song may open; play() mixes the rest.
+		const first = Math.floor(Math.random() * songs.length);
+		this.play([songs[first], ...songs.slice(0, first), ...songs.slice(first + 1)]);
 	}
 
 	playNext(song: Song): void {
@@ -239,11 +252,6 @@ class Player {
 		else this.#load(this.index - 1, true);
 	}
 
-	/** The old name; the layout's shortcuts still call it. */
-	prev(): void {
-		this.previous();
-	}
-
 	seek(seconds: number): void {
 		if (!this.#audio) return;
 		this.#audio.currentTime = seconds;
@@ -261,8 +269,11 @@ class Player {
 		this.#sound();
 	}
 
+	/** The slider at zero is as silent as muted, so the button undoes either. */
 	toggleMute(): void {
-		this.muted = !this.muted;
+		const silent = this.muted || !this.volume;
+		this.muted = !silent;
+		if (!this.volume) this.volume = 0.5;
 		this.#sound();
 	}
 
@@ -312,6 +323,8 @@ class Player {
 		if (at) audio.addEventListener('loadedmetadata', () => load === this.#loads && (audio.currentTime = at), { once: true });
 		this.#wanted = this.waiting = autoplay;
 		if (autoplay) this.#play();
+		// No pause event comes when a new source replaces a playing one (or, in WebKit, a failed one).
+		else this.playing = false;
 		if (navigator.mediaSession) {
 			const art = coverUrl(song.coverArt, 600);
 			navigator.mediaSession.metadata = new MediaMetadata({
@@ -419,7 +432,8 @@ class Player {
 			index: this.index,
 			time: this.time,
 			listened: this.#listened,
-			scrobbled: this.#scrobbled
+			scrobbled: this.#scrobbled,
+			straight: this.shuffling ? this.#straight.map((song) => song.id) : undefined
 		} satisfies Saved);
 	}
 
@@ -427,7 +441,14 @@ class Player {
 		const saved = stored<Saved>(SAVED);
 		if (!saved?.queue?.length) return;
 		this.queue = saved.queue;
-		this.#load(Math.max(0, Math.min(saved.index, saved.queue.length - 1)), false, saved.time || 0);
+		const index = Math.max(0, Math.min(saved.index, saved.queue.length - 1));
+		// The order from before the shuffle: each id claims one of the songs still to come.
+		const rest = this.queue.slice(index + 1);
+		this.#straight = (saved.straight ?? []).flatMap((id) => {
+			const at = rest.findIndex((song) => song.id === id);
+			return at < 0 ? [] : rest.splice(at, 1);
+		});
+		this.#load(index, false, saved.time || 0);
 		// The listen carries over the reload, so it is not counted twice.
 		this.#listened = saved.listened || 0;
 		this.#scrobbled = saved.scrobbled === true;

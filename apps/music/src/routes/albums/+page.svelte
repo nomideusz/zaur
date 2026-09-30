@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
+	import { reload } from '#lib/visit.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 
@@ -23,7 +24,7 @@
 		<h1>Albums</h1>
 		<!-- Random has no "more": each load is a fresh draw. -->
 		{#if data.sort === 'random'}
-			<button class="btn-tactile tall" type="button" onclick={() => invalidateAll()}><Icon name="shuffle" /> Shuffle again</button>
+			<button class="btn-tactile tall" type="button" onclick={() => reload(invalidateAll)}><Icon name="shuffle" /> Shuffle again</button>
 		{/if}
 	</header>
 	<nav class="sorts" aria-label="Order" bind:this={sorts}>

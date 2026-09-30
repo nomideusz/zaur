@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
+	import { reload } from '#lib/visit.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 
 	const missing = $derived(page.status === 404);
@@ -9,7 +10,7 @@
 	// Loads this address again in place, so what is playing keeps playing.
 	async function retry() {
 		trying = true;
-		await refreshAll().catch(() => {});
+		await reload(refreshAll);
 		trying = false;
 	}
 </script>

@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { goto, invalidateAll } from '$app/navigation';
+	import { tick } from 'svelte';
+	import { invalidateAll } from '$app/navigation';
 	import { api, post } from '#lib/api';
 	import { notify } from '#lib/notice.svelte';
 	import { formatTime, player } from '#lib/player.svelte';
+	import { visit } from '#lib/visit.svelte';
 	import Cover from '#lib/components/Cover.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Sheet from '#lib/components/Sheet.svelte';
@@ -26,11 +28,20 @@
 		sheet.open();
 	}
 
+	// The card swaps its form for the question and back, and the button just pressed goes with
+	// the half it was in: the card itself takes the focus, so the keys stay inside it.
+	async function ask(sure: boolean) {
+		deleting = sure;
+		await tick();
+		sheet.focus();
+	}
+
 	async function change(body: { name: string } | { remove: number }, done: string) {
 		busy = true;
 		const ok = await post(url, body);
 		busy = false;
-		sheet.close();
+		// Waited for: the card's history entry going would cut the reload below short.
+		await sheet.close();
 		if (!ok) return notify('Could not change the playlist.');
 		await invalidateAll();
 		notify(done);
@@ -40,10 +51,11 @@
 		busy = true;
 		const response = await api(url, { method: 'DELETE' }).catch(() => null);
 		busy = false;
-		sheet.close();
+		await sheet.close();
 		if (!response?.ok) return notify('Could not delete the playlist.');
 		notify(`Deleted ${list.name}`);
-		goto('/playlists');
+		// In this page's place in history: Back would only find it gone.
+		void visit('/playlists', { replace: true });
 	}
 </script>
 
@@ -53,7 +65,7 @@
 	<header class="hero">
 		<Cover id={list.coverArt} size={300} class="w-40 shrink-0 !rounded-xl" />
 		<div class="min-w-0">
-			<span class="z-caption">Playlist{mine || !list.owner ? '' : ` by ${list.owner}`}</span>
+			<span class="z-caption">{mine ? 'Playlist' : 'Shared playlist'}</span>
 			<h1>{list.name}</h1>
 			<p class="z-caption">{songs.length} {songs.length === 1 ? 'song' : 'songs'} · {formatTime(list.duration)}</p>
 			<div class="actions mt-3">
@@ -81,16 +93,16 @@
 
 <Sheet bind:this={sheet} label={deleting ? 'Delete this playlist?' : 'Edit playlist'} heading>
 	{#if deleting}
-		<p class="ask">“{list.name}” goes; its songs stay in the library.</p>
+		<p class="ask">“{list.name}” will be deleted. Its songs stay in the library.</p>
 		<div class="actions justify-end">
-			<button class="btn-tactile tall" type="button" onclick={() => (deleting = false)}>Cancel</button>
+			<button class="btn-tactile tall" type="button" onclick={() => ask(false)}>Cancel</button>
 			<button class="btn-tactile btn-danger tall" type="button" disabled={busy} onclick={remove}>Delete</button>
 		</div>
 	{:else}
 		<form class="flex flex-col gap-4" onsubmit={(event) => (event.preventDefault(), change({ name }, 'Renamed'))}>
-			<input class="z-field name" placeholder="Name" aria-label="Playlist name" maxlength="200" autocomplete="off" bind:value={name} />
+			<input class="z-field" placeholder="Name" aria-label="Playlist name" maxlength="200" autocomplete="off" bind:value={name} />
 			<div class="actions">
-				<button class="btn-tactile btn-danger tall mr-auto" type="button" onclick={() => (deleting = true)}>Delete…</button>
+				<button class="btn-tactile btn-danger tall mr-auto" type="button" onclick={() => ask(true)}>Delete…</button>
 				<button class="btn-tactile tall" type="button" onclick={() => sheet.close()}>Cancel</button>
 				<button class="btn-tactile btn-primary tall" type="submit" disabled={busy || !name.trim() || name.trim() === list.name}>Save</button>
 			</div>
@@ -118,15 +130,5 @@
 	}
 	.ask {
 		margin: 0 0 16px;
-	}
-	.name {
-		height: 36px;
-	}
-	@media (pointer: coarse) {
-		/* Under 16px, iOS zooms the page when the field takes focus. */
-		.name {
-			height: 44px;
-			font-size: 16px;
-		}
 	}
 </style>
