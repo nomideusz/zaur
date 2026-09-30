@@ -15,7 +15,7 @@
 	import { browser } from '$app/env';
 	import { whoIsHere } from '../../../routes/meet.remote';
 	import MeetIcon from './MeetIcon.svelte';
-	import { deviceProblem, hereLine } from '#lib/meet/call';
+	import { canPickSpeaker as pickSpeaker, deviceProblem, hereLine } from '#lib/meet/call';
 	import { identityStyle } from '#lib/mail/colors';
 	import { initials } from '#lib/mail/rows';
 
@@ -65,7 +65,7 @@
 		return () => clearInterval(poll);
 	});
 
-	const canPickSpeaker = typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+	const canPickSpeaker = pickSpeaker();
 	const blocked = $derived([camProblem, micProblem].filter((p): p is string => Boolean(p?.includes('blocked'))));
 	const canJoin = $derived(!joining && (you !== null || guestName.trim().length > 0));
 	const LEVELS = [4, 6, 8, 10, 12, 14, 16, 18];

@@ -73,3 +73,17 @@ export function deviceProblem(cause: unknown, what: 'camera' | 'microphone'): st
 	if (name === 'NotReadableError') return `The ${what} is in use by another app`;
 	return `Could not start the ${what}`;
 }
+
+/**
+ * iPhone and iPad (an iPad says it is a Mac, but a Mac has no touch screen). iOS
+ * routes call audio itself (speaker, AirPods, Control Center); iOS 26 has
+ * setSinkId, but using it on the call's <audio> elements distorts the sound, so
+ * Meet never picks an output there.
+ */
+export const onIOS = () =>
+	typeof navigator !== 'undefined' &&
+	(/iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
+
+/** Whether this browser can send the call to a chosen speaker. */
+export const canPickSpeaker = () =>
+	typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype && !onIOS();

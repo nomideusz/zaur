@@ -13,10 +13,11 @@
 	import type { LocalAudioTrack, LocalVideoTrack, Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import { captureMessage } from '@tracewayapp/frontend';
 	import { isSafariUserAgent } from '@zaur/mail-core/utils/meet';
 	import { identityStyle } from '#lib/mail/colors';
 	import { initials } from '#lib/mail/rows';
-	import { GUEST_PREFIX, TILE_ASPECT, deviceProblem, fitGrid, formatElapsed, rosterOrder, type RosterEntry } from '#lib/meet/call';
+	import { GUEST_PREFIX, TILE_ASPECT, canPickSpeaker as pickSpeaker, deviceProblem, fitGrid, formatElapsed, onIOS, rosterOrder, type RosterEntry } from '#lib/meet/call';
 	import type { CallTicket } from '../../../routes/meet.remote';
 	import type { MediaChoice } from './MeetLobby.svelte';
 	import MeetIcon, { type MeetIconName } from './MeetIcon.svelte';
@@ -79,7 +80,7 @@
 	 * laptops and showed it where it could never work.
 	 */
 	const canShare = typeof navigator !== 'undefined' && typeof navigator.mediaDevices?.getDisplayMedia === 'function';
-	const canPickSpeaker = typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+	const canPickSpeaker = pickSpeaker();
 	const nativeShare =
 		typeof navigator !== 'undefined' && typeof navigator.share === 'function' && matchMedia('(pointer: coarse)').matches;
 
@@ -173,10 +174,33 @@
 		if (loud) lastSpoke = loud.sid || loud.identity;
 	}
 
+	/**
+	 * iOS only, while its crackling is chased: how the incoming audio has fared so far.
+	 * Lost packets and "concealed" (invented) samples mean the network; clean numbers
+	 * with a crackle mean the phone's playback. Counts only, nothing anyone said.
+	 */
+	async function audioHealth(room: Room): Promise<string> {
+		const lines: string[] = [];
+		for (const person of room.remoteParticipants.values())
+			for (const publication of person.audioTrackPublications.values())
+				(await publication.audioTrack?.getRTCStatsReport())?.forEach((stat) => {
+					if (stat.type !== 'inbound-rtp') return;
+					const concealed = stat.totalSamplesReceived ? (100 * (stat.concealedSamples ?? 0)) / stat.totalSamplesReceived : 0;
+					lines.push(
+						`lost ${stat.packetsLost ?? '?'}/${stat.packetsReceived ?? '?'}, concealed ${concealed.toFixed(1)}%, jitter ${Math.round((stat.jitter ?? 0) * 1000)} ms`
+					);
+				});
+		return lines.join('; ');
+	}
+
 	onMount(() => {
 		const tick = setInterval(() => (now = Date.now()), 1000);
-		// iPhone and iPad (an iPad says it is a Mac, but a Mac has no touch screen).
-		const iOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+		// The last reading is sent when the call ends (reading then would race the hang-up).
+		let health = '';
+		const sample = setInterval(() => {
+			if (iOS && lk && status === 'live') void audioHealth(lk).then((line) => (health = line || health));
+		}, 10_000);
+		const iOS = onIOS();
 		// Safari 16.4+: the call keeps the audio session it needs from the start, rather than
 		// starting as playback and switching when the mic opens, which restarts the audio hardware.
 		const session = (navigator as { audioSession?: { type: string } }).audioSession;
@@ -191,7 +215,7 @@
 				audioCaptureDefaults: { deviceId: choice.mic },
 				// Phones default to whichever camera the OS lists first — usually the rear one.
 				videoCaptureDefaults: { deviceId: choice.cam, facingMode: 'user' },
-				audioOutput: { deviceId: choice.speaker }
+				...(canPickSpeaker && { audioOutput: { deviceId: choice.speaker } })
 			});
 			// LiveKit keeps a Web Audio context running for audio processors and webAudioMix, neither
 			// used here. On iOS an idle context beside the call makes WebKit resample everything that
@@ -263,6 +287,8 @@
 		})();
 		return () => {
 			clearInterval(tick);
+			clearInterval(sample);
+			if (health) captureMessage(`Meet iOS audio (${navigator.userAgent.match(/OS [\d_]+/)?.[0] ?? '?'}): ${health}`);
 			leaving = true;
 			void lk?.disconnect();
 			if (iOS && session) session.type = 'auto';
