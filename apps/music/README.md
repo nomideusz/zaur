@@ -194,19 +194,37 @@ says so, and covers come from a cache.
   cache. Anything about offline has to be checked on a production build
   (`pnpm --filter @zaur/music build`, then run `build/index.js`).
 
-## Add from YouTube
+## Adding music
 
-`/add` takes a YouTube (or Bartube) link, or words to search for. The server
-fetches the audio and the thumbnail, tags the file, and writes it to
+Search is also where music is added. Under the library's results it streams
+what is out there: albums from Deezer and songs on YouTube, each with an Add
+button (`#lib/server/albums`). A pasted YouTube (or Bartube) link adds that
+video. The server fetches the audio, tags the file, and writes it to
 `<MUSIC_DIR>/YouTube/<artist>/`, where Navidrome finds it on a scan
 (`#lib/server/youtube`). One download runs at a time. With `YATTEE_URL` set,
 Yattee Server does the YouTube part from another host and only the file is
 downloaded here; search needs Yattee. The job list lives in memory, so a
 restart forgets the list and keeps the files.
 
-The manifest's share target points at `/add`, so a link shared to the installed
-app lands there. An app that is already open is handed the link and is not
-reloaded, which would stop the music (Chromium only).
+A whole album (from Search, or "Add the other N songs" on an album page) is
+Deezer's tracklist: each track the library lacks is looked up on YouTube when
+its turn comes (`pickUpload`: the same take, about as long, the artist's own
+upload first) and filed under `YouTube/<album artist>/<album>/` with Deezer's
+tags and cover, so it joins the album already there.
+
+The manifest's share target points at `/search` (`/add` redirects there), so a
+link shared to the installed app is added. An app that is already open is
+handed the link and is not reloaded, which would stop the music (Chromium only).
+
+## Tagging what arrives
+
+Songs that reach the library some other way (YouTube rips with the uploader as
+artist and no album) are tagged by `scripts/retag.py`: album, year and cover
+from Deezer, or else each its own single, so nothing shows as "Unknown album".
+The server runs a copy from the data volume every hour (contabo's root crontab:
+`docker exec <music container> python3 /data/retag/retag.py sweep`, log in
+`/srv/zaur-music/retag/sweep.log`); after changing the script, copy it to
+`/srv/zaur-music/retag/`. `retag.py undo` puts every old tag back.
 
 ## Checks
 

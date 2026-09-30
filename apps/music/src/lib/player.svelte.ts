@@ -69,6 +69,8 @@ class Player {
 	duration = $state(0);
 	volume = $state(1);
 	muted = $state(false);
+	/** False on iOS, where a page cannot set the loudness (the hardware keys do). */
+	volumeWorks = $state(true);
 	repeat = $state<Repeat>('off');
 	/** What comes next is in a random order; off puts it back as it was. */
 	shuffling = $state(false);
@@ -121,6 +123,10 @@ class Player {
 		const volume = Number(prefs.volume ?? 1);
 		this.volume = audio.volume = volume >= 0 && volume <= 1 ? volume : 1;
 		this.muted = audio.muted = prefs.muted === true;
+		// iOS ignores the setting: it reads back 1. A spare element asks, so the real one is untouched.
+		const probe = new Audio();
+		probe.volume = 0.5;
+		this.volumeWorks = probe.volume === 0.5;
 		this.repeat = prefs.repeat ?? 'off';
 		this.shuffling = prefs.shuffling === true;
 		this.#restore();

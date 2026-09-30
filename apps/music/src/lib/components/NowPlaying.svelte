@@ -28,6 +28,8 @@
 		drag = undefined;
 	}
 	const repeatLabel = $derived(`Repeat: ${{ off: 'off', all: 'all', one: 'this song' }[player.repeat]}`);
+	// The slider at zero is as silent as muted: the button shows, says and undoes both.
+	const silent = $derived(player.muted || !player.volume);
 
 	// A control that goes away with what it did (a queue row, Clear) would drop the focus onto the
 	// page under the sheet: the sheet takes it back.
@@ -175,6 +177,31 @@
 							<Icon name={player.repeat === 'one' ? 'repeat-one' : 'repeat'} class="size-[18px]" />
 						</button>
 					</div>
+
+					{#if player.volumeWorks}
+						<div class="volume">
+							<button
+								class="z-icon-btn !size-9 shrink-0 pointer-coarse:!size-11"
+								type="button"
+								aria-label="Mute"
+								aria-pressed={silent}
+								title={silent ? 'Unmute' : 'Mute'}
+								onclick={() => player.toggleMute()}
+							>
+								<Icon name={silent ? 'mute' : 'volume'} />
+							</button>
+							<input
+								type="range"
+								min="0"
+								max="1"
+								step="0.05"
+								value={player.muted ? 0 : player.volume}
+								aria-label="Volume"
+								aria-valuetext="{Math.round((player.muted ? 0 : player.volume) * 100)}%"
+								oninput={(event) => player.setVolume(Number(event.currentTarget.value))}
+							/>
+						</div>
+					{/if}
 				</div>
 			</div>
 
@@ -330,6 +357,19 @@
 		justify-content: space-between;
 		max-width: 340px;
 		margin: 10px auto 0;
+	}
+	.volume {
+		display: flex;
+		align-items: center;
+		gap: 8px;
+		max-width: 340px;
+		margin: 8px auto 0;
+		color: var(--z-soft);
+	}
+	.volume input {
+		flex: 1;
+		min-width: 0;
+		accent-color: var(--z-accent);
 	}
 	/* A toggle that is on: the accent, and a dot so it is not told by colour alone. */
 	.on {
