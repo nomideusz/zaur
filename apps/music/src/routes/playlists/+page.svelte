@@ -6,6 +6,7 @@
 	import Cover from '#lib/components/Cover.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import Sheet from '#lib/components/Sheet.svelte';
+	import type { Playlist } from '#lib/types';
 
 	let { data } = $props();
 	let sheet: Sheet;
@@ -36,19 +37,32 @@
 		<button class="btn-tactile tall" type="button" onclick={() => ((name = ''), sheet.open())}><Icon name="plus" /> New playlist</button>
 	</header>
 	{#if data.playlists.length}
-		<div class="album-grid">
-			{#each data.playlists as list (list.id)}
-				<a class="tile" href="/playlist/{list.id}">
-					<Cover id={list.coverArt} class="mb-1.5" />
-					<span class="truncate font-semibold text-[var(--z-ink)]">{list.name}</span>
-					<span class="z-caption truncate">{list.songCount ?? 0} {list.songCount === 1 ? 'song' : 'songs'} · {formatTime(list.duration)}</span>
-				</a>
-			{/each}
-		</div>
+		{@render grid(data.playlists)}
 	{:else}
 		<p class="empty-note">No playlists yet. Make one here, or from the ⋯ menu beside any song.</p>
 	{/if}
+	<!-- Not yours: another account made these public. They play, and only their owner changes them. -->
+	{#if data.shared.length}
+		<section class="section">
+			<div class="section-head"><h2>Shared by others</h2></div>
+			{@render grid(data.shared, true)}
+		</section>
+	{/if}
 </div>
+
+{#snippet grid(lists: Playlist[], shared = false)}
+	<div class="album-grid">
+		{#each lists as list (list.id)}
+			<a class="tile" href="/playlist/{list.id}">
+				<Cover id={list.coverArt} class="mb-1.5" />
+				<span class="truncate font-semibold text-[var(--z-ink)]">{list.name}</span>
+				<span class="z-caption truncate">
+					{list.songCount ?? 0} {list.songCount === 1 ? 'song' : 'songs'} · {shared && list.owner ? `by ${list.owner}` : formatTime(list.duration)}
+				</span>
+			</a>
+		{/each}
+	</div>
+{/snippet}
 
 <Sheet bind:this={sheet} label="New playlist" heading>
 	<form class="flex flex-col gap-4" onsubmit={create}>

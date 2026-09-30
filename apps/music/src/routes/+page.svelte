@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { api, submit } from '#lib/api';
+	import { api } from '#lib/api';
 	import { notify } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
@@ -58,6 +58,10 @@
 				<Icon name="shuffle" /> Shuffle all
 			</button>
 			<a class="btn-tactile tall max-md:hidden" href="/add"><Icon name="add" /> Add from YouTube</a>
+			<!-- The phone's way to the account and Sign out (the sidebar has them on a wide screen). -->
+			<a class="z-avatar size-11 text-[15px] no-underline md:hidden" href="/account" aria-label="Account: {data.user.name}">
+				{[...data.user.name][0]?.toUpperCase()}
+			</a>
 		</div>
 	</header>
 	<!-- The phone's tab row has no room for these two (the sidebar has them on a wide screen). -->
@@ -104,11 +108,6 @@
 			<p class="empty-note">Tap the heart on a song to keep it here.</p>
 		{/if}
 	</section>
-
-	<form class="signout" method="POST" action="/auth/logout" onsubmit={submit}>
-		<span class="z-caption">Signed in as <span class="z-mono">{data.user.email}</span></span>
-		<button class="btn-tactile tall" type="submit"><Icon name="logout" /> Sign out</button>
-	</form>
 </div>
 
 <style>
@@ -150,20 +149,5 @@
 	}
 	.list:hover {
 		border-color: var(--z-line);
-	}
-	.signout {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		gap: 8px;
-		margin-top: 40px;
-		padding-top: 16px;
-		border-top: 1px solid var(--z-hairline);
-	}
-	@media (min-width: 768px) {
-		.signout {
-			display: none;
-		}
 	}
 </style>

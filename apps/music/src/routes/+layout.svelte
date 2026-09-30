@@ -138,8 +138,9 @@
 	const path = $derived((way.to ?? navigating.to?.url ?? page.url).pathname);
 	// /album/x lights Albums, /artist/x Artists, /playlist/x Playlists.
 	const isCurrent = (href: string) => (href === '/' ? path === '/' : path === href || path.startsWith(`${href.replace(/s$/, '')}/`));
-	// The phone's row has no Playlists or Favourites: they hang off Home, so Home is lit for them.
-	const isCurrentTab = (href: string) => isCurrent(href) || (href === '/' && (isCurrent('/playlists') || isCurrent('/favourites')));
+	// The phone's row has no Playlists, Favourites or Account: they hang off Home, so Home is lit for them.
+	const isCurrentTab = (href: string) =>
+		isCurrent(href) || (href === '/' && ['/playlists', '/favourites', '/account'].some(isCurrent));
 
 	async function openSearch() {
 		// From Now playing, visit() closes the sheet first: Back is then the page, not the sheet again.
@@ -207,10 +208,10 @@
 		</nav>
 		{#if user}
 			<form class="account" method="POST" action="/auth/logout" onsubmit={submit}>
-				<span class="who">
+				<a class="who" href="/account" title="Account" aria-current={isCurrent('/account') ? 'page' : undefined}>
 					<span class="name">{user.name}</span>
 					<span class="email z-mono">{user.email}</span>
-				</span>
+				</a>
 				<button class="z-icon-btn !size-8 pointer-coarse:!size-11" type="submit" aria-label="Sign out" title="Sign out">
 					<Icon name="logout" />
 				</button>
@@ -255,6 +256,14 @@
 		grid-template-areas: 'main' 'dock';
 		height: 100dvh;
 		background: var(--z-canvas);
+		/*
+		 * iOS 26+ paints the status bar strip of an installed app with the background under the
+		 * page's top edge, but only when a fixed or sticky box holds that edge; with none it lays
+		 * its blur there instead. Sticky makes the shell that box and moves nothing: the window
+		 * never scrolls, .main does. (The same fix as mail's .z-screen.)
+		 */
+		position: sticky;
+		top: 0;
 	}
 	.side {
 		display: none;
@@ -425,6 +434,14 @@
 		flex: 1;
 		flex-direction: column;
 		min-width: 0;
+		margin: -4px -6px;
+		padding: 4px 6px;
+		border-radius: 8px;
+		text-decoration: none;
+	}
+	.who:hover,
+	.who[aria-current='page'] {
+		background: var(--z-hover);
 	}
 	.name,
 	.email {

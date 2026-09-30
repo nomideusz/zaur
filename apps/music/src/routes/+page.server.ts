@@ -1,6 +1,6 @@
 import { signedIn } from '#lib/server/auth';
-import { sub } from '#lib/server/navidrome';
-import type { Album, Playlist, Song } from '#lib/types';
+import { playlistsOf, sub } from '#lib/server/navidrome';
+import type { Album, Song } from '#lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
@@ -11,7 +11,7 @@ export const load: PageServerLoad = async (event) => {
 		albums('recent'),
 		albums('newest'),
 		albums('frequent'),
-		sub<{ playlists: { playlist?: Playlist[] } }>(user, 'getPlaylists').then((r) => r.playlists.playlist ?? []),
+		playlistsOf(user).then((lists) => lists.own),
 		sub<{ starred2: { song?: Song[] } }>(user, 'getStarred2').then((r) => r.starred2.song ?? [])
 	]);
 	return { user, recent, newest, frequent, playlists: playlists.slice(0, 8), favourites: favourites.slice(0, 8) };

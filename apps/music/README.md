@@ -45,6 +45,15 @@ real Navidrome, a new address gets a real user there.
   to sign-in and back to the same page. `/health` answers without a session; the
   client uses it to tell "the library is down" from "this device is offline".
 
+## Account
+
+`/account` says who is signed in and what belongs to the account, links to
+mail's settings (the password, two-factor sign-in and devices are mail's to
+look after: `accountUrl` in `#lib/server/oidc`), and signs out. Signing out
+ends mail's session too, since mail is where the sign-in lives. The way there
+is the name at the foot of the sidebar, or on a phone the initial beside
+Shuffle all on Home.
+
 ## The player
 
 `#lib/player.svelte.ts` is one player over the one `<audio>` element in the
@@ -130,9 +139,12 @@ Playlists are Navidrome's, per person. You can create one (from Playlists, or
 from the Add to playlist card), add a song from its ⋯ menu or a whole album
 from the album's page, remove a song, rename and delete.
 
-- Only your own playlists can be changed; Navidrome lets only the owner do it.
-  One that someone else shares is shown as "Shared playlist" with no Edit, and
-  the Add to playlist card lists only your own (`/api/playlists`).
+- A playlist belongs to the account that made it (`playlistsOf` in
+  `#lib/server/navidrome` is the one place that sorts them). Home, Playlists
+  and the Add to playlist card show your own. One that another account made
+  public (the radio's, say) is listed apart on Playlists under "Shared by
+  others" and opens as "Shared by <owner>" with no Edit: Navidrome lets only
+  the owner change it.
 - A song is removed by its **position**, not its id: a playlist can hold the
   same song twice.
 - Deleting a playlist leaves its songs in the library. The shared library

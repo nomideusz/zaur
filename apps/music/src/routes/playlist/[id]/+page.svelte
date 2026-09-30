@@ -73,7 +73,7 @@
 	<header class="hero">
 		<Cover id={list.coverArt} size={300} class="w-40 shrink-0 !rounded-xl" />
 		<div class="min-w-0">
-			<span class="z-caption">{mine ? 'Playlist' : 'Shared playlist'}</span>
+			<span class="z-caption">{mine ? 'Playlist' : list.owner ? `Shared by ${list.owner}` : 'Shared playlist'}</span>
 			<h1>{list.name}</h1>
 			<p class="z-caption">{songs.length} {songs.length === 1 ? 'song' : 'songs'} · {formatTime(list.duration)}</p>
 			<div class="actions mt-3">

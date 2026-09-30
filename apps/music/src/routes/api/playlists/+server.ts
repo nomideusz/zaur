@@ -1,13 +1,11 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { apiUser } from '#lib/server/auth';
-import { sub } from '#lib/server/navidrome';
+import { playlistsOf, sub } from '#lib/server/navidrome';
 import type { Playlist } from '#lib/types';
 
 /** The playlists this person can add to: their own (ones shared with them are read-only). */
 export const GET: RequestHandler = async ({ locals }) => {
-	const user = apiUser(locals);
-	const { playlists } = await sub<{ playlists: { playlist?: Playlist[] } }>(user, 'getPlaylists');
-	return json((playlists.playlist ?? []).filter((playlist) => playlist.owner === user.email));
+	return json((await playlistsOf(apiUser(locals))).own);
 };
 
 /** { name } — a new, empty playlist; answers with its id. */

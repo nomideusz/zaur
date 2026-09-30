@@ -6,7 +6,7 @@
  */
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { error } from '@sveltejs/kit';
-import type { User } from '#lib/types';
+import type { Playlist, User } from '#lib/types';
 
 type Params = Record<string, string | number | boolean | undefined>;
 
@@ -81,6 +81,17 @@ export async function sub<T = Record<string, never>>(user: User, method: string,
 		console.error(`[navidrome] ${method} failed`, cause);
 		error(502, 'The music library is not answering.');
 	}
+}
+
+/**
+ * A playlist belongs to the account that made it. `own` are this person's, to
+ * play and to change; `shared` are ones another account made public (the
+ * radio's, say), which Navidrome lists for everyone and lets nobody else change.
+ */
+export async function playlistsOf(user: User): Promise<{ own: Playlist[]; shared: Playlist[] }> {
+	const { playlists } = await sub<{ playlists: { playlist?: Playlist[] } }>(user, 'getPlaylists');
+	const all = playlists.playlist ?? [];
+	return { own: all.filter((list) => list.owner === user.email), shared: all.filter((list) => list.owner !== user.email) };
 }
 
 /** Subsonic as our admin account (library scans). */

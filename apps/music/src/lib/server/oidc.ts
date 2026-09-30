@@ -21,6 +21,8 @@ export interface LoginTransaction {
 }
 
 const issuer = () => (process.env.OIDC_ISSUER?.trim() || 'https://webmail.zaur.app').replace(/\/$/, '');
+/** Mail's settings: the password, two-factor sign-in and devices of the account Music signs in with. */
+export const accountUrl = () => `${issuer()}/settings`;
 const clientId = () => process.env.OIDC_CLIENT_ID?.trim() || 'music';
 const redirectUri = (origin: string) => `${origin}/auth/callback`;
 
