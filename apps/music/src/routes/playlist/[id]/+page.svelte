@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from 'svelte';
-	import { invalidateAll } from '$app/navigation';
+	import { afterNavigate, invalidateAll } from '$app/navigation';
 	import { api, post } from '#lib/api';
 	import { notify } from '#lib/notice.svelte';
 	import { formatTime, player } from '#lib/player.svelte';
@@ -21,6 +21,12 @@
 	let name = $state('');
 	let deleting = $state(false);
 	let busy = $state(false);
+	// Whether the history entry before this one is Playlists: come here from it, not Back to here.
+	// (Opening the card is a navigation too, a shallow one, and says nothing about that.)
+	let listBefore = false;
+	afterNavigate(({ from, type, shallow }) => {
+		if (!shallow) listBefore = type !== 'popstate' && from?.url.pathname === '/playlists';
+	});
 
 	function edit() {
 		name = list.name;
@@ -54,8 +60,10 @@
 		await sheet.close();
 		if (!response?.ok) return notify('Could not delete the playlist.');
 		notify(`Deleted ${list.name}`);
-		// In this page's place in history: Back would only find it gone.
-		void visit('/playlists', { replace: true });
+		// Back would only find it gone. Step back to Playlists when that is the entry before this
+		// one (replacing this one would put it in history twice); otherwise take this one's place.
+		if (listBefore) history.back();
+		else void visit('/playlists', { replace: true });
 	}
 </script>
 

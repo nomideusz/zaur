@@ -14,5 +14,5 @@ export const load: PageServerLoad = async (event) => {
 		sub<{ playlists: { playlist?: Playlist[] } }>(user, 'getPlaylists').then((r) => r.playlists.playlist ?? []),
 		sub<{ starred2: { song?: Song[] } }>(user, 'getStarred2').then((r) => r.starred2.song ?? [])
 	]);
-	return { recent, newest, frequent, playlists: playlists.slice(0, 8), favourites: favourites.slice(0, 8) };
+	return { user, recent, newest, frequent, playlists: playlists.slice(0, 8), favourites: favourites.slice(0, 8) };
 };

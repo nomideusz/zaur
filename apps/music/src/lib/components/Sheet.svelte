@@ -16,10 +16,10 @@
 	 * row underneath. Esc, the focus trap and focus coming back are the browser's.
 	 *
 	 * Like Now playing it is a history entry of its own (`page.state.sheet`), so
-	 * Back closes it and stays on the page. A link inside replaces that entry
-	 * (the sheet goes when the page has come). Anything else that navigates or
-	 * reloads the page's data after closing waits for close(): Kit drops a load
-	 * that a history step lands on.
+	 * Back closes it and stays on the page. A link inside closes it the same
+	 * way once its page is had, and then goes there (visit.svelte.ts). Anything
+	 * else that navigates or reloads the page's data after closing waits for
+	 * close(): Kit drops a load that a history step lands on.
 	 */
 	let { label, heading = false, children }: { label: string; heading?: boolean; children: Snippet } = $props();
 	let dialog: HTMLDialogElement;
@@ -70,7 +70,7 @@
 		history.back();
 	}
 
-	// Back, or a link inside that has loaded its page.
+	// Back, or a link inside whose page is had.
 	$effect(() => {
 		if (!page.state.sheet && dialog.open) dialog.close();
 	});
@@ -99,7 +99,6 @@
 	bind:this={dialog}
 	class:anchored
 	data-sheet
-	data-sveltekit-replacestate
 	tabindex="-1"
 	aria-label={label}
 	onclick={(event) => event.target === dialog && dialog.close()}

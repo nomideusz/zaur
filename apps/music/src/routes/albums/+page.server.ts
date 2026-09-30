@@ -29,5 +29,5 @@ export const load: PageServerLoad = async (event) => {
 		// A short page is the end of the library.
 		if ((albumList2.album?.length ?? 0) < size) break;
 	}
-	return { sort, sorts: SORTS, count, albums };
+	return { user, sort, sorts: SORTS, count, albums };
 };

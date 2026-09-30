@@ -1,4 +1,4 @@
-import { notify } from '#lib/notice.svelte';
+import { notice, notify } from '#lib/notice.svelte';
 
 /**
  * fetch for our own /api: a 401 means the week-long session cookie ran out, so
@@ -32,8 +32,15 @@ export const reachable = (): Promise<boolean> =>
 		() => false
 	);
 
-/** What the status line says when it does not. */
-export const unreachable = (): void => notify(navigator.onLine ? "Can't reach the library" : "You're offline", 6000);
+const AWAY = ["You're offline", "Can't reach the library"];
+
+/** What the status line says when it does not… */
+export const unreachable = (): void => notify(AWAY[Number(navigator.onLine)], 6000);
+
+/** …and stops saying once a page has come after all, rather than when its six seconds are up. */
+export function reached(): void {
+	if (AWAY.includes(notice.text)) notify('', 0);
+}
 
 /**
  * For a form that posts the old way (sign out): sent to a server that is not

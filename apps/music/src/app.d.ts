@@ -6,6 +6,10 @@ declare global {
 			/** The signed-in Zaur account, from the session cookie. */
 			user: User | null;
 		}
+		interface PageData {
+			/** Every page's load returns it (there is no root layout load: see visit.svelte.ts); an error page has none. */
+			user?: User;
+		}
 		interface PageState {
 			/** The Now playing sheet is open: its own history entry, so Back closes it. */
 			nowPlaying?: boolean;

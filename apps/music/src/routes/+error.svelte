@@ -1,10 +1,16 @@
 <script lang="ts">
+	import { browser } from '$app/env';
 	import { refreshAll } from '$app/navigation';
 	import { page } from '$app/state';
 	import { reload } from '#lib/visit.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 
 	const missing = $derived(page.status === 404);
+	// "Internal Error" is all Kit has to say when a page's data could not be fetched at all:
+	// no network, or a gateway answering for a server that is down.
+	const message = $derived(
+		page.error?.message === 'Internal Error' ? (browser && !navigator.onLine ? "You're offline." : "Can't reach the library.") : page.error?.message
+	);
 	let trying = $state(false);
 
 	// Loads this address again in place, so what is playing keeps playing.
@@ -21,7 +27,7 @@
 	<div class="oops">
 		<span class="glyph"><Icon name={missing ? 'search' : 'alert'} class="size-6" /></span>
 		<h1>{missing ? 'Not found' : 'Something went wrong'}</h1>
-		<p>{page.error?.message}</p>
+		<p>{message}</p>
 		<div class="actions">
 			{#if !missing}
 				<button class="btn-tactile btn-primary tall" type="button" disabled={trying} onclick={retry}>Try again</button>

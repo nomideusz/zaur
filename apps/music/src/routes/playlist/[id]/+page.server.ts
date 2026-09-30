@@ -4,6 +4,7 @@ import type { Playlist } from '#lib/types';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async (event) => {
-	const { playlist } = await sub<{ playlist: Playlist }>(signedIn(event), 'getPlaylist', { id: event.params.id });
-	return { playlist };
+	const user = signedIn(event);
+	const { playlist } = await sub<{ playlist: Playlist }>(user, 'getPlaylist', { id: event.params.id });
+	return { user, playlist };
 };

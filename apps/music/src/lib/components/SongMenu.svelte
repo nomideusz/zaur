@@ -42,7 +42,7 @@
 		<button class="z-menu-item" type="button" onclick={() => (sheet.close(), picker.open([song!]))}>
 			<Icon name="playlist" /> Add to playlist…
 		</button>
-		<!-- The links take the menu's history entry (see Sheet); it closes when their page has come. -->
+		<!-- The menu closes when a link's page is had, and then it is gone to (see Sheet). -->
 		{#if album && song.albumId}
 			<a class="z-menu-item" href="/album/{song.albumId}"><Icon name="album" /> Go to album</a>
 		{/if}

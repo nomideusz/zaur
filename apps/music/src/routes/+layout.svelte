@@ -13,8 +13,13 @@
 	import NowPlaying from '#lib/components/NowPlaying.svelte';
 	import PlayerBar from '#lib/components/PlayerBar.svelte';
 	import { sheetOpen } from '#lib/components/Sheet.svelte';
+	import type { User } from '#lib/types';
 
-	let { data, children } = $props();
+	let { children } = $props();
+	// Who is signed in comes with each page's data: the root layout has no load of its own
+	// (see visit.svelte.ts). An error page has no data, so there the last answer stands.
+	let known: User | undefined;
+	const user = $derived((known = page.data.user ?? known));
 	let audio: HTMLAudioElement;
 	let main: HTMLElement;
 	let dock: HTMLElement;
@@ -50,23 +55,23 @@
 		if (from && type !== 'popstate' && from.url.pathname !== to?.url.pathname) main.scrollTop = 0;
 	});
 
-	// A page whose data cannot be fetched would cost the one that is playing (see visit.svelte.ts),
-	// so every navigation is held until its data is in, then made again. Out of reach, it is not made.
+	// A link or a goto() is held until the page's data is in, then made again by visit(): out of
+	// reach, the app stays where it is (see visit.svelte.ts). Back and Forward are Kit's alone.
 	// ponytail: a second tap while Kit is still putting a fetched page up is not held (Kit asks
-	// nobody then); the window is a few milliseconds.
+	// nobody then); the window is a few milliseconds, and the worst of it is the error page.
 	beforeNavigate((navigation) => {
 		const { from, to, willUnload, cancel } = navigation;
-		// Not for this: leaving the app, a sheet's history entry, the same page again, and the navigation made again below.
-		if (willUnload || !to || navigation.shallow || to.url.href === from?.url.href || way.fetched(to.url)) return;
+		if (navigation.type === 'popstate') way.drop();
+		// Not for this: leaving the app, Back and Forward, a layer's own history entry, and the navigation visit() makes.
+		if (willUnload || !to || navigation.type === 'popstate' || navigation.shallow || way.fetched(to.url)) return;
+		// The same page again has nothing to fetch — unless a layer is up, which visit() closes.
+		if (to.url.href === from?.url.href && !page.state.nowPlaying && !page.state.sheet) return;
 		cancel();
-		const link = navigation.type === 'link' && navigation.event.target instanceof Element ? navigation.event.target.closest('a') : null;
-		void way.fetch(to.url).then((ok) => {
-			if (!ok) return;
-			if (navigation.type === 'popstate') history.go(navigation.delta);
-			// Clicked again, a link keeps what it asks of Kit (replace the entry, stay scrolled).
-			else if (link?.isConnected) link.click();
-			else void goto(to.url);
-		});
+		// A link keeps what it asks of Kit (the sort chips stay scrolled). The address is the one
+		// it had when tapped: in Now playing it changes with the song.
+		const link = navigation.type === 'link' && navigation.event.target instanceof Element ? navigation.event.target : null;
+		const stay = link?.closest('[data-sveltekit-reset]')?.getAttribute('data-sveltekit-reset') === 'false';
+		void visit(to.url.href, stay ? { reset: false } : undefined);
 	});
 
 	// A reload, or Forward, into the history entry a menu or a card had: nothing is open to go
@@ -90,16 +95,22 @@
 	// browser's top layer, over everything in the page. Shown again as a popover the line is put
 	// on top of them, and it is lifted clear of whichever covers the dock.
 	let lift = $state('');
+	// Set instead of lift: the line hangs from the top, under Now playing's header.
+	let drop = $state('');
 	function place() {
-		const open = [...document.querySelectorAll('dialog[open]')].map((dialog) => dialog.getBoundingClientRect());
+		const open = [...document.querySelectorAll('dialog[open]')].map((dialog) => ({ dialog, box: dialog.getBoundingClientRect() }));
 		line.hidePopover?.();
 		if (open.length) line.showPopover?.();
 		// Whichever reaches down to where the line would be (56px: the line and the gaps around it).
-		const over = open.filter((box) => box.bottom > innerHeight - dock.offsetHeight - 56).sort((a, b) => b.top - a.top)[0];
+		const over = open.filter(({ box }) => box.bottom > innerHeight - dock.offsetHeight - 56).sort((a, b) => b.box.top - a.box.top)[0];
+		// Full screen, Now playing has its controls at the bottom (on a small phone, Play is right
+		// there): the line goes up top, under its header. The wide panel keeps it at its bottom edge.
+		const head = over && over.box.top < 1 ? over.dialog.querySelector('header')?.getBoundingClientRect() : undefined;
+		drop = head ? `${head.bottom + 4}px` : '';
 		if (!over) lift = `${dock.offsetHeight}px`;
 		// Above a sheet that rises from the bottom; inside the bottom edge of a tall one.
-		else if (over.top > innerHeight / 3) lift = `${innerHeight - over.top}px`;
-		else lift = `calc(${innerHeight - over.bottom + 6}px + env(safe-area-inset-bottom))`;
+		else if (over.box.top > innerHeight / 3) lift = `${innerHeight - over.box.top}px`;
+		else lift = `calc(${innerHeight - over.box.bottom + 6}px + env(safe-area-inset-bottom))`;
 	}
 	$effect(() => {
 		// Again when a sheet opens or closes under a line that is still up.
@@ -131,14 +142,18 @@
 	const isCurrentTab = (href: string) => isCurrent(href) || (href === '/' && (isCurrent('/playlists') || isCurrent('/favourites')));
 
 	async function openSearch() {
-		// From Now playing, Search takes the sheet's place in history: Back is then the page, not the sheet again.
-		if (page.url.pathname !== '/search') await visit('/search', { replace: Boolean(page.state.nowPlaying) });
+		// From Now playing, visit() closes the sheet first: Back is then the page, not the sheet again.
+		if (page.url.pathname !== '/search') await visit('/search');
 		main.querySelector<HTMLInputElement>('input[type="search"]')?.focus();
 	}
 
 	// What the pointer last pressed. A control focused by a click is only where the focus came to
 	// rest, the way a clicked song row is; one reached with Tab is about to be used.
+	// The control, not the glyph in it: the heart's is a new element once it has been clicked.
 	let pressed: EventTarget | null = null;
+	function press({ target }: PointerEvent) {
+		pressed = target instanceof Element ? (target.closest('button, a, summary, input') ?? target) : target;
+	}
 
 	// The one rule for the keys. While a menu or a card is up they are its own, wherever in it
 	// the focus is (Now playing is a dialog too, but the keys drive it), and typing is typing.
@@ -173,7 +188,7 @@
 	}
 </script>
 
-<svelte:window onkeydown={shortcut} onpointerdown={(event) => (pressed = event.target)} />
+<svelte:window onkeydown={shortcut} onpointerdown={press} />
 
 <div class="shell">
 	<aside class="side">
@@ -189,15 +204,17 @@
 				</a>
 			{/each}
 		</nav>
-		<form class="account" method="POST" action="/auth/logout" onsubmit={submit}>
-			<span class="who">
-				<span class="name">{data.user.name}</span>
-				<span class="email z-mono">{data.user.email}</span>
-			</span>
-			<button class="z-icon-btn !size-8" type="submit" aria-label="Sign out" title="Sign out">
-				<Icon name="logout" />
-			</button>
-		</form>
+		{#if user}
+			<form class="account" method="POST" action="/auth/logout" onsubmit={submit}>
+				<span class="who">
+					<span class="name">{user.name}</span>
+					<span class="email z-mono">{user.email}</span>
+				</span>
+				<button class="z-icon-btn !size-8 pointer-coarse:!size-11" type="submit" aria-label="Sign out" title="Sign out">
+					<Icon name="logout" />
+				</button>
+			</form>
+		{/if}
 	</aside>
 
 	<main class="main" bind:this={main}>
@@ -207,7 +224,7 @@
 
 	<div class="dock" bind:this={dock}>
 		<!-- The live region is always there; what it says comes and goes. -->
-		<div class="notice" role="status" popover="manual" bind:this={line} style:--lift={lift}>
+		<div class="notice" role="status" popover="manual" bind:this={line} style:--lift={lift} style:top={drop || undefined} style:bottom={drop ? 'auto' : undefined}>
 			{#if notice.text}
 				<p class="z-railed" transition:fade={{ duration: 120 }}>{notice.text}</p>
 			{/if}

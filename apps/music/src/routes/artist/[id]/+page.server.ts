@@ -12,5 +12,5 @@ export const load: PageServerLoad = async (event) => {
 	const albums = await Promise.all(
 		(artist.album ?? []).map((album) => sub<{ album: Album }>(user, 'getAlbum', { id: album.id }).then((r) => r.album.song ?? []))
 	);
-	return { artist, songs: albums.flat() };
+	return { user, artist, songs: albums.flat() };
 };

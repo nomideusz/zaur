@@ -95,13 +95,13 @@
 						<div class="min-w-0">
 							<h2>{song.title}</h2>
 							<!-- A line each, so a long artist cannot push the album out of reach.
-							     replacestate: the page takes the sheet's history entry, so Back does not reopen it. -->
+							     The sheet closes before the page is gone to (visit.svelte.ts), so Back does not reopen it. -->
 							<p>
-								{#if song.artistId}<a href="/artist/{song.artistId}" data-sveltekit-replacestate>{song.artist}</a>{:else}<span>{song.artist ?? ''}</span>{/if}
+								{#if song.artistId}<a href="/artist/{song.artistId}">{song.artist}</a>{:else}<span>{song.artist ?? ''}</span>{/if}
 							</p>
 							{#if song.album}
 								<p>
-									{#if song.albumId}<a href="/album/{song.albumId}" data-sveltekit-replacestate>{song.album}</a>{:else}<span>{song.album}</span>{/if}
+									{#if song.albumId}<a href="/album/{song.albumId}">{song.album}</a>{:else}<span>{song.album}</span>{/if}
 								</p>
 							{/if}
 						</div>
@@ -304,9 +304,11 @@
 		color: inherit;
 		text-decoration: none;
 	}
-	.about a:hover {
-		color: var(--z-accent-ink);
-		text-decoration: underline;
+	@media (hover: hover) {
+		.about a:hover {
+			color: var(--z-accent-ink);
+			text-decoration: underline;
+		}
 	}
 	.starred {
 		color: var(--z-ch-flagged-solid);
