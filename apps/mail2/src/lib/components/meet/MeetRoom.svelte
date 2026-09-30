@@ -188,12 +188,14 @@
 				const all = [...report.values()];
 				const inbound = all.find((stat) => stat.type === 'inbound-rtp');
 				if (!inbound) continue;
-				const concealed = inbound.totalSamplesReceived ? (100 * (inbound.concealedSamples ?? 0)) / inbound.totalSamplesReceived : 0;
+				const share = (samples = 0) => (inbound.totalSamplesReceived ? (100 * samples) / inbound.totalSamplesReceived : 0).toFixed(1);
+				// Sped up or slowed down to ride out uneven arrival; heard as warble.
+				const stretched = (inbound.insertedSamplesForDeceleration ?? 0) + (inbound.removedSamplesForAcceleration ?? 0);
 				// How this device reaches the server: a relay over TCP or TLS suffers most on a lossy network.
 				const pair = all.find((stat) => stat.type === 'candidate-pair' && stat.nominated && stat.state === 'succeeded');
 				const local = pair && report.get(pair.localCandidateId);
 				lines.push(
-					`lost ${inbound.packetsLost ?? '?'}/${inbound.packetsReceived ?? '?'}, concealed ${concealed.toFixed(1)}%, ` +
+					`lost ${inbound.packetsLost ?? '?'}/${inbound.packetsReceived ?? '?'}, concealed ${share(inbound.concealedSamples)}%, stretched ${share(stretched)}%, ` +
 						`jitter ${Math.round((inbound.jitter ?? 0) * 1000)} ms, rtt ${pair ? Math.round((pair.currentRoundTripTime ?? 0) * 1000) : '?'} ms, ` +
 						`via ${local ? `${local.candidateType}/${local.relayProtocol ?? local.protocol}` : '?'}`
 				);
