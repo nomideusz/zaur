@@ -175,7 +175,7 @@
 	}
 
 	/**
-	 * iOS only, while its crackling is chased: how the incoming audio has fared so far.
+	 * While phones' crackling is chased: how the incoming audio has fared so far.
 	 * Lost packets and "concealed" (invented) samples mean the network; clean numbers
 	 * with a crackle mean the phone's playback. Counts only, nothing anyone said.
 	 */
@@ -198,7 +198,7 @@
 		// The last reading is sent when the call ends (reading then would race the hang-up).
 		let health = '';
 		const sample = setInterval(() => {
-			if (iOS && lk && status === 'live') void audioHealth(lk).then((line) => (health = line || health));
+			if (lk && status === 'live') void audioHealth(lk).then((line) => (health = line || health));
 		}, 10_000);
 		const iOS = onIOS();
 		// Safari 16.4+: the call keeps the audio session it needs from the start, rather than
@@ -288,7 +288,12 @@
 		return () => {
 			clearInterval(tick);
 			clearInterval(sample);
-			if (health) captureMessage(`Meet iOS audio (${navigator.userAgent.match(/OS [\d_]+/)?.[0] ?? '?'}): ${health}`);
+			if (health) {
+				// An Android's agent says Linux first.
+				const ua = navigator.userAgent;
+				const system = (ua.match(/iPhone OS [\d_]+|Android [\d.]+/) ?? ua.match(/Mac OS X|Windows|Linux/))?.[0] ?? '?';
+				captureMessage(`Meet audio (${system}): ${health}`);
+			}
 			leaving = true;
 			void lk?.disconnect();
 			if (iOS && session) session.type = 'auto';
