@@ -226,7 +226,7 @@ EasyMP4Tags.RegisterFreeformKey(PEAK_KEY, 'REPLAYGAIN_TRACK_PEAK')
 def loudness(p):
     """(integrated LUFS, sample peak dBFS) from ffmpeg's ebur128 summary, or None."""
     r = subprocess.run(['nice', 'ffmpeg', '-nostats', '-hide_banner', '-i', p, '-map', '0:a:0', '-af', 'ebur128=peak=sample', '-f', 'null', '-'],
-                       capture_output=True, text=True, timeout=600)
+                       capture_output=True, text=True, errors='replace', timeout=600)
     i = re.findall(r'^\s+I:\s+(-?[\d.]+) LUFS', r.stderr, re.M)
     peak = re.findall(r'^\s+Peak:\s+(-?[\d.]+|-inf) dBFS', r.stderr, re.M)
     if r.returncode or not i or not peak: return None
