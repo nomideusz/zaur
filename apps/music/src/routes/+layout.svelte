@@ -68,7 +68,8 @@
 	function scrolled() {
 		const h1 = main.querySelector('h1');
 		const under = main.getBoundingClientRect().top + bar.offsetHeight;
-		solid = h1 && h1.getClientRects().length ? h1.getBoundingClientRect().bottom < under : main.scrollTop > 0;
+		// A heading only for screen readers (Search's) is 1px at the very top: there, any scroll counts.
+		solid = h1 && h1.offsetWidth > 1 ? h1.getBoundingClientRect().bottom < under : main.scrollTop > 0;
 		if (solid) heading = h1?.textContent?.trim() ?? '';
 	}
 	// Where Back goes when there is nothing in the app to go back to (opened here from a link).
