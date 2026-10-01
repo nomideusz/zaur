@@ -83,12 +83,21 @@
 	// (A menu's or Now playing's own history entry is no page: Kit tells nobody about those.)
 	let depth = 0;
 	function back() {
-		if (depth > 0) history.back();
+		if (depth > 0) {
+			ours = true;
+			history.back();
+		}
 		else if (up) void goto(up.href);
 	}
 
 	// A page slides in over the last one, as in a native app: a cross-fade where the browser can.
+	// Not for a step back or forward the browser took (iOS's edge swipe, a phone's back gesture):
+	// the system animates those itself, and a fade after it blinks. Our own Back is ours to animate.
+	let ours = false;
 	onNavigate((navigation) => {
+		const mine = ours;
+		ours = false;
+		if (navigation.type === 'popstate' && !mine) return;
 		if (!document.startViewTransition || navigation.from?.url.pathname === navigation.to?.url.pathname) return;
 		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 		return new Promise((resolve) => {
