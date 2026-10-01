@@ -66,6 +66,8 @@ ARTISTS.forEach(([name, names], a) => {
 				track: a === 1 ? (i % 21) + 1 : i + 1,
 				discNumber: a === 1 && i >= 21 ? 2 : 1,
 				year: 1998 + rand(27),
+				// Most measured (loud, like real masters), some not yet: the player evens them out.
+				replayGain: i % 4 === 3 ? {} : { trackGain: -10 + rand(14), trackPeak: 0.9 },
 				contentType: 'audio/wav',
 				suffix: 'wav'
 			};

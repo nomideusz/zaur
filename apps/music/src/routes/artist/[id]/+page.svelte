@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { player } from '#lib/player.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
+	import ArtistRow from '#lib/components/ArtistRow.svelte';
 	import Cover from '#lib/components/Cover.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import TrackList from '#lib/components/TrackList.svelte';
@@ -57,6 +58,15 @@
 			{#each albums as album (album.id)}<AlbumTile {album} artist={false} />{/each}
 		</div>
 	</section>
+
+	{#await data.related then related}
+		{#if related.length}
+			<section class="section">
+				<div class="section-head"><h2>Fans also like</h2></div>
+				<ArtistRow artists={related} />
+			</section>
+		{/if}
+	{/await}
 </div>
 
 <style>

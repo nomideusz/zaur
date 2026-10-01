@@ -7,7 +7,7 @@
  */
 import { sub } from '#lib/server/navidrome';
 import { searchYouTube, type AlbumTags } from '#lib/server/youtube';
-import type { OutsideAlbum, Song, User, YouTubeResult } from '#lib/types';
+import type { Artist, OutsideAlbum, RelatedArtist, Song, User, YouTubeResult } from '#lib/types';
 
 interface DeezerAlbum {
 	id: number;
@@ -199,4 +199,68 @@ export async function lookOutside(q: string): Promise<{ albums: OutsideAlbum[]; 
 		videos: videos.status === 'fulfilled' ? videos.value : [],
 		failed: albums.status === 'rejected' || videos.status === 'rejected'
 	};
+}
+
+interface DeezerArtist {
+	id: number;
+	name: string;
+	picture_medium?: string;
+}
+
+/** Deezer's "fans also like" for an artist, by name; none when Deezer does not know them. */
+const relatedOnDeezer = (name: string) =>
+	cached(`related:${norm(name)}`, async () => {
+		const { data } = await deezer<{ data: DeezerArtist[] }>(`/search/artist?${new URLSearchParams({ q: name, limit: '5' })}`);
+		const artist = data.find((a) => norm(a.name) === norm(name));
+		return artist ? (await deezer<{ data: DeezerArtist[] }>(`/artist/${artist.id}/related?limit=20`)).data : [];
+	});
+
+/** The library's artists by norm(name), to tell which related ones it has. */
+const libraryArtists = (user: User) =>
+	cached('library-artists', async () => {
+		const { artists } = await sub<{ artists: { index?: { artist?: Artist[] }[] } }>(user, 'getArtists');
+		return new Map((artists.index ?? []).flatMap((group) => group.artist ?? []).map((a) => [norm(a.name), a.id]));
+	});
+
+/** Who fans of this artist also like: the library's first (to play), then the rest (to add). */
+export async function relatedArtists(user: User, name: string): Promise<RelatedArtist[]> {
+	try {
+		const [related, library] = await Promise.all([relatedOnDeezer(name), libraryArtists(user)]);
+		const out = related.map((a) => ({ name: a.name, picture: a.picture_medium, id: library.get(norm(a.name)) }));
+		return [...out.filter((a) => a.id), ...out.filter((a) => !a.id)].slice(0, 12);
+	} catch (cause) {
+		console.warn('[discover] related failed', cause);
+		return [];
+	}
+}
+
+/**
+ * Lidify's idea: artists the library does not have yet, that fans of the
+ * listener's own artists also like. Liked by more of them ranks higher.
+ */
+export async function discover(user: User, seeds: string[]): Promise<RelatedArtist[]> {
+	try {
+		const library = await libraryArtists(user);
+		const found = new Map<string, RelatedArtist & { score: number }>();
+		const lists = await Promise.allSettled(seeds.map((seed) => relatedOnDeezer(seed)));
+		lists.forEach((list, i) => {
+			if (list.status === 'rejected') return;
+			// Deezer lists the closest first.
+			list.value.forEach((a, rank) => {
+				const key = norm(a.name);
+				if (library.has(key)) return;
+				const hit = found.get(key) ?? { name: a.name, picture: a.picture_medium, like: [], score: 0 };
+				hit.like!.push(seeds[i]);
+				hit.score += 1 - rank / 40;
+				found.set(key, hit);
+			});
+		});
+		return [...found.values()]
+			.sort((a, b) => b.score - a.score)
+			.slice(0, 16)
+			.map(({ score: _, ...a }) => a);
+	} catch (cause) {
+		console.warn('[discover] failed', cause);
+		return [];
+	}
 }

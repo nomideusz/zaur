@@ -1,4 +1,5 @@
 import { signedIn } from '#lib/server/auth';
+import { discover } from '#lib/server/albums';
 import { playlistsOf, sub } from '#lib/server/navidrome';
 import type { Album, Song } from '#lib/types';
 import type { PageServerLoad } from './$types';
@@ -14,5 +15,15 @@ export const load: PageServerLoad = async (event) => {
 		playlistsOf(user).then((lists) => lists.own),
 		sub<{ starred2: { song?: Song[] } }>(user, 'getStarred2').then((r) => r.starred2.song ?? [])
 	]);
-	return { user, recent, newest, frequent, playlists: playlists.slice(0, 8), favourites: favourites.slice(0, 8) };
+	// What this person plays and loves says what to look for; streamed, so Deezer never holds Home up.
+	const seeds = [...new Set([...frequent, ...favourites, ...recent].map((item) => item.artist).filter((name) => name && name !== 'Various Artists'))] as string[];
+	return {
+		user,
+		recent,
+		newest,
+		frequent,
+		playlists: playlists.slice(0, 8),
+		favourites: favourites.slice(0, 8),
+		discover: discover(user, seeds.slice(0, 8))
+	};
 };

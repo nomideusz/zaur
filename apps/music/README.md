@@ -216,6 +216,12 @@ The manifest's share target points at `/search` (`/add` redirects there), so a
 link shared to the installed app is added. An app that is already open is
 handed the link and is not reloaded, which would stop the music (Chromium only).
 
+**Discover.** An artist's page ends with "Fans also like" (Deezer's related
+artists), and Home has a Discover shelf: artists the library lacks that fans
+of the listener's most played, favourite and recent artists also like. One the
+library has opens its page; any other opens a search, with its albums to add
+(`relatedArtists`, `discover` in `#lib/server/albums`).
+
 ## Tagging what arrives
 
 Songs that reach the library some other way (YouTube rips with the uploader as
@@ -225,6 +231,19 @@ The server runs a copy from the data volume every hour (contabo's root crontab:
 `docker exec <music container> python3 /data/retag/retag.py sweep`, log in
 `/srv/zaur-music/retag/sweep.log`); after changing the script, copy it to
 `/srv/zaur-music/retag/`. `retag.py undo` puts every old tag back.
+
+The same sweep measures each song's loudness with ffmpeg (`retag.py gain`) and
+writes a ReplayGain track gain and peak into its tags; Navidrome passes them on
+as `replayGain`, and the player turns them into the song's volume, so a loud
+song and a quiet one sound alike. A page can only turn the volume down, and on
+iOS it cannot set it at all, so there the songs play as they are.
+
+`scripts/dupes.py` finds the same song twice (same artist and title, the same
+length give or take a few seconds) and moves the spare copies out to
+`/srv/zaur-music/dupes/`. It runs on contabo's host, since it reads Navidrome's
+database: `report` says what it would move, `apply` moves it, `undo` puts it
+back. It moves only a loose single or a second copy on the same album, and
+never one in anyone's favourites or a playlist.
 
 ## Checks
 

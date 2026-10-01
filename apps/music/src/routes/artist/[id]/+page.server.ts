@@ -1,4 +1,5 @@
 import { signedIn } from '#lib/server/auth';
+import { relatedArtists } from '#lib/server/albums';
 import { sub } from '#lib/server/navidrome';
 import type { Album, Artist } from '#lib/types';
 import type { PageServerLoad } from './$types';
@@ -12,5 +13,6 @@ export const load: PageServerLoad = async (event) => {
 	const albums = await Promise.all(
 		(artist.album ?? []).map((album) => sub<{ album: Album }>(user, 'getAlbum', { id: album.id }).then((r) => r.album.song ?? []))
 	);
-	return { user, artist, songs: albums.flat() };
+	// Streamed: Deezer never holds the page up.
+	return { user, artist, songs: albums.flat(), related: relatedArtists(user, artist.name) };
 };

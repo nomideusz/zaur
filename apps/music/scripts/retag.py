@@ -6,14 +6,18 @@ looked up on Deezer (with its cover). Songs keep their Navidrome IDs (matched by
   python3 retag.py plan   -> /data/retag/plan.jsonl   (reads only)
   python3 retag.py apply [plan]  -> writes tags; old tags to /data/retag/backup.jsonl
   python3 retag.py undo   -> restores tags from backup.jsonl
-  python3 retag.py sweep  -> plan + apply for files that arrived since, then a Navidrome scan
+  python3 retag.py gain   -> ReplayGain track gain/peak (measured by ffmpeg) for every song without one
+  python3 retag.py sweep  -> plan + apply + gain for files that arrived since, then a Navidrome scan
                              (hourly from contabo's crontab; see apps/music/README.md)
 
 A song Deezer does not know becomes its own single (album = its title), so
 nothing lands in Navidrome's "[Unknown Album]".
 """
-import hashlib, json, os, re, secrets, sys, time, unicodedata, urllib.parse, urllib.request
+import fcntl, hashlib, json, os, re, secrets, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
+from concurrent.futures import ThreadPoolExecutor
 import mutagen
+from mutagen.easyid3 import EasyID3
+from mutagen.easymp4 import EasyMP4Tags
 from mutagen.id3 import APIC, ID3, TALB, TDRC, TIT2, TPE1, TPE2
 
 ROOT = os.environ.get('RETAG_ROOT', '/music')
@@ -209,9 +213,68 @@ def navidrome(method, **params):
     return json.load(urllib.request.urlopen(f'{base}/rest/{method}?' + urllib.parse.urlencode(q), timeout=60))['subsonic-response']
 
 
+# ReplayGain 2.0: gain to bring the song to -18 LUFS. The player turns it into a volume.
+AUDIO = ('.mp3', '.m4a', '.flac', '.ogg', '.opus')
+GAIN_KEY, PEAK_KEY = 'replaygain_track_gain', 'replaygain_track_peak'
+# TXXX frames, which Navidrome reads (EasyID3's own replaygain keys write RVA2).
+EasyID3.RegisterTXXXKey(GAIN_KEY, 'REPLAYGAIN_TRACK_GAIN')
+EasyID3.RegisterTXXXKey(PEAK_KEY, 'REPLAYGAIN_TRACK_PEAK')
+EasyMP4Tags.RegisterFreeformKey(GAIN_KEY, 'REPLAYGAIN_TRACK_GAIN')
+EasyMP4Tags.RegisterFreeformKey(PEAK_KEY, 'REPLAYGAIN_TRACK_PEAK')
+
+
+def loudness(p):
+    """(integrated LUFS, sample peak dBFS) from ffmpeg's ebur128 summary, or None."""
+    r = subprocess.run(['nice', 'ffmpeg', '-nostats', '-hide_banner', '-i', p, '-map', '0:a:0', '-af', 'ebur128=peak=sample', '-f', 'null', '-'],
+                       capture_output=True, text=True, timeout=600)
+    i = re.findall(r'^\s+I:\s+(-?[\d.]+) LUFS', r.stderr, re.M)
+    peak = re.findall(r'^\s+Peak:\s+(-?[\d.]+|-inf) dBFS', r.stderr, re.M)
+    if r.returncode or not i or not peak: return None
+    return float(i[-1]), float(peak[-1])
+
+
+def gain_one(p):
+    try:
+        f = mutagen.File(p, easy=True)
+        if f is None or f.tags is not None and GAIN_KEY in f.tags: return 0
+        measured = loudness(p)
+        # Silence measures -70 LUFS: no gain to give.
+        if not measured or measured[0] <= -70: return -1
+        if f.tags is None: f.add_tags()
+        f[GAIN_KEY] = f'{-18 - measured[0]:.2f} dB'
+        f[PEAK_KEY] = f'{10 ** (measured[1] / 20):.6f}'
+        f.save()
+        return 1
+    except Exception as e:
+        print('gain error', p, e, file=sys.stderr)
+        return -1
+
+
+def gain():
+    # Not measured (unreadable, silent) once is not tried every hour.
+    failed_path = f'{OUT}/gain-failed.txt'
+    failed = set(open(failed_path).read().splitlines()) if os.path.exists(failed_path) else set()
+    todo = [os.path.join(root, name) for root, _, files in os.walk(ROOT) for name in files
+            if name.lower().endswith(AUDIO) and os.path.join(root, name) not in failed]
+    # Still arriving, maybe: the next sweep takes it.
+    todo = [p for p in todo if time.time() - os.path.getmtime(p) >= 600]
+    # ponytail: 3 ffmpegs at nice 10 measure ~3,000 songs in ~15 min; the box also runs mail.
+    with ThreadPoolExecutor(3) as pool, open(failed_path, 'a') as out:
+        results = list(pool.map(gain_one, todo))
+        for p, r in zip(todo, results):
+            if r < 0: out.write(p + '\n')
+    n = results.count(1)
+    print('gained', n, 'failed', results.count(-1))
+    return n
+
+
 def sweep():
+    # One at a time: the first gain pass outlasts the hour.
+    lock = open(f'{OUT}/sweep.lock', 'w')
+    try: fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError: return print('another sweep is running')
     plan()
-    if apply(): navidrome('startScan')
+    if apply() + gain(): navidrome('startScan')
 
 
 def undo():
@@ -233,4 +296,4 @@ def undo():
 
 
 if __name__ == '__main__':
-    {'plan': plan, 'apply': apply, 'undo': undo, 'sweep': sweep}[sys.argv[1]](*sys.argv[2:])
+    {'plan': plan, 'apply': apply, 'undo': undo, 'gain': gain, 'sweep': sweep, 'scan': lambda: navidrome('startScan')}[sys.argv[1]](*sys.argv[2:])

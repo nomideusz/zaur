@@ -55,6 +55,20 @@ function stored<T>(key: string): T | null {
 	}
 }
 
+/**
+ * Each song's share of the volume, so a loud one and a quiet one sound alike:
+ * its ReplayGain, aimed at -14 LUFS (where YouTube and Spotify play) rather
+ * than ReplayGain's -18, so fewer songs come out quieter. A page can only turn
+ * the volume down, so a song quieter than that plays as it is.
+ */
+const AIM = 4;
+const level = (song: Song | undefined) => {
+	const gain = song?.replayGain?.trackGain;
+	if (gain === undefined) return 1;
+	const peak = song?.replayGain?.trackPeak || 1;
+	return Math.min(1, 10 ** ((gain + AIM) / 20), 1 / peak);
+};
+
 const streamUrl = (id: string) => `/api/stream/${encodeURIComponent(id)}`;
 
 export const coverUrl = (id: string | undefined, size = 300) => (id ? `/api/cover/${encodeURIComponent(id)}?size=${size}` : undefined);
@@ -121,8 +135,8 @@ class Player {
 		this.#audio = audio;
 		const prefs = stored<Prefs>(PREFS) ?? {};
 		const volume = Number(prefs.volume ?? 1);
-		this.volume = audio.volume = volume >= 0 && volume <= 1 ? volume : 1;
-		this.muted = audio.muted = prefs.muted === true;
+		this.volume = volume >= 0 && volume <= 1 ? volume : 1;
+		this.muted = prefs.muted === true;
 		// iOS ignores the setting: it reads back 1. A spare element asks, so the real one is untouched.
 		const probe = new Audio();
 		probe.volume = 0.5;
@@ -130,6 +144,7 @@ class Player {
 		this.repeat = prefs.repeat ?? 'off';
 		this.shuffling = prefs.shuffling === true;
 		this.#restore();
+		this.#sound();
 		const on = <K extends keyof HTMLMediaElementEventMap>(type: K, fn: () => void) => {
 			audio.addEventListener(type, fn);
 			return () => audio.removeEventListener(type, fn);
@@ -318,6 +333,7 @@ class Player {
 		if (!audio || !song) return;
 		const load = ++this.#loads;
 		audio.src = streamUrl(song.id);
+		audio.volume = this.volume * level(song);
 		this.time = at;
 		this.duration = song.duration ?? 0;
 		// From the top is a new listen; from a saved spot it is the same one going on.
@@ -422,7 +438,7 @@ class Player {
 
 	#sound(): void {
 		if (!this.#audio) return;
-		this.#audio.volume = this.volume;
+		this.#audio.volume = this.volume * level(this.current);
 		this.#audio.muted = this.muted;
 		this.#savePrefs();
 	}

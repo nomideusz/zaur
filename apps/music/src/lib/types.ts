@@ -19,6 +19,8 @@ export interface Song {
 	discNumber?: number;
 	year?: number;
 	starred?: string;
+	/** ReplayGain from the file's tags (retag.py measures it); OpenSubsonic. */
+	replayGain?: { trackGain?: number; trackPeak?: number };
 }
 
 export interface Album {
@@ -69,6 +71,15 @@ export interface OutsideAlbum {
 	tracks: number;
 	/** album, ep, single, compile */
 	kind?: string;
+}
+
+/** An artist Deezer relates to others; `id` when the library has them too. */
+export interface RelatedArtist {
+	name: string;
+	picture?: string;
+	id?: string;
+	/** The library's artists this one is like, for Home's Discover. */
+	like?: string[];
 }
 
 /** One song being added: a video, or an album's track (whose video is found when its turn comes). */

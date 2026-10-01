@@ -3,6 +3,7 @@
 	import { notify } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
 	import AlbumTile from '#lib/components/AlbumTile.svelte';
+	import ArtistRow from '#lib/components/ArtistRow.svelte';
 	import Cover from '#lib/components/Cover.svelte';
 	import Icon from '#lib/components/Icon.svelte';
 	import TrackList from '#lib/components/TrackList.svelte';
@@ -82,6 +83,25 @@
 	{/if}
 
 	{#if data.frequent.length}{@render shelf('Most played', 'frequent', data.frequent)}{/if}
+
+	{#await data.discover then artists}
+		{#if artists.length}
+			<section class="section">
+				<div class="section-head">
+					<h2>Discover</h2>
+					<span class="turn">
+						<button class="z-icon-btn" type="button" aria-label="Discover: previous" onclick={(event) => turn(event, -1)}>
+							<Icon name="chevron-left" />
+						</button>
+						<button class="z-icon-btn" type="button" aria-label="Discover: next" onclick={(event) => turn(event, 1)}>
+							<Icon name="chevron-right" />
+						</button>
+					</span>
+				</div>
+				<ArtistRow {artists} />
+			</section>
+		{/if}
+	{/await}
 
 	{#if data.playlists.length}
 		<section class="section">
