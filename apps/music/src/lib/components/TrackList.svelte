@@ -44,7 +44,14 @@
 		{#if discs && song.discNumber !== songs[i - 1]?.discNumber}
 			<li class="disc z-caption">Disc {song.discNumber ?? 1}</li>
 		{/if}
-		<li class="track" class:current aria-current={current ? 'true' : undefined}>
+		<!-- A right-click, or a long press on Android, opens the row's menu where it was made (232px: the menu's width).
+		     ponytail: iOS has no contextmenu for a long press; the dots are the way there. -->
+		<li
+			class="track"
+			class:current
+			aria-current={current ? 'true' : undefined}
+			oncontextmenu={(event) => (event.preventDefault(), menu.open(song, i, new DOMRect(event.clientX, event.clientY, 232, 0)))}
+		>
 			<button class="main" type="button" onclick={() => player.play(songs, i)}>
 				{#if numbered}
 					<span class="num z-mono">
@@ -99,6 +106,12 @@
 	/* Where there is a hover to show: after a tap it would stay on the row. */
 	@media (hover: hover) {
 		.track:hover {
+			background: var(--z-hover);
+		}
+	}
+	/* A tap shows where it landed. */
+	@media (pointer: coarse) {
+		.track:has(.main:active) {
 			background: var(--z-hover);
 		}
 	}

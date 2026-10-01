@@ -10,7 +10,7 @@
 
 	/**
 	 * A native modal <dialog>: a menu beside the button that opened it (give
-	 * open() that button; on a phone it is a sheet from the bottom), or a small
+	 * open() that button, or the box a right-click makes; on a phone it is a sheet from the bottom), or a small
 	 * card with a heading. The top layer keeps it clear of the scroller and the
 	 * dock, and being modal, a tap outside closes it without also landing on the
 	 * row underneath. Esc, the focus trap and focus coming back are the browser's.
@@ -28,7 +28,7 @@
 	// Whether the last thing done was a tap or a click, not a key.
 	let tapped = false;
 
-	export async function open(anchor?: HTMLElement): Promise<void> {
+	export async function open(anchor?: HTMLElement | DOMRect): Promise<void> {
 		anchored = Boolean(anchor);
 		// The caller has just set what the sheet shows: let that render, then measure.
 		await tick();
@@ -39,7 +39,7 @@
 		// A sheet that takes over from another (the menu's "Add to playlist…") inherits its entry.
 		if (!page.state.sheet) void goto('', { state: { ...page.state, sheet: true }, shallow: true, persistState: true });
 		if (!anchor) return;
-		const box = anchor.getBoundingClientRect();
+		const box = anchor instanceof HTMLElement ? anchor.getBoundingClientRect() : anchor;
 		const below = box.bottom + 4;
 		// No room under the button (the last rows): open upwards.
 		const top = below + dialog.offsetHeight > innerHeight - 8 ? box.top - 4 - dialog.offsetHeight : below;

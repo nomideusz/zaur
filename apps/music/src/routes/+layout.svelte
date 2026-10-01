@@ -2,18 +2,19 @@
 	import './layout.css';
 	import { onMount, tick } from 'svelte';
 	import { fade } from 'svelte/transition';
-	import { afterNavigate, beforeNavigate, goto, snapshot } from '$app/navigation';
+	import { afterNavigate, beforeNavigate, goto, onNavigate, snapshot } from '$app/navigation';
 	import { navigating, page } from '$app/state';
-	import { submit } from '#lib/api';
+	import { api, submit } from '#lib/api';
 	import { notice } from '#lib/notice.svelte';
-	import { player } from '#lib/player.svelte';
+	import { player, wide } from '#lib/player.svelte';
 	import { visit, way } from '#lib/visit.svelte';
 	import Icon, { type IconName } from '#lib/components/Icon.svelte';
 	import Mark from '#lib/components/Mark.svelte';
+	import NowPanel from '#lib/components/NowPanel.svelte';
 	import NowPlaying from '#lib/components/NowPlaying.svelte';
 	import PlayerBar from '#lib/components/PlayerBar.svelte';
 	import { sheetOpen } from '#lib/components/Sheet.svelte';
-	import type { User } from '#lib/types';
+	import type { Playlist, User } from '#lib/types';
 
 	let { children } = $props();
 	// Who is signed in comes with each page's data: the root layout has no load of its own
@@ -24,6 +25,7 @@
 	let main: HTMLElement;
 	let dock: HTMLElement;
 	let line: HTMLElement;
+	let bar: HTMLElement;
 
 	// Where this window was opened: the launch below that matches it is the one that opened it.
 	let opened = page.url.href;
@@ -51,9 +53,57 @@
 	// at the top and Back returns to where you were; a page that only changes its query (sort
 	// chips, Show more, search as you type — the reset="false" navigations) stays where it is.
 	snapshot({ id: 'scroll', capture: () => main.scrollTop, restore: (top) => (main.scrollTop = top) });
-	afterNavigate(({ from, to, type }) => {
+	afterNavigate((navigation) => {
+		const { from, to, type } = navigation;
+		depth = type === 'enter' ? 0 : Math.max(0, depth + (navigation.type === 'popstate' ? navigation.delta : 1));
 		if (from && type !== 'popstate' && from.url.pathname !== to?.url.pathname) main.scrollTop = 0;
+		requestAnimationFrame(scrolled);
+		if (!from || to?.url.pathname.startsWith('/playlist')) void loadPlaylists();
 	});
+
+	// The bar along the top: Back on a page reached from another, and the page's title once its
+	// own heading has scrolled up under the bar, as in an app's navigation bar.
+	let solid = $state(false);
+	let heading = $state('');
+	function scrolled() {
+		const h1 = main.querySelector('h1');
+		const under = main.getBoundingClientRect().top + bar.offsetHeight;
+		solid = h1 && h1.getClientRects().length ? h1.getBoundingClientRect().bottom < under : main.scrollTop > 0;
+		if (solid) heading = h1?.textContent?.trim() ?? '';
+	}
+	// Where Back goes when there is nothing in the app to go back to (opened here from a link).
+	// A section that is not in the phone's tab row (Playlists, Favourites, Account) hangs off Home, there only.
+	const up = $derived.by(() => {
+		const [, first, deeper] = page.url.pathname.match(/^\/([^/]+)(\/.)?/) ?? [];
+		if (deeper && ['album', 'artist', 'playlist'].includes(first)) return { href: `/${first}s`, phone: false };
+		if (!deeper && ['playlists', 'favourites', 'account'].includes(first)) return { href: '/', phone: true };
+	});
+	// How many pages into the app this one is: a reload starts again at none, so Back goes up instead.
+	// (A menu's or Now playing's own history entry is no page: Kit tells nobody about those.)
+	let depth = 0;
+	function back() {
+		if (depth > 0) history.back();
+		else if (up) void goto(up.href);
+	}
+
+	// A page slides in over the last one, as in a native app: a cross-fade where the browser can.
+	onNavigate((navigation) => {
+		if (!document.startViewTransition || navigation.from?.url.pathname === navigation.to?.url.pathname) return;
+		if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
+
+	// Your own playlists, in the sidebar; again whenever a playlist page is gone to (made, renamed, deleted).
+	let playlists = $state.raw<Playlist[]>([]);
+	async function loadPlaylists() {
+		const response = await api('/api/playlists').catch(() => undefined);
+		if (response?.ok) playlists = await response.json();
+	}
 
 	// A link or a goto() is held until the page's data is in, then made again by visit(): out of
 	// reach, the app stays where it is (see visit.svelte.ts). Back and Forward are Kit's alone.
@@ -122,7 +172,7 @@
 		href: string;
 		label: string;
 		icon: IconName;
-		/** Also in the phone's bottom row (five fit). */
+		/** Also in the phone's bottom row. */
 		tab?: boolean;
 	}
 	const sections: Section[] = [
@@ -191,7 +241,7 @@
 
 <svelte:window onkeydown={shortcut} onpointerdown={press} />
 
-<div class="shell">
+<div class="shell" class:paneled={wide.current && player.panel && player.current}>
 	<aside class="side">
 		<a class="brand" href="/">
 			<Mark />
@@ -204,6 +254,14 @@
 					{section.label}
 				</a>
 			{/each}
+			{#if playlists.length}
+				<h2 class="z-caption">Your playlists</h2>
+				{#each playlists as list (list.id)}
+					<a href="/playlist/{list.id}" class="navlink list" aria-current={page.url.pathname === `/playlist/${list.id}` ? 'page' : undefined}>
+						{list.name}
+					</a>
+				{/each}
+			{/if}
 		</nav>
 		{#if user}
 			<form class="account" method="POST" action="/auth/logout" onsubmit={submit}>
@@ -218,9 +276,21 @@
 		{/if}
 	</aside>
 
-	<main class="main" bind:this={main}>
+	<main class="main" class:backed={up} class:phone-back={up?.phone} bind:this={main} onscroll={scrolled}>
+		<header class="top" class:solid bind:this={bar}>
+			{#if up}
+				<button class="z-icon-btn back !size-9 pointer-coarse:!size-11" type="button" aria-label="Back" title="Back" onclick={back}>
+					<Icon name="chevron-left" class="size-5" />
+				</button>
+			{:else}<span></span>{/if}
+			<!-- A tap on the title goes back to the top, like a tap on a phone's status bar. -->
+			<button class="title" type="button" tabindex="-1" aria-hidden="true" onclick={() => main.scrollTo({ top: 0, behavior: 'smooth' })}>
+				{heading}
+			</button>
+		</header>
 		{@render children()}
 	</main>
+	{#if wide.current && player.panel}<NowPanel />{/if}
 	{#if way.to || navigating.to}<div class="loading"></div>{/if}
 
 	<div class="dock" bind:this={dock}>
@@ -275,10 +345,64 @@
 		overflow-y: auto;
 		overscroll-behavior: contain;
 	}
+	/* Over the page's top edge, so it takes no room: clear until the page slides up under it. */
+	.top {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		display: grid;
+		grid-template-columns: 44px minmax(0, 1fr) 44px;
+		align-items: center;
+		height: calc(48px + env(safe-area-inset-top));
+		margin-bottom: calc(-48px - env(safe-area-inset-top));
+		padding: env(safe-area-inset-top) 6px 0;
+		/* Clear, it lets taps through to the page; only Back takes them. */
+		pointer-events: none;
+		transition:
+			background-color 0.15s,
+			box-shadow 0.15s;
+	}
+	.top.solid {
+		background: color-mix(in srgb, var(--z-surface) 80%, transparent);
+		box-shadow: 0 1px 0 var(--z-hairline);
+		backdrop-filter: blur(16px) saturate(1.6);
+		-webkit-backdrop-filter: blur(16px) saturate(1.6);
+		pointer-events: auto;
+	}
+	.back {
+		border-radius: 999px;
+		pointer-events: auto;
+	}
+	/* Over a cover, Back still has something under it. */
+	.top:not(.solid) .back {
+		background: color-mix(in srgb, var(--z-surface) 70%, transparent);
+		-webkit-backdrop-filter: blur(8px);
+		backdrop-filter: blur(8px);
+	}
+	.top .title {
+		overflow: hidden;
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--z-ink);
+		font-size: 15px;
+		font-weight: 650;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+		opacity: 0;
+		transition: opacity 0.15s;
+	}
+	.top.solid .title {
+		opacity: 1;
+	}
+	/* A page with Back starts below it. */
+	.backed > :global(.page) {
+		padding-top: calc(48px + env(safe-area-inset-top));
+	}
 	/* A page is on its way: a line along the top, unless it is there before anyone could look. */
 	.loading {
 		grid-area: main;
-		z-index: 1;
+		z-index: 3;
 		height: 2px;
 		background: linear-gradient(90deg, transparent, var(--z-accent), transparent) 0 0 / 40% 100% no-repeat;
 		animation: loading 1.1s linear 150ms infinite backwards;
@@ -332,7 +456,8 @@
 	}
 	.tabs {
 		display: grid;
-		grid-template-columns: repeat(5, 1fr);
+		grid-auto-columns: 1fr;
+		grid-auto-flow: column;
 		height: 56px;
 		border-top: 1px solid var(--z-line);
 		background: var(--z-surface);
@@ -381,8 +506,39 @@
 		.main {
 			padding-left: 0;
 		}
+		.top {
+			grid-template-columns: 44px minmax(0, 1fr) 44px;
+			padding-inline: 20px;
+		}
+		.top .title {
+			text-align: left;
+		}
+		/* Playlists, Favourites and Account are in the sidebar here: nothing to go back up to. */
+		.phone-back .top .back {
+			visibility: hidden;
+		}
+		.backed:not(.phone-back) > :global(.page) {
+			padding-top: 56px;
+		}
+		.phone-back > :global(.page) {
+			padding-top: 28px;
+		}
 		.tabs {
 			display: none;
+		}
+	}
+	/* Wide: Now playing stands beside the page. */
+	.shell > :global(.panel) {
+		display: none;
+	}
+	@media (min-width: 1280px) {
+		.shell.paneled {
+			grid-template-columns: calc(232px + env(safe-area-inset-left)) minmax(0, 1fr) calc(320px + env(safe-area-inset-right));
+			grid-template-areas: 'side main panel' 'dock dock dock';
+		}
+		.shell > :global(.panel) {
+			grid-area: panel;
+			display: flex;
 		}
 	}
 	.brand {
@@ -400,6 +556,18 @@
 		flex: 1 0 auto;
 		flex-direction: column;
 		gap: 2px;
+	}
+	.side h2 {
+		margin: 18px 10px 4px;
+	}
+	.navlink.list {
+		display: block;
+		overflow: hidden;
+		height: 30px;
+		line-height: 30px;
+		color: var(--z-muted);
+		white-space: nowrap;
+		text-overflow: ellipsis;
 	}
 	.navlink {
 		display: flex;

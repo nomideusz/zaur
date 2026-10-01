@@ -124,6 +124,16 @@ closes, and a tap outside closes without also landing on what is underneath.
 Each is also a history entry, so Back closes it and stays on the page with the
 music playing. Now playing's entry survives a reload.
 
+At 1280px and wider, Now playing is a panel beside the page instead
+(`NowPanel.svelte`, not modal); the song in the player bar and its Queue
+button show and hide it, and that choice is remembered. Both share
+`Queue.svelte`, and both are tinted with the cover's average colour
+(`tintOf` in `#lib/player.svelte.ts`). On a phone, Now playing is pulled down
+to close, and the mini player is swiped up to open it or sideways for the next
+or previous song. A right-click on a song row (or a long press on Android)
+opens its ⋯ menu where the click was. iOS fires no contextmenu event for a
+long press, so there it is the ⋯ button only.
+
 `Sheet.svelte` is the one component behind the menus and cards. Its header
 comment has the rules a caller must follow, and the one that is easy to miss
 is that anything which navigates or reloads the page's data after closing a
@@ -170,6 +180,13 @@ stop the music. Two things prevent that, and the header comment of
 A link inside Now playing, a menu or a card closes that layer first, waits for
 its history step, then goes. Replacing the layer's shallow entry instead makes
 Kit treat the next Back as closing a layer, and the screen would not change.
+
+The bar along the top of `.main` shows the page's title once its own heading
+has scrolled under it, and Back on pages below a section (an album, an
+artist, a playlist; on a phone also Playlists, Favourites and Account). Back
+steps back through history when the app came from another of its pages, and
+otherwise goes up to the section. A page change cross-fades through a view
+transition unless reduced motion is asked for.
 
 `.main` scrolls, not the window, so Kit's own scroll handling never sees it.
 The layout does it: a new page opens at the top, Back returns to where you

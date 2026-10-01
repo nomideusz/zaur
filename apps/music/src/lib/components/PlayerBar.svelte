@@ -1,9 +1,13 @@
 <script lang="ts">
-	import { formatTime, player } from '#lib/player.svelte';
+	import { formatTime, isStarred, player, toggleStar, wide } from '#lib/player.svelte';
 	import Cover from './Cover.svelte';
 	import Icon from './Icon.svelte';
 
-	/** The mini player along the bottom; tapping the song opens Now playing. */
+	/**
+	 * The mini player along the bottom; tapping the song opens Now playing. On a
+	 * computer it is the player itself: the song on the left, the transport over
+	 * the seek bar in the middle, the volume and the queue on the right.
+	 */
 	const song = $derived(player.current);
 	const progress = $derived(player.duration ? (player.time / player.duration) * 100 : 0);
 	// While the thumb is held the slider shows where it is; the audio seeks once, on release
@@ -14,18 +18,36 @@
 		if (drag !== undefined) player.seek(drag);
 		drag = undefined;
 	}
+	// On a phone the bar is swiped: up for Now playing, sideways for the next or the last song.
+	let start: { x: number; y: number } | undefined;
+	function touch(event: TouchEvent) {
+		const at = event.touches[0];
+		start = innerWidth < 768 && !(event.target as Element).closest('.transport') ? { x: at.clientX, y: at.clientY } : undefined;
+	}
+	function swipe(event: TouchEvent) {
+		if (!start) return;
+		const at = event.changedTouches[0];
+		const [dx, dy] = [at.clientX - start.x, at.clientY - start.y];
+		start = undefined;
+		if (dy < -40 && -dy > Math.abs(dx)) player.open = true;
+		else if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 2) {
+			if (dx < 0) player.next();
+			else player.previous();
+		}
+	}
 	const repeatLabel = $derived(`Repeat: ${{ off: 'off', all: 'all', one: 'this song' }[player.repeat]}`);
 	// The slider at zero is as silent as muted: the button shows, says and undoes both.
 	const silent = $derived(player.muted || !player.volume);
 </script>
 
 {#if song}
-	<div class="bar">
+	<div class="bar" role="region" aria-label="Player" ontouchstart={touch} ontouchend={swipe}>
 		<span class="line" style="width: {progress}%"></span>
+		<div class="left">
 		<button
 			class="now"
 			type="button"
-			onclick={() => (player.open = true)}
+			onclick={() => player.show()}
 			aria-label="Now playing: {song.title}{song.artist ? ` — ${song.artist}` : ''}. Open player"
 		>
 			<Cover id={song.coverArt} size={96} class="w-11 shrink-0 !rounded-md" />
@@ -34,6 +56,19 @@
 				<span class="meta">{song.artist ?? ''}</span>
 			</span>
 		</button>
+		<button
+			class="z-icon-btn !size-9 shrink-0 wide"
+			class:starred={isStarred(song)}
+			type="button"
+			aria-label={isStarred(song) ? 'Remove from favourites' : 'Add to favourites'}
+			aria-pressed={isStarred(song)}
+			onclick={() => toggleStar(song)}
+		>
+			<Icon name={isStarred(song) ? 'heart-filled' : 'heart'} />
+		</button>
+		</div>
+
+		<div class="center">
 
 		<div class="transport">
 			<button
@@ -98,6 +133,9 @@
 			/>
 			<span class="z-mono">{formatTime(player.duration)}</span>
 		</div>
+		</div>
+
+		<div class="right">
 
 		<!-- Loudness is the hardware keys' job on a phone (and iOS ignores it), so this is for a mouse. -->
 		<div class="vol wide">
@@ -123,9 +161,17 @@
 			/>
 		</div>
 
-		<button class="z-icon-btn !size-9 wide" type="button" aria-label="Queue" title="Queue" onclick={() => (player.open = true)}>
+		<button
+			class="z-icon-btn !size-9 wide"
+			class:on={wide.current && player.panel}
+			type="button"
+			aria-label="Queue"
+			title="Queue"
+			onclick={() => player.show()}
+		>
 			<Icon name="queue" />
 		</button>
+		</div>
 	</div>
 {/if}
 
@@ -230,6 +276,15 @@
 		border-radius: 999px;
 		background: currentColor;
 	}
+	.starred {
+		color: var(--z-ch-flagged-solid);
+	}
+	/* On a phone the three parts are one row. */
+	.left,
+	.center,
+	.right {
+		display: contents;
+	}
 	.scrub {
 		display: flex;
 		flex: 1.4;
@@ -278,8 +333,42 @@
 		.line {
 			display: none;
 		}
+		.bar {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr) minmax(0, 2fr) minmax(0, 1fr);
+			height: 76px;
+			padding: 0 16px;
+		}
+		.left {
+			display: flex;
+			align-items: center;
+			gap: 6px;
+			min-width: 0;
+		}
 		.now {
-			flex: 1;
+			flex: 0 1 auto;
+		}
+		.now :global(.cover) {
+			width: 52px;
+		}
+		.center {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-self: center;
+			width: 100%;
+			max-width: 640px;
+		}
+		.center .scrub {
+			flex: none;
+			width: 100%;
+			margin-top: -2px;
+		}
+		.right {
+			display: flex;
+			align-items: center;
+			justify-content: flex-end;
+			gap: 4px;
 		}
 	}
 </style>

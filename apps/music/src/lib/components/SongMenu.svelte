@@ -17,7 +17,7 @@
 	let song = $state<Song>();
 	let index = 0;
 
-	export function open(row: Song, at: number, button: HTMLElement): void {
+	export function open(row: Song, at: number, button: HTMLElement | DOMRect): void {
 		song = row;
 		index = at;
 		sheet.open(button);

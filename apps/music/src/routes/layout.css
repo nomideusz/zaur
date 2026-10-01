@@ -7,9 +7,30 @@
 @import '../../../mail2/src/routes/styles/tokens.css';
 @import '../../../mail2/src/routes/styles/base.css';
 
+/*
+ * An app, not a document: no grey flash on a tap, no text selected or callout
+ * from a long press on the chrome, the tiles and the rows, and no wait for a
+ * double-tap zoom. Text people may want to copy (a title on its page, the
+ * account's address) stays selectable.
+ */
+html {
+	-webkit-tap-highlight-color: transparent;
+	touch-action: manipulation;
+}
+button,
+a,
+nav,
+.dock,
+.album-row,
+.album-grid,
+img {
+	-webkit-touch-callout: none;
+	user-select: none;
+}
+
 @layer components {
 	.page {
-		max-width: 1280px;
+		max-width: 1760px;
 		margin: 0 auto;
 		padding: calc(16px + env(safe-area-inset-top)) 16px 32px;
 	}
@@ -64,9 +85,10 @@
 	.link:hover {
 		text-decoration: underline;
 	}
+	/* Tiles grow with a wide screen, rather than only more of them. */
 	.album-grid {
 		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+		grid-template-columns: repeat(auto-fill, minmax(clamp(150px, 11vw, 220px), 1fr));
 		gap: 20px 16px;
 	}
 	@media (max-width: 480px) {
@@ -77,7 +99,7 @@
 	}
 	.album-row {
 		display: grid;
-		grid-auto-columns: minmax(136px, 164px);
+		grid-auto-columns: clamp(136px, 10vw, 200px);
 		grid-auto-flow: column;
 		gap: 16px;
 		padding-bottom: 6px;
@@ -123,6 +145,15 @@
 	@media (prefers-reduced-motion: no-preference) {
 		.album-row {
 			scroll-behavior: smooth;
+		}
+		/* A press is felt: what is under the finger gives a little (scale, not transform: theirs stay). */
+		@media (pointer: coarse) {
+			.z-icon-btn:active:not(:disabled),
+			.btn-tactile:active:not(:disabled),
+			.album-row a:active,
+			.album-grid a:active {
+				scale: 0.94;
+			}
 		}
 	}
 }

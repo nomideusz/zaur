@@ -5,7 +5,7 @@
  */
 import { goto } from '$app/navigation';
 import { page } from '$app/state';
-import { SvelteMap } from 'svelte/reactivity';
+import { MediaQuery, SvelteMap } from 'svelte/reactivity';
 import { api, post } from '#lib/api';
 import { notify } from '#lib/notice.svelte';
 import type { Song } from '#lib/types';
@@ -28,6 +28,7 @@ interface Prefs {
 	muted?: boolean;
 	repeat?: Repeat;
 	shuffling?: boolean;
+	panel?: boolean;
 }
 
 function shuffled<T>(items: T[]): T[] {
@@ -71,6 +72,34 @@ const level = (song: Song | undefined) => {
 
 const streamUrl = (id: string) => `/api/stream/${encodeURIComponent(id)}`;
 
+/** Wide enough for Now playing to stand beside the page rather than over it. */
+export const wide = new MediaQuery('min-width: 1280px');
+
+/**
+ * A cover's average colour, for what is around it to be tinted with; '' until known.
+ * Same origin, so the canvas may read it.
+ */
+const tints = new SvelteMap<string, string>();
+const asked = new Set<string>();
+export function tintOf(id: string | undefined): string {
+	if (id && !asked.has(id)) {
+		asked.add(id);
+		const img = new Image();
+		img.onload = () => {
+			const context = document.createElement('canvas').getContext('2d', { willReadFrequently: true });
+			if (!context) return;
+			// 8×8 and averaged: drawn straight to one pixel, a browser samples only a few.
+			context.drawImage(img, 0, 0, 8, 8);
+			const data = context.getImageData(0, 0, 8, 8).data;
+			const sum = [0, 0, 0];
+			for (let i = 0; i < data.length; i += 4) for (let c = 0; c < 3; c++) sum[c] += data[i + c];
+			tints.set(id, `rgb(${sum.map((v) => Math.round(v / 64)).join(' ')})`);
+		};
+		img.src = coverUrl(id, 64)!;
+	}
+	return (id && tints.get(id)) || '';
+}
+
 export const coverUrl = (id: string | undefined, size = 300) => (id ? `/api/cover/${encodeURIComponent(id)}?size=${size}` : undefined);
 
 class Player {
@@ -88,6 +117,8 @@ class Player {
 	repeat = $state<Repeat>('off');
 	/** What comes next is in a random order; off puts it back as it was. */
 	shuffling = $state(false);
+	/** On a wide screen: Now playing beside the page. */
+	panel = $state(true);
 
 	#audio: HTMLAudioElement | undefined;
 	#channel: BroadcastChannel | undefined;
@@ -130,6 +161,15 @@ class Player {
 		else history.back();
 	}
 
+	/** The song at the bottom, or Queue, pressed: the panel beside the page on a wide screen, Now playing otherwise. */
+	show(): void {
+		if (!wide.current) this.open = true;
+		else {
+			this.panel = !this.panel;
+			this.#savePrefs();
+		}
+	}
+
 	/** Called once by the layout with its <audio>; returns the teardown. */
 	attach(audio: HTMLAudioElement): () => void {
 		this.#audio = audio;
@@ -143,6 +183,7 @@ class Player {
 		this.volumeWorks = probe.volume === 0.5;
 		this.repeat = prefs.repeat ?? 'off';
 		this.shuffling = prefs.shuffling === true;
+		this.panel = prefs.panel !== false;
 		this.#restore();
 		this.#sound();
 		const on = <K extends keyof HTMLMediaElementEventMap>(type: K, fn: () => void) => {
@@ -444,7 +485,7 @@ class Player {
 	}
 
 	#savePrefs(): void {
-		store(PREFS, { volume: this.volume, muted: this.muted, repeat: this.repeat, shuffling: this.shuffling } satisfies Prefs);
+		store(PREFS, { volume: this.volume, muted: this.muted, repeat: this.repeat, shuffling: this.shuffling, panel: this.panel } satisfies Prefs);
 	}
 
 	#save(): void {
