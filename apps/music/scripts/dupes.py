@@ -1,5 +1,13 @@
 """
-Duplicate songs in the music library: the same artist and title (tidied as
+Doubles in the music library: the same album split in two, and the same song twice.
+
+An album split in two is one Navidrome counts twice because its songs' tags
+differ: a release date on some and not others (retag.py's MP3s against whole
+albums added from the app), or the album artist spelled two ways ("Bjork",
+"Björk"). The smaller parts are retagged like the biggest one (inside the music
+container, by retag.py unsplit, which keeps the old tags for its undo).
+
+Duplicate songs: the same artist and title (tidied as
 retag.py tidies them) at the same length, give or take a few seconds. Of each
 set, the copy on a real album wins, then lossless, then the higher bitrate; the
 rest move out of the library to a folder of their own, so undo puts them back.
@@ -13,6 +21,7 @@ database, read-only, for the songs and who uses them.
   python3 dupes.py report  -> /srv/zaur-music/retag/dupes.jsonl, and a summary (moves nothing)
   python3 dupes.py apply   -> moves what the report says to /srv/zaur-music/dupes/, then a Navidrome scan
   python3 dupes.py undo    -> moves them back, then a scan
+  python3 dupes.py unsplit -> retags split albums' smaller parts, then a scan (hourly from contabo's crontab)
 """
 import collections, json, os, re, shutil, sqlite3, subprocess, sys, unicodedata
 
@@ -82,10 +91,44 @@ def report():
     print(f'{len(sets)} sets: {moves} to move, {kept_in_use} stay because someone uses them -> {REPORT}')
 
 
-def scan():
+def retag(*args):
     container = subprocess.run(['docker', 'ps', '-qf', 'name=zaur-music-klupig'], capture_output=True, text=True).stdout.split()
-    if container: subprocess.run(['docker', 'exec', container[0], 'python3', '/data/retag/retag.py', 'scan'], check=False)
-    else: print('music container not found: scan Navidrome by hand')
+    if container: subprocess.run(['docker', 'exec', container[0], 'python3', '/data/retag/retag.py', *args], check=False)
+    else: print('music container not found: run retag.py', *args, 'in it by hand')
+
+
+def scan():
+    retag('scan')
+
+
+def unsplit():
+    """Albums by the same name and album artist (give or take accents and case) that Navidrome counts as several."""
+    db = sqlite3.connect(f'file:{DB}?mode=ro', uri=True)
+    db.row_factory = sqlite3.Row
+    albums = [dict(r) for r in db.execute(
+        'select id, name, album_artist, date, release_date, mbz_album_id, song_count from album where song_count > 0 and not missing')]
+    groups = collections.defaultdict(list)
+    for a in albums: groups[(norm(a['name']), norm(a['album_artist']))].append(a)
+    rows = []
+    for key, parts in groups.items():
+        if len(parts) < 2 or not all(key): continue
+        # The part that knows most (a MusicBrainz ID, a release date), then the biggest, then the earliest (the original).
+        main = max(parts, key=lambda a: (bool(a['mbz_album_id']), bool(a['release_date']), a['song_count'],
+                                         -int((a['date'] or '9999')[:4] or 9999)))
+        discs = bool(db.execute('select 1 from media_file where album_id = ? and disc_number > 0 and not missing', (main['id'],)).fetchone())
+        for part in parts:
+            if part is main: continue
+            for (path,) in db.execute('select path from media_file where album_id = ? and not missing', (part['id'],)):
+                rows.append({'path': path, 'album': main['name'], 'albumartist': main['album_artist'],
+                             'date': main['date'], 'releasedate': main['release_date'],
+                             # Navidrome's album ID is the MusicBrainz one when there is one.
+                             'musicbrainz_albumid': main['mbz_album_id'],
+                             # Disc numbers only if the album has them, or the songs sort apart.
+                             'discs': discs})
+    with open(f'{OUT}/unsplit.jsonl', 'w') as out:
+        for r in rows: out.write(json.dumps(r, ensure_ascii=False) + '\n')
+    print('to retag', len(rows))
+    if rows: retag('unsplit', '/data/retag/unsplit.jsonl')
 
 
 def move(src, dst):
@@ -120,4 +163,4 @@ def undo():
 
 
 if __name__ == '__main__':
-    {'report': report, 'apply': apply, 'undo': undo}[sys.argv[1]]()
+    {'report': report, 'apply': apply, 'undo': undo, 'unsplit': unsplit}[sys.argv[1]]()

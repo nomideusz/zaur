@@ -7,6 +7,9 @@ looked up on Deezer (with its cover). Songs keep their Navidrome IDs (matched by
   python3 retag.py apply [plan]  -> writes tags; old tags to /data/retag/backup.jsonl
   python3 retag.py undo   -> restores tags from backup.jsonl
   python3 retag.py gain   -> ReplayGain track gain/peak (measured by ffmpeg) for every song without one
+  python3 retag.py unsplit <plan>  -> retags split albums' smaller parts like the main part (plan from dupes.py
+                             unsplit, on the host); old tags to /data/retag/unsplit-backup.jsonl
+  python3 retag.py unsplit-undo    -> puts those back
   python3 retag.py sweep  -> plan + apply + gain for files that arrived since, then a Navidrome scan
                              (hourly from contabo's crontab; see apps/music/README.md)
 
@@ -18,7 +21,7 @@ from concurrent.futures import ThreadPoolExecutor
 import mutagen
 from mutagen.easyid3 import EasyID3
 from mutagen.easymp4 import EasyMP4Tags
-from mutagen.id3 import APIC, ID3, TALB, TDRC, TIT2, TPE1, TPE2
+from mutagen.id3 import APIC, ID3, TALB, TDRC, TDRL, TIT2, TPE1, TPE2
 
 ROOT = os.environ.get('RETAG_ROOT', '/music')
 OUT = os.environ.get('RETAG_OUT', '/data/retag')
@@ -188,7 +191,11 @@ def apply(plan_file=f'{OUT}/plan.jsonl'):
             tags.setall('TPE1', [TPE1(encoding=3, text=new['artist'])])
             tags.setall('TPE2', [TPE2(encoding=3, text=new.get('albumartist') or new['artist'])])
         tags.setall('TALB', [TALB(encoding=3, text=new['album'])])
-        if new.get('year'): tags.setall('TDRC', [TDRC(encoding=3, text=str(new['year']))])
+        if new.get('year'):
+            tags.setall('TDRC', [TDRC(encoding=3, text=str(new['year']))])
+            # Navidrome's album ID includes the release date: without it the song is an album apart
+            # from the same album added in the app (whose m4a date counts as both).
+            tags.setall('TDRL', [TDRL(encoding=3, text=str(new['year']))])
         url = new.get('cover')
         if url:
             if url not in covers:
@@ -219,6 +226,7 @@ GAIN_KEY, PEAK_KEY = 'replaygain_track_gain', 'replaygain_track_peak'
 # TXXX frames, which Navidrome reads (EasyID3's own replaygain keys write RVA2).
 EasyID3.RegisterTXXXKey(GAIN_KEY, 'REPLAYGAIN_TRACK_GAIN')
 EasyID3.RegisterTXXXKey(PEAK_KEY, 'REPLAYGAIN_TRACK_PEAK')
+EasyID3.RegisterTextKey('releasedate', 'TDRL')
 EasyMP4Tags.RegisterFreeformKey(GAIN_KEY, 'REPLAYGAIN_TRACK_GAIN')
 EasyMP4Tags.RegisterFreeformKey(PEAK_KEY, 'REPLAYGAIN_TRACK_PEAK')
 
@@ -268,6 +276,68 @@ def gain():
     return n
 
 
+ALBUM_KEYS = ('album', 'albumartist', 'date', 'releasedate', 'musicbrainz_albumid', 'tracknumber', 'discnumber')
+
+
+def deezer_tracks(album_name, artist):
+    """norm(title) -> (track, disc) on Deezer's album by this name and artist; empty if not found."""
+    key = (album_name, artist)
+    if key not in albums:
+        found = get('https://api.deezer.com/search/album?' + urllib.parse.urlencode({'q': f'{artist} {album_name}', 'limit': 25})).get('data', [])
+        hit = next((a for a in found if norm(EDITION.sub('', a['title'])) == norm(EDITION.sub('', album_name))
+                    and norm(a['artist']['name']) == norm(artist)), None)
+        tracks = get(f'https://api.deezer.com/album/{hit["id"]}/tracks?limit=200').get('data', []) if hit else []
+        albums[key] = {norm(clean(t.get('title_short') or t['title'])): (t.get('track_position'), t.get('disk_number')) for t in tracks}
+    return albums[key]
+
+
+def unsplit(plan_file):
+    backup = open(f'{OUT}/unsplit-backup.jsonl', 'a')
+    n = 0
+    for line in open(plan_file):
+        row = json.loads(line)
+        p = os.path.join(ROOT, row['path'])
+        f = mutagen.File(p, easy=True) if os.path.exists(p) else None
+        if f is None: continue
+        if f.tags is None: f.add_tags()
+        mp4 = isinstance(f.tags, EasyMP4Tags)
+        backup.write(json.dumps({'path': p, 'tags': {k: [str(v) for v in f.tags[k]] for k in ALBUM_KEYS if k in f.tags}}, ensure_ascii=False) + '\n')
+        backup.flush()
+        want = {k: row.get(k) for k in ('album', 'albumartist', 'date', 'releasedate', 'musicbrainz_albumid')}
+        # An m4a has one date, which Navidrome reads as both.
+        if mp4: want['date'] = want.pop('releasedate') or want['date']
+        for k, v in want.items():
+            if v: f[k] = v
+            elif k in f.tags: del f[k]
+        # Its place on the album, which a song filed as a single never had.
+        if 'tracknumber' not in f.tags:
+            title = f.tags.get('title', [''])[0]
+            track, disc = deezer_tracks(row['album'], row['albumartist']).get(norm(clean(title)), (None, None))
+            if track:
+                f['tracknumber'] = str(track)
+                if disc and row.get('discs'): f['discnumber'] = str(disc)
+        f.save()
+        n += 1
+    print('unsplit', n)
+    if n: navidrome('startScan')
+
+
+def unsplit_undo():
+    n = 0
+    for line in open(f'{OUT}/unsplit-backup.jsonl'):
+        row = json.loads(line)
+        f = mutagen.File(row['path'], easy=True) if os.path.exists(row['path']) else None
+        if f is None: continue
+        for k in ALBUM_KEYS:
+            if k in row['tags']: f[k] = row['tags'][k]
+            elif k in f.tags: del f[k]
+        f.save()
+        n += 1
+    os.rename(f'{OUT}/unsplit-backup.jsonl', f'{OUT}/unsplit-backup.jsonl.undone')
+    print('restored', n)
+    if n: navidrome('startScan')
+
+
 def sweep():
     # One at a time: the first gain pass outlasts the hour.
     lock = open(f'{OUT}/sweep.lock', 'w')
@@ -296,4 +366,4 @@ def undo():
 
 
 if __name__ == '__main__':
-    {'plan': plan, 'apply': apply, 'undo': undo, 'gain': gain, 'sweep': sweep, 'scan': lambda: navidrome('startScan')}[sys.argv[1]](*sys.argv[2:])
+    {'plan': plan, 'apply': apply, 'undo': undo, 'gain': gain, 'sweep': sweep, 'scan': lambda: navidrome('startScan'), 'unsplit': unsplit, 'unsplit-undo': unsplit_undo}[sys.argv[1]](*sys.argv[2:])

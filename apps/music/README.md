@@ -245,6 +245,13 @@ database: `report` says what it would move, `apply` moves it, `undo` puts it
 back. It moves only a loose single or a second copy on the same album, and
 never one in anyone's favourites or a playlist.
 
+`dupes.py unsplit` (hourly from contabo's root crontab, at :47) finds albums
+Navidrome shows twice because their songs' tags differ: a release date on
+some, a MusicBrainz ID on others, the album artist spelled two ways. It retags
+the smaller parts like the main one (`retag.py unsplit` in the container, with
+track numbers from Deezer where a song had none); `retag.py unsplit-undo` puts
+the old tags back.
+
 ## Checks
 
 ```sh
