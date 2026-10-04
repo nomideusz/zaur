@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Windmill',
+			desc: 'Windmill developer platform: turn Python, TypeScript, Bash and SQL scripts into flows, webhooks, cron jobs and internal apps, with a worker and a native worker, and your superadmin created on first boot.',
+			deploy: 'https://railway.com/deploy/windmill-dev',
+			source: 'https://github.com/nomideusz/windmill-railway'
+		},
+		{
 			name: 'Codewhale',
 			desc: 'Codewhale coding agent, git, gh, Node, Python. Browser terminal + SSH.',
 			deploy: 'https://railway.com/deploy/codewhale',
