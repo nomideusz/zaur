@@ -191,9 +191,6 @@
 		{#if data.registerUrl}
 			Need an address?
 			<a href={data.registerUrl} class={linkClass}>Create your account</a>
-		{:else}
-			Invites open periodically at
-			<a href="https://register.zaur.app" class={linkClass}>register.zaur.app</a>
 		{/if}
 	{/snippet}
 </AuthCard>
