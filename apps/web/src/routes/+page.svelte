@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Infisical',
+			desc: 'Infisical secrets manager: env vars, API keys and certificates for your team and apps, with the admin created and public sign-up closed on first boot.',
+			deploy: 'https://railway.com/deploy/infisical-secrets',
+			source: 'https://github.com/nomideusz/infisical-railway'
+		},
+		{
 			name: 'Windmill',
 			desc: 'Windmill developer platform: turn Python, TypeScript, Bash and SQL scripts into flows, webhooks, cron jobs and internal apps, with a worker and a native worker, and your superadmin created on first boot.',
 			deploy: 'https://railway.com/deploy/windmill-dev',
