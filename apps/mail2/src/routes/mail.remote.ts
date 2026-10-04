@@ -56,16 +56,23 @@ export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 /**
  * Mailboxes other people share with you, each with its folders — the
  * sidebar's Shared group. A folder they did not share is not listed.
+ *
+ * The session can name an account that then refuses Mailbox/get ("You do not
+ * have access to account br" — ~70 a day since 09-28); one such account used
+ * to fail the whole group. It is left out instead.
  */
 export const sharedMailboxes = query(async (): Promise<SharedMailboxDTO[]> => {
 	const client = await connect();
-	return Promise.all(
-		client.getSharedMailAccounts().map(async ({ id, name }) => ({
-			id,
-			name,
-			mailboxes: folderList(await client.forAccount(id)!.getMailboxes())
-		}))
+	const accounts = await Promise.all(
+		client.getSharedMailAccounts().map(async ({ id, name }) => {
+			try {
+				return { id, name, mailboxes: folderList(await client.forAccount(id)!.getMailboxes()) };
+			} catch {
+				return null;
+			}
+		})
 	);
+	return accounts.filter((a) => a !== null);
 });
 
 /**
