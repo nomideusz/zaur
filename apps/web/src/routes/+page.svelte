@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import Drawing from '$lib/Drawing.svelte';
+	import { onMount, tick } from 'svelte';
 	import Icon from '$lib/Icon.svelte';
 	import { kinds, kindOf } from '$lib/template-kinds';
 	import mailDesktop from '$lib/plates/mail-desktop.webp';
@@ -17,7 +16,8 @@
 			name: 'Szkoły Jogi',
 			desc: 'The directory of yoga and pilates schools in Poland: class schedules, pass prices, reviews and online sign-up.',
 			href: 'https://szkolyjogi.pl',
-			lead: true
+			lead: true,
+			uses: ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify']
 		},
 		{
 			id: 'fixtar',
@@ -25,13 +25,15 @@
 			desc: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
 			href: 'https://fixtar.pl',
 			lead: true,
-			client: true
+			client: true,
+			uses: ['svelte-search']
 		},
 		{
 			id: 'mail',
 			name: 'Mail',
 			desc: 'A clean inbox and your own @zaur.app address.',
 			href: 'https://webmail.zaur.app',
+			uses: ['svelte-calendar'],
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/mail2',
 			plates: [
 				{ src: mailDesktop, w: 1440, h: 900, alt: 'Zaur Mail on a desktop: folders on the left, the inbox list, and an open three-message thread.' },
@@ -48,7 +50,8 @@
 			id: 'dino',
 			name: 'Dino',
 			desc: 'Your sky for the next 24 hours — real sun, moon, stars, and live weather on one quiet page.',
-			href: 'https://dino.zaur.app'
+			href: 'https://dino.zaur.app',
+			uses: ['zaur-world']
 		},
 		{
 			id: 'music',
@@ -693,7 +696,7 @@
 	const specs: Record<string, [string, string][]> = {
 		szkolyjogi: [
 			['Covers', 'Yoga and pilates schools across Poland'],
-			['Built on', '9 packages from this catalog'],
+			['Built on', 'All 10 packages in this catalog'],
 			['Languages', 'Polish, English, Ukrainian']
 		],
 		fixtar: [
@@ -725,8 +728,8 @@
 
 	// Part numbers: templates count up from the oldest, so a new card at the
 	// top of the list gets the next number and existing ones never shift.
-	const apps = products.map((p, i) => ({ ...p, part: `A${i + 1}`, specs: specs[p.id] ?? [] }));
-	const pkgs = packages.map((p, i) => ({ ...p, part: `P${i + 1}` }));
+	const apps = products.map((p, i) => ({ ...p, part: `A${i + 1}`, specs: specs[p.id] ?? [], uses: p.uses ?? [] }));
+	const pkgs = packages.map((p, i) => ({ ...p, part: `P${i + 1}`, id: p.name.split('/')[1] }));
 	const skls = skills.map((s, i) => ({ ...s, part: `S${i + 1}` }));
 	// Stack column: the services a template's own description names.
 	const stackWords: [RegExp, string][] = [
@@ -754,8 +757,6 @@
 		!needle || fields.some((f) => f?.toLowerCase().includes(needle));
 
 	const shownApps = $derived(apps.filter((a) => hits(a.part, a.name, a.desc, ...a.specs.flat())));
-	// Below the full-width leads, every second part sits in the right column.
-	const rightCol = $derived(new Set(shownApps.filter((a) => !a.lead).filter((_, i) => i % 2).map((a) => a.id)));
 
 	// "Look inside": screenshots of apps that need an account to open.
 	let viewer: HTMLDialogElement;
@@ -770,6 +771,83 @@
 			.map(([kind]) => ({ kind, rows: shownTpls.filter((t) => t.kind === kind) }))
 			.filter((g) => g.rows.length)
 	);
+	// Wires: one per real import, drawn only while both ends are on the canvas.
+	const edges = $derived(
+		shownApps.flatMap((a) =>
+			a.uses.filter((id) => shownPkgs.some((p) => p.id === id)).map((to) => ({ from: a.id, to, key: `${a.id}>${to}` }))
+		)
+	);
+
+	// Tracing: hovering or focusing a node lights its wires and the nodes they reach.
+	let active = $state<string | null>(null);
+	const reach = $derived.by(() => {
+		if (!active) return null;
+		const ids = new Set([active]);
+		for (const e of edges) {
+			if (e.from === active) ids.add(e.to);
+			if (e.to === active) ids.add(e.from);
+		}
+		return ids;
+	});
+	const lit = (e: { from: string; to: string }) => e.from === active || e.to === active;
+
+	// Nodes drag by their header on wide screens; the wires follow.
+	let offsets = $state<Record<string, { x: number; y: number }>>({});
+	const moved = $derived(Object.keys(offsets).length > 0);
+	let dragging = $state<string | null>(null);
+	let graph = $state<HTMLElement>();
+	let paths = $state<Record<string, string>>({});
+	let ports = $state<{ x: number; y: number }[]>([]);
+	let wide = $state(false);
+
+	function grab(e: PointerEvent, id: string) {
+		if (!wide || e.button !== 0 || (e.target as HTMLElement).closest('a, button')) return;
+		const head = e.currentTarget as HTMLElement;
+		const from = offsets[id] ?? { x: 0, y: 0 };
+		head.setPointerCapture(e.pointerId);
+		dragging = id;
+		const move = (m: PointerEvent) => {
+			offsets[id] = { x: from.x + m.clientX - e.clientX, y: from.y + m.clientY - e.clientY };
+		};
+		const drop = () => {
+			dragging = null;
+			head.removeEventListener('pointermove', move);
+			head.removeEventListener('pointerup', drop);
+			head.removeEventListener('pointercancel', drop);
+		};
+		head.addEventListener('pointermove', move);
+		head.addEventListener('pointerup', drop);
+		head.addEventListener('pointercancel', drop);
+	}
+
+	// Port to port, measured from the rendered nodes. Packages sit between their
+	// consumers, so a wire leaves and enters on whichever side faces the other end.
+	function route() {
+		if (!graph || !wide) return;
+		const g = graph.getBoundingClientRect();
+		const box = (id: string) => graph!.querySelector(`[data-node="${id}"]`)?.getBoundingClientRect();
+		const next: Record<string, string> = {};
+		const dots = new Map<string, { x: number; y: number }>();
+		for (const e of edges) {
+			const a = box(e.from);
+			const b = box(e.to);
+			if (!a || !b) continue;
+			const right = a.left + a.width / 2 < b.left + b.width / 2;
+			const p = { x: (right ? a.right : a.left) - g.left, y: a.top + 22 - g.top };
+			const q = { x: (right ? b.left : b.right) - g.left, y: b.top + 22 - g.top };
+			const dx = Math.max(48, Math.abs(q.x - p.x) * 0.45) * (right ? 1 : -1);
+			next[e.key] = `M${p.x} ${p.y}C${p.x + dx} ${p.y} ${q.x - dx} ${q.y} ${q.x} ${q.y}`;
+			dots.set(`${p.x},${p.y}`, p).set(`${q.x},${q.y}`, q);
+		}
+		paths = next;
+		ports = [...dots.values()];
+	}
+
+	$effect(() => {
+		void [edges, offsets[dragging ?? ''], wide, Object.keys(offsets).length];
+		tick().then(route);
+	});
+
 	const total = $derived(shownApps.length + shownPkgs.length + shownSkills.length + shownTpls.length);
 
 	const index = $derived([
@@ -805,6 +883,18 @@
 	let trafficDown = $state(false);
 
 	onMount(() => {
+		const mq = matchMedia('(min-width: 861px)');
+		const sync = () => {
+			wide = mq.matches;
+			if (!wide) offsets = {};
+		};
+		sync();
+		mq.addEventListener('change', sync);
+		// Live data and font loading change node heights, so the wires re-route.
+		const ro = new ResizeObserver(() => route());
+		if (graph) for (const el of [graph, ...graph.querySelectorAll('.col, .stack')]) ro.observe(el);
+		document.fonts?.ready.then(route);
+
 		fetch('/api/traffic')
 			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
 			.then((t) => (traffic = t))
@@ -822,6 +912,11 @@
 				})
 				.catch(() => (registryDown = true));
 		}
+
+		return () => {
+			mq.removeEventListener('change', sync);
+			ro.disconnect();
+		};
 	});
 
 	let copied = $state('');
@@ -848,6 +943,66 @@
 
 {#snippet hl(text: string)}{#each pieces(text) as p, i (i)}{#if p.hit}<mark>{p.text}</mark>{:else}{p.text}{/if}{/each}{/snippet}
 
+{#snippet appNode(a: (typeof apps)[number])}
+	{@const o = offsets[a.id]}
+	<article
+		class="node node--app"
+		class:node--lead={a.lead}
+		class:dim={reach && !reach.has(a.id)}
+		class:held={dragging === a.id}
+		id={a.id}
+		data-node={a.id}
+		aria-labelledby="{a.id}-name"
+		style:translate={o ? `${o.x}px ${o.y}px` : null}
+		onpointerenter={() => (active = a.id)}
+		onpointerleave={() => (active = null)}
+		onfocusin={() => (active = a.id)}
+		onfocusout={() => (active = null)}
+	>
+		<!-- svelte-ignore a11y_no_static_element_interactions (dragging is a pointer-only extra) -->
+	<header class="node__head" onpointerdown={(e) => grab(e, a.id)}>
+			<span class="part">{@render hl(a.part)}</span>
+			<h3 id="{a.id}-name">{@render hl(a.name)}</h3>
+			<span class="host">{new URL(a.href).host}</span>
+		</header>
+		<div class="node__body">
+			{#if a.client}<p class="tag">Client work</p>{/if}
+			<p class="node__desc">{@render hl(a.desc)}</p>
+			{#if a.id === 'szkolyjogi'}
+				<div class="readout">
+					<span class="dot" class:dot--off={!traffic}></span>
+					<p>
+						<strong>{traffic ? traffic.clicksPerDay : trafficDown ? '—' : '…'}</strong>
+						search clicks a day{#if traffic?.monthAgo && traffic.monthAgo < traffic.clicksPerDay}, up from {traffic.monthAgo} a month ago{/if}
+						<small>Google Search Console, last 7 days</small>
+					</p>
+				</div>
+			{/if}
+			<dl class="props">
+				{#each a.specs as [k, v] (k)}
+					<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
+				{/each}
+			</dl>
+			{#if a.uses.length}
+				<p class="imports">
+					<span>Imports</span>
+					{#each a.uses as u (u)}<a class="port-chip mono" href="#pkg-{u}">{u}</a>{/each}
+				</p>
+			{/if}
+			{#if a.plates}
+				<p class="node__note">Needs a Zaur address. <a href="#register">Get one free</a>.</p>
+				<div class="actions">
+					<a class="btn" href={a.href}>Sign in to {a.name} <Icon name="out" /></a>
+					<button type="button" class="btn btn--quiet" onclick={() => lookInside(a)}>Look inside</button>
+					<a class="node__link" href={a.source}>Source</a>
+				</div>
+			{:else}
+				<div class="actions"><a class="btn" href={a.href}>Open {a.name} <Icon name="out" /></a></div>
+			{/if}
+		</div>
+	</article>
+{/snippet}
+
 <svelte:window {onkeydown} />
 
 <svelte:head>
@@ -860,242 +1015,181 @@
 	<link rel="canonical" href="https://zaur.app/" />
 </svelte:head>
 
-<div class="catalog">
-	<header class="rail">
-		<a class="wordmark" href="/" aria-label="Zaur home">ZAUR</a>
-		<p class="rail__sub">Software catalog</p>
-		<nav class="rail__index" aria-label="Catalog sections">
+<div class="board">
+	<header class="bar">
+		<a class="logo" href="/" aria-label="Zaur home">ZAUR</a>
+		<nav class="bar__nav" aria-label="Sections">
 			{#each index as s (s.href)}
-				<a href={s.href} class:empty={!s.count}>
-					<span>{s.label}</span>
-					<span class="rail__count">{s.count}</span>
-				</a>
+				<a href={s.href} class:empty={!s.count}>{s.label} <span class="n">{s.count}</span></a>
 			{/each}
 		</nav>
-		<div class="rail__foot">
-			<p>Questions and work</p>
-			<a href="mailto:nom@zaur.app">nom@zaur.app</a>
-			<a href="https://github.com/nomideusz">github.com/nomideusz</a>
+		<div class="finder" role="search">
+			<label class="visually-hidden" for="find">Find anything on the canvas</label>
+			<Icon name="search" />
+			<input
+				id="find"
+				type="search"
+				bind:this={search}
+				bind:value={query}
+				placeholder="postgres, svelte, browser, T42…"
+				autocomplete="off"
+				spellcheck="false"
+			/>
+			<kbd aria-hidden="true">/</kbd>
 		</div>
+		<a class="bar__mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
 	</header>
 
-	<main class="sheet">
-		<section class="intro" aria-labelledby="intro-title">
-			<h1 id="intro-title">Software, stocked and running.</h1>
-			<p class="intro__lede">
-				Apps, open-source packages and one-click deployment templates. I build and maintain
-				every part in this catalog myself.
+	<main class="canvas">
+		<section class="hello" aria-labelledby="hello-title">
+			<h1 id="hello-title">I build software and keep it running.</h1>
+			<p class="hello__lede">
+				Apps, open-source packages and one-click deploy templates, all made and run by me. Every
+				connection is real: an app is wired only to the packages it actually imports.
 			</p>
-			<div class="finder" role="search">
-				<label for="find">Find a part</label>
-				<div class="finder__field">
-					<Icon name="search" />
-					<input
-						id="find"
-						type="search"
-						bind:this={search}
-						bind:value={query}
-						placeholder="postgres, browser, svelte, T42…"
-						autocomplete="off"
-						spellcheck="false"
-					/>
-					<kbd aria-hidden="true">/</kbd>
-				</div>
-				<p class="finder__count" aria-live="polite">
-					{#if needle}
-						{total} of {apps.length + pkgs.length + skls.length + tpls.length} parts match
-					{:else}
-						{apps.length + pkgs.length + skls.length + tpls.length} parts in stock
-					{/if}
-				</p>
-			</div>
+			<p class="hello__meta" aria-live="polite">
+				<span class="count">
+					{#if needle}{total} of {apps.length + pkgs.length + skls.length + tpls.length} nodes match{:else}{apps.length + pkgs.length + skls.length + tpls.length} nodes{/if}
+				</span>
+				{#if wide}<span>Hover a node to trace its wires. Drag one by its header.</span>{/if}
+				{#if moved}
+					<button type="button" class="link" onclick={() => (offsets = {})}>Put the nodes back</button>
+				{/if}
+			</p>
 		</section>
 
 		{#if !total && !shownSites.length}
 			<div class="nothing">
-				<p>Nothing in the catalog matches “{query.trim()}”.</p>
-				<button type="button" class="order order--quiet" onclick={() => ((query = ''), search.focus())}>
-					Clear the search
-				</button>
+				<p>Nothing on the canvas matches “{query.trim()}”.</p>
+				<button type="button" class="btn btn--light" onclick={() => ((query = ''), search.focus())}>Clear the search</button>
 			</div>
 		{/if}
 
-		<section class="section" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length}>
-			<div class="section__head">
-				<h2 id="apps-title">Apps</h2>
-				<p>Live services. Open them in your browser.</p>
-			</div>
-			<div class="parts">
-				{#each shownApps as a (a.id)}
-					<article class="part" class:part--lead={a.lead} class:part--right={rightCol.has(a.id)} id={a.id} aria-labelledby="{a.id}-name">
-						<div class="part__drawing"><Drawing id={a.id} /></div>
-						<div class="part__body">
-							<p class="part__no"><span class="tab">{@render hl(a.part)}</span></p>
-							<h3 class="part__name" id="{a.id}-name">{@render hl(a.name)}</h3>
-							<p class="part__host">{new URL(a.href).host}{#if a.client}{' · client work'}{/if}</p>
-							<p class="part__desc">{@render hl(a.desc)}</p>
-							<dl class="spec">
-								{#if a.id === 'szkolyjogi'}
-									<div>
-										<dt>Search clicks</dt>
-										<dd>
-											{#if traffic}
-												{traffic.clicksPerDay} a day{#if traffic.monthAgo && traffic.monthAgo < traffic.clicksPerDay}, up from {traffic.monthAgo} a month ago{/if}
-											{:else}
-												{trafficDown ? '—' : '…'}
-											{/if}
-											<small>Google Search Console, last 7 days</small>
-										</dd>
-									</div>
-								{/if}
-								{#each a.specs as [k, v] (k)}
-									<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
-								{/each}
-							</dl>
-							{#if a.plates}
-								<p class="part__note">Needs a Zaur address. <a href="#register">Get one free</a>.</p>
-								<div class="part__actions">
-									<a class="order" href={a.href}>Sign in to {a.name} <Icon name="out" /></a>
-									<button type="button" class="order order--quiet" onclick={() => lookInside(a)}>Look inside</button>
-									<a class="part__source" href={a.source}>Source</a>
-								</div>
-							{:else}
-								<a class="order" href={a.href}>Open {a.name} <Icon name="out" /></a>
-							{/if}
+		<div class="graph" class:tracing={reach} bind:this={graph} hidden={!shownApps.length && !shownPkgs.length && !shownSkills.length}>
+			<svg class="wires" aria-hidden="true">
+				{#each edges as e, i (e.key)}
+					{#if paths[e.key]}
+						<path d={paths[e.key]} pathLength="1" class:lit={reach && lit(e)} style:--i={i} />
+					{/if}
+				{/each}
+			</svg>
+
+			<section class="col col--apps" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length && !shownSkills.length}>
+				<h2 class="frame-label" id="apps-title">Apps <span class="n">{shownApps.length}</span></h2>
+				<div class="stack stack--lead">
+					{#each shownApps.filter((a) => a.lead) as a (a.id)}{@render appNode(a)}{/each}
+					{#each shownSkills as s (s.name)}
+						<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
+							<header class="node__head">
+								<span class="part">{@render hl(s.part)}</span>
+								<h3 id="skill-{s.part}">{@render hl(s.name)}</h3>
+								<span class="host">Agent skill</span>
+							</header>
+							<div class="node__body">
+								<p class="node__desc">{@render hl(s.desc)}</p>
+								<div class="actions"><a class="btn btn--quiet" href={s.source}>Source <Icon name="out" /></a></div>
+							</div>
+						</article>
+					{/each}
+				</div>
+				<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
+				<div class="stack">
+					{#each shownApps.filter((a) => !a.lead) as a (a.id)}{@render appNode(a)}{/each}
+				</div>
+			</section>
+
+			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length}>
+				<h2 class="frame-label" id="packages-title">
+					Packages <span class="n">{shownPkgs.length}</span>
+					<span class="frame-note">Live from npm{#if registryDown}; the registry didn't answer, so some figures are missing{/if}</span>
+				</h2>
+				{#each shownPkgs as p (p.id)}
+					{@const s = stock[p.name]}
+					{@const cmd = `pnpm add ${p.name}`}
+					{@const o = offsets[p.id]}
+					<article
+						class="node node--pkg"
+						class:dim={reach && !reach.has(p.id)}
+						class:held={dragging === p.id}
+						id="pkg-{p.id}"
+						data-node={p.id}
+						aria-labelledby="pkg-{p.id}-name"
+						style:translate={o ? `${o.x}px ${o.y}px` : null}
+						onpointerenter={() => (active = p.id)}
+						onpointerleave={() => (active = null)}
+						onfocusin={() => (active = p.id)}
+						onfocusout={() => (active = null)}
+					>
+						<!-- svelte-ignore a11y_no_static_element_interactions (dragging is a pointer-only extra) -->
+						<header class="node__head" onpointerdown={(e) => grab(e, p.id)}>
+							<span class="part">{@render hl(p.part)}</span>
+							<h3 id="pkg-{p.id}-name">{@render hl(p.id)}</h3>
+							<span class="ver mono" class:ver--off={!s}>{s ? `v${s.version}` : registryDown ? '—' : '…'}</span>
+						</header>
+						<div class="node__body">
+							<p class="node__desc">{@render hl(p.desc)}</p>
+							<p class="facts">
+								<span class:zero={s?.deps === 0}>{s ? `${s.deps} ${s.deps === 1 ? 'dep' : 'deps'}` : '… deps'}</span>
+								<span>{s?.license ?? '…'}</span>
+							</p>
+							<button type="button" class="cmd" onclick={() => copy(cmd)} aria-label="Copy “{cmd}”">
+								<code>{cmd}</code>
+								<span class="cmd__state">{#if copied === cmd}<Icon name="check" /> Copied{:else}<Icon name="copy" /> Copy{/if}</span>
+							</button>
+							<p class="links">
+								<a href={p.npm}>npm</a>
+								{#if p.demo}<a href={p.demo}>Demo</a>{/if}
+								{#if p.source}<a href={p.source}>Source</a>{/if}
+							</p>
 						</div>
 					</article>
 				{/each}
-			</div>
-		</section>
+			</section>
 
-		<section class="section" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length}>
-			<div class="section__head">
-				<h2 id="packages-title">Packages</h2>
+			<svg class="ports" aria-hidden="true">
+				{#each ports as p (`${p.x},${p.y}`)}<circle cx={p.x} cy={p.y} r="5.5" />{/each}
+			</svg>
+		</div>
+
+		<section class="frame" id="templates" aria-labelledby="templates-title" hidden={!shownTpls.length}>
+			<div class="frame__top">
+				<h2 class="frame-label" id="templates-title">Railway templates <span class="n">{shownTpls.length}</span></h2>
 				<p>
-					Published on npm under @nomideusz. Version, dependencies and licence are read live from the registry.
-					{#if registryDown}<strong class="warn">The npm registry didn't answer, so some figures are missing.</strong>{/if}
+					One-click deploys, many with the admin created on first boot and nightly backups to a
+					Railway bucket. New to Railway? <a href="https://railway.com?referralCode=sLjDXb">Get $20 of credit</a>
+					(a referral link, so I may earn a commission).
 				</p>
 			</div>
-			<table class="table table--pkgs">
-				<thead>
-					<tr>
-						<th scope="col">Part</th>
-						<th scope="col">Package</th>
-						<th scope="col" class="num">Version</th>
-						<th scope="col" class="num">Deps</th>
-						<th scope="col">Licence</th>
-						<th scope="col">Install</th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each shownPkgs as p (p.name)}
-						{@const s = stock[p.name]}
-						{@const cmd = `pnpm add ${p.name}`}
-						<tr>
-							<td class="cell-no"><span class="tab">{@render hl(p.part)}</span></td>
-							<td><div class="cell-main">
-								<span class="code-name">{@render hl(p.name)}</span>
-								<span class="cell-desc">{@render hl(p.desc)}</span>
-								<span class="cell-links">
-									<a href={p.npm}>npm</a>
-									{#if p.demo}<a href={p.demo}>Demo</a>{/if}
-									{#if p.source}<a href={p.source}>Source</a>{/if}
-								</span>
-							</div></td>
-							<td class="num" data-label="Version">{s ? s.version : registryDown ? '—' : '…'}</td>
-							<td class="num" data-label="Deps" class:zero={s?.deps === 0}>{s ? s.deps : registryDown ? '—' : '…'}</td>
-							<td data-label="Licence">{s?.license ?? (registryDown ? '—' : '…')}</td>
-							<td class="cell-install">
-								<button type="button" class="cmd" onclick={() => copy(cmd)} aria-label="Copy “{cmd}”">
-									<code>{cmd}</code>
-									<span class="cmd__state">
-										{#if copied === cmd}<Icon name="check" /> Copied{:else}<Icon name="copy" /> Copy{/if}
-									</span>
-								</button>
-							</td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</section>
-
-		<section class="section section--short" id="skills" aria-labelledby="skills-title" hidden={!shownSkills.length}>
-			<div class="section__head">
-				<h2 id="skills-title">Skills</h2>
-				<p>Instructions that teach coding agents how to do a job well.</p>
-			</div>
-			<table class="table">
-				<tbody>
-					{#each shownSkills as s (s.name)}
-						<tr>
-							<td class="cell-no"><span class="tab">{@render hl(s.part)}</span></td>
-							<td><div class="cell-main">
-								<span class="code-name">{@render hl(s.name)}</span>
-								<span class="cell-desc">{@render hl(s.desc)}</span>
-							</div></td>
-							<td class="cell-act"><a class="order order--quiet" href={s.source}>Source <Icon name="out" /></a></td>
-						</tr>
-					{/each}
-				</tbody>
-			</table>
-		</section>
-
-		<section class="section" id="templates" aria-labelledby="templates-title" hidden={!shownTpls.length}>
-			<div class="section__head">
-				<h2 id="templates-title">Templates</h2>
-				<p>
-					One-click deploys on Railway, many with the admin created on first boot and nightly
-					backups to a Railway bucket.
-				</p>
-				<p class="referral">
-					New to Railway? <a href="https://railway.com?referralCode=sLjDXb">Get $20 of credit</a>.
-					It's a referral link, so I may earn a commission if you sign up.
-				</p>
-			</div>
-			<table class="table table--tpls" class:searching={needle}>
-				<colgroup>
-					<col class="col-no" />
-					<col />
-					<col class="col-stack" />
-					<col class="col-act" />
-				</colgroup>
-				<thead>
-					<tr>
-						<th scope="col">Part</th>
-						<th scope="col">Template</th>
-						<th scope="col">Stack</th>
-						<th scope="col"><span class="visually-hidden">Actions</span></th>
-					</tr>
-				</thead>
+			<div class="tpl-groups" class:searching={needle}>
 				{#each groups as g (g.kind)}
-					<tbody>
-						<tr class="group">
-							<th scope="colgroup" colspan="4">{@render hl(g.kind)} <span>{g.rows.length}</span></th>
-						</tr>
-						{#each g.rows as t (t.name)}
-							<tr id={t.part}>
-								<td class="cell-no"><span class="tab">{@render hl(t.part)}</span></td>
-								<td class="tpl-cell">
-									<div class="tpl">
+					<section class="node node--tpl" aria-label="{g.kind} templates">
+						<header class="node__head">
+							<h3>{@render hl(g.kind)} <span class="n">{g.rows.length}</span></h3>
+						</header>
+						<ul class="tpl-list">
+							{#each g.rows as t (t.name)}
+								<li class="tpl" id={t.part}>
+									<span class="part">{@render hl(t.part)}</span>
+									<p class="tpl__text">
 										<span class="tpl__name">{@render hl(t.name)}</span>
 										<span class="tpl__desc" title={t.desc}>{@render hl(t.desc)}</span>
-									</div>
-								</td>
-								<td class="tpl__stack">{@render hl(t.stack.join(' · '))}</td>
-								<td class="tpl__act">
-									<a href={t.deploy} class="deploy" aria-label="Deploy {t.name} on Railway">Deploy <Icon name="out" /></a>
-									<a href={t.source} aria-label="{t.name} source">Source</a>
-								</td>
-							</tr>
-						{/each}
-					</tbody>
+									</p>
+									<span class="tpl__act">
+										<a href={t.deploy} class="deploy" aria-label="Deploy {t.name} on Railway">Deploy</a>
+										<a href={t.source} class="tpl__src" aria-label="{t.name} source">Source</a>
+									</span>
+								</li>
+							{/each}
+						</ul>
+					</section>
 				{/each}
-			</table>
+			</div>
 		</section>
 
 		<section class="sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
+			<h2 class="frame-label" id="websites-title">Websites <span class="n">{shownSites.length}</span></h2>
 			<p>
-				<strong id="websites-title">Websites</strong>, a mix of products, client work and experiments:
+				A mix of products, client work and experiments:
 				{#each shownSites as w, i (w.id)}
 					<a href={w.href}>{@render hl(w.name)}</a>{i < shownSites.length - 1 ? ', ' : '.'}
 				{/each}
@@ -1104,11 +1198,11 @@
 
 		<footer class="close">
 			<p class="close__line">
-				Need a part that isn't listed, or want to work together?
+				Need something that isn't on the canvas, or want to work together?
 				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
 			</p>
 			<p class="close__small">
-				© 2026 Zaur · <a href="https://github.com/nomideusz">Source on GitHub</a> ·
+				© 2026 Zaur · <a href="https://github.com/nomideusz">github.com/nomideusz</a> ·
 				<a href="https://register.zaur.app">Get an @zaur.app address</a>
 			</p>
 		</footer>
@@ -1118,7 +1212,7 @@
 		{#if viewing}
 			<div class="plates__head">
 				<h2 id="plates-title">Inside {viewing.name}</h2>
-				<button type="button" class="order order--quiet" onclick={() => viewer.close()}>Close</button>
+				<button type="button" class="btn btn--quiet" onclick={() => viewer.close()}>Close</button>
 			</div>
 			<p class="plates__note">Screenshots from a demo account.{#if viewing.id === 'mail'}{' Every message and sender is made up.'}{/if}</p>
 			<div class="plates__row">
