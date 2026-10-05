@@ -109,6 +109,18 @@
 
 	const templates = [
 		{
+			name: 'Rocket.Chat',
+			desc: 'Rocket.Chat team chat: channels, DMs, threads, video calls and integrations, with a self-initiating MongoDB replica set and the admin created on first boot.',
+			deploy: 'https://railway.com/deploy/rocketchat-workspace',
+			source: 'https://github.com/nomideusz/rocketchat-railway'
+		},
+		{
+			name: 'Teable',
+			desc: 'Teable: the open-source Airtable alternative on real Postgres, with grid, kanban, gallery and form views, real-time collaboration and an API.',
+			deploy: 'https://railway.com/deploy/teable-production',
+			source: 'https://github.com/nomideusz/teable-railway'
+		},
+		{
 			name: 'Infisical',
 			desc: 'Infisical secrets manager: env vars, API keys and certificates for your team and apps, with the admin created and public sign-up closed on first boot.',
 			deploy: 'https://railway.com/deploy/infisical-secrets',
