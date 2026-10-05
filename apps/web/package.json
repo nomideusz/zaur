@@ -3,14 +3,11 @@
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",
-	"description": "Marketing site for the Zaur suite (zaur.app) — Mail, Chat, Discuss.",
+	"description": "Catalog site for zaur.app: apps, npm packages, Railway templates and websites by one maker.",
 	"scripts": {
-		"predev": "node ../../packages/ui/scripts/build-css.mjs",
 		"dev": "vite dev",
-		"prebuild": "node ../../packages/ui/scripts/build-css.mjs",
 		"build": "vite build",
 		"preview": "vite preview",
-		"prestart": "node ../../packages/ui/scripts/build-css.mjs",
 		"start": "node static-server.mjs",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json"
@@ -27,10 +24,5 @@
 		"svelte-check": "^4.4.6",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.7"
-	},
-	"dependencies": {
-		"@nomideusz/zaur-world": "^1.4.2",
-		"@zaur/sprite": "workspace:*",
-		"@zaur/ui": "workspace:*"
 	}
 }

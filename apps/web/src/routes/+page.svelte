@@ -1,9 +1,12 @@
 <script lang="ts">
-	import Sprite from '$lib/Sprite.svelte';
+	import { onMount } from 'svelte';
+	import Drawing from '$lib/Drawing.svelte';
+	import Icon from '$lib/Icon.svelte';
+	import { kinds, kindOf } from '$lib/template-kinds';
 
 	const title = 'Zaur — apps, packages, templates';
 	const description =
-		'Everything we build in one place: Zaur apps, open-source npm packages, one-click Railway templates, and live websites.';
+		'Everything I build in one place: Zaur apps, open-source npm packages, one-click Railway templates, and live websites.';
 
 	const products = [
 		{
@@ -670,7 +673,139 @@
 			href: 'https://radiobartek.com'
 		}
 	];
+
+	// Spec rows per app; every value is a fact from the app's own repo.
+	const specs: Record<string, [string, string][]> = {
+		mail: [
+			['Server', 'Stalwart, self-hosted'],
+			['Protocol', 'JMAP'],
+			['Includes', 'Calendar, contacts, offline mode']
+		],
+		register: [
+			['Creates', 'A real @zaur.app mailbox'],
+			['Talks to', 'Stalwart admin API']
+		],
+		dino: [
+			['Engine', '@nomideusz/zaur-world'],
+			['Shows', 'Sun, moon, stars, live weather'],
+			['Window', 'The next 24 hours']
+		],
+		music: [
+			['Server', 'Navidrome, self-hosted'],
+			['Client', 'Installable web app'],
+			['Sign-in', 'Your Zaur account']
+		]
+	};
+
+	// Part numbers: templates count up from the oldest, so a new card at the
+	// top of the list gets the next number and existing ones never shift.
+	const apps = products.map((p, i) => ({ ...p, part: `A${i + 1}`, specs: specs[p.id] ?? [] }));
+	const pkgs = packages.map((p, i) => ({ ...p, part: `P${i + 1}` }));
+	const skls = skills.map((s, i) => ({ ...s, part: `S${i + 1}` }));
+	// Stack column: the services a template's own description names.
+	const stackWords: [RegExp, string][] = [
+		[/postgres|pgvector/i, 'Postgres'],
+		[/mariadb|mysql/i, 'MariaDB'],
+		[/mongodb/i, 'MongoDB'],
+		[/redis/i, 'Redis'],
+		[/clickhouse/i, 'ClickHouse'],
+		[/elasticsearch/i, 'Elasticsearch'],
+		[/bucket/i, 'Bucket'],
+		[/backups?/i, 'Backups']
+	];
+	const stackOf = (desc: string) => stackWords.filter(([re]) => re.test(desc)).map(([, w]) => w);
+	const tpls = templates.map((t, i) => ({
+		...t,
+		part: `T${templates.length - i}`,
+		kind: kindOf(t.name),
+		stack: stackOf(t.desc)
+	}));
+
+	let query = $state('');
+	let search: HTMLInputElement;
+	const needle = $derived(query.trim().toLowerCase());
+	const hits = (...fields: (string | undefined)[]) =>
+		!needle || fields.some((f) => f?.toLowerCase().includes(needle));
+
+	const shownApps = $derived(apps.filter((a) => hits(a.part, a.name, a.desc, ...a.specs.flat())));
+	const shownPkgs = $derived(pkgs.filter((p) => hits(p.part, p.name, p.desc)));
+	const shownSkills = $derived(skls.filter((s) => hits(s.part, s.name, s.desc)));
+	const shownTpls = $derived(tpls.filter((t) => hits(t.part, t.name, t.desc, t.kind, ...t.stack)));
+	const shownSites = $derived(websites.filter((w) => hits(w.name)));
+	const groups = $derived(
+		kinds
+			.map(([kind]) => ({ kind, rows: shownTpls.filter((t) => t.kind === kind) }))
+			.filter((g) => g.rows.length)
+	);
+	const total = $derived(shownApps.length + shownPkgs.length + shownSkills.length + shownTpls.length);
+
+	const index = $derived([
+		{ href: '#apps', label: 'Apps', count: shownApps.length },
+		{ href: '#packages', label: 'Packages', count: shownPkgs.length },
+		{ href: '#skills', label: 'Skills', count: shownSkills.length },
+		{ href: '#templates', label: 'Templates', count: shownTpls.length },
+		{ href: '#websites', label: 'Websites', count: shownSites.length }
+	]);
+
+	// Split text around the search term so matches can be marked without {@html}.
+	function pieces(text: string) {
+		if (!needle) return [{ text, hit: false }];
+		const out: { text: string; hit: boolean }[] = [];
+		const lower = text.toLowerCase();
+		let at = 0;
+		for (let i = lower.indexOf(needle); i !== -1; i = lower.indexOf(needle, at)) {
+			if (i > at) out.push({ text: text.slice(at, i), hit: false });
+			out.push({ text: text.slice(i, i + needle.length), hit: true });
+			at = i + needle.length;
+		}
+		if (at < text.length) out.push({ text: text.slice(at), hit: false });
+		return out;
+	}
+
+	// Live stock data: current version, runtime dependencies and licence, read
+	// from the npm registry in the visitor's browser.
+	let stock = $state<Record<string, { version: string; deps: number; license?: string }>>({});
+	let registryDown = $state(false);
+	onMount(() => {
+		for (const p of packages) {
+			fetch(`https://registry.npmjs.org/${p.name}/latest`)
+				.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+				.then((j) => {
+					stock[p.name] = {
+						version: j.version,
+						deps: Object.keys(j.dependencies ?? {}).length,
+						license: j.license
+					};
+				})
+				.catch(() => (registryDown = true));
+		}
+	});
+
+	let copied = $state('');
+	let copiedTimer: ReturnType<typeof setTimeout>;
+	async function copy(text: string) {
+		try {
+			await navigator.clipboard.writeText(text);
+			copied = text;
+			clearTimeout(copiedTimer);
+			copiedTimer = setTimeout(() => (copied = ''), 1600);
+		} catch {
+			search?.focus();
+		}
+	}
+
+	function onkeydown(e: KeyboardEvent) {
+		const t = e.target as HTMLElement;
+		if (e.key === '/' && !t.closest('input, textarea, [contenteditable]')) {
+			e.preventDefault();
+			search.focus();
+		}
+	}
 </script>
+
+{#snippet hl(text: string)}{#each pieces(text) as p, i (i)}{#if p.hit}<mark>{p.text}</mark>{:else}{p.text}{/if}{/each}{/snippet}
+
+<svelte:window {onkeydown} />
 
 <svelte:head>
 	<title>{title}</title>
@@ -682,181 +817,235 @@
 	<link rel="canonical" href="https://zaur.app/" />
 </svelte:head>
 
-<section class="zw-hero zw-container" aria-labelledby="hero-title">
-	<div class="zw-hero__copy">
-		<p class="zw-eyebrow">Independent projects</p>
-		<h1 class="zw-hero__title" id="hero-title">Things<br />we make.</h1>
-		<p class="zw-hero__lede">
-			Apps, open-source packages, deployment templates, and websites. Collected in one place.
-		</p>
-		<div class="zw-hero__actions">
-			<a class="zw-button" href="#featured">Browse the work</a>
-			<a class="zw-text-link" href="https://github.com/nomideusz">Follow the source <span aria-hidden="true">↗</span></a>
+<div class="catalog">
+	<header class="rail">
+		<a class="wordmark" href="/" aria-label="Zaur home">ZAUR</a>
+		<p class="rail__sub">Software catalog</p>
+		<nav class="rail__index" aria-label="Catalog sections">
+			{#each index as s (s.href)}
+				<a href={s.href} class:empty={!s.count}>
+					<span>{s.label}</span>
+					<span class="rail__count">{s.count}</span>
+				</a>
+			{/each}
+		</nav>
+		<div class="rail__foot">
+			<p>Questions and work</p>
+			<a href="mailto:nom@zaur.app">nom@zaur.app</a>
+			<a href="https://github.com/nomideusz">github.com/nomideusz</a>
 		</div>
-	</div>
+	</header>
 
-	<aside class="zw-field-note" aria-label="About the live sky">
-		<div class="zw-field-note__top">
-			<span class="zw-live-dot" aria-hidden="true"></span>
-			<span>Live from your sky</span>
-			<span class="zw-field-note__mark">
-				<Sprite frame="happy" size={64} label="Zaur" blinks />
-			</span>
-		</div>
-		<p class="zw-field-note__title">This background knows when your sun sets.</p>
-		<p class="zw-field-note__body">
-			It follows local weather, seasons, moon phases, meteor showers, and the occasional ISS pass.
-			We turned it into a zero-dependency package.
-		</p>
-		<div class="zw-field-note__links">
-			<a href="https://www.npmjs.com/package/@nomideusz/zaur-world">Get zaur-world</a>
-			<a href="https://github.com/nomideusz/zaur-world">Read the source</a>
-		</div>
-	</aside>
-</section>
-
-<section class="zw-container zw-featured" id="featured" aria-labelledby="featured-heading">
-	<div class="zw-featured__intro">
-		<p class="zw-eyebrow">Selected work</p>
-		<h2 id="featured-heading">A few highlights.</h2>
-	</div>
-	<div class="zw-featured__grid">
-		<a class="zw-feature zw-feature--mail" href="https://webmail.zaur.app">
-			<span class="zw-feature__kind">Product</span>
-			<span class="zw-feature__title">Private email.</span>
-			<span class="zw-feature__desc">A fast JMAP inbox with calendar, contacts, and offline support.</span>
-			<span class="zw-feature__action">Open Mail <span aria-hidden="true">→</span></span>
-		</a>
-		<a class="zw-feature zw-feature--world" href="https://www.npmjs.com/package/@nomideusz/zaur-world">
-			<span class="zw-feature__kind">Open source</span>
-			<span class="zw-feature__title">A living sky.</span>
-			<span class="zw-feature__desc">The living canvas behind this page, packaged for any website.</span>
-			<span class="zw-feature__action">Explore zaur-world <span aria-hidden="true">→</span></span>
-		</a>
-		<a class="zw-feature" href="https://thebest.travel">
-			<span class="zw-feature__kind">Selected work</span>
-			<span class="zw-feature__title">Tours and experiences.</span>
-			<span class="zw-feature__desc">Tours, guides, live availability, and payments in one SvelteKit product.</span>
-			<span class="zw-feature__action">Visit thebest.travel <span aria-hidden="true">↗</span></span>
-		</a>
-		<a class="zw-feature" href="#templates">
-			<span class="zw-feature__kind">Infrastructure</span>
-			<span class="zw-feature__title">One-click infrastructure.</span>
-			<span class="zw-feature__desc">Production-minded Railway templates for Dify, n8n, Chatwoot, and more.</span>
-			<span class="zw-feature__action">Browse templates <span aria-hidden="true">↓</span></span>
-		</a>
-	</div>
-</section>
-
-<section class="zw-container zw-section" id="apps" aria-labelledby="apps-heading">
-	<div class="zw-section__intro">
-		<p class="zw-eyebrow">Products</p>
-		<h2 class="zw-section__title" id="apps-heading">Zaur apps.</h2>
-		<p class="zw-section__lede">A few services we build and run.</p>
-	</div>
-	<div class="zw-products zw-products--apps">
-		{#each products as p (p.id)}
-			<a class="zw-card" id={p.id} href={p.href}>
-				<span class="zw-card__kicker">Zaur app</span>
-				<span class="zw-card__name">{p.name}</span>
-				<span class="zw-card__desc">{p.desc}</span>
-				<span class="zw-arrow" aria-hidden="true">→</span>
-			</a>
-		{/each}
-	</div>
-</section>
-
-<section class="zw-container zw-section" id="packages" aria-labelledby="packages-heading">
-	<div class="zw-section__intro">
-		<p class="zw-eyebrow">Open source</p>
-		<h2 class="zw-section__title" id="packages-heading">npm packages.</h2>
-		<p class="zw-section__lede">Libraries published under the @nomideusz scope.</p>
-	</div>
-	<div class="zw-products">
-		{#each packages as p (p.name)}
-			<div class="zw-card zw-card--static">
-				<span class="zw-card__kicker">npm package</span>
-				<span class="zw-card__name zw-card__name--mono">{p.name}</span>
-				<span class="zw-card__desc">{p.desc}</span>
-				<span class="zw-card__links">
-					<a href={p.npm}>View on npm</a>
-					{#if p.demo}<a href={p.demo}>Try the demo</a>{/if}
-					{#if p.source}<a href={p.source}>Source</a>{/if}
-				</span>
+	<main class="sheet">
+		<section class="intro" aria-labelledby="intro-title">
+			<h1 id="intro-title">Software, stocked and running.</h1>
+			<p class="intro__lede">
+				Apps, open-source packages and one-click deployment templates. I build and maintain
+				every part in this catalog myself.
+			</p>
+			<div class="finder" role="search">
+				<label for="find">Find a part</label>
+				<div class="finder__field">
+					<Icon name="search" />
+					<input
+						id="find"
+						type="search"
+						bind:this={search}
+						bind:value={query}
+						placeholder="postgres, browser, svelte, T42…"
+						autocomplete="off"
+						spellcheck="false"
+					/>
+					<kbd aria-hidden="true">/</kbd>
+				</div>
+				<p class="finder__count" aria-live="polite">
+					{#if needle}
+						{total} of {apps.length + pkgs.length + skls.length + tpls.length} parts match
+					{:else}
+						{apps.length + pkgs.length + skls.length + tpls.length} parts in stock
+					{/if}
+				</p>
 			</div>
-		{/each}
-	</div>
-</section>
+		</section>
 
-<section class="zw-container zw-section" id="templates" aria-labelledby="templates-heading">
-	<div class="zw-section__intro">
-		<p class="zw-eyebrow">Infrastructure</p>
-		<h2 class="zw-section__title" id="templates-heading">Railway templates.</h2>
-		<p class="zw-section__lede">One-click deployments for open-source software.</p>
-		<a class="zw-referral" href="https://railway.com?referralCode=sLjDXb">
-			<span>New to Railway?</span>
-			<strong>Get $20 credit</strong>
-			<span aria-hidden="true">↗</span>
-		</a>
-		<p class="zw-referral__note">Referral link. We may earn a commission if you sign up.</p>
-	</div>
-	<div class="zw-products">
-		{#each templates as t (t.name)}
-			<div class="zw-card zw-card--static">
-				<span class="zw-card__kicker">One-click deploy</span>
-				<span class="zw-card__name">{t.name}</span>
-				<span class="zw-card__desc">{t.desc}</span>
-				<span class="zw-card__links">
-					<a href={t.deploy}>Deploy on Railway</a>
-					<a href={t.source}>Source</a>
-				</span>
+		{#if !total && !shownSites.length}
+			<div class="nothing">
+				<p>Nothing in the catalog matches “{query.trim()}”.</p>
+				<button type="button" class="order order--quiet" onclick={() => ((query = ''), search.focus())}>
+					Clear the search
+				</button>
 			</div>
-		{/each}
-	</div>
-</section>
+		{/if}
 
-<section class="zw-container zw-section" id="skills" aria-labelledby="skills-heading">
-	<div class="zw-section__intro">
-		<p class="zw-eyebrow">Agents</p>
-		<h2 class="zw-section__title" id="skills-heading">Agent skills.</h2>
-		<p class="zw-section__lede">Skills that teach coding agents how we work.</p>
-	</div>
-	<div class="zw-products">
-		{#each skills as s (s.name)}
-			<div class="zw-card zw-card--static">
-				<span class="zw-card__kicker">Claude skill</span>
-				<span class="zw-card__name zw-card__name--mono">{s.name}</span>
-				<span class="zw-card__desc">{s.desc}</span>
-				<span class="zw-card__links">
-					<a href={s.source}>Source</a>
-				</span>
+		<section class="section" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length}>
+			<div class="section__head">
+				<h2 id="apps-title">Apps</h2>
+				<p>Live services. Open them in your browser.</p>
 			</div>
-		{/each}
-	</div>
-</section>
+			<div class="parts">
+				{#each shownApps as a (a.id)}
+					<article class="part" id={a.id} aria-labelledby="{a.id}-name">
+						<div class="part__drawing"><Drawing id={a.id} /></div>
+						<div class="part__body">
+							<p class="part__no"><span class="tab">{@render hl(a.part)}</span></p>
+							<h3 class="part__name" id="{a.id}-name">{@render hl(a.name)}</h3>
+							<p class="part__host">{new URL(a.href).host}</p>
+							<p class="part__desc">{@render hl(a.desc)}</p>
+							<dl class="spec">
+								{#each a.specs as [k, v] (k)}
+									<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
+								{/each}
+							</dl>
+							<a class="order" href={a.href}>Open {a.name} <Icon name="out" /></a>
+						</div>
+					</article>
+				{/each}
+			</div>
+		</section>
 
-<section class="zw-container zw-section" id="websites" aria-labelledby="websites-heading">
-	<div class="zw-section__intro">
-		<p class="zw-eyebrow">Websites</p>
-		<h2 class="zw-section__title" id="websites-heading">Selected websites.</h2>
-		<p class="zw-section__lede">A mix of products, client work, and experiments.</p>
-	</div>
-	<div class="zw-products">
-		{#each websites as w (w.id)}
-			<a class="zw-card" href={w.href}>
-				<span class="zw-card__kicker">Live website</span>
-				<span class="zw-card__name">{w.name}</span>
-				<span class="zw-card__desc">{w.desc}</span>
-				<span class="zw-arrow" aria-hidden="true">→</span>
-			</a>
-		{/each}
-	</div>
-</section>
+		<section class="section" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length}>
+			<div class="section__head">
+				<h2 id="packages-title">Packages</h2>
+				<p>
+					Published on npm under @nomideusz. Version, dependencies and licence are read live from the registry.
+					{#if registryDown}<strong class="warn">The npm registry didn't answer, so some figures are missing.</strong>{/if}
+				</p>
+			</div>
+			<table class="table table--pkgs">
+				<thead>
+					<tr>
+						<th scope="col">Part</th>
+						<th scope="col">Package</th>
+						<th scope="col" class="num">Version</th>
+						<th scope="col" class="num">Deps</th>
+						<th scope="col">Licence</th>
+						<th scope="col">Install</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each shownPkgs as p (p.name)}
+						{@const s = stock[p.name]}
+						{@const cmd = `pnpm add ${p.name}`}
+						<tr>
+							<td class="cell-no"><span class="tab">{@render hl(p.part)}</span></td>
+							<td><div class="cell-main">
+								<span class="code-name">{@render hl(p.name)}</span>
+								<span class="cell-desc">{@render hl(p.desc)}</span>
+								<span class="cell-links">
+									<a href={p.npm}>npm</a>
+									{#if p.demo}<a href={p.demo}>Demo</a>{/if}
+									{#if p.source}<a href={p.source}>Source</a>{/if}
+								</span>
+							</div></td>
+							<td class="num" data-label="Version">{s ? s.version : registryDown ? '—' : '…'}</td>
+							<td class="num" data-label="Deps" class:zero={s?.deps === 0}>{s ? s.deps : registryDown ? '—' : '…'}</td>
+							<td data-label="Licence">{s?.license ?? (registryDown ? '—' : '…')}</td>
+							<td class="cell-install">
+								<button type="button" class="cmd" onclick={() => copy(cmd)} aria-label="Copy “{cmd}”">
+									<code>{cmd}</code>
+									<span class="cmd__state">
+										{#if copied === cmd}<Icon name="check" /> Copied{:else}<Icon name="copy" /> Copy{/if}
+									</span>
+								</button>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</section>
 
-<aside class="zw-closing zw-container">
-	<div>
-		<p class="zw-eyebrow">Still curious?</p>
-		<p class="zw-closing__title">More projects and source code live on GitHub.</p>
-	</div>
-	<a class="zw-button zw-button--quiet" href="https://github.com/nomideusz">Browse everything on GitHub <span aria-hidden="true">↗</span></a>
-</aside>
+		<section class="section section--short" id="skills" aria-labelledby="skills-title" hidden={!shownSkills.length}>
+			<div class="section__head">
+				<h2 id="skills-title">Skills</h2>
+				<p>Instructions that teach coding agents how to do a job well.</p>
+			</div>
+			<table class="table">
+				<tbody>
+					{#each shownSkills as s (s.name)}
+						<tr>
+							<td class="cell-no"><span class="tab">{@render hl(s.part)}</span></td>
+							<td><div class="cell-main">
+								<span class="code-name">{@render hl(s.name)}</span>
+								<span class="cell-desc">{@render hl(s.desc)}</span>
+							</div></td>
+							<td class="cell-act"><a class="order order--quiet" href={s.source}>Source <Icon name="out" /></a></td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</section>
+
+		<section class="section" id="templates" aria-labelledby="templates-title" hidden={!shownTpls.length}>
+			<div class="section__head">
+				<h2 id="templates-title">Templates</h2>
+				<p>
+					One-click deploys on Railway, many with the admin created on first boot and nightly
+					backups to a Railway bucket.
+				</p>
+				<p class="referral">
+					New to Railway? <a href="https://railway.com?referralCode=sLjDXb">Get $20 of credit</a>.
+					It's a referral link, so I may earn a commission if you sign up.
+				</p>
+			</div>
+			<table class="table table--tpls" class:searching={needle}>
+				<colgroup>
+					<col class="col-no" />
+					<col />
+					<col class="col-stack" />
+					<col class="col-act" />
+				</colgroup>
+				<thead>
+					<tr>
+						<th scope="col">Part</th>
+						<th scope="col">Template</th>
+						<th scope="col">Stack</th>
+						<th scope="col"><span class="visually-hidden">Actions</span></th>
+					</tr>
+				</thead>
+				{#each groups as g (g.kind)}
+					<tbody>
+						<tr class="group">
+							<th scope="colgroup" colspan="4">{@render hl(g.kind)} <span>{g.rows.length}</span></th>
+						</tr>
+						{#each g.rows as t (t.name)}
+							<tr id={t.part}>
+								<td class="cell-no"><span class="tab">{@render hl(t.part)}</span></td>
+								<td class="tpl-cell">
+									<div class="tpl">
+										<span class="tpl__name">{@render hl(t.name)}</span>
+										<span class="tpl__desc" title={t.desc}>{@render hl(t.desc)}</span>
+									</div>
+								</td>
+								<td class="tpl__stack">{@render hl(t.stack.join(' · '))}</td>
+								<td class="tpl__act">
+									<a href={t.deploy} class="deploy" aria-label="Deploy {t.name} on Railway">Deploy <Icon name="out" /></a>
+									<a href={t.source} aria-label="{t.name} source">Source</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				{/each}
+			</table>
+		</section>
+
+		<section class="sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
+			<p>
+				<strong id="websites-title">Websites</strong>, a mix of products, client work and experiments:
+				{#each shownSites as w, i (w.id)}
+					<a href={w.href}>{@render hl(w.name)}</a>{i < shownSites.length - 1 ? ', ' : '.'}
+				{/each}
+			</p>
+		</section>
+
+		<footer class="close">
+			<p class="close__line">
+				Need a part that isn't listed, or want to work together?
+				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
+			</p>
+			<p class="close__small">
+				© 2026 Zaur · <a href="https://github.com/nomideusz">Source on GitHub</a> ·
+				<a href="https://register.zaur.app">Get an @zaur.app address</a>
+			</p>
+		</footer>
+	</main>
+</div>
