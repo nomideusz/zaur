@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Fluxer',
+			desc: 'Fluxer: the open-source Discord alternative. Servers, text channels, DMs, roles, file uploads and message search on your own Railway project.',
+			deploy: 'https://railway.com/deploy/fluxer-chat',
+			source: 'https://github.com/nomideusz/fluxer-railway'
+		},
+		{
 			name: 'Rocket.Chat',
 			desc: 'Rocket.Chat team chat: channels, DMs, threads, video calls and integrations, with a self-initiating MongoDB replica set and the admin created on first boot.',
 			deploy: 'https://railway.com/deploy/rocketchat-workspace',
