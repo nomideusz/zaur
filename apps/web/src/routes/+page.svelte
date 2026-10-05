@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'AFFiNE',
+			desc: 'AFFiNE: the open-source Notion and Miro alternative. Docs, edgeless whiteboards and databases in one workspace, with real-time collaboration, on Postgres with pgvector.',
+			deploy: 'https://railway.com/deploy/affine-production',
+			source: 'https://github.com/nomideusz/affine-railway'
+		},
+		{
 			name: 'Fluxer',
 			desc: 'Fluxer: the open-source Discord alternative. Servers, text channels, DMs, roles, file uploads and message search on your own Railway project.',
 			deploy: 'https://railway.com/deploy/fluxer-chat',
