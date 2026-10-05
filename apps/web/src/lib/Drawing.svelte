@@ -35,6 +35,31 @@
 		<path class="thin" d="M121 130 182 154H190" />
 		<text class="lbl" x="194" y="152">LANGUAGES</text>
 		<text class="lbl" x="194" y="165">PL/EN/UK</text>
+	{:else if id === 'fixtar'}
+		<!-- cordless drill, side view -->
+		<path class="ln" d="M14 74H40" />
+		<path class="thin" d="M18 70l4 8M24 70l4 8M30 70l4 8" />
+		<rect class="ln solid" x="40" y="62" width="24" height="24" />
+		<path class="thin" d="M48 62v24M56 62v24" />
+		<path class="ln solid" d="M112 92 104 148H144L148 92" />
+		<path class="ln" d="M112 98h-8v14h6" />
+		<path class="ln solid" d="M64 56H168a8 8 0 0 1 8 8V84a8 8 0 0 1-8 8H64Z" />
+		<path class="thin" d="M150 64v20M156 64v20M162 64v20" />
+		<rect class="ln solid" x="92" y="148" width="68" height="22" />
+		<path class="thin" d="M92 156H160" />
+		<!-- length dimension -->
+		<path class="thin" d="M14 68V30M176 54V30" />
+		<path class="thin" d="M14 38H176" marker-start="url(#arrow-{id})" marker-end="url(#arrow-{id})" />
+		<text class="lbl" x="95" y="32" text-anchor="middle">ONLINE SHOP</text>
+		<!-- callouts -->
+		<circle class="dot" cx="162" cy="84" r="2" />
+		<path class="thin" d="M162 84 180 100H190" />
+		<text class="lbl" x="194" y="98">BASELINKER</text>
+		<text class="lbl" x="194" y="111">SYNC</text>
+		<circle class="dot" cx="140" cy="163" r="2" />
+		<path class="thin" d="M140 163 180 176H190" />
+		<text class="lbl" x="194" y="174">PAYU</text>
+		<text class="lbl" x="194" y="187">PRZELEWY24</text>
 	{:else if id === 'mail'}
 		<!-- envelope, flap down -->
 		<rect class="ln" x="34" y="66" width="150" height="96" />

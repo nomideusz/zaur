@@ -3,6 +3,9 @@
 	import Drawing from '$lib/Drawing.svelte';
 	import Icon from '$lib/Icon.svelte';
 	import { kinds, kindOf } from '$lib/template-kinds';
+	import mailDesktop from '$lib/plates/mail-desktop.webp';
+	import mailPhone from '$lib/plates/mail-phone.webp';
+	import musicDesktop from '$lib/plates/music-desktop.webp';
 
 	const title = 'Zaur — apps, packages, templates';
 	const description =
@@ -13,13 +16,27 @@
 			id: 'szkolyjogi',
 			name: 'Szkoły Jogi',
 			desc: 'The directory of yoga and pilates schools in Poland: class schedules, pass prices, reviews and online sign-up.',
-			href: 'https://szkolyjogi.pl'
+			href: 'https://szkolyjogi.pl',
+			lead: true
+		},
+		{
+			id: 'fixtar',
+			name: 'Fixtar',
+			desc: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
+			href: 'https://fixtar.pl',
+			lead: true,
+			client: true
 		},
 		{
 			id: 'mail',
 			name: 'Mail',
 			desc: 'A clean inbox and your own @zaur.app address.',
-			href: 'https://webmail.zaur.app'
+			href: 'https://webmail.zaur.app',
+			source: 'https://github.com/nomideusz/zaur/tree/main/apps/mail2',
+			plates: [
+				{ src: mailDesktop, w: 1440, h: 900, alt: 'Zaur Mail on a desktop: folders on the left, the inbox list, and an open three-message thread.' },
+				{ src: mailPhone, w: 585, h: 1266, alt: 'Zaur Mail on a phone: the inbox with unread and flagged messages.' }
+			]
 		},
 		{
 			id: 'register',
@@ -37,7 +54,11 @@
 			id: 'music',
 			name: 'Music',
 			desc: 'A private, self-hosted music library and radio powered by Navidrome.',
-			href: 'https://music.zaur.app'
+			href: 'https://music.zaur.app',
+			source: 'https://github.com/nomideusz/zaur/tree/main/apps/music',
+			plates: [
+				{ src: musicDesktop, w: 1440, h: 460, alt: 'Zaur Music on a desktop: the library home with recently added albums.' }
+			]
 		}
 	];
 
@@ -613,12 +634,6 @@
 			href: 'https://thebest.travel'
 		},
 		{
-			id: 'fixtar',
-			name: 'fixtar.pl',
-			desc: 'E-commerce store for power tools, built with SvelteKit.',
-			href: 'https://fixtar.pl'
-		},
-		{
 			id: 'recycling',
 			name: 'recycling.kompi.pl',
 			desc: 'Map of e-waste, battery, and fluorescent-lamp collection points across Poland.',
@@ -681,6 +696,12 @@
 			['Built on', '9 packages from this catalog'],
 			['Languages', 'Polish, English, Ukrainian']
 		],
+		fixtar: [
+			['Products', 'Synced from BaseLinker'],
+			['Payments', 'PayU, Przelewy24'],
+			['Search', '@nomideusz/svelte-search'],
+			['Feeds', 'Google Merchant']
+		],
 		mail: [
 			['Server', 'Stalwart, self-hosted'],
 			['Protocol', 'JMAP'],
@@ -733,6 +754,13 @@
 		!needle || fields.some((f) => f?.toLowerCase().includes(needle));
 
 	const shownApps = $derived(apps.filter((a) => hits(a.part, a.name, a.desc, ...a.specs.flat())));
+	// Below the full-width leads, every second part sits in the right column.
+	const rightCol = $derived(new Set(shownApps.filter((a) => !a.lead).filter((_, i) => i % 2).map((a) => a.id)));
+
+	// "Look inside": screenshots of apps that need an account to open.
+	let viewer: HTMLDialogElement;
+	let viewing = $state<(typeof apps)[number] | null>(null);
+	const lookInside = (a: (typeof apps)[number]) => ((viewing = a), viewer.showModal());
 	const shownPkgs = $derived(pkgs.filter((p) => hits(p.part, p.name, p.desc)));
 	const shownSkills = $derived(skls.filter((s) => hits(s.part, s.name, s.desc)));
 	const shownTpls = $derived(tpls.filter((t) => hits(t.part, t.name, t.desc, t.kind, ...t.stack)));
@@ -899,12 +927,12 @@
 			</div>
 			<div class="parts">
 				{#each shownApps as a (a.id)}
-					<article class="part" class:part--lead={a.id === 'szkolyjogi'} id={a.id} aria-labelledby="{a.id}-name">
+					<article class="part" class:part--lead={a.lead} class:part--right={rightCol.has(a.id)} id={a.id} aria-labelledby="{a.id}-name">
 						<div class="part__drawing"><Drawing id={a.id} /></div>
 						<div class="part__body">
 							<p class="part__no"><span class="tab">{@render hl(a.part)}</span></p>
 							<h3 class="part__name" id="{a.id}-name">{@render hl(a.name)}</h3>
-							<p class="part__host">{new URL(a.href).host}</p>
+							<p class="part__host">{new URL(a.href).host}{#if a.client}{' · client work'}{/if}</p>
 							<p class="part__desc">{@render hl(a.desc)}</p>
 							<dl class="spec">
 								{#if a.id === 'szkolyjogi'}
@@ -924,7 +952,16 @@
 									<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
 								{/each}
 							</dl>
-							<a class="order" href={a.href}>Open {a.name} <Icon name="out" /></a>
+							{#if a.plates}
+								<p class="part__note">Needs a Zaur address. <a href="#register">Get one free</a>.</p>
+								<div class="part__actions">
+									<a class="order" href={a.href}>Sign in to {a.name} <Icon name="out" /></a>
+									<button type="button" class="order order--quiet" onclick={() => lookInside(a)}>Look inside</button>
+									<a class="part__source" href={a.source}>Source</a>
+								</div>
+							{:else}
+								<a class="order" href={a.href}>Open {a.name} <Icon name="out" /></a>
+							{/if}
 						</div>
 					</article>
 				{/each}
@@ -1076,4 +1113,19 @@
 			</p>
 		</footer>
 	</main>
+
+	<dialog class="plates" bind:this={viewer} aria-labelledby="plates-title" closedby="any" onclose={() => (viewing = null)}>
+		{#if viewing}
+			<div class="plates__head">
+				<h2 id="plates-title">Inside {viewing.name}</h2>
+				<button type="button" class="order order--quiet" onclick={() => viewer.close()}>Close</button>
+			</div>
+			<p class="plates__note">Screenshots from a demo account.{#if viewing.id === 'mail'}{' Every message and sender is made up.'}{/if}</p>
+			<div class="plates__row">
+				{#each viewing.plates ?? [] as pl (pl.src)}
+					<img src={pl.src} width={pl.w} height={pl.h} alt={pl.alt} loading="lazy" decoding="async" />
+				{/each}
+			</div>
+		{/if}
+	</dialog>
 </div>

@@ -365,7 +365,7 @@ kbd {
 	background: var(--stock);
 }
 
-.part:nth-child(even) {
+.part--right {
 	padding-left: 1.5rem;
 	padding-right: 0;
 }
@@ -396,19 +396,6 @@ kbd {
 		grid-column: 2;
 		grid-row: 1 / -1;
 		margin: 0;
-	}
-}
-
-/* After a full-width lead, the remaining parts swap sides. */
-@media (min-width: 1101px) {
-	.part--lead ~ .part:nth-child(even) {
-		padding-left: 0;
-		padding-right: 1.5rem;
-	}
-
-	.part--lead ~ .part:nth-child(odd) {
-		padding-left: 1.5rem;
-		padding-right: 0;
 	}
 }
 
@@ -487,6 +474,29 @@ kbd {
 	padding-top: 0.1rem;
 }
 
+.part__note {
+	margin-bottom: 0.75rem;
+	font-size: 0.875rem;
+	color: var(--muted);
+}
+
+.part__actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.5rem 0.75rem;
+	margin-top: auto;
+}
+
+.part__actions .order {
+	margin-top: 0;
+}
+
+.part__source {
+	font-size: 0.875rem;
+	font-weight: 700;
+}
+
 .spec small {
 	display: block;
 	margin-top: 0.15rem;
@@ -527,6 +537,82 @@ kbd {
 
 .order--quiet:hover {
 	background: var(--mark);
+}
+
+/* ---- Look inside ----------------------------------------------------------- */
+
+.plates {
+	width: min(72rem, calc(100% - 2rem));
+	max-height: calc(100dvh - 2rem);
+	margin: auto;
+	padding: 1.25rem 1.5rem 1.5rem;
+	border: 1px solid var(--ink);
+	background: var(--stock);
+	color: var(--ink);
+}
+
+.plates::backdrop {
+	background: rgb(20 20 20 / 0.55);
+}
+
+.plates__head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid var(--ink);
+}
+
+.plates__head h2 {
+	font-size: 1.5rem;
+	font-weight: 800;
+	font-stretch: 75%;
+}
+
+.plates__note {
+	margin: 0.6rem 0 1rem;
+	font-size: 0.875rem;
+	color: var(--muted);
+}
+
+.plates__row {
+	display: flex;
+	align-items: flex-start;
+	gap: 1rem;
+}
+
+.plates__row img {
+	display: block;
+	min-width: 0;
+	height: auto;
+	border: 1px solid var(--rule);
+}
+
+/* Desktop plate takes the room; the phone plate stays phone-sized. */
+.plates__row img:first-child {
+	flex: 1 1 0;
+	width: 100%;
+}
+
+.plates__row img + img {
+	flex: 0 0 auto;
+	width: min(16rem, 28%);
+}
+
+@media (max-width: 860px) {
+	.plates {
+		padding: 1rem;
+	}
+
+	.plates__row {
+		flex-direction: column;
+	}
+
+	.plates__row img + img {
+		width: min(16rem, 100%);
+		align-self: center;
+	}
 }
 
 /* ---- Tables --------------------------------------------------------------- */
@@ -814,7 +900,7 @@ kbd {
 
 @media (max-width: 1100px) {
 	.part,
-	.part:nth-child(even) {
+	.part--right {
 		padding-inline: 0;
 	}
 
