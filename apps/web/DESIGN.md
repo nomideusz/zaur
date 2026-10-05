@@ -257,6 +257,8 @@ App parts only.
 - **Structure:** the drawing (centred vertically), then the body: tab, title, host (muted, 0.875rem), description (max 40ch), spec `dl`, and order button pinned to the bottom (`margin-top: auto`).
 - **Spec list:** full width, opened by a 1px ink rule. Each row is a 6.5rem term column plus the value, 0.45rem vertical padding, with a 1px warm rule below. Terms are uppercase labels at 0.75rem.
 - There is no background, border, radius or shadow. Card edges come from the 1px grid gap.
+- **Lead part (`.part--lead`):** the project with the most real use (szkolyjogi.pl, A1) spans the whole grid as a drawing column of 21rem plus the body. Above 1100px the body splits into the intro with the order button on the left and the spec list on the right. The parts after it swap their side padding, so the remaining four fill a 2×2 grid. Only one part leads.
+- **Live spec row:** a spec value can be live, like the npm cells. The source goes in a muted `small` under the value ("Google Search Console, last 7 days"); a figure without its source and window is not shown.
 
 ### Order Button
 The catalog's "order" action.
@@ -298,6 +300,7 @@ Links inherit their colour. They have a 1px underline at 45% currentColor, offse
 ### States
 - **Empty search:** when nothing matches, all sections hide. A row appears with "Nothing in the catalog matches "…"." (1.25rem, weight 600) and a quiet order button, "Clear the search", which empties the field and refocuses it.
 - **Registry down:** if any npm fetch fails, the packages description adds a bold ink line, "The npm registry didn't answer, so some figures are missing.", and the missing figures show as an em dash. There is no colour alarm and no banner.
+- **Traffic down:** if `/api/traffic` fails (no key, Google unreachable, or the Vite dev server, which has no endpoint), the Search clicks value is an em dash and the source line stays.
 - **Copied:** see Install Command.
 - **Focus:** a 2px ink outline at offset 2px everywhere. It is on-green on the rail and a 3px green outline on the finder.
 - **`:target`:** see Templates Table. Scrolling is smooth only under `prefers-reduced-motion: no-preference`, with a 1.5rem scroll padding.

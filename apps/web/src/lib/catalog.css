@@ -370,6 +370,48 @@ kbd {
 	padding-right: 0;
 }
 
+/* The lead part spans the grid: drawing, then intro and spec side by side. */
+.part--lead {
+	grid-column: 1 / -1;
+	grid-template-columns: minmax(0, 21rem) minmax(0, 1fr);
+	gap: 2.5rem;
+	padding-inline: 0;
+}
+
+@media (min-width: 1101px) {
+	.part--lead .part__body {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		grid-template-rows: repeat(4, auto) 1fr;
+		column-gap: 2.5rem;
+		align-items: start;
+		justify-items: start;
+	}
+
+	.part--lead .part__body > * {
+		grid-column: 1;
+	}
+
+	.part--lead .spec {
+		grid-column: 2;
+		grid-row: 1 / -1;
+		margin: 0;
+	}
+}
+
+/* After a full-width lead, the remaining parts swap sides. */
+@media (min-width: 1101px) {
+	.part--lead ~ .part:nth-child(even) {
+		padding-left: 0;
+		padding-right: 1.5rem;
+	}
+
+	.part--lead ~ .part:nth-child(odd) {
+		padding-left: 1.5rem;
+		padding-right: 0;
+	}
+}
+
 .part__drawing {
 	align-self: center;
 	padding: 0.5rem 0;
@@ -443,6 +485,13 @@ kbd {
 	text-transform: uppercase;
 	font-size: 0.75rem;
 	padding-top: 0.1rem;
+}
+
+.spec small {
+	display: block;
+	margin-top: 0.15rem;
+	color: var(--muted);
+	font-size: 0.75rem;
 }
 
 /* ---- Order actions -------------------------------------------------------- */

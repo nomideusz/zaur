@@ -11,7 +11,31 @@
 		</marker>
 	</defs>
 
-	{#if id === 'mail'}
+	{#if id === 'szkolyjogi'}
+		<!-- card-index drawer, one city card pulled up -->
+		<path class="thin" d="M38 112V98H172V112M48 98v-6h24v6" />
+		<path class="thin solid" d="M34 112V104H176V112H34M130 104v-6h24v6" />
+		<rect class="ln solid" x="54" y="30" width="108" height="90" />
+		<path class="ln solid" d="M118 30v-8h30v8" />
+		<text class="tag" x="66" y="54">Kraków</text>
+		<path class="thin" d="M66 68H148M66 80H136M66 92H144" />
+		<rect class="ln solid" x="30" y="112" width="150" height="48" />
+		<rect class="thin" x="89" y="124" width="32" height="12" />
+		<path class="ln" d="M97 144a8 5 0 0 0 16 0" />
+		<!-- width dimension -->
+		<path class="thin" d="M30 166V192M180 166V192" />
+		<path class="thin" d="M30 184H180" marker-start="url(#arrow-{id})" marker-end="url(#arrow-{id})" />
+		<text class="lbl lbl--ground" x="105" y="188" text-anchor="middle">ALL OF POLAND</text>
+		<!-- callouts -->
+		<circle class="dot" cx="136" cy="80" r="2" />
+		<path class="thin" d="M136 80 176 62H190" />
+		<text class="lbl" x="194" y="60">SCHEDULES</text>
+		<text class="lbl" x="194" y="73">PRICES</text>
+		<circle class="dot" cx="121" cy="130" r="2" />
+		<path class="thin" d="M121 130 182 154H190" />
+		<text class="lbl" x="194" y="152">LANGUAGES</text>
+		<text class="lbl" x="194" y="165">PL/EN/UK</text>
+	{:else if id === 'mail'}
 		<!-- envelope, flap down -->
 		<rect class="ln" x="34" y="66" width="150" height="96" />
 		<path class="ln" d="M34 66 109 120 184 66" />
@@ -110,6 +134,10 @@
 	.hid {
 		stroke-width: 1;
 		stroke-dasharray: 4 3;
+	}
+
+	.solid {
+		fill: var(--stock);
 	}
 
 	.dot,

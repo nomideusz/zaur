@@ -10,6 +10,12 @@
 
 	const products = [
 		{
+			id: 'szkolyjogi',
+			name: 'Szkoły Jogi',
+			desc: 'The directory of yoga and pilates schools in Poland: class schedules, pass prices, reviews and online sign-up.',
+			href: 'https://szkolyjogi.pl'
+		},
+		{
 			id: 'mail',
 			name: 'Mail',
 			desc: 'A clean inbox and your own @zaur.app address.',
@@ -607,12 +613,6 @@
 			href: 'https://thebest.travel'
 		},
 		{
-			id: 'szkolyjogi',
-			name: 'szkolyjogi.pl',
-			desc: 'Directory of yoga schools and studios across Poland.',
-			href: 'https://szkolyjogi.pl'
-		},
-		{
 			id: 'fixtar',
 			name: 'fixtar.pl',
 			desc: 'E-commerce store for power tools, built with SvelteKit.',
@@ -676,6 +676,11 @@
 
 	// Spec rows per app; every value is a fact from the app's own repo.
 	const specs: Record<string, [string, string][]> = {
+		szkolyjogi: [
+			['Covers', 'Yoga and pilates schools across Poland'],
+			['Built on', '9 packages from this catalog'],
+			['Languages', 'Polish, English, Ukrainian']
+		],
 		mail: [
 			['Server', 'Stalwart, self-hosted'],
 			['Protocol', 'JMAP'],
@@ -766,7 +771,17 @@
 	// from the npm registry in the visitor's browser.
 	let stock = $state<Record<string, { version: string; deps: number; license?: string }>>({});
 	let registryDown = $state(false);
+
+	// szkolyjogi.pl search clicks, served by static-server.mjs from Search Console.
+	let traffic = $state<{ clicksPerDay: number; monthAgo: number | null } | null>(null);
+	let trafficDown = $state(false);
+
 	onMount(() => {
+		fetch('/api/traffic')
+			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+			.then((t) => (traffic = t))
+			.catch(() => (trafficDown = true));
+
 		for (const p of packages) {
 			fetch(`https://registry.npmjs.org/${p.name}/latest`)
 				.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
@@ -884,7 +899,7 @@
 			</div>
 			<div class="parts">
 				{#each shownApps as a (a.id)}
-					<article class="part" id={a.id} aria-labelledby="{a.id}-name">
+					<article class="part" class:part--lead={a.id === 'szkolyjogi'} id={a.id} aria-labelledby="{a.id}-name">
 						<div class="part__drawing"><Drawing id={a.id} /></div>
 						<div class="part__body">
 							<p class="part__no"><span class="tab">{@render hl(a.part)}</span></p>
@@ -892,6 +907,19 @@
 							<p class="part__host">{new URL(a.href).host}</p>
 							<p class="part__desc">{@render hl(a.desc)}</p>
 							<dl class="spec">
+								{#if a.id === 'szkolyjogi'}
+									<div>
+										<dt>Search clicks</dt>
+										<dd>
+											{#if traffic}
+												{traffic.clicksPerDay} a day{#if traffic.monthAgo && traffic.monthAgo < traffic.clicksPerDay}, up from {traffic.monthAgo} a month ago{/if}
+											{:else}
+												{trafficDown ? '—' : '…'}
+											{/if}
+											<small>Google Search Console, last 7 days</small>
+										</dd>
+									</div>
+								{/if}
 								{#each a.specs as [k, v] (k)}
 									<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
 								{/each}
