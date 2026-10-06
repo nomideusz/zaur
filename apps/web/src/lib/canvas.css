@@ -463,9 +463,9 @@ mark {
 	column-gap: 2.25rem;
 }
 
-.col--apps > .frame-label--more {
-	grid-column: 3;
-	grid-row: 1;
+/* The agent skill has no wires: it sits under the packages, across both columns. */
+.col--pkgs .node--skill {
+	grid-column: 1 / -1;
 }
 
 .frame-label {
@@ -1137,11 +1137,7 @@ mark {
 		display: contents;
 	}
 
-	.col--apps .node--skill {
-		order: 1;
-	}
-
-	.col--apps > .frame-label--more {
+	.frame-label--more {
 		display: none;
 	}
 

@@ -85,7 +85,9 @@
 			desc: 'The site of a colourful interior design studio in Kraków, with a custom CMS: the owner edits text and photos right on the live page.',
 			href: 'https://pikastro.eu',
 			lead: true,
-			client: true
+			client: true,
+			// No package wires, so it can head the right column and even out the canvas.
+			right: true
 		}
 	];
 
@@ -1115,31 +1117,19 @@
 				{/each}
 			</svg>
 
-			<section class="col col--apps" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length && !shownSkills.length}>
+			<section class="col col--apps" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length}>
 				<h2 class="frame-label" id="apps-title">Apps <span class="n">{shownApps.length}</span></h2>
 				<div class="stack stack--lead">
-					{#each shownApps.filter((a) => a.lead) as a (a.id)}{@render appNode(a)}{/each}
-					{#each shownSkills as s (s.name)}
-						<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
-							<header class="node__head">
-								<span class="part">{@render hl(s.part)}</span>
-								<h3 id="skill-{s.part}">{@render hl(s.name)}</h3>
-								<span class="host">Agent skill</span>
-							</header>
-							<div class="node__body">
-								<p class="node__desc">{@render hl(s.desc)}</p>
-								<div class="actions"><a class="btn btn--quiet" href={s.source}>Source <Icon name="out" /></a></div>
-							</div>
-						</article>
-					{/each}
+					{#each shownApps.filter((a) => a.lead && !a.right) as a (a.id)}{@render appNode(a)}{/each}
 				</div>
-				<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
 				<div class="stack">
+					{#each shownApps.filter((a) => a.lead && a.right) as a (a.id)}{@render appNode(a)}{/each}
+					<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
 					{#each shownApps.filter((a) => !a.lead) as a (a.id)}{@render appNode(a)}{/each}
 				</div>
 			</section>
 
-			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length}>
+			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length && !shownSkills.length}>
 				<h2 class="frame-label" id="packages-title">
 					Packages <span class="n">{shownPkgs.length}</span>
 					<span class="frame-note">Live from npm{#if registryDown}; the registry didn't answer, so some figures are missing{/if}</span>
@@ -1182,6 +1172,19 @@
 								{#if p.demo}<a href={p.demo}>Demo</a>{/if}
 								{#if p.source}<a href={p.source}>Source</a>{/if}
 							</p>
+						</div>
+					</article>
+				{/each}
+				{#each shownSkills as s (s.name)}
+					<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
+						<header class="node__head">
+							<span class="part">{@render hl(s.part)}</span>
+							<h3 id="skill-{s.part}">{@render hl(s.name)}</h3>
+							<span class="host">Agent skill</span>
+						</header>
+						<div class="node__body">
+							<p class="node__desc">{@render hl(s.desc)}</p>
+							<div class="actions"><a class="btn btn--quiet" href={s.source}>Source <Icon name="out" /></a></div>
 						</div>
 					</article>
 				{/each}
