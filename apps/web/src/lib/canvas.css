@@ -1005,10 +1005,7 @@ mark {
 /* ---- Websites and close ---------------------------------------------------- */
 
 .sites {
-	display: grid;
-	gap: 0.6rem;
-	margin-top: clamp(3.5rem, 7vw, 5rem);
-	max-width: 62rem;
+	margin-top: clamp(4rem, 8vw, 6.5rem);
 }
 
 /* ---- Narrower ---------------------------------------------------------------- */
@@ -1278,7 +1275,6 @@ mark {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
 	gap: 1.25rem;
-	margin-top: 1.25rem;
 }
 
 .node--site {

@@ -667,48 +667,77 @@
 		}
 	];
 
-	const websites = [
+	// Hand-made websites still online. Spec rows are facts visible on the live site.
+	const websites: { id: string; name: string; desc: string; href: string; specs: [string, string][] }[] = [
 		{
 			id: 'recycling',
 			name: 'recycling.kompi.pl',
-			desc: 'Map of e-waste, battery, and fluorescent-lamp collection points across Poland.',
-			href: 'https://recycling.kompi.pl'
+			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
+			href: 'https://recycling.kompi.pl',
+			specs: [
+				['Data', 'Thousands of collection points, with a page for every city'],
+				['Includes', 'Interactive map, city pages, a recycling guide']
+			]
 		},
 		{
 			id: 'tutitutu',
 			name: 'tutitutu.pl',
 			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
-			href: 'https://tutitutu.pl'
+			href: 'https://tutitutu.pl',
+			specs: [
+				['CMS', 'Custom, written by hand before AI: the studio edits its own realisations'],
+				['Sections', 'Realisations, workshop, publications, references']
+			]
 		},
 		{
 			id: 'kruk',
 			name: 'kruk.live',
-			desc: 'Real-time collaborative drawing, kanban, property, pixel-art, and photo apps.',
-			href: 'https://kruk.live'
+			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
+			href: 'https://kruk.live',
+			specs: [
+				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
+				['Mode', 'Real-time and collaborative']
+			]
 		},
 		{
 			id: 'wibroakustyka',
 			name: 'wibroakustyka.ai',
 			desc: 'Product site for the Graal vibroacoustic wellness chair.',
-			href: 'https://wibroakustyka.ai'
+			href: 'https://wibroakustyka.ai',
+			specs: [
+				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
+				['Includes', 'News and the Health & Longevity Summit 2026']
+			]
 		},
 		{
 			id: 'intertech',
 			name: 'intertechpoland.pl',
-			desc: 'Scientific equipment catalogue and industry news for Picarro and UGT solutions.',
-			href: 'https://intertechpoland.pl'
+			desc: 'Equipment catalogue and industry news for the Polish representative of Picarro and UGT.',
+			href: 'https://intertechpoland.pl',
+			specs: [
+				['Energy', 'Emissions monitoring and reduction, leak detection, pipe replacement'],
+				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors']
+			]
 		},
 		{
 			id: 'polaczenie',
 			name: 'gabinet-polaczenie.pl',
 			desc: 'Acupuncture clinic in Kraków offering treatments that complement conventional care.',
-			href: 'https://gabinet-polaczenie.pl'
+			href: 'https://gabinet-polaczenie.pl',
+			specs: [
+				['Format', 'One page, in Polish and English'],
+				['Covers', 'Treatments and the therapist']
+			]
 		},
 		{
 			id: 'radiobartek',
 			name: 'radiobartek.com',
 			desc: 'Internet radio station, self-hosted on AzuraCast.',
-			href: 'https://radiobartek.com'
+			href: 'https://radiobartek.com',
+			specs: [
+				['Stream', 'AzuraCast, self-hosted'],
+				['Player', 'One page, one button: listen']
+			]
 		}
 	];
 
@@ -863,7 +892,7 @@
 	const shownPkgs = $derived(pkgs.filter((p) => hits(p.part, p.name, p.desc)));
 	const shownSkills = $derived(skls.filter((s) => hits(s.part, s.name, s.desc)));
 	const shownTpls = $derived(tpls.filter((t) => hits(t.part, t.name, t.desc, t.kind, ...t.stack)));
-	const shownSites = $derived(sites.filter((w) => hits(w.part, w.name, w.desc)));
+	const shownSites = $derived(sites.filter((w) => hits(w.part, w.name, w.desc, ...w.specs.flat())));
 	const groups = $derived(
 		kinds
 			.map(([kind]) => ({ kind, rows: shownTpls.filter((t) => t.kind === kind) }))
@@ -953,8 +982,8 @@
 		{ href: '#apps', label: 'Apps', count: shownApps.length },
 		{ href: '#packages', label: 'Packages', count: shownPkgs.length },
 		{ href: '#skills', label: 'Skills', count: shownSkills.length },
-		{ href: '#templates', label: 'Templates', count: shownTpls.length },
-		{ href: '#websites', label: 'Websites', count: shownSites.length }
+		{ href: '#websites', label: 'Websites', count: shownSites.length },
+		{ href: '#templates', label: 'Templates', count: shownTpls.length }
 	]);
 
 	// Split text around the search term so matches can be marked without {@html}.
@@ -1184,7 +1213,10 @@
 			</svg>
 
 			<section class="col col--apps" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length}>
-				<h2 class="frame-label" id="apps-title">Apps <span class="n">{shownApps.length}</span></h2>
+				<h2 class="frame-label" id="apps-title">
+					Apps <span class="n">{shownApps.length}</span>
+					<span class="frame-note">Products and client work I run today</span>
+				</h2>
 				<div class="stack stack--lead">
 					{#each shownApps.filter((a) => a.lead && !a.middle) as a (a.id)}{@render appNode(a)}{/each}
 				</div>
@@ -1261,6 +1293,39 @@
 			</svg>
 		</div>
 
+		<section class="frame sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
+			<div class="frame__top">
+				<h2 class="frame-label" id="websites-title">Hand-made websites <span class="n">{shownSites.length}</span></h2>
+				<p>
+					I have been making websites since 2000, when I was 17: by hand, from the first HTML to
+					custom CMSes, until AI took over. The proof is this page, which Claude built with me.
+					These are the hand-made ones still online, a mix of client work and experiments.
+				</p>
+			</div>
+			<div class="sites__grid">
+				{#each shownSites as w (w.id)}
+					<article class="node node--site" id={w.id} aria-labelledby="{w.id}-name">
+						<header class="node__head">
+							<span class="part">{@render hl(w.part)}</span>
+							<h3 id="{w.id}-name">{@render hl(w.name)}</h3>
+						</header>
+						{#if w.plates}
+							<Peek plates={w.plates} name={w.name} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
+						{/if}
+						<div class="node__body">
+							<p class="node__desc">{@render hl(w.desc)}</p>
+							<dl class="props">
+								{#each w.specs as [k, v] (k)}
+									<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
+								{/each}
+							</dl>
+							<div class="actions"><a class="btn btn--quiet" href={w.href}>Open <Icon name="out" /></a></div>
+						</div>
+					</article>
+				{/each}
+			</div>
+		</section>
+
 		<section class="frame" id="templates" aria-labelledby="templates-title" hidden={!shownTpls.length}>
 			<div class="frame__top">
 				<h2 class="frame-label" id="templates-title">Railway templates <span class="n">{shownTpls.length}</span></h2>
@@ -1292,30 +1357,6 @@
 							{/each}
 						</ul>
 					</section>
-				{/each}
-			</div>
-		</section>
-
-		<section class="sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
-			<h2 class="frame-label" id="websites-title">
-				Websites <span class="n">{shownSites.length}</span>
-				<span class="frame-note">Products, client work and experiments</span>
-			</h2>
-			<div class="sites__grid">
-				{#each shownSites as w (w.id)}
-					<article class="node node--site" id={w.id} aria-labelledby="{w.id}-name">
-						<header class="node__head">
-							<span class="part">{@render hl(w.part)}</span>
-							<h3 id="{w.id}-name">{@render hl(w.name)}</h3>
-						</header>
-						{#if w.plates}
-							<Peek plates={w.plates} name={w.name} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
-						{/if}
-						<div class="node__body">
-							<p class="node__desc">{@render hl(w.desc)}</p>
-							<div class="actions"><a class="btn btn--quiet" href={w.href}>Open <Icon name="out" /></a></div>
-						</div>
-					</article>
 				{/each}
 			</div>
 		</section>

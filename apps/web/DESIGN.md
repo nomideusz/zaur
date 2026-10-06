@@ -323,9 +323,11 @@ Display and Sans latin files are preloaded in `app.html`. All faces use `font-di
 
 **Templates.** Family nodes flow in CSS columns (`columns: 3 22rem`, 1.25rem gap, `break-inside: avoid`). Templates are grouped by `template-kinds.ts`. Any name that isn't listed falls into the last group, and numbering counts up from the oldest (T1 is oldest). Adding a template needs no layout work.
 
-**Websites.** Compact sky-headed nodes in an auto-fill grid (`repeat(auto-fill, minmax(17rem, 1fr))`, 1.25rem gap) under the Websites label: header with part number (W1…) and host, the peek strip, the description and a quiet Open button. Adding a site needs an entry in `websites` and its plates.
+**Hand-made websites.** The section sits between the graph and the templates, because the page is a portfolio and the websites are the maker's own history. It uses the same `frame__top` as templates: the label "Hand-made websites" with its count, and beside it the honest paragraph (making websites by hand since 2000, until AI took over, this page being the proof). Below, compact sky-headed nodes in an auto-fill grid (`repeat(auto-fill, minmax(17rem, 1fr))`, 1.25rem gap): header with part number (W1…) and host, the peek strip, the description, flat spec rows (what is inside: a custom CMS, five mini-apps, thousands of map points) and a quiet Open button. Adding a site needs an entry in `websites` with its spec rows and its plates.
 
-**Rhythm.** Sections are separated by fluid gaps: hello clamp(2.5rem, 6vw, 4.5rem) on top, templates clamp(4rem, 8vw, 6.5rem), websites clamp(3.5rem, 7vw, 5rem), close clamp(4rem, 9vw, 7rem). Node bodies use 1rem padding with 0.85rem between items. Packages use 0.85–0.9rem, and the lead uses 1.15–1.3rem.
+**The two project families.** Apps are products and client work the maker runs today, wired to the packages they import; the Apps label says so in its frame note. Websites are the hand-made sites still online. The split is by era and method, never by how "app-like" a site feels.
+
+**Rhythm.** Sections are separated by fluid gaps: hello clamp(2.5rem, 6vw, 4.5rem) on top, websites and templates clamp(4rem, 8vw, 6.5rem) each, close clamp(4rem, 9vw, 7rem). Node bodies use 1rem padding with 0.85rem between items. Packages use 0.85–0.9rem, and the lead uses 1.15–1.3rem.
 
 ### Named Rules
 **The Real Wires Rule.** A wire is drawn only for an entry in an app's `uses` array, and only while both ends are on the canvas (search can remove either end). Never draw a decorative or inferred connection.
