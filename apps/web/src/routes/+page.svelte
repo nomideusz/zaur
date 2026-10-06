@@ -142,6 +142,12 @@
 
 	const templates = [
 		{
+			name: 'OpenReplay',
+			desc: 'OpenReplay session replay: watch what users did with console, network and performance data alongside, plus funnels, heatmaps and dashboards, with recordings kept on your own Railway volume.',
+			deploy: 'https://railway.com/deploy/openreplay',
+			source: 'https://github.com/nomideusz/openreplay-railway'
+		},
+		{
 			name: 'Inbox Zero',
 			desc: 'Inbox Zero AI email assistant for Gmail and Outlook: plain-English rules that label, archive and draft replies, plus bulk unsubscribe and digests, with your own LLM key, Postgres, Redis and built-in scheduled jobs.',
 			deploy: 'https://railway.com/deploy/inbox-zero',
