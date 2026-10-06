@@ -62,6 +62,30 @@
 			plates: [
 				{ src: musicDesktop, w: 1440, h: 460, alt: 'Zaur Music on a desktop: the library home with recently added albums.' }
 			]
+		},
+		{
+			id: 'thebest',
+			name: 'thebest.travel',
+			desc: 'A tour marketplace for Cracow: local guides, live availability and online booking with card payments.',
+			href: 'https://thebest.travel',
+			lead: true,
+			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
+		},
+		{
+			id: 'festivals',
+			name: 'Friendly Festivals',
+			desc: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
+			href: 'https://newinternet.online',
+			lead: true,
+			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
+		},
+		{
+			id: 'pikastro',
+			name: 'Pikastro',
+			desc: 'The site of a colourful interior design studio in Kraków, with a custom CMS: the owner edits text and photos right on the live page.',
+			href: 'https://pikastro.eu',
+			lead: true,
+			client: true
 		}
 	];
 
@@ -643,22 +667,10 @@
 
 	const websites = [
 		{
-			id: 'thebest',
-			name: 'thebest.travel',
-			desc: 'Tour marketplace with live availability and online booking.',
-			href: 'https://thebest.travel'
-		},
-		{
 			id: 'recycling',
 			name: 'recycling.kompi.pl',
 			desc: 'Map of e-waste, battery, and fluorescent-lamp collection points across Poland.',
 			href: 'https://recycling.kompi.pl'
-		},
-		{
-			id: 'pikastro',
-			name: 'pikastro.eu',
-			desc: 'Colourful interior design studio combining architecture, graphics, and AI prototyping.',
-			href: 'https://pikastro.eu'
 		},
 		{
 			id: 'kurcz',
@@ -720,7 +732,9 @@
 		mail: [
 			['Server', 'Stalwart, self-hosted'],
 			['Protocol', 'JMAP'],
-			['Includes', 'Calendar, contacts, offline mode']
+			['Includes', 'Calendar, contacts, files, Meet video calls'],
+			['Client', 'Installable web app, push notifications, several accounts'],
+			['Sign-in', 'One Zaur account for Mail, Music, Photos and Bartube']
 		],
 		register: [
 			['Creates', 'A real @zaur.app mailbox'],
@@ -730,6 +744,21 @@
 			['Engine', '@nomideusz/zaur-world'],
 			['Shows', 'Sun, moon, stars, live weather'],
 			['Window', 'The next 24 hours']
+		],
+		thebest: [
+			['Covers', 'Guided tours in Cracow'],
+			['Payments', 'Stripe'],
+			['Languages', 'English, Polish']
+		],
+		festivals: [
+			['Covers', 'Festivals worldwide'],
+			['Includes', 'Lineups, editions, reviews, organiser claims']
+		],
+		pikastro: [
+			['CMS', 'Custom, click-to-edit on the page'],
+			['Edits', 'Text and photos, with edit history'],
+			['Storage', 'Netlify Blobs, no database'],
+			['Languages', 'Polish, English']
 		],
 		music: [
 			['Server', 'Navidrome, self-hosted'],
