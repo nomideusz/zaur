@@ -1375,10 +1375,10 @@ mark {
 }
 
 .plates__main img {
-	width: 100%;
+	width: auto;
+	max-width: 100%;
 	max-height: min(62dvh, 46rem);
-	object-fit: cover;
-	object-position: top;
+	margin-inline: auto;
 }
 
 .plates__main figcaption {

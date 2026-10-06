@@ -397,7 +397,7 @@ An off-white 3rem field (12px radius, Rest shadow) with a search icon, a placeho
 
 ### Look Inside Dialog
 A native modal `<dialog>` that is one big node: a family header (coral for apps, sky for websites) with the part number, the name, the host and a quiet Close; the plate; a thumbnail row; and the open link. Off-white, 14px radius, Lift shadow, over a cobalt 70% backdrop, max `76rem` wide and scrollable past `100dvh − 2rem`. Esc (`oncancel`) and a backdrop click close through the morph.
-- **Plate:** the selected frame fills the row (cover from the top, max `min(62dvh, 46rem)`), with its description as the figcaption. A phone capture, when there is one, sits beside it at `min(13rem, 22vw)` and stacks under it at 860px and below.
+- **Plate:** the selected frame is shown whole, fitted inside the row and `min(62dvh, 46rem)` tall, centred, with its description as the figcaption. The dialog never crops a plate; only the strip does. A phone capture, when there is one, sits beside it at `min(13rem, 22vw)` and stacks under it at 860px and below.
 - **Thumbs:** 7.5rem tabs for every frame, 60% at rest, 85% on hover, full with a 2px package-yellow ring when selected. Left and right arrows change the frame.
 - **Provenance:** the foot says where the pixels come from: "Captured from the live site on 7 October 2026" for public sites, "Screenshots from a demo account" for Mail and Music (Mail adds that every message and sender is made up). Beside it, a solid Open (or Sign in to) button and a Source link.
 
@@ -422,7 +422,7 @@ A native modal `<dialog>` that is one big node: a family header (coral for apps,
 - **Do** keep headings on cobalt in Funnel Display 700 with negative tracking, and put counts inline after them in Sans.
 - **Do** dim with `opacity: 0.4` plus `grayscale(1)`.
 - **Do** import new images from `src/lib` so they get hashed URLs.
-- **Do** give every new app or website plates: capture the live page at 1440×900 (scaled to 1200 wide) and 390×844 with scrollbars hidden, save them as `src/lib/plates/<id>-<n>.webp` and `<id>-phone.webp`, and describe each frame in `plates.ts` in the project's own words. A project without plates renders without a strip; never stand in with a mock or illustration.
+- **Do** give every new app or website plates: capture the live page at 1440×900 (scaled to 1200 wide) and 390×844 with scrollbars hidden, save them as `src/lib/plates/<id>-<n>.webp` and `<id>-phone.webp`, and describe each frame in `plates.ts` in the project's own words. Each frame is a deliberately chosen page or state (a studio profile, a product page, the sky at noon), never a scroll offset, and no two frames of one project should look alike. A project without plates renders without a strip; never stand in with a mock or illustration.
 
 ### Don't:
 - **Don't** use a white sheet with black ink and one spot colour, or any printed-document look (the old Parts Catalog, kurcz.pl, Friendly Festivals).
