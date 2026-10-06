@@ -463,8 +463,13 @@ mark {
 	column-gap: 2.25rem;
 }
 
-/* The agent skill has no wires: it sits under the packages, across both columns. */
-.col--pkgs .node--skill {
+.col--apps > .frame-label--more {
+	grid-column: 3;
+	grid-row: 1;
+}
+
+/* Nodes without wires (Pikastro, the agent skill) sit under the packages, across both columns. */
+.col--pkgs > .node:not(.node--pkg) {
 	grid-column: 1 / -1;
 }
 

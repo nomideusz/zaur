@@ -86,8 +86,14 @@
 			href: 'https://pikastro.eu',
 			lead: true,
 			client: true,
-			// No package wires, so it can head the right column and even out the canvas.
-			right: true
+			// No package wires, so it sits under the packages and evens out the canvas.
+			middle: true
+		},
+		{
+			id: 'kurcz',
+			name: 'kurcz.pl',
+			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
+			href: 'https://kurcz.pl'
 		}
 	];
 
@@ -675,12 +681,6 @@
 			href: 'https://recycling.kompi.pl'
 		},
 		{
-			id: 'kurcz',
-			name: 'kurcz.pl',
-			desc: 'Everything about muscle cramps — causes, first aid, prevention (Polish).',
-			href: 'https://kurcz.pl'
-		},
-		{
 			id: 'tutitutu',
 			name: 'tutitutu.pl',
 			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
@@ -755,6 +755,11 @@
 		festivals: [
 			['Covers', 'Festivals worldwide'],
 			['Includes', 'Lineups, editions, reviews, organiser claims']
+		],
+		kurcz: [
+			['Built with', 'Astro, no JavaScript on article pages'],
+			['Covers', 'Causes, first aid, prevention guides'],
+			['Languages', 'Polish, English']
 		],
 		pikastro: [
 			['CMS', 'Custom, click-to-edit on the page'],
@@ -1120,16 +1125,15 @@
 			<section class="col col--apps" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length}>
 				<h2 class="frame-label" id="apps-title">Apps <span class="n">{shownApps.length}</span></h2>
 				<div class="stack stack--lead">
-					{#each shownApps.filter((a) => a.lead && !a.right) as a (a.id)}{@render appNode(a)}{/each}
+					{#each shownApps.filter((a) => a.lead && !a.middle) as a (a.id)}{@render appNode(a)}{/each}
 				</div>
+				<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
 				<div class="stack">
-					{#each shownApps.filter((a) => a.lead && a.right) as a (a.id)}{@render appNode(a)}{/each}
-					<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
 					{#each shownApps.filter((a) => !a.lead) as a (a.id)}{@render appNode(a)}{/each}
 				</div>
 			</section>
 
-			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length && !shownSkills.length}>
+			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length && !shownSkills.length && !shownApps.some((a) => a.middle)}>
 				<h2 class="frame-label" id="packages-title">
 					Packages <span class="n">{shownPkgs.length}</span>
 					<span class="frame-note">Live from npm{#if registryDown}; the registry didn't answer, so some figures are missing{/if}</span>
@@ -1175,6 +1179,7 @@
 						</div>
 					</article>
 				{/each}
+				{#each shownApps.filter((a) => a.middle) as a (a.id)}{@render appNode(a)}{/each}
 				{#each shownSkills as s (s.name)}
 					<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
 						<header class="node__head">
