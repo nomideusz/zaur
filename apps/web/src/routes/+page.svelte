@@ -142,6 +142,12 @@
 
 	const templates = [
 		{
+			name: 'Inbox Zero',
+			desc: 'Inbox Zero AI email assistant for Gmail and Outlook: plain-English rules that label, archive and draft replies, plus bulk unsubscribe and digests, with your own LLM key, Postgres, Redis and built-in scheduled jobs.',
+			deploy: 'https://railway.com/deploy/inbox-zero',
+			source: 'https://github.com/nomideusz/inbox-zero-railway'
+		},
+		{
 			name: 'AFFiNE',
 			desc: 'AFFiNE: the open-source Notion and Miro alternative. Docs, edgeless whiteboards and databases in one workspace, with real-time collaboration, on Postgres with pgvector.',
 			deploy: 'https://railway.com/deploy/affine-production',
