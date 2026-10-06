@@ -14,6 +14,7 @@ colors:
   pkg: "#ffd43b"
   skill: "#5fe3a1"
   tpl: "#ff9ecb"
+  site: "#8ed0ff"
   wire: "#ffe58a"
   live: "#1fbf6a"
   port-chip: "#fff3c4"
@@ -122,6 +123,25 @@ components:
     backgroundColor: "{colors.tpl}"
     textColor: "{colors.node-ink}"
     padding: "0.7rem 1rem 0.65rem"
+  node-head-site:
+    backgroundColor: "{colors.site}"
+    textColor: "{colors.node-ink}"
+    padding: "0.7rem 1rem 0.65rem"
+  peek:
+    backgroundColor: "{colors.node-sunk}"
+    aspectRatio: "16 / 10"
+  peek-cta:
+    backgroundColor: "{colors.node-ink}"
+    textColor: "#ffffff"
+    typography: "{typography.label}"
+    rounded: "{rounded.deploy}"
+    padding: "0.32rem 0.65rem"
+  peek-cta-hover:
+    backgroundColor: "{colors.canvas}"
+  peek-dot:
+    backgroundColor: "rgb(255 255 255 / 0.45)"
+  peek-dot-on:
+    backgroundColor: "{colors.pkg}"
   button:
     backgroundColor: "{colors.node-ink}"
     textColor: "#ffffff"
@@ -213,7 +233,7 @@ components:
 
 **Creative North Star: "The Deploy Canvas"**
 
-The whole page is one live infrastructure canvas. A drenched cobalt ground with a fine white dot grid runs edge to edge. Every app, package, skill and template is a node on it: a cool off-white panel with rounded corners and a soft shadow, headed by a flat family colour. Pale-yellow bezier wires run port to port, and each wire is a real import from an app's `uses` list. Hover or focus a node and its wires light while everything unreached fades to grey. On wide screens nodes drag by their header and the wires follow. Package versions are read live from npm, and the lead app's search clicks are read live from Search Console.
+The whole page is one live infrastructure canvas. A drenched cobalt ground with a fine white dot grid runs edge to edge. Every app, package, skill and template is a node on it: a cool off-white panel with rounded corners and a soft shadow, headed by a flat family colour. Pale-yellow bezier wires run port to port, and each wire is a real import from an app's `uses` list. Hover or focus a node and its wires light while everything unreached fades to grey, and yellow packets run along the lit wires. Every app and website node carries a peek strip under its header: the project's real screens, scrubbed with the pointer on a mouse or swiped on touch, so the whole estate can be browsed without opening anything. A click on the strip opens a Look inside dialog, and the frame morphs into the dialog's plate. On wide screens nodes drag by their header and the wires follow. Package versions are read live from npm, and the lead app's search clicks are read live from Search Console.
 
 The canvas is busy on purpose. It is dense with real objects, and the cobalt holds them together. Headings sit directly on the canvas in white Funnel Display. Everything you read or act on lives inside a node. Colour has a job: the header hue says what family a node belongs to, yellow says "wire or current", and green says "live". Nothing is decoration.
 
@@ -222,8 +242,9 @@ This world replaced the earlier "Parts Catalog" (white stock, black ink, one spo
 **Key Characteristics:**
 - Cobalt canvas (`canvas`) with a 22px dot grid owns every viewport. Nothing else is a page background.
 - Off-white rounded nodes (14px) with soft, blue-tinted, downward shadows.
-- Four family header colours: coral apps, yellow packages, mint skills, pink templates.
-- Wires are only real imports. They draw in once on first paint and light up on trace.
+- Five family header colours: coral apps, yellow packages, mint skills, pink templates, sky websites.
+- Peek strips: real screenshots of every app and website, inside the node under its header. Public sites are captured from the live page and the dialog says so with the date; Mail and Music use demo accounts and say so.
+- Wires are only real imports. They draw in once on first paint, light up on trace, and carry moving packets while lit.
 - Funnel Display for headings, Funnel Sans for everything read, and Martian Mono only for typed or versioned tokens.
 - Live data (npm versions, Search Console clicks) is shown with its source. A failure shows an em dash, never a typed-in number.
 
@@ -240,6 +261,7 @@ The palette is a saturated cobalt ground with off-white panels and four bright, 
 - **Package Yellow** (`pkg`): package node headers. It also means "current": a lit wire while tracing, the focus ring on the canvas and around the finder, text selection, search `<mark>`, the copy-state word, the in-text links on cobalt ("Put the nodes back", the close email) and the port-chip hover.
 - **Skill Mint** (`skill`): skill node headers.
 - **Template Pink** (`tpl`): template family node headers. A `:target` template row is tinted with a pale pink (#fff0f7).
+- **Site Sky** (`site`): website node headers, and the Look inside header when a website is open.
 
 ### Tertiary
 - **Wire Cream** (`wire`): wires at rest (2px, 70% opacity) and the stroke of the port dots where wires plug into node edges.
@@ -301,6 +323,8 @@ Display and Sans latin files are preloaded in `app.html`. All faces use `font-di
 
 **Templates.** Family nodes flow in CSS columns (`columns: 3 22rem`, 1.25rem gap, `break-inside: avoid`). Templates are grouped by `template-kinds.ts`. Any name that isn't listed falls into the last group, and numbering counts up from the oldest (T1 is oldest). Adding a template needs no layout work.
 
+**Websites.** Compact sky-headed nodes in an auto-fill grid (`repeat(auto-fill, minmax(17rem, 1fr))`, 1.25rem gap) under the Websites label: header with part number (W1…) and host, the peek strip, the description and a quiet Open button. Adding a site needs an entry in `websites` and its plates.
+
 **Rhythm.** Sections are separated by fluid gaps: hello clamp(2.5rem, 6vw, 4.5rem) on top, templates clamp(4rem, 8vw, 6.5rem), websites clamp(3.5rem, 7vw, 5rem), close clamp(4rem, 9vw, 7rem). Node bodies use 1rem padding with 0.85rem between items. Packages use 0.85–0.9rem, and the lead uses 1.15–1.3rem.
 
 ### Named Rules
@@ -329,12 +353,21 @@ Everything is rounded, and the radius steps down with the size of the object. No
 ### Node
 The canvas object.
 - **Shape:** off-white panel, 14px radius, Rest shadow. A flat family-colour header holds a mono part number (on an ink 12% wash), the display-face name and a Sans host line (ink at 72%). Packages add a dark mono version chip at the right of the header.
+- **Peek strip:** between header and body on every app and website node that has plates (see Peek Strip below).
 - **Body:** description, then any facts, key/value list, imports, and actions.
-- **Trace:** hovering or focusing a node sets it active. Its wires go to package yellow at 3px, other wires drop to 14%, port dots drop to 50%, and every unreached node dims.
+- **Trace:** hovering or focusing a node sets it active. Its wires go to package yellow at 3px, other wires drop to 14%, port dots drop to 50%, and every unreached node dims. Each lit wire also gets a `flow` twin: a 3px yellow dashed path (`0.03 0.07` of the path length) whose dashes move toward the app at 0.2 path lengths a second, so imports visibly arrive. Flow exists only while tracing and only without reduced motion.
 - **Drag:** at 861px and wider, app and package headers show a grab cursor and drag by pointer. Wires re-route live. "Put the nodes back" appears in the meta line once anything has moved.
 
 ### Template Family Node
 Pink-headed node per kind with a count, flowing in columns. Rows are a three-column grid: mono part number, then name over an ellipsized muted description (full text in `title`, unclamped while searching), then actions (a dark Deploy pill and a muted Source link). Rows are divided by a 1px inset `node-sunk` line.
+
+### Peek Strip
+The project's real screens inside its node, so it can be browsed without opening it.
+- **Shape:** a 16:10 band directly under the header, `node-sunk` behind the frames, a 1px `node-sunk` line below. Frames are desktop captures (1200×750, object-fit cover from the top); Music's 1440×460 plate crops the same way.
+- **Scrub:** on a mouse, the pointer's x position across the strip picks the frame (`floor(x / width × n)`), and the film slides with a 260ms ease-out. Leaving the strip returns to the first frame. On touch (`hover: none`) the film is a scroll-snap row and swipes.
+- **Dots:** bottom-left, one per frame in an ink 72% pill. Rest dots are white 45%; the current dot is package yellow at 1.25× (yellow says current). A single-frame strip has no dots.
+- **Look inside:** an ink pill (label type, 7px radius) bottom-right. On a mouse the whole strip is the button (cursor `zoom-in`); on touch only the pill is, so a swipe reaches the film. Hover and focus turn the pill cobalt. The accessible name says how many screens there are.
+- **Morph:** the active frame and the dialog's plate share `view-transition-name: plate`. Opening and closing run inside `document.startViewTransition` (440ms ease-out group, 240ms root fade), and fall back to an instant open where unsupported or with reduced motion.
 
 ### Key/Value List
 Flat rows: a 6rem muted term (500) and a 600 value, in Funnel Sans at 0.875rem, with a 0.45rem row gap. No fills, boxes or rules.
@@ -363,7 +396,10 @@ The bar nav has pill links (600, 0.9375rem) with live `.n` counts, a 12% white h
 An off-white 3rem field (12px radius, Rest shadow) with a search icon, a placeholder of real queries, and a mono `/` kbd. `/` anywhere focuses it. `:focus-within` draws a 3px yellow ring. It filters every node, the wires and the counts live, and marks hits in yellow.
 
 ### Look Inside Dialog
-A native modal `<dialog>` (closes on Esc or backdrop, plus a quiet Close), off-white with a 14px radius and the Lift shadow, over a cobalt 70% backdrop, with a coral header. It shows real demo-account screenshots: the desktop plate fills the row and the phone plate stays phone-sized. The caption always says it is a demo account.
+A native modal `<dialog>` that is one big node: a family header (coral for apps, sky for websites) with the part number, the name, the host and a quiet Close; the plate; a thumbnail row; and the open link. Off-white, 14px radius, Lift shadow, over a cobalt 70% backdrop, max `76rem` wide and scrollable past `100dvh − 2rem`. Esc (`oncancel`) and a backdrop click close through the morph.
+- **Plate:** the selected frame fills the row (cover from the top, max `min(62dvh, 46rem)`), with its description as the figcaption. A phone capture, when there is one, sits beside it at `min(13rem, 22vw)` and stacks under it at 860px and below.
+- **Thumbs:** 7.5rem tabs for every frame, 60% at rest, 85% on hover, full with a 2px package-yellow ring when selected. Left and right arrows change the frame.
+- **Provenance:** the foot says where the pixels come from: "Captured from the live site on 7 October 2026" for public sites, "Screenshots from a demo account" for Mail and Music (Mail adds that every message and sender is made up). Beside it, a solid Open (or Sign in to) button and a Source link.
 
 ### Focus
 3px outline with a 2px offset and 6px radius. It is yellow on cobalt and cobalt inside nodes and the dialog (each sets `--focus`).
@@ -386,6 +422,7 @@ A native modal `<dialog>` (closes on Esc or backdrop, plus a quiet Close), off-w
 - **Do** keep headings on cobalt in Funnel Display 700 with negative tracking, and put counts inline after them in Sans.
 - **Do** dim with `opacity: 0.4` plus `grayscale(1)`.
 - **Do** import new images from `src/lib` so they get hashed URLs.
+- **Do** give every new app or website plates: capture the live page at 1440×900 (scaled to 1200 wide) and 390×844 with scrollbars hidden, save them as `src/lib/plates/<id>-<n>.webp` and `<id>-phone.webp`, and describe each frame in `plates.ts` in the project's own words. A project without plates renders without a strip; never stand in with a mock or illustration.
 
 ### Don't:
 - **Don't** use a white sheet with black ink and one spot colour, or any printed-document look (the old Parts Catalog, kurcz.pl, Friendly Festivals).
@@ -397,3 +434,5 @@ A native modal `<dialog>` (closes on Esc or backdrop, plus a quiet Close), off-w
 - **Don't** draw wires that aren't real imports.
 - **Don't** use hard offset shadows, glows outside the live dot, or hover lift.
 - **Don't** fabricate figures, counts or testimonials. Show a usage number only when it comes from a live source.
+- **Don't** show a screenshot without saying where it came from. The dialog always names the source (live capture with its date, or a demo account).
+- **Don't** make the peek strip the only way to open a project. The Open or Sign in link stays in the node's actions.

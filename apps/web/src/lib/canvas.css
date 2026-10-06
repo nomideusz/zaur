@@ -60,6 +60,7 @@
 	--pkg: #ffd43b;
 	--skill: #5fe3a1;
 	--tpl: #ff9ecb;
+	--site: #8ed0ff;
 
 	--wire: #ffe58a;
 	--live: #1fbf6a;
@@ -1010,112 +1011,6 @@ mark {
 	max-width: 62rem;
 }
 
-.sites p {
-	font-size: 1.0625rem;
-	line-height: 1.75;
-	color: var(--on-canvas-soft);
-}
-
-.sites a {
-	color: var(--on-canvas);
-	font-weight: 600;
-}
-
-.close {
-	margin-top: clamp(4rem, 9vw, 7rem);
-	padding-top: 2.5rem;
-	box-shadow: 0 -1px 0 rgb(255 255 255 / 0.16);
-}
-
-.close__line {
-	max-width: 52rem;
-	font-family: var(--display);
-	font-size: clamp(1.75rem, 3.6vw, 2.75rem);
-	font-weight: 700;
-	line-height: 1.1;
-	letter-spacing: -0.02em;
-	text-wrap: balance;
-}
-
-.close__line a {
-	color: var(--pkg);
-	text-decoration-thickness: 3px;
-	text-underline-offset: 0.15em;
-}
-
-.close__small {
-	margin-top: 1.5rem;
-	font-size: 0.875rem;
-	color: var(--on-canvas-soft);
-}
-
-/* ---- Look inside ----------------------------------------------------------- */
-
-.plates {
-	--focus: var(--canvas);
-	width: min(72rem, calc(100% - 2rem));
-	max-height: calc(100dvh - 2rem);
-	margin: auto;
-	padding: 0;
-	border: 0;
-	border-radius: var(--r);
-	background: var(--node);
-	color: var(--node-ink);
-	box-shadow: var(--shadow-lift);
-}
-
-.plates::backdrop {
-	background: rgb(10 18 80 / 0.7);
-}
-
-.plates__head {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 1rem;
-	padding: 0.75rem 0.85rem 0.75rem 1.25rem;
-	background: var(--app);
-}
-
-.plates__head h2 {
-	font-family: var(--display);
-	font-size: 1.5rem;
-	font-weight: 700;
-	letter-spacing: -0.015em;
-}
-
-.plates__note {
-	padding: 1rem 1.25rem 0;
-	font-size: 0.875rem;
-	color: var(--node-muted);
-}
-
-.plates__row {
-	display: flex;
-	align-items: flex-start;
-	gap: 1rem;
-	padding: 1rem 1.25rem 1.25rem;
-}
-
-.plates__row img {
-	display: block;
-	min-width: 0;
-	height: auto;
-	border-radius: 8px;
-	box-shadow: 0 0 0 1px var(--node-sunk), var(--shadow);
-}
-
-/* Desktop plate takes the room; the phone plate stays phone-sized. */
-.plates__row img:first-child {
-	flex: 1 1 0;
-	width: 100%;
-}
-
-.plates__row img + img {
-	flex: 0 0 auto;
-	width: min(16rem, 28%);
-}
-
 /* ---- Narrower ---------------------------------------------------------------- */
 
 @media (max-width: 1280px) {
@@ -1238,12 +1133,354 @@ mark {
 		padding-block: 0.45rem;
 	}
 
-	.plates__row {
-		flex-direction: column;
+}
+
+/* ---- Peek strips ---------------------------------------
+   A project's real screens inside its node. Pointer x scrubs the film on a
+   mouse; on touch the film scrolls with snap. Any click opens Look inside. */
+.peek {
+	position: relative;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+	background: var(--node-sunk);
+	border-bottom: 1px solid var(--node-sunk);
+}
+
+.peek__film {
+	display: flex;
+	height: 100%;
+	translate: calc(var(--i) * -100%) 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	.peek__film {
+		transition: translate 260ms cubic-bezier(0.2, 0.8, 0.2, 1);
+	}
+}
+
+.peek__film img {
+	flex: none;
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: top;
+	user-select: none;
+	-webkit-user-drag: none;
+}
+
+.peek__dots {
+	position: absolute;
+	left: 0.65rem;
+	bottom: 0.6rem;
+	display: flex;
+	gap: 0.3rem;
+	padding: 0.32rem 0.45rem;
+	border-radius: 999px;
+	background: rgb(18 22 51 / 0.72);
+	pointer-events: none;
+}
+
+.peek__dots i {
+	width: 0.4rem;
+	height: 0.4rem;
+	border-radius: 50%;
+	background: rgb(255 255 255 / 0.45);
+	transition:
+		background 120ms ease-out,
+		scale 120ms ease-out;
+}
+
+.peek__dots i.on {
+	background: var(--pkg);
+	scale: 1.25;
+}
+
+.peek__open {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: flex-end;
+	justify-content: flex-end;
+	padding: 0.6rem;
+	border: 0;
+	background: transparent;
+	color: #fff;
+	cursor: zoom-in;
+}
+
+.peek__open:focus-visible {
+	outline-offset: -3px;
+}
+
+.peek__cta {
+	padding: 0.32rem 0.65rem;
+	border-radius: 7px;
+	background: var(--node-ink);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	line-height: 1.2;
+	box-shadow: 0 2px 6px rgb(6 12 64 / 0.3);
+	transition: background 120ms ease-out;
+}
+
+.peek__open:hover .peek__cta,
+.peek__open:focus-visible .peek__cta {
+	background: var(--canvas);
+}
+
+/* Touch: the film scrolls with snap and the open button is only the pill,
+   so a swipe reaches the film. */
+@media (hover: none) {
+	.peek__film {
+		overflow-x: auto;
+		scroll-snap-type: x mandatory;
+		scrollbar-width: none;
+		translate: none;
+		transition: none;
 	}
 
-	.plates__row img + img {
-		width: min(16rem, 100%);
-		align-self: center;
+	.peek__film::-webkit-scrollbar {
+		display: none;
+	}
+
+	.peek__film img {
+		scroll-snap-align: start;
+	}
+
+	.peek__open {
+		inset: auto 0.6rem 0.6rem auto;
+		padding: 0;
+	}
+}
+
+/* ---- Wire flow: imports arrive while a node is traced ---- */
+@media (prefers-reduced-motion: no-preference) {
+	.tracing .wires path.flow {
+		stroke: var(--pkg);
+		stroke-width: 3;
+		opacity: 1;
+		stroke-dasharray: 0.03 0.07;
+		stroke-dashoffset: 0;
+		animation: flow 1.2s linear infinite;
+		transition: none;
+	}
+
+	@keyframes flow {
+		to {
+			stroke-dashoffset: 0.2;
+		}
+	}
+}
+
+/* ---- Websites: compact sky-headed nodes with peek strips ---- */
+.sites__grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+	gap: 1.25rem;
+	margin-top: 1.25rem;
+}
+
+.node--site {
+	--head: var(--site);
+}
+
+.node--site .node__head h3 {
+	font-size: 1.125rem;
+}
+
+.node--site .node__body {
+	gap: 0.7rem;
+	padding: 0.85rem 0.9rem 0.95rem;
+}
+
+.node--site .node__desc {
+	font-size: 0.9063rem;
+}
+
+/* ---- Look inside ----------------------------------------
+   The dialog is one big node: family header, the plate, a thumbnail row
+   of the other screens, and the open link. The plate morphs in from the
+   peek strip when the browser supports view transitions. */
+.plates {
+	--focus: var(--canvas);
+	--head: var(--app);
+	width: min(76rem, calc(100% - 2rem));
+	max-height: calc(100dvh - 2rem);
+	margin: auto;
+	padding: 0;
+	border: 0;
+	border-radius: var(--r);
+	background: var(--node);
+	color: var(--node-ink);
+	box-shadow: var(--shadow-lift);
+	overflow: auto;
+}
+
+.plates--site {
+	--head: var(--site);
+}
+
+.plates::backdrop {
+	background: rgb(10 18 80 / 0.7);
+}
+
+.plates__head {
+	grid-template-columns: auto minmax(0, 1fr) auto;
+	padding-right: 0.85rem;
+}
+
+.plates__head h2 {
+	font-family: var(--display);
+	font-size: 1.5rem;
+	font-weight: 700;
+	line-height: 1.1;
+	letter-spacing: -0.015em;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.plates__head .btn {
+	grid-column: 3;
+	grid-row: 1 / span 2;
+	align-self: center;
+}
+
+.plates__stage {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr);
+	gap: 1rem;
+	align-items: start;
+	padding: 1rem 1.25rem 0;
+}
+
+.plates__stage--phone {
+	grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.plates__main {
+	display: grid;
+	gap: 0.5rem;
+	min-width: 0;
+}
+
+.plates__main img,
+.plates__phone {
+	display: block;
+	height: auto;
+	border-radius: 8px;
+	box-shadow:
+		0 0 0 1px var(--node-sunk),
+		var(--shadow);
+}
+
+.plates__main img {
+	width: 100%;
+	max-height: min(62dvh, 46rem);
+	object-fit: cover;
+	object-position: top;
+}
+
+.plates__main figcaption {
+	font-size: 0.875rem;
+	color: var(--node-muted);
+}
+
+.plates__phone {
+	width: min(13rem, 22vw);
+}
+
+.plates__thumbs {
+	display: flex;
+	gap: 0.6rem;
+	padding: 0.9rem 1.25rem 0;
+	overflow-x: auto;
+	scrollbar-width: thin;
+}
+
+.plates__thumb {
+	flex: none;
+	width: 7.5rem;
+	padding: 0;
+	border: 0;
+	border-radius: 6px;
+	overflow: hidden;
+	background: var(--node-sunk);
+	box-shadow: 0 0 0 1px var(--node-sunk);
+	opacity: 0.6;
+	cursor: pointer;
+	transition:
+		opacity 120ms ease-out,
+		box-shadow 120ms ease-out;
+}
+
+.plates__thumb:hover {
+	opacity: 0.85;
+}
+
+.plates__thumb[aria-selected='true'] {
+	opacity: 1;
+	box-shadow: 0 0 0 2px var(--pkg);
+}
+
+.plates__thumb img {
+	display: block;
+	width: 100%;
+	height: auto;
+	aspect-ratio: 16 / 10;
+	object-fit: cover;
+	object-position: top;
+}
+
+.plates__foot {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem 1rem;
+	padding: 1rem 1.25rem 1.25rem;
+}
+
+.plates__note {
+	font-size: 0.875rem;
+	color: var(--node-muted);
+}
+
+/* The peek frame and the dialog plate share one name; the group glides and
+   the images cover it so differing crops never letterbox. */
+::view-transition-group(plate) {
+	animation-duration: 440ms;
+	animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+::view-transition-old(plate),
+::view-transition-new(plate) {
+	animation: none;
+	mix-blend-mode: normal;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: top;
+	overflow: clip;
+}
+
+::view-transition-old(root),
+::view-transition-new(root) {
+	animation-duration: 240ms;
+}
+
+@media (max-width: 860px) {
+	.plates__stage--phone {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.plates__phone {
+		width: min(13rem, 100%);
+		justify-self: center;
+	}
+
+	.plates__head .btn {
+		grid-row: 1;
+		align-self: start;
 	}
 }

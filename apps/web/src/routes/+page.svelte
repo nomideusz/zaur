@@ -2,9 +2,8 @@
 	import { onMount, tick } from 'svelte';
 	import Icon from '$lib/Icon.svelte';
 	import { kinds, kindOf } from '$lib/template-kinds';
-	import mailDesktop from '$lib/plates/mail-desktop.webp';
-	import mailPhone from '$lib/plates/mail-phone.webp';
-	import musicDesktop from '$lib/plates/music-desktop.webp';
+	import Peek from '$lib/Peek.svelte';
+	import { platesFor, capturedOn, type Plates } from '$lib/plates';
 
 	const title = 'Zaur — apps, packages, templates';
 	const description =
@@ -35,10 +34,7 @@
 			href: 'https://webmail.zaur.app',
 			uses: ['svelte-calendar'],
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/mail2',
-			plates: [
-				{ src: mailDesktop, w: 1440, h: 900, alt: 'Zaur Mail on a desktop: folders on the left, the inbox list, and an open three-message thread.' },
-				{ src: mailPhone, w: 585, h: 1266, alt: 'Zaur Mail on a phone: the inbox with unread and flagged messages.' }
-			]
+			account: true
 		},
 		{
 			id: 'register',
@@ -59,9 +55,7 @@
 			desc: 'A private, self-hosted music library and radio powered by Navidrome.',
 			href: 'https://music.zaur.app',
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/music',
-			plates: [
-				{ src: musicDesktop, w: 1440, h: 460, alt: 'Zaur Music on a desktop: the library home with recently added albums.' }
-			]
+			account: true
 		},
 		{
 			id: 'thebest',
@@ -776,7 +770,14 @@
 
 	// Part numbers: templates count up from the oldest, so a new card at the
 	// top of the list gets the next number and existing ones never shift.
-	const apps = products.map((p, i) => ({ ...p, part: `A${i + 1}`, specs: specs[p.id] ?? [], uses: p.uses ?? [] }));
+	const apps = products.map((p, i) => ({
+		...p,
+		part: `A${i + 1}`,
+		specs: specs[p.id] ?? [],
+		uses: p.uses ?? [],
+		plates: platesFor(p.id, p.name)
+	}));
+	const sites = websites.map((w, i) => ({ ...w, part: `W${i + 1}`, plates: platesFor(w.id, w.name) }));
 	const pkgs = packages.map((p, i) => ({ ...p, part: `P${i + 1}`, id: p.name.split('/')[1] }));
 	const skls = skills.map((s, i) => ({ ...s, part: `S${i + 1}` }));
 	// Stack column: the services a template's own description names.
@@ -806,14 +807,63 @@
 
 	const shownApps = $derived(apps.filter((a) => hits(a.part, a.name, a.desc, ...a.specs.flat())));
 
-	// "Look inside": screenshots of apps that need an account to open.
+	// "Look inside": every project's real screens, opened from its peek strip.
+	// The strip's frame and the dialog's plate share a view-transition name, so
+	// the frame morphs into the dialog and back when the browser supports it.
+	type Project = {
+		id: string;
+		part: string;
+		name: string;
+		href: string;
+		plates: Plates | null;
+		source?: string;
+		account?: boolean;
+	};
 	let viewer: HTMLDialogElement;
-	let viewing = $state<(typeof apps)[number] | null>(null);
-	const lookInside = (a: (typeof apps)[number]) => ((viewing = a), viewer.showModal());
+	let viewing = $state<Project | null>(null);
+	let frame = $state(0);
+	let morphing = $state<string | null>(null);
+	const captured = new Date(capturedOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+	async function transition(change: () => void) {
+		if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return change();
+		await document.startViewTransition(async () => {
+			change();
+			await tick();
+		}).finished;
+	}
+	async function lookInside(p: Project, at = 0) {
+		morphing = p.id;
+		frame = at;
+		await tick();
+		await transition(() => {
+			morphing = null;
+			viewing = p;
+			viewer.showModal();
+		});
+	}
+	async function closeViewer() {
+		const p = viewing;
+		if (!p) return;
+		await transition(() => {
+			viewer.close();
+			viewing = null;
+			morphing = p.id;
+		});
+		morphing = null;
+	}
+	function viewerKeys(e: KeyboardEvent) {
+		const n = viewing?.plates?.frames.length ?? 0;
+		if (n < 2) return;
+		if (e.key === 'ArrowRight') frame = (frame + 1) % n;
+		else if (e.key === 'ArrowLeft') frame = (frame + n - 1) % n;
+		else return;
+		e.preventDefault();
+	}
 	const shownPkgs = $derived(pkgs.filter((p) => hits(p.part, p.name, p.desc)));
 	const shownSkills = $derived(skls.filter((s) => hits(s.part, s.name, s.desc)));
 	const shownTpls = $derived(tpls.filter((t) => hits(t.part, t.name, t.desc, t.kind, ...t.stack)));
-	const shownSites = $derived(websites.filter((w) => hits(w.name)));
+	const shownSites = $derived(sites.filter((w) => hits(w.part, w.name, w.desc)));
 	const groups = $derived(
 		kinds
 			.map(([kind]) => ({ kind, rows: shownTpls.filter((t) => t.kind === kind) }))
@@ -896,7 +946,8 @@
 		tick().then(route);
 	});
 
-	const total = $derived(shownApps.length + shownPkgs.length + shownSkills.length + shownTpls.length);
+	const total = $derived(shownApps.length + shownPkgs.length + shownSkills.length + shownTpls.length + shownSites.length);
+	const all = apps.length + pkgs.length + skls.length + tpls.length + sites.length;
 
 	const index = $derived([
 		{ href: '#apps', label: 'Apps', count: shownApps.length },
@@ -1013,6 +1064,9 @@
 			<h3 id="{a.id}-name">{@render hl(a.name)}</h3>
 			<span class="host">{new URL(a.href).host}</span>
 		</header>
+		{#if a.plates}
+			<Peek plates={a.plates} name={a.name} morph={morphing === a.id ? frame : null} onopen={(k) => lookInside(a, k)} />
+		{/if}
 		<div class="node__body">
 			{#if a.client}<p class="tag">Client work</p>{/if}
 			<p class="node__desc">{@render hl(a.desc)}</p>
@@ -1037,15 +1091,17 @@
 					{#each a.uses as u (u)}<a class="port-chip mono" href="#pkg-{u}">{u}</a>{/each}
 				</p>
 			{/if}
-			{#if a.plates}
+			{#if a.account}
 				<p class="node__note">Needs a Zaur address. <a href="#register">Get one free</a>.</p>
 				<div class="actions">
 					<a class="btn" href={a.href}>Sign in to {a.name} <Icon name="out" /></a>
-					<button type="button" class="btn btn--quiet" onclick={() => lookInside(a)}>Look inside</button>
 					<a class="node__link" href={a.source}>Source</a>
 				</div>
 			{:else}
-				<div class="actions"><a class="btn" href={a.href}>Open {a.name} <Icon name="out" /></a></div>
+				<div class="actions">
+					<a class="btn" href={a.href}>Open {a.name} <Icon name="out" /></a>
+					{#if a.source}<a class="node__link" href={a.source}>Source</a>{/if}
+				</div>
 			{/if}
 		</div>
 	</article>
@@ -1097,9 +1153,13 @@
 			</p>
 			<p class="hello__meta" aria-live="polite">
 				<span class="count">
-					{#if needle}{total} of {apps.length + pkgs.length + skls.length + tpls.length} nodes match{:else}{apps.length + pkgs.length + skls.length + tpls.length} nodes{/if}
+					{#if needle}{total} of {all} nodes match{:else}{all} nodes{/if}
 				</span>
-				{#if wide}<span>Hover a node to trace its wires. Drag one by its header.</span>{/if}
+				{#if wide}
+					<span>Hover a node to trace its wires. Sweep a screenshot to flip through its screens. Drag a node by its header.</span>
+				{:else}
+					<span>Swipe a screenshot to flip through its screens.</span>
+				{/if}
 				{#if moved}
 					<button type="button" class="link" onclick={() => (offsets = {})}>Put the nodes back</button>
 				{/if}
@@ -1118,6 +1178,7 @@
 				{#each edges as e, i (e.key)}
 					{#if paths[e.key]}
 						<path d={paths[e.key]} pathLength="1" class:lit={reach && lit(e)} style:--i={i} />
+						{#if reach && lit(e)}<path class="flow" d={paths[e.key]} pathLength="1" />{/if}
 					{/if}
 				{/each}
 			</svg>
@@ -1236,13 +1297,27 @@
 		</section>
 
 		<section class="sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
-			<h2 class="frame-label" id="websites-title">Websites <span class="n">{shownSites.length}</span></h2>
-			<p>
-				A mix of products, client work and experiments:
-				{#each shownSites as w, i (w.id)}
-					<a href={w.href}>{@render hl(w.name)}</a>{i < shownSites.length - 1 ? ', ' : '.'}
+			<h2 class="frame-label" id="websites-title">
+				Websites <span class="n">{shownSites.length}</span>
+				<span class="frame-note">Products, client work and experiments</span>
+			</h2>
+			<div class="sites__grid">
+				{#each shownSites as w (w.id)}
+					<article class="node node--site" id={w.id} aria-labelledby="{w.id}-name">
+						<header class="node__head">
+							<span class="part">{@render hl(w.part)}</span>
+							<h3 id="{w.id}-name">{@render hl(w.name)}</h3>
+						</header>
+						{#if w.plates}
+							<Peek plates={w.plates} name={w.name} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
+						{/if}
+						<div class="node__body">
+							<p class="node__desc">{@render hl(w.desc)}</p>
+							<div class="actions"><a class="btn btn--quiet" href={w.href}>Open <Icon name="out" /></a></div>
+						</div>
+					</article>
 				{/each}
-			</p>
+			</div>
 		</section>
 
 		<footer class="close">
@@ -1257,17 +1332,56 @@
 		</footer>
 	</main>
 
-	<dialog class="plates" bind:this={viewer} aria-labelledby="plates-title" closedby="any" onclose={() => (viewing = null)}>
-		{#if viewing}
-			<div class="plates__head">
-				<h2 id="plates-title">Inside {viewing.name}</h2>
-				<button type="button" class="btn btn--quiet" onclick={() => viewer.close()}>Close</button>
+	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (a backdrop click closes; Esc is handled by oncancel) -->
+	<dialog
+		class="plates"
+		class:plates--site={viewing?.part.startsWith('W')}
+		bind:this={viewer}
+		aria-labelledby="plates-title"
+		oncancel={(e) => (e.preventDefault(), closeViewer())}
+		onclick={(e) => e.target === viewer && closeViewer()}
+		onkeydown={viewerKeys}
+	>
+		{#if viewing?.plates}
+			{@const pl = viewing.plates}
+			{@const f = pl.frames[frame] ?? pl.frames[0]}
+			<header class="node__head plates__head">
+				<span class="part">{viewing.part}</span>
+				<h2 id="plates-title">{viewing.name}</h2>
+				<span class="host">{new URL(viewing.href).host}</span>
+				<button type="button" class="btn btn--quiet" onclick={closeViewer}>Close</button>
+			</header>
+			<div class="plates__stage" class:plates__stage--phone={pl.phone}>
+				<figure class="plates__main">
+					<img src={f.src} width={f.w} height={f.h} alt={f.alt} decoding="async" style:view-transition-name="plate" />
+					<figcaption>{f.alt}</figcaption>
+				</figure>
+				{#if pl.phone}
+					<img class="plates__phone" src={pl.phone.src} width={pl.phone.w} height={pl.phone.h} alt={pl.phone.alt} loading="lazy" decoding="async" />
+				{/if}
 			</div>
-			<p class="plates__note">Screenshots from a demo account.{#if viewing.id === 'mail'}{' Every message and sender is made up.'}{/if}</p>
-			<div class="plates__row">
-				{#each viewing.plates ?? [] as pl (pl.src)}
-					<img src={pl.src} width={pl.w} height={pl.h} alt={pl.alt} loading="lazy" decoding="async" />
-				{/each}
+			{#if pl.frames.length > 1}
+				<div class="plates__thumbs" role="tablist" aria-label="Screens of {viewing.name}">
+					{#each pl.frames as t, k (t.src)}
+						<button type="button" role="tab" class="plates__thumb" aria-selected={k === frame} onclick={() => (frame = k)}>
+							<img src={t.src} width={t.w} height={t.h} alt="" loading="lazy" decoding="async" />
+							<span class="visually-hidden">{t.alt}</span>
+						</button>
+					{/each}
+				</div>
+			{/if}
+			<div class="plates__foot">
+				<p class="plates__note">
+					{#if pl.source === 'demo'}
+						Screenshots from a demo account.{#if viewing.id === 'mail'}{' Every message and sender is made up.'}{/if}
+					{:else}
+						Captured from the live site on {captured}.
+					{/if}
+				</p>
+				<div class="actions">
+					<a class="btn" href={viewing.href}>{viewing.account ? 'Sign in to' : 'Open'} {viewing.name} <Icon name="out" /></a>
+					{#if viewing.source}<a class="node__link" href={viewing.source}>Source</a>{/if}
+				</div>
 			</div>
 		{/if}
 	</dialog>
