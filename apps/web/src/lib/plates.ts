@@ -41,11 +41,9 @@ const screens: Record<string, string[]> = {
 		'a product page, the EUMS-3150 mitre saw'
 	],
 	register: ['the "Create your address" form'],
-	// Package demos (zaur-world, svelte-qr and svelte-geometrize run live instead).
+	// Package demos. zaur-world, svelte-qr and svelte-geometrize run live instead,
+	// and search, i18n, media, scheduler, payments and notify show pictograms.
 	'svelte-calendar': ['the live demo, a week planner', 'the demo further down, with the code'],
-	'svelte-search': ['the demo: full-text search for Svelte 5 apps', 'the demo further down'],
-	'svelte-i18n': ['the demo: "Ship in any language", with a live preview', 'the demo further down'],
-	'svelte-media': ['the docs: image upload and multi-size storage', 'the docs further down'],
 	thebest: ['the "Discover Kraków" hero', 'the Explore Tours grid', 'a tour page, kayaking on the Dunajec river'],
 	festivals: ['the year-ahead timeline', 'the Unsound Festival page', 'the Waking Life page'],
 	pikastro: ['the "Dość beżu, czas na kolor" hero', 'the interior and graphic design portfolio', 'the about page'],

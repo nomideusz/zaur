@@ -1734,3 +1734,57 @@ mark {
 		border-radius: 0;
 	}
 }
+
+/* ---- Pictogram band: packages with nothing worth a screenshot ----
+   One line drawing in the icon voice (even stroke, square caps, ink on
+   node-sunk), large, where other nodes show a plate. */
+.peek--picto {
+	display: grid;
+	place-items: center;
+	color: var(--node-ink);
+}
+
+.peek--picto svg {
+	width: 6.5rem;
+	height: 6.5rem;
+	fill: none;
+	stroke: currentColor;
+	stroke-width: 1.6;
+	stroke-linecap: square;
+	stroke-linejoin: miter;
+}
+
+/* ---- Account cluster: Mail, Register and Music share one Zaur account ----
+   A labelled boundary on the canvas around the three nodes, in the bar's
+   1px white line, so the shared sign-in reads as structure, not as prose. */
+.cluster {
+	display: grid;
+	gap: var(--node-gap, 1.25rem);
+	padding: 0.85rem;
+	margin: 3rem -0.85rem 0;
+	border: 1px solid rgb(255 255 255 / 0.28);
+	border-radius: calc(var(--r) + 0.85rem);
+}
+
+.cluster__label {
+	margin: -3.55rem 0 0 0.15rem;
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.15rem 0.6rem;
+	font-size: 0.9375rem;
+	font-weight: 600;
+	color: var(--on-canvas);
+}
+
+.cluster__label span {
+	font-size: 0.8125rem;
+	font-weight: 500;
+	color: var(--on-canvas-soft);
+}
+
+@media (max-width: 860px) {
+	.cluster {
+		margin-inline: 0;
+	}
+}

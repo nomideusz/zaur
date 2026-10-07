@@ -385,7 +385,13 @@ zaur-world's node runs the real `@nomideusz/zaur-world` sky in its band, small a
 - **No dialog:** there is nothing to look inside; the Demo link (dino.zaur.app) in the node's links is the way in.
 
 ### Package Strips
-Packages with a public demo (svelte-calendar, svelte-search, svelte-i18n, svelte-media) get an ordinary peek strip of two demo captures, and their Look inside dialog takes the package-yellow header. Packages with neither a demo nor a live band (scheduler, payments, notify) have no band.
+svelte-calendar, whose demo is a real calendar, gets a peek strip of two captured details (the week grid, the day planner with events) and a package-yellow Look inside dialog with its whole demo pages.
+
+### Pictogram Band
+Packages with nothing worth a screenshot (scheduler, payments, notify) or a demo that is only documentation (search, i18n, media) show a pictogram in the band: one line drawing on a 48-unit grid in the icon voice (even 1.6 stroke, square caps, `node-ink` on `node-sunk`), 6.5rem, centred, with the package's description as its accessible name. A calendar with a clock, a card with a chip, an envelope with an unread dot, a magnifier over result lines, a globe, a picture frame with hills. No label, no badge: the header already names the package.
+
+### Account Cluster
+Mail, Register and Music share one Zaur account, so they sit inside one labelled boundary in the right graph column: a 1px white 28% line (the bar's own line) with a radius of the node radius plus its padding, and above it the label "One Zaur account" in UI type with "Register creates it; Mail and Music sign in with it." in `on-canvas-soft`. It is structure on the canvas, like a network boundary, not a wire: wires stay real imports only. Nodes inside keep every behaviour, including drag.
 
 ### Key/Value List
 Flat rows: a 6rem muted term (500) and a 600 value, in Funnel Sans at 0.875rem, with a 0.45rem row gap. No fills, boxes or rules.

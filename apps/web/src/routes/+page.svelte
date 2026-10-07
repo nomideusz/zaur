@@ -6,6 +6,7 @@
 	import LiveSky from '$lib/LiveSky.svelte';
 	import LiveQr from '$lib/LiveQr.svelte';
 	import LiveGeometrize from '$lib/LiveGeometrize.svelte';
+	import Pictogram from '$lib/Pictogram.svelte';
 	import { platesFor, capturedOn, type Plates } from '$lib/plates';
 
 	const title = 'Zaur — apps, packages, templates';
@@ -37,13 +38,16 @@
 			href: 'https://webmail.zaur.app',
 			uses: ['svelte-calendar'],
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/mail2',
-			account: true
+			account: true,
+			// Mail, Register and Music share one Zaur account, so they sit in one cluster on the canvas.
+			cluster: true
 		},
 		{
 			id: 'register',
 			name: 'Register',
 			desc: 'Create your own @zaur.app email account.',
-			href: 'https://register.zaur.app'
+			href: 'https://register.zaur.app',
+			cluster: true
 		},
 		{
 			id: 'music',
@@ -51,7 +55,8 @@
 			desc: 'A private, self-hosted music library and radio powered by Navidrome.',
 			href: 'https://music.zaur.app',
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/music',
-			account: true
+			account: true,
+			cluster: true
 		},
 		{
 			id: 'thebest',
@@ -95,14 +100,16 @@
 			desc: 'Full-text search for Svelte 5 — FTS5, fuzzy matching, geo proximity, autocomplete, Polish locale.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-search',
 			demo: 'https://svelte-search-eight.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-search'
+			source: 'https://github.com/nomideusz/svelte-search',
+			picto: 'search'
 		},
 		{
 			name: '@nomideusz/svelte-i18n',
 			desc: 'Lightweight i18n for Svelte 5 — runes-based locale state, flat JSON messages, URL-locale routing.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-i18n',
 			demo: 'https://svelte-i18n-five.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-i18n'
+			source: 'https://github.com/nomideusz/svelte-i18n',
+			picto: 'i18n'
 		},
 		{
 			name: '@nomideusz/svelte-geometrize',
@@ -127,22 +134,26 @@
 			desc: 'Image upload, processing, and S3-compatible storage for Svelte 5 apps.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-media',
 			demo: 'https://svelte-media-gamma.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-media'
+			source: 'https://github.com/nomideusz/svelte-media',
+			picto: 'media'
 		},
 		{
 			name: '@nomideusz/svelte-scheduler',
 			desc: 'Booking and scheduling logic for Svelte 5 — tour slots, pricing, cancellation policies.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler',
+			picto: 'scheduler'
 		},
 		{
 			name: '@nomideusz/svelte-payments',
 			desc: 'Provider-agnostic payments for the booking platform — Mollie server adapter + Stripe Connect UI.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments',
+			picto: 'payments'
 		},
 		{
 			name: '@nomideusz/svelte-notify',
 			desc: 'Email notification template library for the booking platform.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify',
+			picto: 'notify'
 		}
 	];
 
@@ -847,6 +858,8 @@
 		!needle || fields.some((f) => f?.toLowerCase().includes(needle));
 
 	const shownApps = $derived(apps.filter((a) => hits(a.part, a.name, a.desc, ...a.specs.flat())));
+	// The right column's account cluster: Mail, Register and Music share one sign-in.
+	const clustered = $derived(shownApps.filter((a) => placed(a) === 'right' && a.cluster));
 
 	// "Look inside": every project's real screens, opened from its peek strip.
 	// The strip's frame and the dialog's plate share a view-transition name, so
@@ -1234,7 +1247,16 @@
 				</div>
 				<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
 				<div class="stack">
-					{#each shownApps.filter((a) => placed(a) === 'right') as a (a.id)}{@render appNode(a)}{/each}
+					{#if clustered.length}
+						<section class="cluster" aria-labelledby="cluster-title">
+							<p class="cluster__label" id="cluster-title">
+								One Zaur account
+								<span>Register creates it; Mail and Music sign in with it.</span>
+							</p>
+							{#each clustered as a (a.id)}{@render appNode(a)}{/each}
+						</section>
+					{/if}
+					{#each shownApps.filter((a) => placed(a) === 'right' && !a.cluster) as a (a.id)}{@render appNode(a)}{/each}
 				</div>
 			</section>
 
@@ -1272,6 +1294,8 @@
 							<LiveQr />
 						{:else if p.live === 'geometrize'}
 							<LiveGeometrize />
+						{:else if p.picto}
+							<Pictogram kind={p.picto} label="{p.id}: {p.desc}" />
 						{:else if p.plates}
 							<Peek plates={p.plates} name={p.id} morph={morphing === p.id ? frame : null} onopen={(k) => lookInside({ ...p, href: p.demo ?? p.npm }, k)} />
 						{/if}
