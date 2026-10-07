@@ -9,14 +9,20 @@
 		plates,
 		name,
 		morph = null,
+		crop,
 		onopen
 	}: {
 		plates: Plates;
 		name: string;
 		/** While a morph to or from the dialog runs, the frame that carries the shared name. */
 		morph?: number | null;
+		/** Show a zoomed fragment of each frame around this point instead of the whole page. */
+		crop?: { x: string; y: string; zoom: number };
 		onopen: (frame: number) => void;
 	} = $props();
+
+	const wide = (f: { w: number; h: number }) => f.w / f.h > 1.9;
+	const position = (f: { w: number; h: number }) => (crop ? `${crop.x} ${crop.y}` : wide(f) ? 'center' : 'top');
 
 	let i = $state(0);
 	let film = $state<HTMLElement>();
@@ -43,18 +49,23 @@
 <div class="peek" style:--n={n} style:--i={i} onpointermove={scrub} onpointerleave={() => morph === null && (i = 0)}>
 	<div class="peek__film" bind:this={film} onscroll={followScroll}>
 		{#each plates.frames as f, k (f.src)}
-			<img
-				src={f.src}
-				width={f.w}
-				height={f.h}
-				alt={f.alt}
-				loading="lazy"
-				decoding="async"
-				draggable="false"
-				style:object-fit={f.w / f.h > 1.9 ? 'contain' : 'cover'}
-				style:object-position={f.w / f.h > 1.9 ? 'center' : 'top'}
-				style:view-transition-name={morph !== null && k === i ? 'plate' : null}
-			/>
+			<!-- Each frame clips its own image, so a zoomed fragment never bleeds into the next frame. -->
+			<div class="peek__frame">
+				<img
+					src={f.src}
+					width={f.w}
+					height={f.h}
+					alt={f.alt}
+					loading="lazy"
+					decoding="async"
+					draggable="false"
+					style:object-fit={wide(f) && !crop ? 'contain' : 'cover'}
+					style:object-position={position(f)}
+					style:transform-origin={crop ? position(f) : null}
+					style:scale={crop ? crop.zoom : null}
+					style:view-transition-name={morph !== null && k === i ? 'plate' : null}
+				/>
+			</div>
 		{/each}
 	</div>
 	{#if n > 1}
