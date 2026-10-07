@@ -462,6 +462,8 @@ mark {
 .col--pkgs {
 	grid-template-columns: repeat(2, minmax(0, 1fr));
 	column-gap: 2.25rem;
+	/* Only zaur-world has a band, so a row must not stretch its neighbour. */
+	align-items: start;
 }
 
 .col--apps > .frame-label--more {
@@ -1525,8 +1527,13 @@ mark {
 	position: absolute;
 	inset: 0;
 	display: block;
-	width: 100%;
-	height: 100%;
+	/* The engine draws the sun at a fixed pixel size 8% in from the edge, so in
+	   a band this small the sunset fell half outside. It sizes itself from
+	   clientWidth, which ignores transforms: lay it out at 2× and scale down. */
+	width: 200%;
+	height: 200%;
+	transform: scale(0.5);
+	transform-origin: 0 0;
 }
 
 .live-tag {
