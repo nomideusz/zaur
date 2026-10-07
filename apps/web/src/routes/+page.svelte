@@ -670,7 +670,7 @@
 		}
 	];
 
-	// Hand-made websites still online. Spec rows are facts visible on the live site.
+	// Other sites still online. Spec rows are facts visible on the live site.
 	const websites: { id: string; name: string; desc: string; href: string; specs: [string, string][] }[] = [
 		{
 			id: 'recycling',
@@ -1300,11 +1300,11 @@
 
 		<section class="frame sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
 			<div class="frame__top">
-				<h2 class="frame-label" id="websites-title">Hand-made websites <span class="n">{shownSites.length}</span></h2>
+				<h2 class="frame-label" id="websites-title">Websites <span class="n">{shownSites.length}</span></h2>
 				<p>
 					I have been making websites since 2000, when I was 17: by hand, from the first HTML to
 					custom CMSes, until AI took over. The proof is this page, which Claude built with me.
-					These are the hand-made ones still online, a mix of client work and experiments.
+					These are the other sites still online, a mix of client work and experiments.
 				</p>
 			</div>
 			<div class="sites__grid">
