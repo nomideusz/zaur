@@ -167,6 +167,12 @@
 
 	const templates = [
 		{
+			name: 'Mautic Production',
+			desc: 'Email campaigns, segments and lead scoring, with the cron jobs and queue workers that actually send them.',
+			deploy: 'https://railway.com/deploy/mautic-production',
+			source: 'https://github.com/nomideusz/mautic-railway'
+		},
+		{
 			name: 'Lago Production',
 			desc: 'Lago usage-based billing: meter events, apply plans, credits and coupons, and issue PDF invoices on schedule — the complete stack with worker, clock and PDF renderer, admin seeded and sign-up closed.',
 			deploy: 'https://railway.com/deploy/lago-production',
