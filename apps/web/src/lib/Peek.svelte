@@ -51,6 +51,8 @@
 				loading="lazy"
 				decoding="async"
 				draggable="false"
+				style:object-fit={f.w / f.h > 1.9 ? 'contain' : 'cover'}
+				style:object-position={f.w / f.h > 1.9 ? 'center' : 'top'}
 				style:view-transition-name={morph !== null && k === i ? 'plate' : null}
 			/>
 		{/each}

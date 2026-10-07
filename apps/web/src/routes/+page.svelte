@@ -58,7 +58,9 @@
 			desc: 'A private, self-hosted music library and radio powered by Navidrome.',
 			href: 'https://music.zaur.app',
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/music',
-			account: true
+			account: true,
+			// No package wires, so it sits under the packages and evens out the canvas.
+			column: 'middle'
 		},
 		{
 			id: 'thebest',
@@ -74,24 +76,10 @@
 			desc: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
 			href: 'https://newinternet.online',
 			lead: true,
+			// A lead node placed in the right column so the three graph columns stay level.
+			column: 'right',
 			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
 		},
-		{
-			id: 'pikastro',
-			name: 'Pikastro',
-			desc: 'The site of a colourful interior design studio in Kraków, with a custom CMS: the owner edits text and photos right on the live page.',
-			href: 'https://pikastro.eu',
-			lead: true,
-			client: true,
-			// No package wires, so it sits under the packages and evens out the canvas.
-			middle: true
-		},
-		{
-			id: 'kurcz',
-			name: 'kurcz.pl',
-			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
-			href: 'https://kurcz.pl'
-		}
 	];
 
 	const packages = [
@@ -670,16 +658,20 @@
 		}
 	];
 
-	// Other sites still online. Spec rows are facts visible on the live site.
-	const websites: { id: string; name: string; desc: string; href: string; specs: [string, string][] }[] = [
+	// Sites people read or look at, as opposed to apps that keep state. The tag
+	// says the relationship: client work, an experiment, or (untagged) my own.
+	// Spec rows are facts visible on the live site. Client work first.
+	const websites: { id: string; name: string; desc: string; href: string; tag?: string; specs: [string, string][] }[] = [
 		{
-			id: 'recycling',
-			name: 'recycling.kompi.pl',
-			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
-			href: 'https://recycling.kompi.pl',
+			id: 'pikastro',
+			name: 'pikastro.eu',
+			desc: 'A colourful interior design studio in Kraków, with a custom CMS: the owner edits text and photos right on the live page.',
+			href: 'https://pikastro.eu',
+			tag: 'Client work',
 			specs: [
-				['Data', 'Thousands of collection points, with a page for every city'],
-				['Includes', 'Interactive map, city pages, a recycling guide']
+				['CMS', 'Custom, click-to-edit on the page, with edit history'],
+				['Storage', 'Netlify Blobs, no database'],
+				['Languages', 'Polish, English']
 			]
 		},
 		{
@@ -687,19 +679,10 @@
 			name: 'tutitutu.pl',
 			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
 			href: 'https://tutitutu.pl',
+			tag: 'Client work',
 			specs: [
 				['CMS', 'Custom, written by hand before AI: the studio edits its own realisations'],
 				['Sections', 'Realisations, workshop, publications, references']
-			]
-		},
-		{
-			id: 'kruk',
-			name: 'kruk.live',
-			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
-			href: 'https://kruk.live',
-			specs: [
-				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
-				['Mode', 'Real-time and collaborative']
 			]
 		},
 		{
@@ -707,6 +690,7 @@
 			name: 'wibroakustyka.ai',
 			desc: 'Product site for the Graal vibroacoustic wellness chair.',
 			href: 'https://wibroakustyka.ai',
+			tag: 'Client work',
 			specs: [
 				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
 				['Includes', 'News and the Health & Longevity Summit 2026']
@@ -717,6 +701,7 @@
 			name: 'intertechpoland.pl',
 			desc: 'Equipment catalogue and industry news for the Polish representative of Picarro and UGT.',
 			href: 'https://intertechpoland.pl',
+			tag: 'Client work',
 			specs: [
 				['Energy', 'Emissions monitoring and reduction, leak detection, pipe replacement'],
 				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors']
@@ -727,9 +712,43 @@
 			name: 'gabinet-polaczenie.pl',
 			desc: 'Acupuncture clinic in Kraków offering treatments that complement conventional care.',
 			href: 'https://gabinet-polaczenie.pl',
+			tag: 'Client work',
 			specs: [
 				['Format', 'One page, in Polish and English'],
 				['Covers', 'Treatments and the therapist']
+			]
+		},
+		{
+			id: 'kurcz',
+			name: 'kurcz.pl',
+			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
+			href: 'https://kurcz.pl',
+			specs: [
+				['Built with', 'Astro, no JavaScript on article pages'],
+				['Covers', 'Causes, first aid, prevention guides'],
+				['Languages', 'Polish, English']
+			]
+		},
+		{
+			id: 'recycling',
+			name: 'recycling.kompi.pl',
+			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
+			href: 'https://recycling.kompi.pl',
+			tag: 'Experiment',
+			specs: [
+				['Data', 'Thousands of collection points, with a page for every city'],
+				['Includes', 'Interactive map, city pages, a recycling guide']
+			]
+		},
+		{
+			id: 'kruk',
+			name: 'kruk.live',
+			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
+			href: 'https://kruk.live',
+			tag: 'Experiment',
+			specs: [
+				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
+				['Mode', 'Real-time and collaborative']
 			]
 		},
 		{
@@ -737,6 +756,7 @@
 			name: 'radiobartek.com',
 			desc: 'Internet radio station, self-hosted on AzuraCast.',
 			href: 'https://radiobartek.com',
+			tag: 'Experiment',
 			specs: [
 				['Stream', 'AzuraCast, self-hosted'],
 				['Player', 'One page, one button: listen']
@@ -782,17 +802,6 @@
 			['Covers', 'Festivals worldwide'],
 			['Includes', 'Lineups, editions, reviews, organiser claims']
 		],
-		kurcz: [
-			['Built with', 'Astro, no JavaScript on article pages'],
-			['Covers', 'Causes, first aid, prevention guides'],
-			['Languages', 'Polish, English']
-		],
-		pikastro: [
-			['CMS', 'Custom, click-to-edit on the page'],
-			['Edits', 'Text and photos, with edit history'],
-			['Storage', 'Netlify Blobs, no database'],
-			['Languages', 'Polish, English']
-		],
 		music: [
 			['Server', 'Navidrome, self-hosted'],
 			['Client', 'Installable web app'],
@@ -802,6 +811,9 @@
 
 	// Part numbers: templates count up from the oldest, so a new card at the
 	// top of the list gets the next number and existing ones never shift.
+	// Graph placement: lead apps fill the left column and the rest the right
+	// one, unless `column` says otherwise ('middle' sits under the packages).
+	const placed = (a: { lead?: boolean; column?: string }) => a.column ?? (a.lead ? 'left' : 'right');
 	const apps = products.map((p, i) => ({
 		...p,
 		part: `A${i + 1}`,
@@ -895,7 +907,7 @@
 	const shownPkgs = $derived(pkgs.filter((p) => hits(p.part, p.name, p.desc)));
 	const shownSkills = $derived(skls.filter((s) => hits(s.part, s.name, s.desc)));
 	const shownTpls = $derived(tpls.filter((t) => hits(t.part, t.name, t.desc, t.kind, ...t.stack)));
-	const shownSites = $derived(sites.filter((w) => hits(w.part, w.name, w.desc, ...w.specs.flat())));
+	const shownSites = $derived(sites.filter((w) => hits(w.part, w.name, w.desc, w.tag, ...w.specs.flat())));
 	const groups = $derived(
 		kinds
 			.map(([kind]) => ({ kind, rows: shownTpls.filter((t) => t.kind === kind) }))
@@ -1223,15 +1235,15 @@
 					<span class="frame-note">Products and client work I run today</span>
 				</h2>
 				<div class="stack stack--lead">
-					{#each shownApps.filter((a) => a.lead && !a.middle) as a (a.id)}{@render appNode(a)}{/each}
+					{#each shownApps.filter((a) => placed(a) === 'left') as a (a.id)}{@render appNode(a)}{/each}
 				</div>
 				<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
 				<div class="stack">
-					{#each shownApps.filter((a) => !a.lead) as a (a.id)}{@render appNode(a)}{/each}
+					{#each shownApps.filter((a) => placed(a) === 'right') as a (a.id)}{@render appNode(a)}{/each}
 				</div>
 			</section>
 
-			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length && !shownSkills.length && !shownApps.some((a) => a.middle)}>
+			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length && !shownSkills.length && !shownApps.some((a) => placed(a) === 'middle')}>
 				<h2 class="frame-label" id="packages-title">
 					Packages <span class="n">{shownPkgs.length}</span>
 					<span class="frame-note">Live from npm{#if registryDown}; the registry didn't answer, so some figures are missing{/if}</span>
@@ -1277,7 +1289,7 @@
 						</div>
 					</article>
 				{/each}
-				{#each shownApps.filter((a) => a.middle) as a (a.id)}{@render appNode(a)}{/each}
+				{#each shownApps.filter((a) => placed(a) === 'middle') as a (a.id)}{@render appNode(a)}{/each}
 				{#each shownSkills as s (s.name)}
 					<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
 						<header class="node__head">
@@ -1318,6 +1330,7 @@
 							<Peek plates={w.plates} name={w.name} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
 						{/if}
 						<div class="node__body">
+							{#if w.tag}<p class="tag">{@render hl(w.tag)}</p>{/if}
 							<p class="node__desc">{@render hl(w.desc)}</p>
 							<dl class="props">
 								{#each w.specs as [k, v] (k)}
