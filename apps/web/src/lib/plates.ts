@@ -34,12 +34,7 @@ const screens: Record<string, string[]> = {
 		'a product page, the EUMS-3150 mitre saw'
 	],
 	register: ['the "Create your address" form'],
-	dino: [
-		'dawn over the hills, with the hourly forecast below',
-		'midday, a clear blue sky',
-		'sunset, the sky turning red',
-		'night, with true star positions and the dinosaur'
-	],
+	// Dino has no plates: its node runs the real sky (LiveSky.svelte).
 	thebest: ['the "Discover Kraków" hero', 'the Explore Tours grid', 'a tour page, kayaking on the Dunajec river'],
 	festivals: ['the year-ahead timeline', 'the Unsound Festival page', 'the Waking Life page'],
 	pikastro: ['the "Dość beżu, czas na kolor" hero', 'the interior and graphic design portfolio', 'the about page'],

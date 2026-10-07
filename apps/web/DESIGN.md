@@ -243,7 +243,7 @@ This world replaced the earlier "Parts Catalog" (white stock, black ink, one spo
 - Cobalt canvas (`canvas`) with a 22px dot grid owns every viewport. Nothing else is a page background.
 - Off-white rounded nodes (14px) with soft, blue-tinted, downward shadows.
 - Five family header colours: coral apps, yellow packages, mint skills, pink templates, sky websites.
-- Peek strips: real screenshots of every app and website, inside the node under its header. Public sites are captured from the live page and the dialog says so with the date; Mail and Music use demo accounts and say so.
+- Peek strips: real screenshots of every app and website, inside the node under its header. Public sites are captured from the live page and the dialog says so with the date; Mail and Music use demo accounts and say so. Dino alone runs its real engine in that band instead.
 - Wires are only real imports. They draw in once on first paint, light up on trace, and carry moving packets while lit.
 - Funnel Display for headings, Funnel Sans for everything read, and Martian Mono only for typed or versioned tokens.
 - Live data (npm versions, Search Console clicks) is shown with its source. A failure shows an em dash, never a typed-in number.
@@ -282,7 +282,7 @@ The palette is a saturated cobalt ground with off-white panels and four bright, 
 
 **The Family Header Rule.** A node's header colour names its family and nothing else. A new kind of thing gets a new family hue as a flat header, never a tint, gradient or accent stripe.
 
-**The Green Means Live Rule.** Live Green appears only on the status dot next to data fetched live. A static figure never gets a dot.
+**The Green Means Live Rule.** Live Green appears only on the status dot next to data fetched live: the Search Console readout and the live sky's tag. A static figure never gets a dot.
 
 ## Typography
 
@@ -370,6 +370,13 @@ The project's real screens inside its node, so it can be browsed without opening
 - **Dots:** bottom-left, one per frame in an ink 72% pill. Rest dots are white 45%; the current dot is package yellow at 1.25× (yellow says current). A single-frame strip has no dots.
 - **Look inside:** an ink pill (label type, 7px radius) bottom-right. On a mouse the whole strip is the button (cursor `zoom-in`); on touch only the pill is, so a swipe reaches the film. Hover and focus turn the pill cobalt. The accessible name says how many screens there are.
 - **Morph:** the active frame and the dialog's plate share `view-transition-name: plate`. Opening and closing run inside `document.startViewTransition` (440ms ease-out group, 240ms root fade), and fall back to an instant open where unsupported or with reduced motion.
+
+### Live Sky
+Dino's node is the one exception to plates: the same 16:10 band runs the real `@nomideusz/zaur-world` sky, small and live, keyed to the visitor's own place and weather. It is the honest version of a screenshot for a product whose whole point is being live.
+- **Loading:** the engine is imported only when the node comes within 240px of the viewport, and the render loop pauses whenever the node leaves it. The dot grid and the engine's page-level CSS variables are off (`gridColor: null`, `atmosphereRoot: null`), so the sky never leaks onto the canvas.
+- **Live tag:** top-left, an ink 72% pill with the Live Green dot (grey while loading or down) and the visitor's city, temperature and conditions from the engine itself. It reads "Reading your sky…" until the first conditions arrive.
+- **Scenes:** six dots bottom-left (Now, dawn, noon, golden hour, dusk, night) in the peek-dot style, each a real button. On a mouse the pointer's x across the band picks the scene through the engine's `preview()`, anchored to the visitor's real sun times; leaving the band returns to now. Bottom-right, where other strips say Look inside, a label names the scene, or "Live".
+- **No dialog:** there is nothing to look inside; the Open Dino button in the actions is the way in.
 
 ### Key/Value List
 Flat rows: a 6rem muted term (500) and a 600 value, in Funnel Sans at 0.875rem, with a 0.45rem row gap. No fills, boxes or rules.

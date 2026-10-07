@@ -198,6 +198,10 @@ importers:
         version: 4.3.3
 
   apps/web:
+    dependencies:
+      '@nomideusz/zaur-world':
+        specifier: ^1.6.0
+        version: 1.6.0(react@19.2.3)
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: ^3.0.10
@@ -1643,6 +1647,14 @@ packages:
     resolution: {integrity: sha512-NxWbIiu/ga4enA/PtXFbYmKJkL9dCGP2ZDUvja/Vah/moi0RUNGuHy5MwJnEikV0Y5Uk3IogIUSg3yFleJUrZA==}
     peerDependencies:
       svelte: ^5.0.0
+
+  '@nomideusz/zaur-world@1.6.0':
+    resolution: {integrity: sha512-+uJiHEy7OGOtZQqgX2DpLur2MYgWX5+vy/+AvBEdcRMrH7ZnQkMPj+D2XyLubgDgngNbMgta1zTapJqo5ZTdzA==}
+    peerDependencies:
+      react: '>=18'
+    peerDependenciesMeta:
+      react:
+        optional: true
 
   '@opentelemetry/api-logs@0.222.0':
     resolution: {integrity: sha512-9mb1If+IF6u0ZVXkHQ6ogEae5HwA6ajIVUgpSDQyRASxft6BSXHvBvPooRle3yFN/fKnCdSOnuu0OC3PLcF6+g==}
@@ -7433,6 +7445,10 @@ snapshots:
       date-fns: 4.4.0
       date-fns-tz: 3.2.0(date-fns@4.4.0)
       svelte: 5.57.0
+
+  '@nomideusz/zaur-world@1.6.0(react@19.2.3)':
+    optionalDependencies:
+      react: 19.2.3
 
   '@opentelemetry/api-logs@0.222.0':
     dependencies:

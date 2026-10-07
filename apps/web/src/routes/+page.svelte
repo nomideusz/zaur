@@ -3,6 +3,7 @@
 	import Icon from '$lib/Icon.svelte';
 	import { kinds, kindOf } from '$lib/template-kinds';
 	import Peek from '$lib/Peek.svelte';
+	import LiveSky from '$lib/LiveSky.svelte';
 	import { platesFor, capturedOn, type Plates } from '$lib/plates';
 
 	const title = 'Zaur — apps, packages, templates';
@@ -47,7 +48,9 @@
 			name: 'Dino',
 			desc: 'Your sky for the next 24 hours — real sun, moon, stars, and live weather on one quiet page.',
 			href: 'https://dino.zaur.app',
-			uses: ['zaur-world']
+			uses: ['zaur-world'],
+			// The one node that runs its real engine instead of showing screenshots.
+			live: true
 		},
 		{
 			id: 'music',
@@ -804,7 +807,7 @@
 		part: `A${i + 1}`,
 		specs: specs[p.id] ?? [],
 		uses: p.uses ?? [],
-		plates: platesFor(p.id, p.name)
+		plates: p.live ? null : platesFor(p.id, p.name)
 	}));
 	const sites = websites.map((w, i) => ({ ...w, part: `W${i + 1}`, plates: platesFor(w.id, w.name) }));
 	const pkgs = packages.map((p, i) => ({ ...p, part: `P${i + 1}`, id: p.name.split('/')[1] }));
@@ -1093,7 +1096,9 @@
 			<h3 id="{a.id}-name">{@render hl(a.name)}</h3>
 			<span class="host">{new URL(a.href).host}</span>
 		</header>
-		{#if a.plates}
+		{#if a.live}
+			<LiveSky name={a.name} />
+		{:else if a.plates}
 			<Peek plates={a.plates} name={a.name} morph={morphing === a.id ? frame : null} onopen={(k) => lookInside(a, k)} />
 		{/if}
 		<div class="node__body">
