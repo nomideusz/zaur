@@ -12,7 +12,14 @@ const file = (name: string) => files[`./plates/${name}.webp`];
 
 export type Plate = { src: string; alt: string; w: number; h: number };
 export type Plates = {
+	/** Whole screens, one per page, shown in the Look inside dialog. */
 	frames: Plate[];
+	/**
+	 * Chosen details of the same pages, one per frame, shown in the peek strip
+	 * when present: a 16:10 clip around the element that matters, captured at
+	 * 2× so it stays crisp in a node. Named <id>-f1.webp, <id>-f2.webp…
+	 */
+	fragments?: Plate[];
 	phone?: Plate;
 	/** Where the pixels come from, for the caption. */
 	source: 'live' | 'demo';
@@ -62,9 +69,18 @@ const framesFor = (id: string, name: string): Plate[] =>
 		.map((what, i) => ({ src: file(`${id}-${i + 1}`), alt: `${name}: ${what}.`, w: 1200, h: 750 }))
 		.filter((f) => f.src);
 
+// Fragments named <id>-f1, <id>-f2… pair with the frames in order.
+const fragmentsFor = (id: string, name: string): Plate[] | undefined => {
+	const list = (screens[id] ?? [])
+		.map((what, i) => ({ src: file(`${id}-f${i + 1}`), alt: `${name}: a detail of ${what}.`, w: 1200, h: 750 }))
+		.filter((f) => f.src);
+	return list.length ? list : undefined;
+};
+
 const live = (id: string, name: string): Plates => ({
 	source: 'live',
 	frames: framesFor(id, name),
+	fragments: fragmentsFor(id, name),
 	phone: file(`${id}-phone`) ? { src: file(`${id}-phone`), alt: `${name} on a phone.`, w: 390, h: 844 } : undefined
 });
 
@@ -85,11 +101,13 @@ const demo: Record<string, Plates> = {
 				.map((what, i) => ({ src: file(`mail-${i + 2}`), alt: `Zaur Mail: ${what}.`, w: 1200, h: 750 }))
 				.filter((f) => f.src)
 		],
+		fragments: [{ src: file('mail-f1'), alt: 'Zaur Mail: a detail of the inbox list and the open thread.', w: 1000, h: 625 }],
 		phone: { src: file('mail-phone'), alt: 'Zaur Mail on a phone: the inbox with unread and flagged messages.', w: 585, h: 1266 }
 	},
 	music: {
 		source: 'demo',
-		frames: [{ src: file('music-desktop'), alt: 'Zaur Music on a desktop: the library home with recently added albums.', w: 1440, h: 460 }]
+		frames: [{ src: file('music-desktop'), alt: 'Zaur Music on a desktop: the library home with recently added albums.', w: 1440, h: 460 }],
+		fragments: [{ src: file('music-f1'), alt: 'Zaur Music: a detail of the recently added albums.', w: 736, h: 460 }]
 	}
 };
 

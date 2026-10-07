@@ -658,10 +658,8 @@
 	// Sites people read or look at, as opposed to apps that keep state. The tag
 	// says the relationship: client work, an experiment, or (untagged) my own.
 	// Spec rows are facts visible on the live site. Client work first. The lead
-	// shows its whole first screen; the others show a zoomed fragment of theirs
-	// (`crop`: the point on the frame to zoom toward, and how far).
-	type Crop = { x: string; y: string; zoom: number };
-	const websites: { id: string; name: string; desc: string; href: string; tag?: string; lead?: boolean; crop?: Crop; specs: [string, string][] }[] = [
+	// shows its whole first screen; the others show captured details (plates.ts fragments).
+	const websites: { id: string; name: string; desc: string; href: string; tag?: string; lead?: boolean; specs: [string, string][] }[] = [
 		{
 			id: 'pikastro',
 			name: 'pikastro.eu',
@@ -681,7 +679,6 @@
 			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
 			href: 'https://tutitutu.pl',
 			tag: 'Client work',
-			crop: { x: '34%', y: '62%', zoom: 1.8 },
 			specs: [
 				['CMS', 'Custom, written by hand before AI: the studio edits its own realisations'],
 				['Sections', 'Realisations, workshop, publications, references']
@@ -693,7 +690,6 @@
 			desc: 'Product site for the Graal vibroacoustic wellness chair.',
 			href: 'https://wibroakustyka.ai',
 			tag: 'Client work',
-			crop: { x: '50%', y: '58%', zoom: 1.7 },
 			specs: [
 				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
 				['Includes', 'News and the Health & Longevity Summit 2026']
@@ -705,7 +701,6 @@
 			desc: 'Equipment catalogue and industry news for the Polish representative of Picarro and UGT.',
 			href: 'https://intertechpoland.pl',
 			tag: 'Client work',
-			crop: { x: '31%', y: '18%', zoom: 2 },
 			specs: [
 				['Energy', 'Emissions monitoring and reduction, leak detection, pipe replacement'],
 				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors']
@@ -717,7 +712,6 @@
 			desc: 'Acupuncture clinic in Kraków offering treatments that complement conventional care.',
 			href: 'https://gabinet-polaczenie.pl',
 			tag: 'Client work',
-			crop: { x: '72%', y: '48%', zoom: 1.8 },
 			specs: [
 				['Format', 'One page, in Polish and English'],
 				['Covers', 'Treatments and the therapist']
@@ -728,7 +722,6 @@
 			name: 'kurcz.pl',
 			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
 			href: 'https://kurcz.pl',
-			crop: { x: '80%', y: '26%', zoom: 1.8 },
 			specs: [
 				['Built with', 'Astro, no JavaScript on article pages'],
 				['Covers', 'Causes, first aid, prevention guides'],
@@ -741,7 +734,6 @@
 			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
 			href: 'https://recycling.kompi.pl',
 			tag: 'Experiment',
-			crop: { x: '50%', y: '28%', zoom: 1.9 },
 			specs: [
 				['Data', 'Thousands of collection points, with a page for every city'],
 				['Includes', 'Interactive map, city pages, a recycling guide']
@@ -753,7 +745,6 @@
 			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
 			href: 'https://kruk.live',
 			tag: 'Experiment',
-			crop: { x: '27%', y: '48%', zoom: 2 },
 			specs: [
 				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
 				['Mode', 'Real-time and collaborative']
@@ -765,7 +756,6 @@
 			desc: 'Internet radio station, self-hosted on AzuraCast.',
 			href: 'https://radiobartek.com',
 			tag: 'Experiment',
-			crop: { x: '50%', y: '62%', zoom: 1.6 },
 			specs: [
 				['Stream', 'AzuraCast, self-hosted'],
 				['Player', 'One page, one button: listen']
@@ -1342,7 +1332,7 @@
 							{#if w.lead}<span class="host">{new URL(w.href).host}</span>{/if}
 						</header>
 						{#if w.plates}
-							<Peek plates={w.plates} name={w.name} crop={w.crop} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
+							<Peek plates={w.plates} name={w.name} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
 						{/if}
 						<div class="node__body">
 							{#if w.tag}<p class="tag">{@render hl(w.tag)}</p>{/if}

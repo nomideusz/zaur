@@ -1661,7 +1661,7 @@ mark {
 /* ---- Websites, bolder: one lead across the row, fragments below ----
    The lead node spans the grid: its whole first screen as a large plate on
    the left, name, description and spec rows on the right. The other nodes
-   show a zoomed fragment of their real screenshot (the Peek crop prop), so each
+   show a captured detail of their real pages (plates.ts fragments), so each
    reads as a detail rather than a shrunken page. Look inside still shows
    the whole pages. */
 .node--site-lead {
