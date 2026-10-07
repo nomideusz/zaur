@@ -1,8 +1,7 @@
 // Plates: real screenshots of every project, so the canvas can be browsed
 // without opening anything. Public sites were captured from the live page
 // (desktop 1440×900 scaled to 1200 wide, phone 390×844, scrollbars hidden),
-// each frame a deliberately chosen page rather than a scroll offset. Mail
-// and Music need an account, so they keep their demo-account plates.
+// each frame a deliberately chosen page rather than a scroll offset.
 //
 // Frames are the "key screens" a peek strip scrubs through, in order.
 // Every file is imported so it gets a hashed URL (see DESIGN.md, Hashed Asset Rule).
@@ -21,8 +20,6 @@ export type Plates = {
 	 */
 	fragments?: Plate[];
 	phone?: Plate;
-	/** Where the pixels come from, for the caption. */
-	source: 'live' | 'demo';
 };
 
 /** The day the live sites were captured. */
@@ -35,17 +32,6 @@ const screens: Record<string, string[]> = {
 		'"Yoga today in Kraków", every class of the day on one timeline',
 		'the Kraków page, studios by style with schedules and prices'
 	],
-	fixtar: [
-		'the home page with the "Twój dom, twoja moc" hero',
-		'the grinders and polishers category',
-		'a product page, the EUMS-3150 mitre saw'
-	],
-	register: ['the "Create your address" form'],
-	// Package demos. zaur-world, svelte-qr and svelte-geometrize run live instead,
-	// and search, i18n, media, scheduler, payments and notify show pictograms.
-	'svelte-calendar': ['the live demo, a week planner', 'the demo further down, with the code'],
-	thebest: ['the "Discover Kraków" hero', 'the Explore Tours grid', 'a tour page, kayaking on the Dunajec river'],
-	festivals: ['the year-ahead timeline', 'the Unsound Festival page', 'the Waking Life page'],
 	pikastro: ['the "Dość beżu, czas na kolor" hero', 'the interior and graphic design portfolio', 'the about page'],
 	kurcz: [
 		'the home page with the muscle anatomy illustration',
@@ -76,41 +62,13 @@ const fragmentsFor = (id: string, name: string): Plate[] | undefined => {
 };
 
 const live = (id: string, name: string): Plates => ({
-	source: 'live',
 	frames: framesFor(id, name),
 	fragments: fragmentsFor(id, name),
 	phone: file(`${id}-phone`) ? { src: file(`${id}-phone`), alt: `${name} on a phone.`, w: 390, h: 844 } : undefined
 });
 
-// Demo-account plates. More Mail screens can be dropped in as mail-2.webp,
-// mail-3.webp… (1200×750) and described here in order.
-const mailScreens = ['the calendar', 'contacts', 'files', 'a Meet video call'];
-const demo: Record<string, Plates> = {
-	mail: {
-		source: 'demo',
-		frames: [
-			{
-				src: file('mail-desktop'),
-				alt: 'Zaur Mail on a desktop: folders on the left, the inbox list, and an open three-message thread.',
-				w: 1440,
-				h: 900
-			},
-			...mailScreens
-				.map((what, i) => ({ src: file(`mail-${i + 2}`), alt: `Zaur Mail: ${what}.`, w: 1200, h: 750 }))
-				.filter((f) => f.src)
-		],
-		fragments: [{ src: file('mail-f1'), alt: 'Zaur Mail: a detail of the inbox list and the open thread.', w: 1000, h: 625 }],
-		phone: { src: file('mail-phone'), alt: 'Zaur Mail on a phone: the inbox with unread and flagged messages.', w: 585, h: 1266 }
-	},
-	music: {
-		source: 'demo',
-		frames: [{ src: file('music-desktop'), alt: 'Zaur Music on a desktop: the library home with recently added albums.', w: 1440, h: 460 }],
-		fragments: [{ src: file('music-f1'), alt: 'Zaur Music: a detail of the recently added albums.', w: 736, h: 460 }]
-	}
-};
-
 /** Plates for a project, or null when none were captured. */
 export function platesFor(id: string, name: string): Plates | null {
-	const p = demo[id] ?? live(id, name);
+	const p = live(id, name);
 	return p.frames.length ? p : null;
 }

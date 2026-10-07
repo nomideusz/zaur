@@ -243,7 +243,7 @@ This world replaced the earlier "Parts Catalog" (white stock, black ink, one spo
 - Cobalt canvas (`canvas`) with a 22px dot grid owns every viewport. Nothing else is a page background.
 - Off-white rounded nodes (14px) with soft, blue-tinted, downward shadows.
 - Five family header colours: coral apps, yellow packages, mint skills, pink templates, sky websites.
-- Peek strips: real screenshots of every app and website, inside the node under its header. Public sites are captured from the live page and the dialog says so with the date; Mail and Music use demo accounts and say so. Packages with a public demo get strips too, and three packages (zaur-world, svelte-qr, svelte-geometrize) run live in that band instead.
+- Peek strips: real screenshots of szkolyjogi.pl and every website, inside the node under its header, captured from the live page; the dialog says so with the date. The other apps and the packages carry no images, except zaur-world, which runs its live sky in that band.
 - Wires are only real imports. They draw in once on first paint, light up on trace, and carry moving packets while lit.
 - Funnel Display for headings, Funnel Sans for everything read, and Martian Mono only for typed or versioned tokens.
 - Live data (npm versions, Search Console clicks) is shown with its source. A failure shows an em dash, never a typed-in number.
@@ -355,7 +355,7 @@ Everything is rounded, and the radius steps down with the size of the object. No
 ### Node
 The canvas object.
 - **Shape:** off-white panel, 14px radius, Rest shadow. A flat family-colour header holds a mono part number (on an ink 12% wash), the display-face name and a Sans host line (ink at 72%). Packages add a dark mono version chip at the right of the header.
-- **Peek strip:** between header and body on every app and website node that has plates (see Peek Strip below).
+- **Peek strip:** between header and body on the szkolyjogi.pl app node and every website node (see Peek Strip below). Other app nodes and packages are text only; zaur-world alone keeps a band, its Live Sky.
 - **Body:** description, then any facts, key/value list, imports, and actions.
 - **Trace:** hovering or focusing a node sets it active. Its wires go to package yellow at 3px, other wires drop to 14%, port dots drop to 50%, and every unreached node dims. Each lit wire also gets a `flow` twin: a 3px yellow dashed path (`0.03 0.07` of the path length) whose dashes move toward the app at 0.2 path lengths a second, so imports visibly arrive. Flow exists only while tracing and only without reduced motion.
 - **Drag:** at 861px and wider, app and package headers show a grab cursor and drag by pointer. Wires re-route live. "Put the nodes back" appears in the meta line once anything has moved.
@@ -365,17 +365,11 @@ Pink-headed node per kind with a count, flowing in columns. Rows are a three-col
 
 ### Peek Strip
 The project's real screens inside its node, so it can be browsed without opening it.
-- **Shape:** a 16:10 band directly under the header, `node-sunk` behind the frames, a 1px `node-sunk` line below. The strip shows the project's **fragments** when it has them (one captured detail per page, a 16:10 clip around the element that matters, taken at 2× from the live page and named `<id>-f<n>.webp`), otherwise its whole-page frames (1200×750, cover from the top). Frame k of the strip is page k of the dialog. Only the Pikastro lead shows whole pages in its strip; every other app, package demo and website shows fragments.
+- **Shape:** a 16:10 band directly under the header, `node-sunk` behind the frames, a 1px `node-sunk` line below. The strip shows the project's **fragments** when it has them (one captured detail per page, a 16:10 clip around the element that matters, taken at 2× from the live page and named `<id>-f<n>.webp`), otherwise its whole-page frames (1200×750, cover from the top). Frame k of the strip is page k of the dialog. Only the Pikastro lead shows whole pages in its strip; szkolyjogi.pl and every other website show fragments.
 - **Scrub:** on a mouse, the pointer's x position across the strip picks the frame (`floor(x / width × n)`), and the film slides with a 260ms ease-out. Leaving the strip returns to the first frame. On touch (`hover: none`) the film is a scroll-snap row and swipes.
 - **Dots:** bottom-left, one per frame in an ink 72% pill. Rest dots are white 45%; the current dot is package yellow at 1.25× (yellow says current). A single-frame strip has no dots.
 - **Look inside:** an ink pill (label type, 7px radius) bottom-right. On a mouse the whole strip is the button (cursor `zoom-in`); on touch only the pill is, so a swipe reaches the film. Hover and focus turn the pill cobalt. The accessible name says how many screens there are.
 - **Morph:** the active frame and the dialog's plate share `view-transition-name: plate`. Opening and closing run inside `document.startViewTransition` (440ms ease-out group, 240ms root fade), and fall back to an instant open where unsupported or with reduced motion.
-
-### Live Bands
-Three package nodes run their package in the band where other nodes show plates, because a package that renders something is best shown rendering it. Each keeps the strip's grammar: ink pills, the yellow-means-current dots where there are states, and a badge bottom-right where other strips say Look inside.
-- **svelte-qr:** the band is a real QR for zaur.app, encoded by the package at build time (no image, no client cost), centred on `node` with a 1px `node-sunk` ring, and a badge saying so.
-- **svelte-geometrize:** the band is one of the canvas's own plates (thebest.travel's hero) fitted into 120 triangles at build time by the package's Vite plugin, resolving into the photo over 1.5s. Pointing at the band replays it; a "Replay the reveal" badge button does the same by click and keyboard.
-- **zaur-world:** the live sky, below.
 
 ### Live Sky
 zaur-world's node runs the real `@nomideusz/zaur-world` sky in its band, small and live, keyed to the visitor's own place and weather. It is the honest version of a screenshot for a package whose whole point is being live, and it replaced a separate Dino app node, since dino.zaur.app is this package's demo.
@@ -383,12 +377,6 @@ zaur-world's node runs the real `@nomideusz/zaur-world` sky in its band, small a
 - **Live tag:** top-left, an ink 72% pill with the Live Green dot (grey while loading or down) and the visitor's city, temperature and conditions from the engine itself. It reads "Reading your sky…" until the first conditions arrive.
 - **Scenes:** six dots bottom-left (Now, dawn, noon, golden hour, dusk, night) in the peek-dot style, each a real button. On a mouse the pointer's x across the band picks the scene through the engine's `preview()`, anchored to the visitor's real sun times; leaving the band returns to now. Bottom-right, where other strips say Look inside, a label names the scene, or "Live".
 - **No dialog:** there is nothing to look inside; the Demo link (dino.zaur.app) in the node's links is the way in.
-
-### Package Strips
-svelte-calendar, whose demo is a real calendar, gets a peek strip of two captured details (the week grid, the day planner with events) and a package-yellow Look inside dialog with its whole demo pages.
-
-### Pictogram Band
-Packages with nothing worth a screenshot (scheduler, payments, notify) or a demo that is only documentation (search, i18n, media) show a pictogram in the band: one line drawing on a 48-unit grid in the icon voice (even 1.6 stroke, square caps, `node-ink` on `node-sunk`), 6.5rem, centred, with the package's description as its accessible name. A calendar with a clock, a card with a chip, an envelope with an unread dot, a magnifier over result lines, a globe, a picture frame with hills. No label, no badge: the header already names the package.
 
 ### Account Cluster
 Mail, Register and Music share one Zaur account, so they sit inside one labelled boundary in the right graph column: a 1px white 28% line (the bar's own line) with a radius of the node radius plus its padding, and above it the label "One Zaur account" in UI type with "Register creates it; Mail and Music sign in with it." in `on-canvas-soft`. It is structure on the canvas, like a network boundary, not a wire: wires stay real imports only. Nodes inside keep every behaviour, including drag.
@@ -423,7 +411,7 @@ An off-white 3rem field (12px radius, Rest shadow) with a search icon, a placeho
 A native modal `<dialog>` that is one big node: a family header (coral for apps, sky for websites) with the part number, the name, the host and a quiet Close; the plate; a thumbnail row; and the open link. Off-white, 14px radius, Lift shadow, over a cobalt 70% backdrop, max `76rem` wide and scrollable past `100dvh − 2rem`. Esc (`oncancel`) and a backdrop click close through the morph.
 - **Plate:** the selected frame is shown whole, fitted inside the row and `min(62dvh, 46rem)` tall, centred, with its description as the figcaption. The dialog never crops a plate; only the strip does. A phone capture, when there is one, sits beside it at `min(13rem, 22vw)` and stacks under it at 860px and below.
 - **Thumbs:** 7.5rem tabs for every frame, 60% at rest, 85% on hover, full with a 2px package-yellow ring when selected. Left and right arrows change the frame.
-- **Provenance:** the foot says where the pixels come from: "Captured from the live site on 7 October 2026" for public sites, "Screenshots from a demo account" for Mail and Music (Mail adds that every message and sender is made up). Beside it, a solid Open (or Sign in to) button and a Source link.
+- **Provenance:** the foot says where the pixels come from: "Captured from the live site on 7 October 2026". Beside it, a solid Open (or Sign in to) button and a Source link.
 
 ### Focus
 3px outline with a 2px offset and 6px radius. It is yellow on cobalt and cobalt inside nodes and the dialog (each sets `--focus`).
@@ -458,5 +446,5 @@ A native modal `<dialog>` that is one big node: a family header (coral for apps,
 - **Don't** draw wires that aren't real imports.
 - **Don't** use hard offset shadows, glows outside the live dot, or hover lift.
 - **Don't** fabricate figures, counts or testimonials. Show a usage number only when it comes from a live source.
-- **Don't** show a screenshot without saying where it came from. The dialog always names the source (live capture with its date, or a demo account).
+- **Don't** show a screenshot without saying where it came from. The dialog always names the source (a live capture with its date).
 - **Don't** make the peek strip the only way to open a project. The Open or Sign in link stays in the node's actions.

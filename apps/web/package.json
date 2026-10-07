@@ -27,8 +27,6 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
-		"@nomideusz/svelte-geometrize": "^0.9.3",
-		"@nomideusz/svelte-qr": "^1.0.0",
 		"@nomideusz/zaur-world": "^1.6.0"
 	}
 }

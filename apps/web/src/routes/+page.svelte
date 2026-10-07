@@ -4,9 +4,6 @@
 	import { kinds, kindOf } from '$lib/template-kinds';
 	import Peek from '$lib/Peek.svelte';
 	import LiveSky from '$lib/LiveSky.svelte';
-	import LiveQr from '$lib/LiveQr.svelte';
-	import LiveGeometrize from '$lib/LiveGeometrize.svelte';
-	import Pictogram from '$lib/Pictogram.svelte';
 	import { platesFor, capturedOn, type Plates } from '$lib/plates';
 
 	const title = 'Zaur — apps, packages, templates';
@@ -70,7 +67,7 @@
 			id: 'festivals',
 			name: 'Friendly Festivals',
 			desc: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
-			href: 'https://newinternet.online',
+			href: 'https://festivals.zaur.app',
 			lead: true,
 			// A lead node placed in the right column so the three graph columns stay level.
 			column: 'right',
@@ -100,60 +97,50 @@
 			desc: 'Full-text search for Svelte 5 — FTS5, fuzzy matching, geo proximity, autocomplete, Polish locale.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-search',
 			demo: 'https://svelte-search-eight.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-search',
-			picto: 'search'
+			source: 'https://github.com/nomideusz/svelte-search'
 		},
 		{
 			name: '@nomideusz/svelte-i18n',
 			desc: 'Lightweight i18n for Svelte 5 — runes-based locale state, flat JSON messages, URL-locale routing.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-i18n',
 			demo: 'https://svelte-i18n-five.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-i18n',
-			picto: 'i18n'
+			source: 'https://github.com/nomideusz/svelte-i18n'
 		},
 		{
 			name: '@nomideusz/svelte-geometrize',
 			desc: 'Geometric image placeholders — triangles resolve into the real photo as it loads.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-geometrize',
 			demo: 'https://svelte-geometrize.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-geometrize',
-			// Geometrizes one of the canvas's own plates, live.
-			live: 'geometrize'
+			source: 'https://github.com/nomideusz/svelte-geometrize'
 		},
 		{
 			name: '@nomideusz/svelte-qr',
 			desc: 'Zero-dependency QR codes for Svelte 5 — pure TypeScript encoder, SVG output.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
 			demo: 'https://svelte-qr.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-qr',
-			// Encodes a real QR for zaur.app in its node.
-			live: 'qr'
+			source: 'https://github.com/nomideusz/svelte-qr'
 		},
 		{
 			name: '@nomideusz/svelte-media',
 			desc: 'Image upload, processing, and S3-compatible storage for Svelte 5 apps.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-media',
 			demo: 'https://svelte-media-gamma.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-media',
-			picto: 'media'
+			source: 'https://github.com/nomideusz/svelte-media'
 		},
 		{
 			name: '@nomideusz/svelte-scheduler',
 			desc: 'Booking and scheduling logic for Svelte 5 — tour slots, pricing, cancellation policies.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler',
-			picto: 'scheduler'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
 		},
 		{
 			name: '@nomideusz/svelte-payments',
 			desc: 'Provider-agnostic payments for the booking platform — Mollie server adapter + Stripe Connect UI.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments',
-			picto: 'payments'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments'
 		},
 		{
 			name: '@nomideusz/svelte-notify',
 			desc: 'Email notification template library for the booking platform.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify',
-			picto: 'notify'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
 		}
 	];
 
@@ -841,7 +828,7 @@
 	const sites = websites.map((w, i) => ({ ...w, part: `W${i + 1}`, plates: platesFor(w.id, w.name) }));
 	const pkgs = packages.map((p, i) => {
 		const id = p.name.split('/')[1];
-		return { ...p, part: `P${i + 1}`, id, plates: platesFor(id, id) };
+		return { ...p, part: `P${i + 1}`, id };
 	});
 	const skls = skills.map((s, i) => ({ ...s, part: `S${i + 1}` }));
 	// Stack column: the services a template's own description names.
@@ -1302,14 +1289,6 @@
 						</header>
 						{#if p.live === 'sky'}
 							<LiveSky name={p.id} />
-						{:else if p.live === 'qr'}
-							<LiveQr />
-						{:else if p.live === 'geometrize'}
-							<LiveGeometrize />
-						{:else if p.picto}
-							<Pictogram kind={p.picto} label="{p.id}: {p.desc}" />
-						{:else if p.plates}
-							<Peek plates={p.plates} name={p.id} morph={morphing === p.id ? frame : null} onopen={(k) => lookInside({ ...p, href: p.demo ?? p.npm }, k)} />
 						{/if}
 						<div class="node__body">
 							<p class="node__desc">{@render hl(p.desc)}</p>
@@ -1436,7 +1415,6 @@
 	<dialog
 		class="plates"
 		class:plates--site={viewing?.part.startsWith('W')}
-		class:plates--pkg={viewing?.part.startsWith('P')}
 		bind:this={viewer}
 		aria-labelledby="plates-title"
 		oncancel={(e) => (e.preventDefault(), closeViewer())}
@@ -1472,13 +1450,7 @@
 				</div>
 			{/if}
 			<div class="plates__foot">
-				<p class="plates__note">
-					{#if pl.source === 'demo'}
-						Screenshots from a demo account.{#if viewing.id === 'mail'}{' Every message and sender is made up.'}{/if}
-					{:else}
-						Captured from the live site on {captured}.
-					{/if}
-				</p>
+				<p class="plates__note">Captured from the live site on {captured}.</p>
 				<div class="actions">
 					<a class="btn" href={viewing.href}>{viewing.account ? 'Sign in to' : 'Open'} {viewing.name} <Icon name="out" /></a>
 					{#if viewing.source}<a class="node__link" href={viewing.source}>Source</a>{/if}
