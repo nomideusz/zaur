@@ -1270,6 +1270,7 @@
 					{@const o = offsets[p.id]}
 					<article
 						class="node node--pkg"
+						class:node--pkg-wide={p.live}
 						class:dim={reach && !reach.has(p.id)}
 						class:held={dragging === p.id}
 						id="pkg-{p.id}"

@@ -472,8 +472,43 @@ mark {
 }
 
 /* Nodes without wires (Pikastro, the agent skill) sit under the packages, across both columns. */
-.col--pkgs > .node:not(.node--pkg) {
+.col--pkgs > .node:not(.node--pkg, .node--skill),
+.col--pkgs > .node--pkg-wide {
 	grid-column: 1 / -1;
+}
+
+/* zaur-world spans both package columns: the live sky on the left, its
+   description on the right, the way the website lead sits. */
+.node--pkg-wide {
+	display: grid;
+	grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+	grid-template-rows: auto 1fr;
+}
+
+.node--pkg-wide .node__head {
+	grid-column: 1 / -1;
+}
+
+.node--pkg-wide .peek {
+	aspect-ratio: auto;
+	min-height: 100%;
+	border-bottom: 0;
+	border-right: 1px solid var(--node-sunk);
+	border-radius: 0 0 0 var(--r);
+}
+
+@media (max-width: 860px) {
+	.node--pkg-wide {
+		display: block;
+	}
+
+	.node--pkg-wide .peek {
+		aspect-ratio: 16 / 10;
+		min-height: 0;
+		border-right: 0;
+		border-bottom: 1px solid var(--node-sunk);
+		border-radius: 0;
+	}
 }
 
 .frame-label {
@@ -1311,8 +1346,8 @@ mark {
 /* ---- Websites: compact sky-headed nodes with peek strips ---- */
 .sites__grid {
 	display: grid;
-	grid-template-columns: repeat(4, minmax(0, 1fr));
-	gap: 1.25rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 1.5rem;
 }
 
 .node--site {
@@ -1320,16 +1355,32 @@ mark {
 }
 
 .node--site .node__head h3 {
-	font-size: 1.125rem;
+	font-size: 1.375rem;
 }
 
-.node--site .node__body {
-	gap: 0.7rem;
-	padding: 0.85rem 0.9rem 0.95rem;
+/* Below the lead, a node is its whole first screen over a two-column body:
+   the description and Open on the left, the spec rows on the right. */
+.node--site:not(.node--site-lead) .node__body {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+	align-content: start;
+	justify-items: start;
+	gap: 0.75rem 1.5rem;
+	padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.node--site:not(.node--site-lead) .node__body > :not(.props) {
+	grid-column: 1;
+}
+
+.node--site:not(.node--site-lead) .props {
+	grid-column: 2;
+	/* Tag, description and Open at most on the left. */
+	grid-row: 1 / span 3;
 }
 
 .node--site .node__desc {
-	font-size: 0.9063rem;
+	font-size: 1rem;
 }
 
 /* ---- Look inside ----------------------------------------
@@ -1634,12 +1685,10 @@ mark {
 	background: var(--canvas);
 }
 
-/* ---- Websites, bolder: one lead across the row, fragments below ----
+/* ---- Websites, bolder: one lead across the row, two columns below ----
    The lead node spans the grid: its whole first screen as a large plate on
    the left, name, description and spec rows on the right. The other nodes
-   show a captured detail of their real pages (plates.ts fragments), so each
-   reads as a detail rather than a shrunken page. Look inside still shows
-   the whole pages. */
+   show their whole first screens too, two to a row. */
 .node--site-lead {
 	grid-column: 1 / -1;
 	display: grid;
@@ -1683,15 +1732,13 @@ mark {
 	font-size: 1.0625rem;
 }
 
-@media (max-width: 1100px) {
-	.sites__grid {
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
-}
-
 @media (max-width: 860px) {
 	.sites__grid {
 		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.node--site:not(.node--site-lead) .node__body {
+		display: flex;
 	}
 
 	.node--site-lead {
