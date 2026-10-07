@@ -167,6 +167,12 @@
 
 	const templates = [
 		{
+			name: 'Lago Production',
+			desc: 'Lago usage-based billing: meter events, apply plans, credits and coupons, and issue PDF invoices on schedule — the complete stack with worker, clock and PDF renderer, admin seeded and sign-up closed.',
+			deploy: 'https://railway.com/deploy/lago-production',
+			source: 'https://github.com/nomideusz/lago-railway'
+		},
+		{
 			name: 'OpenReplay',
 			desc: 'OpenReplay session replay: watch what users did with console, network and performance data alongside, plus funnels, heatmaps and dashboards, with recordings kept on your own Railway volume.',
 			deploy: 'https://railway.com/deploy/openreplay',
