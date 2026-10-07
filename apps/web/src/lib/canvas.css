@@ -1578,7 +1578,7 @@ mark {
 	border-radius: 50%;
 }
 
-.scene-label {
+.peek__badge {
 	position: absolute;
 	right: 0.6rem;
 	bottom: 0.6rem;
@@ -1602,4 +1602,51 @@ mark {
 
 .live-tag .dot--off {
 	box-shadow: none;
+}
+
+/* The badge is shared by every live band: a scene name, a QR note, a replay button. */
+.peek__badge--btn {
+	border: 0;
+	font: inherit;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	pointer-events: auto;
+	transition: background 120ms ease-out;
+}
+
+.peek__badge--btn:hover,
+.peek__badge--btn:focus-visible {
+	background: var(--canvas);
+}
+
+/* svelte-qr: the package encodes a real QR for zaur.app into its band. */
+.peek--qr {
+	display: grid;
+	align-content: start;
+	justify-items: center;
+	padding-top: 0.45rem;
+	background: var(--node);
+	border-bottom: 1px solid var(--node-sunk);
+}
+
+.peek--qr > div {
+	line-height: 0;
+	border-radius: 6px;
+	box-shadow: 0 0 0 1px var(--node-sunk);
+}
+
+/* svelte-geometrize: the package fills its band with a geometrized plate. */
+.peek--geo .geometrize,
+.peek--geo .geometrize img,
+.peek--geo .geometrize svg {
+	position: absolute;
+	inset: 0;
+	display: block;
+	width: 100%;
+	height: 100%;
+}
+
+.plates--pkg {
+	--head: var(--pkg);
 }

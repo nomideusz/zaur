@@ -113,5 +113,5 @@
 			<button type="button" class:on={i === scene} aria-pressed={i === scene} aria-label={s.label} title={s.label} onclick={() => show(i)}></button>
 		{/each}
 	</div>
-	<span class="scene-label" aria-live="polite">{scene === 0 ? 'Live' : scenes[scene].label}</span>
+	<span class="peek__badge" aria-live="polite">{scene === 0 ? 'Live' : scenes[scene].label}</span>
 </div>

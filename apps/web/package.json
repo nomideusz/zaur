@@ -20,12 +20,15 @@
 		"@sveltejs/kit": "^2.57.0",
 		"@sveltejs/vite-plugin-svelte": "^7.0.0",
 		"@types/node": "^25.9.1",
+		"sharp": "^0.35.3",
 		"svelte": "^5.57.0",
 		"svelte-check": "^4.4.6",
 		"typescript": "^6.0.2",
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
+		"@nomideusz/svelte-geometrize": "^0.9.3",
+		"@nomideusz/svelte-qr": "^1.0.0",
 		"@nomideusz/zaur-world": "^1.6.0"
 	}
 }

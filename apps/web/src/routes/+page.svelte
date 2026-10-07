@@ -4,6 +4,8 @@
 	import { kinds, kindOf } from '$lib/template-kinds';
 	import Peek from '$lib/Peek.svelte';
 	import LiveSky from '$lib/LiveSky.svelte';
+	import LiveQr from '$lib/LiveQr.svelte';
+	import LiveGeometrize from '$lib/LiveGeometrize.svelte';
 	import { platesFor, capturedOn, type Plates } from '$lib/plates';
 
 	const title = 'Zaur — apps, packages, templates';
@@ -44,23 +46,12 @@
 			href: 'https://register.zaur.app'
 		},
 		{
-			id: 'dino',
-			name: 'Dino',
-			desc: 'Your sky for the next 24 hours — real sun, moon, stars, and live weather on one quiet page.',
-			href: 'https://dino.zaur.app',
-			uses: ['zaur-world'],
-			// The one node that runs its real engine instead of showing screenshots.
-			live: true
-		},
-		{
 			id: 'music',
 			name: 'Music',
 			desc: 'A private, self-hosted music library and radio powered by Navidrome.',
 			href: 'https://music.zaur.app',
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/music',
-			account: true,
-			// No package wires, so it sits under the packages and evens out the canvas.
-			column: 'middle'
+			account: true
 		},
 		{
 			id: 'thebest',
@@ -88,7 +79,9 @@
 			desc: 'A living ambient sky — real sun times, weather, true star positions, eclipses, and a pixel dinosaur who lives in it. Zero dependencies.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/zaur-world',
 			demo: 'https://dino.zaur.app',
-			source: 'https://github.com/nomideusz/zaur-world'
+			source: 'https://github.com/nomideusz/zaur-world',
+			// Runs the real sky in its node instead of showing screenshots.
+			live: 'sky'
 		},
 		{
 			name: '@nomideusz/svelte-calendar',
@@ -116,14 +109,18 @@
 			desc: 'Geometric image placeholders — triangles resolve into the real photo as it loads.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-geometrize',
 			demo: 'https://svelte-geometrize.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-geometrize'
+			source: 'https://github.com/nomideusz/svelte-geometrize',
+			// Geometrizes one of the canvas's own plates, live.
+			live: 'geometrize'
 		},
 		{
 			name: '@nomideusz/svelte-qr',
 			desc: 'Zero-dependency QR codes for Svelte 5 — pure TypeScript encoder, SVG output.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
 			demo: 'https://svelte-qr.vercel.app',
-			source: 'https://github.com/nomideusz/svelte-qr'
+			source: 'https://github.com/nomideusz/svelte-qr',
+			// Encodes a real QR for zaur.app in its node.
+			live: 'qr'
 		},
 		{
 			name: '@nomideusz/svelte-media',
@@ -788,11 +785,6 @@
 			['Creates', 'A real @zaur.app mailbox'],
 			['Talks to', 'Stalwart admin API']
 		],
-		dino: [
-			['Engine', '@nomideusz/zaur-world'],
-			['Shows', 'Sun, moon, stars, live weather'],
-			['Window', 'The next 24 hours']
-		],
 		thebest: [
 			['Covers', 'Guided tours in Cracow'],
 			['Payments', 'Stripe'],
@@ -819,10 +811,13 @@
 		part: `A${i + 1}`,
 		specs: specs[p.id] ?? [],
 		uses: p.uses ?? [],
-		plates: p.live ? null : platesFor(p.id, p.name)
+		plates: platesFor(p.id, p.name)
 	}));
 	const sites = websites.map((w, i) => ({ ...w, part: `W${i + 1}`, plates: platesFor(w.id, w.name) }));
-	const pkgs = packages.map((p, i) => ({ ...p, part: `P${i + 1}`, id: p.name.split('/')[1] }));
+	const pkgs = packages.map((p, i) => {
+		const id = p.name.split('/')[1];
+		return { ...p, part: `P${i + 1}`, id, plates: platesFor(id, id) };
+	});
 	const skls = skills.map((s, i) => ({ ...s, part: `S${i + 1}` }));
 	// Stack column: the services a template's own description names.
 	const stackWords: [RegExp, string][] = [
@@ -1108,9 +1103,7 @@
 			<h3 id="{a.id}-name">{@render hl(a.name)}</h3>
 			<span class="host">{new URL(a.href).host}</span>
 		</header>
-		{#if a.live}
-			<LiveSky name={a.name} />
-		{:else if a.plates}
+		{#if a.plates}
 			<Peek plates={a.plates} name={a.name} morph={morphing === a.id ? frame : null} onopen={(k) => lookInside(a, k)} />
 		{/if}
 		<div class="node__body">
@@ -1271,6 +1264,15 @@
 							<h3 id="pkg-{p.id}-name">{@render hl(p.id)}</h3>
 							<span class="ver mono" class:ver--off={!s}>{s ? `v${s.version}` : registryDown ? '—' : '…'}</span>
 						</header>
+						{#if p.live === 'sky'}
+							<LiveSky name={p.id} />
+						{:else if p.live === 'qr'}
+							<LiveQr />
+						{:else if p.live === 'geometrize'}
+							<LiveGeometrize />
+						{:else if p.plates}
+							<Peek plates={p.plates} name={p.id} morph={morphing === p.id ? frame : null} onopen={(k) => lookInside({ ...p, href: p.demo ?? p.npm }, k)} />
+						{/if}
 						<div class="node__body">
 							<p class="node__desc">{@render hl(p.desc)}</p>
 							<p class="facts">
@@ -1395,6 +1397,7 @@
 	<dialog
 		class="plates"
 		class:plates--site={viewing?.part.startsWith('W')}
+		class:plates--pkg={viewing?.part.startsWith('P')}
 		bind:this={viewer}
 		aria-labelledby="plates-title"
 		oncancel={(e) => (e.preventDefault(), closeViewer())}
