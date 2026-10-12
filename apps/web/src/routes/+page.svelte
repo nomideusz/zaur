@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'T3 Code',
+			desc: 'Your always-on cloud agent box: the T3 Code server with Claude Code, Codex and OpenCode preinstalled, paired to the T3 web, desktop and mobile apps.',
+			deploy: 'https://railway.com/deploy/t3-code-cloud',
+			source: 'https://github.com/nomideusz/t3code-railway'
+		},
+		{
 			name: 'Lowcoder',
 			desc: 'Lowcoder: the open-source Retool alternative. Build internal tools, admin panels and dashboards on your databases and APIs with a drag-and-drop editor, on MongoDB and Redis.',
 			deploy: 'https://railway.com/deploy/lowcoder',
