@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Penpot',
+			desc: 'Penpot: the open-source Figma alternative. Real-time collaborative design, prototyping, components and design tokens, with CSS/SVG inspect for developers, on Postgres and a Railway bucket.',
+			deploy: 'https://railway.com/deploy/penpot-production',
+			source: 'https://github.com/nomideusz/penpot-railway'
+		},
+		{
 			name: 'Cal.com',
 			desc: 'Cal.com: the open-source Calendly alternative. Public booking pages, event types, availability and Google Calendar sync, on your own Postgres.',
 			deploy: 'https://railway.com/deploy/calcom-production',
