@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Lowcoder',
+			desc: 'Lowcoder: the open-source Retool alternative. Build internal tools, admin panels and dashboards on your databases and APIs with a drag-and-drop editor, on MongoDB and Redis.',
+			deploy: 'https://railway.com/deploy/lowcoder',
+			source: 'https://github.com/nomideusz/lowcoder-railway'
+		},
+		{
 			name: 'Morphik',
 			desc: 'Morphik: an open-source RAG backend for documents. Ingest PDFs, Office files and text, then search and ask questions over them through a REST API or the Python SDK, with any LiteLLM model.',
 			deploy: 'https://railway.com/deploy/morphik-rag',
