@@ -3,7 +3,7 @@
 	// pointer's x position scrubs through the frames like a filmstrip; on touch
 	// the strip swipes with scroll snap. Any click opens the Look inside dialog,
 	// and the active frame morphs into it (View Transitions, see +page.svelte).
-	import type { Plates } from '$lib/plates';
+	import type { Plates } from '#lib/plates';
 
 	let {
 		plates,

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '$lib/canvas.css';
+	import '#lib/canvas.css';
 
 	let { children } = $props();
 </script>

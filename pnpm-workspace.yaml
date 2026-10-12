@@ -4,7 +4,7 @@ packages:
 
 overrides:
   "@capacitor/assets>sharp": "^0.34.0"
-  # Security: svelte 5.57.0 and kit 3.0.0-next.27 still pin devalue below 5.9.3.
+  # Security: svelte 5.57.2 still allows devalue below 5.9.3 (kit 3.0.1 requires ^5.9.4).
   devalue: "^5.9.4"
 
 onlyBuiltDependencies:

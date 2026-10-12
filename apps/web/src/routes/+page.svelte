@@ -1,10 +1,10 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import Icon from '$lib/Icon.svelte';
-	import { kinds, kindOf } from '$lib/template-kinds';
-	import Peek from '$lib/Peek.svelte';
-	import LiveSky from '$lib/LiveSky.svelte';
-	import { platesFor, capturedOn, type Plates } from '$lib/plates';
+	import Icon from '#lib/Icon.svelte';
+	import { kinds, kindOf } from '#lib/template-kinds';
+	import Peek from '#lib/Peek.svelte';
+	import LiveSky from '#lib/LiveSky.svelte';
+	import { platesFor, capturedOn, type Plates } from '#lib/plates';
 
 	const title = 'Zaur — apps, packages, templates';
 	const description =
