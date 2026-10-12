@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Cal.com',
+			desc: 'Cal.com: the open-source Calendly alternative. Public booking pages, event types, availability and Google Calendar sync, on your own Postgres.',
+			deploy: 'https://railway.com/deploy/calcom-production',
+			source: 'https://github.com/nomideusz/calcom-railway'
+		},
+		{
 			name: 'Temporal',
 			desc: 'Temporal: the open-source durable execution engine. Server, password-protected Web UI and Postgres with advanced visibility, schema migrations on every deploy.',
 			deploy: 'https://railway.com/deploy/temporal-server',
