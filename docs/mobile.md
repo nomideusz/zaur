@@ -78,9 +78,9 @@ Native clients authenticate directly with Stalwart; they do not create a webmail
 5. Refresh before expiry and serialize refresh operations per account.
 6. Treat invalid refresh grants as an account-scoped sign-out, never as a global sign-out.
 
-The web implementation in `apps/webmail/src/lib/server/oauth-*` and
-`apps/webmail/src/lib/server/stalwart-auth-*` is a contract reference only. Native clients must not
-call webmail's `/api/auth/*` routes or store `SESSION_SECRET`.
+The web implementation in `packages/server-auth/src/oauth-*` and
+`packages/server-auth/src/stalwart-auth.ts` is a contract reference only. Native clients must not
+call webmail's auth routes or store `SESSION_SECRET`.
 
 ## JMAP
 
@@ -98,14 +98,13 @@ Initial protocol scope:
 - contacts and calendars after the mail foundation is stable;
 - Stalwart account-security methods after core mail flows ship.
 
-Useful behavioral references in webmail:
+Useful behavioral references (shared with the web client, `apps/mail2`):
 
-- `apps/webmail/src/lib/jmap/client.ts`
-- `apps/webmail/src/lib/jmap/types.ts`
-- `apps/webmail/src/lib/jmap/map.ts`
-- `apps/webmail/src/lib/jmap/email-build.ts`
-- `apps/webmail/src/lib/sync/engine.ts`
-- `apps/webmail/src/lib/sync/outbox-processor.ts`
+- `packages/mail-core/src/jmap/client.ts`
+- `packages/mail-core/src/jmap/types.ts`
+- `packages/mail-core/src/jmap/map.ts`
+- `packages/mail-core/src/jmap/email-build.ts`
+- `apps/mail2/src/lib/compose/outbox.ts`
 
 Port behavior and test fixtures, not browser or SvelteKit implementation details.
 

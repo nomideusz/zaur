@@ -1,4 +1,0 @@
-.zevent:global(.compose-panel-open), .z-event:global(.event-panel-open) .z-mobile-fab {
-	visibility: hidden;
-	pointer-events: none;
-}

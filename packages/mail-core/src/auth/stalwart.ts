@@ -1,5 +1,5 @@
-// Direct Stalwart OAuth for public clients (native apps). Mirrors webmail's
-// server-side flow (apps/webmail/src/lib/server/stalwart-auth.ts): PKCE S256
+// Direct Stalwart OAuth for public clients (native apps). Mirrors the
+// server-side flow (packages/server-auth/src/stalwart-auth.ts): PKCE S256
 // via Stalwart's JSON `/api/auth` endpoint — no browser redirect, no client
 // secret — then the standard token endpoint for code exchange and refresh.
 // Crypto is injected so the module runs on Node (webcrypto), browsers, and

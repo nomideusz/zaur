@@ -3,7 +3,7 @@
 Monorepo for the Zaur communications suite — Mail, Chat, Discuss, Meet.
 
 > The pixel-dinosaur app (`dino` / `dino-archive` / `music`) was extracted to
-> its own repo at `../dino`. The shared `@zaur/sprite` mascot frames stay here.
+> its own repo at `../dino`.
 
 The suite lives across subdomains: **Mail** (`register.zaur.app` + `webmail.zaur.app`),
 **Chat** (`chat.zaur.app`, Once Campfire), **Discuss** (`discourse.zaur.app`, Discourse),
@@ -15,8 +15,7 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 | App | Package | URL | Deploy |
 |-----|---------|-----|--------|
 | **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app) | CapRover |
-| **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | Dokploy |
-| **Mail 2.0** (beta, own login) | `@zaur/mail2` | [mail2.zaur.app](https://mail2.zaur.app) | Dokploy |
+| **Webmail** | `@zaur/mail2` | [webmail.zaur.app](https://webmail.zaur.app) (also mail2.zaur.app) | Dokploy |
 | **Music** | `@zaur/music` | [music.zaur.app](https://music.zaur.app) | Dokploy |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | Dokploy |
 | **Native Mail** (planned) | `apps/mobile` | iOS + Android | App Store + Google Play |
@@ -30,8 +29,7 @@ stack on Contabo (`infra/meet/`) can be stopped.
 
 | Package | Purpose |
 |---------|---------|
-| `@zaur/sprite` | Zaur pixel sprite frames + SVG renderer (shared by web and webmail) |
-| `@zaur/ui` | Shared design tokens, components CSS, and utilities (webmail + web) |
+| `@zaur/ui` | Shared design tokens, components CSS, and utilities (mail2 + web) |
 
 ## Native mobile
 
@@ -53,8 +51,7 @@ pnpm install
 
 ```sh
 pnpm dev:web           # http://localhost:5173 (landing site)
-pnpm dev:webmail       # http://localhost:5173
-pnpm dev:mail2         # http://localhost:5175 (Mail 2.0 rebuild, shares the 1.0 session)
+pnpm dev:mail2         # http://localhost:5175 (webmail.zaur.app)
 pnpm dev:music         # http://localhost:5176 (Zaur Music, over Navidrome)
 pnpm dev:register       # http://localhost:3000
 ```
@@ -62,9 +59,6 @@ pnpm dev:register       # http://localhost:3000
 ### Build & check
 
 ```sh
-pnpm build:webmail
-pnpm check:webmail
-pnpm test:webmail
 pnpm build:mail2
 pnpm check:mail2
 pnpm test:mail2
@@ -75,15 +69,13 @@ pnpm test:mail2
 ```
 apps/
   web/           SvelteKit static landing site (zaur.app)
-  webmail/       SvelteKit JMAP client (1.0, frozen to bugfixes during the 2.0 rebuild)
-  mail2/         SvelteKit JMAP client (2.0 rebuild — see docs/decisions/0005-mail-2.0.md)
+  mail2/         SvelteKit JMAP client, serves webmail.zaur.app (see docs/decisions/0005-mail-2.0.md)
   music/         Zaur Music PWA over Navidrome, with Add from YouTube
   register/      Stalwart account registration portal
   mobile/        Planned KMP core + native SwiftUI and Compose clients
 packages/
-  sprite/        Shared Zaur pixel art
   ui/            Shared design system (tokens, CSS, cn utility)
-  mail-core/     Platform-agnostic JMAP client and mail domain logic (webmail + mail2)
+  mail-core/     Platform-agnostic JMAP client and mail domain logic (mail2, planned native clients)
   server-auth/   Shared session, OAuth, and Stalwart auth server code
 docs/
   decisions/     Architecture decision records

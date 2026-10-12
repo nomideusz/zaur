@@ -18,13 +18,3 @@ const parts = [
 const css = parts.join('\n\n');
 
 writeFileSync(join(root, 'css', 'zaur.css'), css);
-
-const seedSrc = join(root, 'src/circadian/seed.js');
-const seedTargets = [
-  join(root, '../../apps/webmail/static/circadian-seed.js'),
-  join(root, '../../apps/web/static/circadian-seed.js')
-];
-for (const target of seedTargets) {
-  mkdirSync(dirname(target), { recursive: true });
-  writeFileSync(target, readFileSync(seedSrc, 'utf8'));
-}

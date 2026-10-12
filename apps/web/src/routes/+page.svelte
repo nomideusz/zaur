@@ -559,7 +559,7 @@
 			name: 'Stalwart Webmail',
 			desc: 'Offline-capable, white-label JMAP webmail for self-hosted Stalwart servers.',
 			deploy: 'https://railway.com/deploy/stalwart-webmail',
-			source: 'https://github.com/nomideusz/zaur/tree/main/apps/webmail'
+			source: 'https://github.com/nomideusz/zaur/tree/main/apps/mail2'
 		},
 		{
 			name: 'Stalwart',

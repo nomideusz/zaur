@@ -6,7 +6,7 @@ Stalwart runs as a **deployed binary**, not application source in this repo. Thi
 
 | Concern | Location |
 |---------|----------|
-| Webmail client | `apps/webmail` |
+| Webmail client | `apps/mail2` |
 | Account registration | `apps/register` |
 | Stalwart binary | CapRover / ops (not vendored here) |
 

@@ -8,14 +8,12 @@ COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/mail-core/package.json ./packages/mail-core/
 COPY packages/server-auth/package.json ./packages/server-auth/
-COPY packages/sprite/package.json ./packages/sprite/
 COPY apps/mail2/package.json ./apps/mail2/
 RUN pnpm install --frozen-lockfile --filter @zaur/mail2...
 
 COPY packages/ui ./packages/ui
 COPY packages/mail-core ./packages/mail-core
 COPY packages/server-auth ./packages/server-auth
-COPY packages/sprite ./packages/sprite
 COPY apps/mail2 ./apps/mail2
 
 # PUBLIC_* config (PUBLIC_TRACEWAY_DSN) is read at runtime, not baked into the
