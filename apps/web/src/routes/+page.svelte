@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'RAGFlow',
+			desc: 'RAGFlow: the open-source RAG engine with deep document understanding. Parse PDFs, Word, slides and spreadsheets into knowledge bases, then chat with them with grounded citations, on Elasticsearch, MySQL, MinIO and Redis.',
+			deploy: 'https://railway.com/deploy/ragflow-engine',
+			source: 'https://github.com/nomideusz/ragflow-railway'
+		},
+		{
 			name: 'Documenso',
 			desc: 'Documenso: the open-source DocuSign alternative. Send PDFs for signature and get them back digitally sealed, with the signing certificate and your admin account created on first boot.',
 			deploy: 'https://railway.com/deploy/documenso-production',
