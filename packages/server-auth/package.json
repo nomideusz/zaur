@@ -13,7 +13,7 @@
 		"test": "node --test --experimental-strip-types tests/*.test.ts"
 	},
 	"dependencies": {
-		"@sveltejs/kit": "^2.57.0",
+		"@sveltejs/kit": "^2.70.3",
 		"@zaur/mail-core": "workspace:*"
 	},
 	"devDependencies": {
