@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Dino',
+			desc: 'A quiet page of important news, curated by AI or simple heuristics, with a pixel dinosaur keeping watch.',
+			deploy: 'https://railway.com/deploy/dino',
+			source: 'https://github.com/nomideusz/dino'
+		},
+		{
 			name: 'Huly',
 			desc: 'Huly: the open-source all-in-one alternative to Linear, Slack and Notion. Issue tracking, team chat, collaborative docs and planning on Postgres, Elasticsearch and a Railway bucket.',
 			deploy: 'https://railway.com/deploy/huly-platform',
