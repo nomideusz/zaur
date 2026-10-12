@@ -73,6 +73,16 @@
 			column: 'right',
 			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
 		},
+		{
+			id: 'kino',
+			name: 'Kino',
+			desc: 'What plays in Polish cinemas today, hour by hour, with the small studio and culture-centre cinemas first.',
+			href: 'https://kino.net.pl',
+			lead: true,
+			// Under the packages: a fourth lead node in any side column left that one hanging.
+			column: 'middle',
+			uses: ['svelte-i18n', 'svelte-notify']
+		},
 	];
 
 	const packages = [
@@ -901,6 +911,10 @@
 		festivals: [
 			['Covers', 'Festivals worldwide'],
 			['Includes', 'Lineups, editions, reviews, organiser claims']
+		],
+		kino: [
+			['Covers', 'Cinemas across Poland, small ones first'],
+			['Data', 'Programmes crawled every 6 hours']
 		],
 		music: [
 			['Server', 'Navidrome, self-hosted'],
