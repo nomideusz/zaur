@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Activepieces',
+			desc: 'Activepieces: the open-source Zapier and n8n alternative. Visual flow builder with hundreds of integrations, AI agents and MCP, on Postgres and Redis with a scalable worker service and sandboxed code steps.',
+			deploy: 'https://railway.com/deploy/activepieces-workflows',
+			source: 'https://github.com/nomideusz/activepieces-railway'
+		},
+		{
 			name: 'Penpot',
 			desc: 'Penpot: the open-source Figma alternative. Real-time collaborative design, prototyping, components and design tokens, with CSS/SVG inspect for developers, on Postgres and a Railway bucket.',
 			deploy: 'https://railway.com/deploy/penpot-production',
