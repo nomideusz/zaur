@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Formbricks',
+			desc: 'Formbricks 6: the open-source Typeform and Qualtrics alternative. Link, website and in-app surveys, NPS and CSAT, with the full v6 stack (Hub, Cube, SpiceDB) and uploads in a Railway bucket.',
+			deploy: 'https://railway.com/deploy/formbricks-surveys',
+			source: 'https://github.com/nomideusz/formbricks-railway'
+		},
+		{
 			name: 'Outline',
 			desc: 'Outline: the fast, collaborative team wiki and knowledge base. Ready on first boot: create your workspace and sign in with a passkey, then add SSO or SMTP for teammates.',
 			deploy: 'https://railway.com/deploy/outline-production',
