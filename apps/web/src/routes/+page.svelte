@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Huly',
+			desc: 'Huly: the open-source all-in-one alternative to Linear, Slack and Notion. Issue tracking, team chat, collaborative docs and planning on Postgres, Elasticsearch and a Railway bucket.',
+			deploy: 'https://railway.com/deploy/huly-platform',
+			source: 'https://github.com/nomideusz/huly-railway'
+		},
+		{
 			name: 'Formbricks',
 			desc: 'Formbricks 6: the open-source Typeform and Qualtrics alternative. Link, website and in-app surveys, NPS and CSAT, with the full v6 stack (Hub, Cube, SpiceDB) and uploads in a Railway bucket.',
 			deploy: 'https://railway.com/deploy/formbricks-surveys',
