@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Opik',
+			desc: 'Opik by Comet: open-source LLM tracing, LLM-as-a-judge evaluation, datasets, experiments and prompt management, on ClickHouse with an embedded Keeper, MySQL, Redis and MinIO, behind basic auth.',
+			deploy: 'https://railway.com/deploy/opik-llm',
+			source: 'https://github.com/nomideusz/opik-railway'
+		},
+		{
 			name: 'Laminar',
 			desc: 'Laminar: open-source observability and evals for AI agents. OpenTelemetry tracing, evaluations, datasets and a SQL editor over your traces, on ClickHouse and Postgres.',
 			deploy: 'https://railway.com/deploy/laminar-observability',
