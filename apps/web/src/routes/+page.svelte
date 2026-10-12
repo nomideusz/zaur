@@ -1425,7 +1425,7 @@
 										<span class="tpl__desc" title={t.desc}>{@render hl(t.desc)}</span>
 									</p>
 									<span class="tpl__act">
-										<a href={t.deploy} class="deploy" aria-label="Deploy {t.name} on Railway">Deploy</a>
+										<a href="{t.deploy}?referralCode=sLjDXb" class="deploy" aria-label="Deploy {t.name} on Railway">Deploy</a>
 										<a href={t.source} class="tpl__src" aria-label="{t.name} source">Source</a>
 									</span>
 								</li>
