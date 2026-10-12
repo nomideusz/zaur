@@ -1,6 +1,8 @@
 import { error } from '@sveltejs/kit';
 import { checkRateLimitRow, getActiveAccount, getStoreDb, readSessionFull } from '@zaur/server-auth';
 import { isMeetGroupId } from '@zaur/mail-core/utils/meet';
+import { featuresOf } from '#lib/features';
+import { createConnectedClient } from '#lib/server/jmap';
 import { getClientAddress } from '#lib/server/login';
 import { meetConfig, meetDisplayName, participantNames } from '#lib/server/meet';
 import type { PageServerLoad } from './$types';
@@ -22,7 +24,17 @@ export const load: PageServerLoad = async ({ params, cookies, request }) => {
 	const account = session ? getActiveAccount(session) : undefined;
 	// The lobby asks again while you wait (`whoIsHere`); this is the first answer.
 	const here = await participantNames(config, params.room);
+	// Where "back" leads after a call: the calendar, when this server has one.
+	let calendar = false;
+	if (session && account) {
+		try {
+			calendar = featuresOf(await createConnectedClient({ ...account, id: session.id })).calendars;
+		} catch {
+			// Server unreachable: back to mail.
+		}
+	}
 	return {
+		calendar,
 		room: params.room,
 		you: account ? { name: meetDisplayName(account), email: account.username } : null,
 		here

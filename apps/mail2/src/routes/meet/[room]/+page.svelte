@@ -88,7 +88,11 @@
 				{joining ? 'Joining…' : failed ? 'Try again' : 'Rejoin'}
 			</button>
 			{#if data.you}
-				<a class="btn-tactile !h-[34px]" href="/calendar"><MeetIcon name="calendar" /> Back to Calendar</a>
+				{#if data.calendar}
+					<a class="btn-tactile !h-[34px]" href="/calendar"><MeetIcon name="calendar" /> Back to Calendar</a>
+				{:else}
+					<a class="btn-tactile !h-[34px]" href="/">Back to Mail</a>
+				{/if}
 			{/if}
 		</div>
 	</main>
