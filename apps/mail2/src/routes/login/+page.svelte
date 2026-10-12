@@ -83,7 +83,8 @@
 		<AuthAlert tone="ok" title="Welcome — almost done" hint="Sign in with the address and password you just created." />
 	{/if}
 
-	<form {...login}>
+	<!-- Kit resets a form after every submit; a failed sign-in (or the 2FA prompt) keeps what was typed. -->
+	<form {...login.enhance(async (form) => void (await form.submit()))}>
 		<div class="mt-[18px] flex items-center gap-2.5">
 			<span class="z-caption">Credentials</span>
 			<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
