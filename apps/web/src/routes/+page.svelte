@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Morphik',
+			desc: 'Morphik: an open-source RAG backend for documents. Ingest PDFs, Office files and text, then search and ask questions over them through a REST API or the Python SDK, with any LiteLLM model.',
+			deploy: 'https://railway.com/deploy/morphik-rag',
+			source: 'https://github.com/nomideusz/morphik-railway'
+		},
+		{
 			name: 'Airweave',
 			desc: 'Airweave: the open-source context retrieval layer for AI agents. Syncs Notion, Slack, GitHub, Drive and 50+ more apps into Vespa hybrid search, with Temporal workers and a password-protected gateway.',
 			deploy: 'https://railway.com/deploy/airweave',
