@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Temporal',
+			desc: 'Temporal: the open-source durable execution engine. Server, password-protected Web UI and Postgres with advanced visibility, schema migrations on every deploy.',
+			deploy: 'https://railway.com/deploy/temporal-server',
+			source: 'https://github.com/nomideusz/temporal-railway'
+		},
+		{
 			name: 'Huly',
 			desc: 'Huly: the open-source all-in-one alternative to Linear, Slack and Notion. Issue tracking, team chat, collaborative docs and planning on Postgres, Elasticsearch and a Railway bucket.',
 			deploy: 'https://railway.com/deploy/huly-platform',
