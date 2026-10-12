@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Laminar',
+			desc: 'Laminar: open-source observability and evals for AI agents. OpenTelemetry tracing, evaluations, datasets and a SQL editor over your traces, on ClickHouse and Postgres.',
+			deploy: 'https://railway.com/deploy/laminar-observability',
+			source: 'https://github.com/nomideusz/laminar-railway'
+		},
+		{
 			name: 'T3 Code',
 			desc: 'Your always-on cloud agent box: the T3 Code server with Claude Code, Codex and OpenCode preinstalled, paired to the T3 web, desktop and mobile apps.',
 			deploy: 'https://railway.com/deploy/t3-code-cloud',
