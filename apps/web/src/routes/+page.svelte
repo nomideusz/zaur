@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Outline',
+			desc: 'Outline: the fast, collaborative team wiki and knowledge base. Ready on first boot: create your workspace and sign in with a passkey, then add SSO or SMTP for teammates.',
+			deploy: 'https://railway.com/deploy/outline-production',
+			source: 'https://github.com/nomideusz/outline-railway'
+		},
+		{
 			name: 'RAGFlow',
 			desc: 'RAGFlow: the open-source RAG engine with deep document understanding. Parse PDFs, Word, slides and spreadsheets into knowledge bases, then chat with them with grounded citations, on Elasticsearch, MySQL, MinIO and Redis.',
 			deploy: 'https://railway.com/deploy/ragflow-engine',
