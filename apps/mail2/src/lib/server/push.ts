@@ -74,7 +74,8 @@ export async function sendPush(
 	try {
 		await webpush.sendNotification(
 			JSON.parse(row.subscription) as BrowserPushSubscription,
-			JSON.stringify(message),
+			// The service worker cannot read env: tell it which icon set (#lib/brand) to draw with.
+			JSON.stringify({ ...message, icons: `/icons/${process.env.PUBLIC_APP_ICON?.trim() === 'zaur' ? 'zaur' : 'mail'}` }),
 			{ vapidDetails: keys, TTL: 60 * 60 * 24 }
 		);
 		return 'sent';

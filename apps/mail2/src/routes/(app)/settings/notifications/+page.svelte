@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '#lib/brand';
 	import { messageOf } from '#lib/errors';
 	import { onMount } from 'svelte';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
@@ -70,7 +71,7 @@
 	const note: Record<PushStatus, string> = {
 		unconfigured: 'Not set up on this server',
 		unsupported: 'This browser cannot show notifications',
-		install: 'Add Zaur Mail to your Home Screen (Share → Add to Home Screen) and open it from there',
+		install: `Add ${appName} to your Home Screen (Share → Add to Home Screen) and open it from there`,
 		denied: 'Blocked in your browser settings for this site',
 		off: 'Off on this device',
 		on: 'On for this device'

@@ -1,7 +1,8 @@
 <!doctype html>
 <!--
 	What the service worker answers a page load with when the network does not
-	(src/service-worker/index.ts). It is the ONLY thing the worker caches, so it
+	(src/service-worker/index.ts), served at /offline.html by
+	src/routes/offline.html/+server.ts, which fills in the {{…}} names. It is the ONLY thing the worker caches, so it
 	has to stand alone: no stylesheet, script, font or image of the app's. The
 	card is the sign-in card (AuthCard.svelte) and the colours are tokens.css's,
 	by hand. Change this file → bump OFFLINE_CACHE in the worker.
@@ -12,7 +13,7 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 		<meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#0f141a" media="(prefers-color-scheme: dark)" />
-		<title>Offline · Zaur Mail</title>
+		<title>Offline · {{APP_NAME}}</title>
 		<script>
 			// The chosen theme, as app.html does it; and come back by ourselves when the connection does.
 			try {
@@ -142,15 +143,15 @@
 				<svg width="24" height="24" viewBox="0 0 16 16" aria-hidden="true">
 					<rect width="16" height="16" rx="3.5" fill="#2563eb" />
 					<g fill="none" stroke="#fff" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
-						<path d="M2 4V12M14 4V12M2 4L8 8" stroke-opacity="0.45" />
-						<path d="M2 4H14L2 12H14" />
+						<path d="{{MARK_FAINT}}" stroke-opacity="0.45" />
+						<path d="{{MARK_BOLD}}" />
 					</g>
 				</svg>
-				Zaur
+				{{BRAND_NAME}}
 			</div>
 			<h1>You’re offline</h1>
 			<p>
-				Zaur Mail can’t be reached right now: the connection is down, or the server is not answering.
+				{{APP_NAME}} can’t be reached right now: the connection is down, or the server is not answering.
 				This page reloads by itself when the connection is back.
 			</p>
 			<!-- An empty href is this address: the page the person was opening, tried again. -->

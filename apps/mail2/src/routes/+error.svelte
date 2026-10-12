@@ -3,6 +3,7 @@
 	import { browser } from '$app/env';
 	import { page } from '$app/state';
 	import AuthCard from '#lib/components/auth/AuthCard.svelte';
+	import { appName } from '#lib/brand';
 	import { withOutboxLock } from '#lib/compose/outbox';
 
 	/**
@@ -15,7 +16,7 @@
 	/**
 	 * A section opened for the first time with no connection fails on its own
 	 * code, which is fetched when first needed. That is not an error of the
-	 * app's: it is the offline page (static/offline.html), said here, and like
+	 * app's: it is the offline page (#lib/offline.html), said here, and like
 	 * it this one comes back by itself. As it was when the error arrived — the
 	 * card must not change its story in the moment before the reload.
 	 */
@@ -62,20 +63,20 @@
 	});
 
 	const title = $derived(
-		offline ? 'You’re offline' : unloaded ? 'Can’t reach Zaur Mail' : missing ? 'Page not found' : 'Something went wrong'
+		offline ? 'You’re offline' : unloaded ? `Can’t reach ${appName}` : missing ? 'Page not found' : 'Something went wrong'
 	);
 	// Kit's own 404 says "Not Found", which the title already does.
 	const message = $derived(
 		offline
-			? 'This part of Zaur Mail needs a connection to open. It opens by itself when the connection is back.'
+			? `This part of ${appName} needs a connection to open. It opens by itself when the connection is back.`
 			: unloaded
-				? `This part of Zaur Mail could not be loaded. ${retrying ? 'Trying again…' : 'Check your connection and try again.'}`
+				? `This part of ${appName} could not be loaded. ${retrying ? 'Trying again…' : 'Check your connection and try again.'}`
 				: missing && (!page.error?.message || page.error.message === 'Not Found')
 					? 'There is nothing at this address.'
 					: (page.error?.message ?? 'Unknown error')
 	);
 	// Someone sent a meeting link that does not work may have no mailbox to go back to.
-	const home = $derived(page.url.pathname.startsWith('/meet/') ? 'Open Zaur Mail' : 'Back to Mail');
+	const home = $derived(page.url.pathname.startsWith('/meet/') ? `Open ${appName}` : 'Back to Mail');
 </script>
 
 <!-- The card took the place of the whole app, and a step through history to
@@ -84,7 +85,7 @@
 <svelte:window ononline={() => offline && reload()} onpopstate={reload} />
 
 <svelte:head>
-	<title>{title} · Zaur Mail</title>
+	<title>{title} · {appName}</title>
 </svelte:head>
 
 <AuthCard {title}>

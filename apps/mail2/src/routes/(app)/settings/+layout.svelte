@@ -2,6 +2,7 @@
 	import { page } from '$app/state';
 	import type { Snippet } from 'svelte';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
+	import { offered } from '#lib/features';
 	import { SETTINGS_GROUPS, settingsSection } from '#lib/settings/sections';
 	import { CHANNELS, channelStyle } from '#lib/mail/colors';
 	import { adoptAccountPrefs } from '#lib/settings.svelte.ts';
@@ -25,6 +26,10 @@
 	});
 
 	const selected = channelStyle(CHANNELS.correspondence);
+	// Only the pages this server has something for (#lib/features).
+	const groups = $derived(
+		SETTINGS_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => offered(item.href, page.data.features)) }))
+	);
 </script>
 
 <svelte:head><title>{shell.title(isRoot ? 'Settings' : `${current.label} · Settings`)}</title></svelte:head>
@@ -37,7 +42,7 @@
 			class="w-[var(--z-sidebar-width)] shrink-0 overflow-y-auto border-r border-[var(--z-line)] bg-[var(--z-surface)] px-3 py-4 select-none max-md:hidden"
 			aria-label="Settings"
 		>
-			{#each SETTINGS_GROUPS as group, index (group.label)}
+			{#each groups as group, index (group.label)}
 				<h2 class="z-caption mb-[9px] px-1.5 {index ? 'mt-5' : ''}">{group.label}</h2>
 				<ul class="flex flex-col gap-[3px]" role="list">
 					{#each group.items as item (item.href)}
@@ -81,7 +86,7 @@
 
 				<!-- A phone has no room for the side list: Account opens with it underneath, one card per group. -->
 				{#if isRoot}
-					{#each SETTINGS_GROUPS as group (group.label)}
+					{#each groups as group (group.label)}
 						{@const items = group.items.filter((item) => item.href !== '/settings')}
 						<section class="md:hidden" aria-label={group.label}>
 							<h2 class="z-caption mb-2 px-1">{group.label}</h2>

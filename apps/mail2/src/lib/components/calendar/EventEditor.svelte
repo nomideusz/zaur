@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { meetName } from '#lib/brand';
 	import { untrack } from 'svelte';
 	import type { Calendar, CalendarEvent, EventRecurrence } from '@zaur/mail-core';
 	import { calendarKey, isRecurringInstance, recurrenceFrom } from '@zaur/mail-core';
@@ -331,7 +332,7 @@
 						</span>
 						<span class="min-w-0 flex-1">
 							<span class="block text-[13.5px] font-semibold">Video call</span>
-							<span class="block text-[12px] opacity-85">Zaur Meet</span>
+							<span class="block text-[12px] opacity-85">{meetName}</span>
 						</span>
 						<input type="checkbox" role="switch" class="z-check" checked={Boolean(meeting)} onchange={(e) => setMeeting(e.currentTarget.checked)} />
 					</label>

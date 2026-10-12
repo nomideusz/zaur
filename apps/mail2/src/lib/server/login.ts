@@ -30,9 +30,36 @@ import { safeNextPath } from '@zaur/server-auth/internal-auth';
 import { createConnectedClient } from '#lib/server/jmap';
 import { reportError } from '#lib/server/report';
 
-/** Public JMAP server — stored in the session; JMAP_INTERNAL_URL overrides it per-request. */
+/**
+ * Public JMAP server — stored in the session; JMAP_INTERNAL_URL overrides it
+ * per-request. A base URL (https://mail.example.com) is discovered through
+ * /.well-known/jmap; a URL with a path is the session resource itself
+ * (https://api.fastmail.com/jmap/session).
+ */
 export function jmapServerUrl(): string {
-	return process.env.PUBLIC_JMAP_SERVER_URL?.trim() || 'https://mail.zaur.app';
+	// Stalwart's OAuth issuer is the same server, so a deployment that only set that keeps working.
+	const url =
+		process.env.PUBLIC_JMAP_SERVER_URL?.trim() ||
+		(jmapAuthMode() === 'stalwart' ? process.env.STALWART_OAUTH_ISSUER_URL?.trim() : undefined);
+	if (!url) throw new Error('PUBLIC_JMAP_SERVER_URL is not set');
+	return url;
+}
+
+/**
+ * How /login turns what was typed into a session (JMAP_AUTH):
+ * - `stalwart` (default): Stalwart's credential flow when STALWART_OAUTH_* is
+ *   set (tokens in the session, 2FA prompt), else HTTP Basic with Stalwart's
+ *   `password$code` 2FA convention.
+ * - `basic`: plain HTTP Basic against the JMAP session (Cyrus, Apache James,
+ *   Stalwart without OAuth). The password is sealed in the session store.
+ * - `token`: the password field takes an API/app token, sent as Bearer
+ *   (Fastmail). Sealed in the session store like a password.
+ */
+export type JmapAuthMode = 'stalwart' | 'basic' | 'token';
+
+export function jmapAuthMode(env: Record<string, string | undefined> = process.env): JmapAuthMode {
+	const mode = env.JMAP_AUTH?.trim().toLowerCase();
+	return mode === 'basic' || mode === 'token' ? mode : 'stalwart';
 }
 
 /**
@@ -101,10 +128,21 @@ export async function attemptLogin(input: {
 	userAgent: string | null;
 }): Promise<LoginAttempt> {
 	const email = input.email.trim().toLowerCase();
-	const serverUrl = jmapServerUrl();
+	let serverUrl: string;
+	try {
+		serverUrl = jmapServerUrl();
+	} catch (error) {
+		console.error('[Mail2 Login]', error);
+		return { status: 'unavailable' };
+	}
+	const mode = jmapAuthMode();
 
 	let sessionData: SessionData;
-	if (isStalwartOauthEnabled()) {
+	if (mode === 'token') {
+		sessionData = { serverUrl, username: email, authMethod: 'token', accessToken: input.password.trim() };
+	} else if (mode === 'basic') {
+		sessionData = { serverUrl, username: email, authMethod: 'password', password: input.password };
+	} else if (isStalwartOauthEnabled()) {
 		let authResult;
 		try {
 			authResult = await authenticateStalwartCredentials({
@@ -145,9 +183,11 @@ export async function attemptLogin(input: {
 	// from the account's identities — same as webmail's login.
 	try {
 		const client = await createConnectedClient(sessionData);
+		// A token names its account: key the session by the server's username.
+		if (mode === 'token') sessionData.username = client.getUsername().trim().toLowerCase() || email;
 		const identities = await client.getIdentities();
-		const primary = findIdentityEmail(identities, email) ?? identities[0];
-		sessionData.displayName = primary?.name || primary?.email || email;
+		const primary = findIdentityEmail(identities, sessionData.username) ?? identities[0];
+		sessionData.displayName = primary?.name || primary?.email || sessionData.username;
 	} catch (error) {
 		if (classifyJmapError(error) === 'invalid_credentials') {
 			return { status: 'invalid_credentials' };

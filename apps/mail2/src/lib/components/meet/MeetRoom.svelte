@@ -9,6 +9,7 @@
 </script>
 
 <script lang="ts">
+	import { meetName } from '#lib/brand';
 	import { onMount } from 'svelte';
 	import type { LocalAudioTrack, LocalVideoTrack, Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
 	import { Menu } from '@ark-ui/svelte/menu';
@@ -291,7 +292,7 @@
 			try {
 				await room.connect(ticket.wsUrl, ticket.token);
 			} catch (cause) {
-				console.error('Zaur Meet: connect failed', cause);
+				console.error('Meet: connect failed', cause);
 				if (leaving) return;
 				leaving = true;
 				onEnd({ failed: 'The call server did not answer. The link is fine — try again in a moment.', elapsed: 0, others: 0 });
@@ -431,7 +432,7 @@
 
 	async function copyLink() {
 		if (nativeShare) {
-			await navigator.share({ title: 'Zaur Meet', url: link }).catch(() => {});
+			await navigator.share({ title: meetName, url: link }).catch(() => {});
 			return;
 		}
 		await navigator.clipboard.writeText(link);
@@ -633,7 +634,7 @@
 				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><path d="M3 3H13L3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
 			</span>
 			<span class="h-4 w-px bg-[var(--z-line)] max-md:hidden"></span>
-			<h1 class="truncate text-[14px] font-semibold">Zaur Meet</h1>
+			<h1 class="truncate text-[14px] font-semibold">{meetName}</h1>
 			{#if startedAt}
 				<span class="z-mono inline-flex h-[22px] shrink-0 items-center gap-1.5 rounded-[6px] border border-[var(--z-line)] bg-[var(--z-sunken)] px-2 text-[11.5px] font-semibold text-[var(--z-strong)]">
 					<span class="size-[7px] rounded-full {statusLine.dot}"></span>
@@ -732,7 +733,7 @@
 					<div class="w-full max-w-[560px] rounded-[12px] border border-[var(--z-line)] bg-[var(--z-surface)] px-4 py-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.3)]">
 						<div class="text-[15px] font-semibold">You're the first one here</div>
 						<p class="mt-1 text-[13px] leading-[1.55] text-[var(--z-muted)]">
-							Anyone with the link can join. Guests type a name; people with a Zaur account join as themselves.
+							Anyone with the link can join. Guests type a name; people with an account here join as themselves.
 						</p>
 						<div class="mt-3 flex gap-2 max-md:flex-col">
 							{@render linkRow()}

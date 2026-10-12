@@ -38,15 +38,14 @@ import {
 	type SessionData
 } from '@zaur/server-auth';
 import { JMAPClient, classifyJmapError } from '@zaur/mail-core';
+import { isOauthSession } from '#lib/server/jmap';
 import { jmapServerUrl } from '#lib/server/login';
 
 export const STEP_UP_TTL_MS = 5 * 60_000;
 
 export type IdentityCheck = 'verified' | 'mfa_required' | 'failure' | 'unavailable';
 
-export function isOauthAccount(account: SessionData): boolean {
-	return account.authMethod === 'oauth' || (!account.password && Boolean(account.accessToken));
-}
+export const isOauthAccount = isOauthSession;
 
 export function hasRecentStepUp(account: SessionData, now = Date.now()): boolean {
 	return Boolean(
@@ -97,19 +96,27 @@ export async function checkCredentials(input: {
 	}
 
 	// Password fallback: the only way to ask Stalwart is to open a session.
+	// An API token (JMAP_AUTH=token) is checked the same way, as Bearer, and must be this account's.
+	const token = account.authMethod === 'token';
 	const secret = totp ? `${input.password}$${totp}` : input.password;
 	try {
 		const client = new JMAPClient(
 			process.env.JMAP_INTERNAL_URL || account.serverUrl || jmapServerUrl(),
 			account.username,
-			secret
+			token ? input.password.trim() : secret,
+			false,
+			token
 		);
 		await client.connect();
+		if (token && accountKey(client.getUsername()) !== accountKey(account.username)) return { status: 'failure' };
 	} catch (cause) {
 		if (classifyJmapError(cause) === 'invalid_credentials') return { status: 'failure' };
 		return { status: 'unavailable' };
 	}
-	return { status: 'verified', next: { ...account, authMethod: 'password', password: secret } };
+	return {
+		status: 'verified',
+		next: token ? { ...account, accessToken: input.password.trim() } : { ...account, authMethod: 'password', password: secret }
+	};
 }
 
 /** Record a proof for this session and rotate its id. */

@@ -40,11 +40,11 @@ export default defineConfig({
 					'font-src': ['self'],
 					// Attachment previews are blob: URLs; Meet's camera tiles are mediastream:.
 					'media-src': ['self', 'blob:', 'mediastream:'],
-					// Traceway takes the browser's error reports; Meet talks to LiveKit
-					// Cloud (signal over wss, region lookup over https, TURN relays).
+					// Meet talks to LiveKit Cloud (signal over wss, region lookup over
+					// https, TURN relays). Traceway's origin, which takes the browser's
+					// error reports, is added at runtime from PUBLIC_TRACEWAY_DSN (hooks.server.ts).
 					'connect-src': [
 						'self',
-						'https://traceway.zaur.app',
 						'https://*.livekit.cloud',
 						'wss://*.livekit.cloud',
 						'https://*.turn.livekit.cloud',

@@ -1,5 +1,6 @@
 import { getContext, setContext, type Snippet } from 'svelte';
 import type { ChangedTypes } from '#lib/mail/live';
+import { appName } from '#lib/brand';
 
 /**
  * The shell's header belongs to the `(app)` layout, so the mark, the section
@@ -21,7 +22,7 @@ export class Shell {
 	unread = $state(0);
 	/** A section's tab title: a pinned tab says how much is waiting in the inbox, whichever section it is on. */
 	title(name: string): string {
-		return `${this.unread > 0 ? `(${this.unread}) ` : ''}${name} · Zaur Mail`;
+		return `${this.unread > 0 ? `(${this.unread}) ` : ''}${name} · ${appName}`;
 	}
 	/**
 	 * Who holds the bar — deliberately not state. An effect's teardown reads

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
+	import { addressKind, appName, mailDomain } from '#lib/brand';
 	import AuthCard, { fieldClass, inputClass, linkClass } from '#lib/components/auth/AuthCard.svelte';
 	import { login } from '../login.remote';
 	import type { PageProps } from './$types';
@@ -11,6 +12,8 @@
 	const result = $derived(login.result);
 	const needsTotp = $derived(result?.requiresTotp === true);
 	const error = $derived(result && !result.ok ? (result.error ?? null) : null);
+	/** JMAP_AUTH=token (Fastmail): the second field takes an API token. */
+	const secretLabel = $derived(data.authMode === 'token' ? 'API token' : 'Password');
 
 	/**
 	 * The two errors Stalwart actually returns — a rejected sign-in and a
@@ -52,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>{data.addingTo ? 'Add an account' : 'Sign in'} · Zaur Mail</title>
+	<title>{data.addingTo ? 'Add an account' : 'Sign in'} · {appName}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -64,7 +67,7 @@
 		</p>
 	{:else if data.continueTo}
 		<p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">
-			to continue to <span class="font-semibold text-[var(--z-strong)]">{data.continueTo}</span>, with your Zaur address.
+			to continue to <span class="font-semibold text-[var(--z-strong)]">{data.continueTo}</span>, with your {addressKind}.
 		</p>
 	{/if}
 
@@ -73,8 +76,8 @@
 			tone="ok"
 			title="Signed out everywhere"
 			hint={data.returnName
-				? `You're signed out of ${data.returnName} and Zaur Mail. Sign in to get back to ${data.returnName}.`
-				: "You're signed out of Zaur Mail. Sign in again whenever you're ready."}
+				? `You're signed out of ${data.returnName} and ${appName}. Sign in to get back to ${data.returnName}.`
+				: `You're signed out of ${appName}. Sign in again whenever you're ready.`}
 		/>
 	{:else if data.welcome}
 		<AuthAlert tone="ok" title="Welcome — almost done" hint="Sign in with the address and password you just created." />
@@ -100,7 +103,7 @@
 				<!-- Typing on arrival lands in the first field still to fill in. -->
 				<!-- svelte-ignore a11y_autofocus -->
 				<input
-					{...login.fields.email.as('email', data.email)}
+					{...login.fields.email.as(data.authMode === 'stalwart' ? 'email' : 'text', data.email)}
 					id="login-email"
 					autofocus={!data.email}
 					required
@@ -109,7 +112,7 @@
 					autocorrect="off"
 					spellcheck="false"
 					enterkeyhint="next"
-					placeholder="you@zaur.app"
+					placeholder="you@{mailDomain}"
 					aria-label="Email"
 					disabled={pending}
 					class={inputClass}
@@ -129,8 +132,8 @@
 					required
 					autocomplete="current-password"
 					enterkeyhint="go"
-					placeholder="Password"
-					aria-label="Password"
+					placeholder={secretLabel}
+					aria-label={secretLabel}
 					disabled={pending}
 					class={inputClass}
 				/>

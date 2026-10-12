@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { messageOf } from '#lib/errors';
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
+	import { appName } from '#lib/brand';
+	import { offered } from '#lib/features';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import ConfirmIdentity from '#lib/components/settings/ConfirmIdentity.svelte';
 	import { describeUserAgent, relativeTime } from '#lib/settings/devices';
@@ -103,8 +106,9 @@
 		<!-- One span: the foot is a flex row, and a sentence split into its items breaks at the link. -->
 		<p class="z-card-foot">
 			<span>
-				Browsers signed in through Zaur Mail (1.0 and 2.0 share these). Mail apps are not listed — revoke their
-				<a href="/settings/app-passwords" class="font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)]">app password</a>.
+				Browsers signed in through {appName}. Mail apps are not listed{#if offered('/settings/app-passwords', page.data.features)}
+					— revoke their
+					<a href="/settings/app-passwords" class="font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)]">app password</a>{/if}.
 			</span>
 		</p>
 	</section>

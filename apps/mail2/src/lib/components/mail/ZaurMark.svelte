@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import { appName, MARK } from '#lib/brand';
 
 	/**
-	 * The brand mark and the shell's home button: the Z that folds an envelope.
+	 * The brand mark and the shell's home button (#lib/brand: Zaur's Z that folds
+	 * an envelope, or a plain envelope).
 	 * The envelope's top edge, the flap's long arm and its bottom edge are one
 	 * stroke — a Z; the sides and the flap's short arm are the same stroke, faint.
 	 * It is a button among buttons: the same `btn-tactile` body, the same
@@ -25,7 +27,7 @@
 		class?: string;
 	}
 
-	let { href = '/', label = 'Zaur Mail', onNavigate, class: className = '' }: Props = $props();
+	let { href = '/', label = appName, onNavigate, class: className = '' }: Props = $props();
 
 	const isHome = $derived(page.url.pathname === href);
 	const title = $derived(isHome ? label : `${label} — back to Mail`);
@@ -50,8 +52,8 @@
 >
 	<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 		<g stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-			<path d="M2 4V12M14 4V12M2 4L8 8" stroke-opacity="0.4" />
-			<path d="M2 4H14L2 12H14" />
+			<path d={MARK.faint} stroke-opacity="0.4" />
+			<path d={MARK.bold} />
 		</g>
 	</svg>
 </a>

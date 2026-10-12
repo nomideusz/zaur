@@ -48,8 +48,10 @@ import {
 	requestRecoveryEmailChange
 } from '#lib/server/recovery';
 import { reportError } from '#lib/server/report';
+import { appName } from '#lib/brand';
+import { featuresOf } from '#lib/features';
 
-const TOTP_ISSUER = 'Zaur Mail';
+const TOTP_ISSUER = appName;
 const TOTP_SETUP_TTL_MS = 10 * 60_000;
 
 /* ── Shapes ─────────────────────────────────────────────────────────────── */
@@ -136,7 +138,10 @@ export const securityOverview = query(async (): Promise<SecurityOverview> => {
 	let serverError: string | null = null;
 	try {
 		const client = await connect(account);
-		({ totpEnabled, appPasswords, apiKeys } = await getAccountSecurityOverview(client));
+		// Only Stalwart has these (#lib/features); elsewhere the page is just the devices.
+		if (featuresOf(client).security) {
+			({ totpEnabled, appPasswords, apiKeys } = await getAccountSecurityOverview(client));
+		}
 	} catch (cause) {
 		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
 		serverError =

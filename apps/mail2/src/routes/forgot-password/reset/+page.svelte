@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '#lib/brand';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
 	import AuthCard, { fieldClass, inputClass, linkClass } from '#lib/components/auth/AuthCard.svelte';
 	import { resetPassword } from '../../reset.remote';
@@ -12,7 +13,7 @@
 </script>
 
 <svelte:head>
-	<title>New password · Zaur Mail</title>
+	<title>New password · {appName}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 

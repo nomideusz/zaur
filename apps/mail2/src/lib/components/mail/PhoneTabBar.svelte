@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/state';
 	import { identityStyle } from '#lib/mail/colors';
+	import { offered } from '#lib/features';
 	import { initials } from '#lib/mail/rows';
 	import { whoami } from '../../../routes/session.remote';
 	import { sectionIcon, sections } from './SectionTabs.svelte';
@@ -15,13 +16,15 @@
 	 */
 	const who = whoami();
 	const session = $derived(who.current ?? null);
+	const shown = $derived(sections.filter((section) => offered(section.href, page.data.features)));
 </script>
 
 <nav
-	class="z-tabbar grid h-14 shrink-0 grid-cols-5 border-t border-[var(--z-line)] bg-[var(--z-surface)] select-none md:hidden"
+	class="z-tabbar grid h-14 shrink-0 border-t border-[var(--z-line)] bg-[var(--z-surface)] select-none md:hidden"
 	aria-label="Sections"
+	style="grid-template-columns: repeat({shown.length}, minmax(0, 1fr))"
 >
-	{#each sections as section (section.href)}
+	{#each shown as section (section.href)}
 		{@const current = section.match(page.url.pathname)}
 		<a
 			href={section.href}

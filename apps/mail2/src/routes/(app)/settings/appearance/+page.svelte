@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '#lib/brand';
 	import { prefs, setPref, THEMES, LIST_MIN, LIST_MAX, DEFAULT_PREFS } from '#lib/settings.svelte.ts';
 	import { install } from '#lib/install.svelte.ts';
 </script>
@@ -55,7 +56,7 @@
 	<section class="z-card">
 		<div class="flex items-center justify-between gap-4 px-4 py-3">
 			<span class="min-w-0">
-				<span class="block text-[13.5px] font-medium text-[var(--z-body)]">Install Zaur Mail</span>
+				<span class="block text-[13.5px] font-medium text-[var(--z-body)]">Install {appName}</span>
 				<span class="mt-[1px] block text-[12px] leading-[1.4] text-[var(--z-soft)]">
 					{install.ios ? 'Tap Share, then Add to Home Screen.' : 'Its own window and icon, like any other app.'}
 				</span>

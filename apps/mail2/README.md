@@ -83,7 +83,12 @@ The credential flow reuses webmail 1.0's exactly, via the shared
   `https://mail2.zaur.app/api/auth/oauth/callback`).
 - **Password fallback (dev default):** with no OAuth config, credentials go
   via HTTP Basic to the JMAP server and the password is sealed in the session
-  store. Works out of the box against the live mail server.
+  store. `.env.example` points it at the live mail server.
+- **Other JMAP servers:** `JMAP_AUTH=basic` (HTTP Basic: Cyrus, Apache James)
+  or `JMAP_AUTH=token` (an API token as Bearer: Fastmail, with
+  `PUBLIC_JMAP_SERVER_URL=https://api.fastmail.com/jmap/session`). Sections and
+  settings pages the server does not advertise a capability for are not linked
+  (`#lib/features`).
 - Accounts with 2FA get the TOTP prompt (`mfa_required` → second submit with
   the six-digit code).
 - Login attempts are rate-limited per client address and per account through
@@ -209,6 +214,8 @@ Service settings:
 | Env | `STALWART_OAUTH_ENABLED=true`, `STALWART_OAUTH_ISSUER_URL=https://mail.zaur.app` |
 | Env | `STALWART_OAUTH_CLIENT_ID=zaur-mail2-prod`, `STALWART_OAUTH_REDIRECT_URI=https://mail2.zaur.app/api/auth/oauth/callback` |
 | Env | `JMAP_INTERNAL_URL=http://mail:8080` |
+| Env | `PUBLIC_JMAP_SERVER_URL=https://mail.zaur.app` — optional here (falls back to `STALWART_OAUTH_ISSUER_URL`); `JMAP_AUTH` unset (Stalwart's flow) |
+| Env | `PUBLIC_APP_NAME=Zaur Mail`, `PUBLIC_BRAND_NAME=Zaur`, `PUBLIC_MAIL_DOMAIN=zaur.app`, `PUBLIC_APP_ICON=zaur` — the branding; unset, the app is a neutral "Webmail" |
 | Env | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — notifications; webmail's values work (`npx web-push generate-vapid-keys` for new ones). Unset, the settings card says so |
 | Env | `PUBLIC_TRACEWAY_DSN=<token>@https://traceway.zaur.app/api/report` — optional; browser and server errors, plus server tracing (`src/lib/server/tracing.ts`) |
 | Volume | the host directory 1.0 webmail used for `/app/.data` → `/app/.data` |

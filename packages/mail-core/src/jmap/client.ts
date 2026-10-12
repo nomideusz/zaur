@@ -109,6 +109,14 @@ async function whenNotBusy(send: () => Promise<Response>): Promise<Response> {
 
 const sessionCache = new Map<string, CachedSessionEntry>();
 
+function originOf(url: string): string | null {
+	try {
+		return new URL(url).origin;
+	} catch {
+		return null;
+	}
+}
+
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
 const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
 const FILENODE_URN = 'urn:ietf:params:jmap:filenode';
@@ -460,7 +468,10 @@ export class JMAPClient {
 			return;
 		}
 
-		const sessionUrl = `${this.serverUrl}/.well-known/jmap`;
+		// A base URL is discovered (RFC 8620 §2.2); one with a path is the session
+		// resource itself, e.g. Fastmail's https://api.fastmail.com/jmap/session.
+		const sessionUrl =
+			new URL(this.serverUrl).pathname.length > 1 ? this.serverUrl : `${this.serverUrl}/.well-known/jmap`;
 		// Bearer tokens rotate and must not become long-lived cache keys containing
 		// credentials. OAuth sessions reconnect against Stalwart instead.
 		const cacheKey = this.isTokenAuth ? '' : `${this.serverUrl}|${this.authHeader}`;
@@ -724,14 +735,21 @@ export class JMAPClient {
 		}
 	}
 
+	/**
+	 * Only URLs on the API's own origin are moved onto `serverUrl` (the internal
+	 * route): a server that hands blobs out from another host (Fastmail's
+	 * fastmailusercontent.com) keeps that host.
+	 */
 	private rewriteSessionUrls(session: JMAPSession): void {
-		session.apiUrl = this.rewriteSessionUrl(session.apiUrl);
-		session.downloadUrl = this.rewriteSessionUrl(session.downloadUrl);
+		const apiOrigin = originOf(session.apiUrl);
+		const rewrite = (url: string) => (originOf(url) === apiOrigin ? this.rewriteSessionUrl(url) : url);
+		session.apiUrl = rewrite(session.apiUrl);
+		session.downloadUrl = rewrite(session.downloadUrl);
 		if (session.uploadUrl) {
-			session.uploadUrl = this.rewriteSessionUrl(session.uploadUrl);
+			session.uploadUrl = rewrite(session.uploadUrl);
 		}
 		if (session.eventSourceUrl) {
-			session.eventSourceUrl = this.rewriteSessionUrl(session.eventSourceUrl);
+			session.eventSourceUrl = rewrite(session.eventSourceUrl);
 		}
 	}
 
@@ -2660,7 +2678,14 @@ export class JMAPClient {
 	}
 
 	openEventStream(): Promise<Response> {
-		const EVENT_SOURCE_TYPES = 'Mailbox,Email,CalendarEvent,Calendar,ContactCard,AddressBook';
+		// Only types the server has: Apache James answers 400 to one it does not know.
+		const EVENT_SOURCE_TYPES = [
+			'Mailbox,Email',
+			this.hasCalendars() && 'CalendarEvent,Calendar',
+			this.hasContacts() && 'ContactCard,AddressBook'
+		]
+			.filter(Boolean)
+			.join(',');
 		if (this.proxyMode) {
 			return fetch('/api/jmap/events');
 		}

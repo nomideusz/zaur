@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { meetName } from '#lib/brand';
 	import { untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
@@ -872,7 +873,7 @@
 											<span class="text-[13.5px] font-semibold">{event.title}</span>
 											<span class="text-[12px] opacity-80">{formatEventTime(event)}</span>
 											{#if meeting}
-												<span class="truncate text-[12px] opacity-70">Zaur Meet</span>
+												<span class="truncate text-[12px] opacity-70">{meetName}</span>
 											{:else if event.location}
 												<span class="truncate text-[12px] opacity-70">{event.location}</span>
 											{/if}

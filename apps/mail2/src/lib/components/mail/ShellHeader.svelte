@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '#lib/brand';
 	import type { Snippet } from 'svelte';
 	import { online } from 'svelte/reactivity/window';
 	import { updated } from '$app/state';
@@ -85,7 +86,7 @@
 			<button
 				type="button"
 				class="btn-tactile !h-[26px] !px-2 !text-[12px]"
-				title="A new version of Zaur Mail is ready"
+				title="A new version of {appName} is ready"
 				aria-label="Reload to update"
 				onclick={() => location.reload()}
 			>

@@ -24,7 +24,11 @@ function normalizeOrigin(value: string): string {
 }
 
 export function isStalwartOauthEnabled(): boolean {
+	// JMAP_AUTH=basic|token (mail2's generic JMAP sign-in) never uses Stalwart's flow.
+	const mode = process.env.JMAP_AUTH?.trim().toLowerCase();
 	return (
+		mode !== 'basic' &&
+		mode !== 'token' &&
 		process.env.STALWART_OAUTH_ENABLED === 'true' &&
 		Boolean(process.env.STALWART_OAUTH_CLIENT_ID?.trim()) &&
 		Boolean(process.env.STALWART_OAUTH_ISSUER_URL?.trim())

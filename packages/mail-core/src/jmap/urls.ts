@@ -21,6 +21,8 @@ export function buildDownloadUrl(
 			.replaceAll('{accountId}', encodeURIComponent(accountId))
 			.replaceAll('{blobId}', encodeURIComponent(blobId))
 			.replaceAll('{name}', encodeURIComponent(name));
+		// RFC 8620 §6.2: the template names the type itself (Fastmail: `?type={type}`).
+		if (path.includes('{type}')) return path.replaceAll('{type}', encodeURIComponent(type));
 		const separator = path.includes('?') ? '&' : '?';
 		return `${path}${separator}accept=${encodeURIComponent(type)}`;
 	}

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { meetName } from '#lib/brand';
 	import { page } from '$app/state';
 	import MeetLobby, { type MediaChoice } from '#lib/components/meet/MeetLobby.svelte';
 	import MeetRoom, { type CallEnd } from '#lib/components/meet/MeetRoom.svelte';
@@ -56,7 +57,7 @@
 </script>
 
 <svelte:head>
-	<title>Zaur Meet</title>
+	<title>{meetName}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 

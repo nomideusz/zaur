@@ -9,7 +9,8 @@ export interface SessionData {
 	serverUrl: string;
 	username: string;
 	displayName?: string;
-	authMethod?: 'password' | 'oauth';
+	/** 'token': a static API token sent as Bearer (JMAP_AUTH=token), never refreshed. */
+	authMethod?: 'password' | 'oauth' | 'token';
 	password?: string;
 	accessToken?: string;
 	refreshToken?: string;

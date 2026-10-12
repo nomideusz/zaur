@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { meetName } from '#lib/brand';
 	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/env';
 	import { afterNavigate, goto } from '$app/navigation';
@@ -577,8 +578,8 @@
 		} else if (invite && isMeetGroupId(invite)) {
 			compose.newDraft({
 				...panelPosition(),
-				subject: 'Join me on Zaur Meet',
-				body: `Join me on Zaur Meet:\n${link.origin}${meetingJoinPath(invite)}\n\nNo account needed: open the link, type your name and join.`,
+				subject: `Join me on ${meetName}`,
+				body: `Join me on ${meetName}:\n${link.origin}${meetingJoinPath(invite)}\n\nNo account needed: open the link, type your name and join.`,
 				focusTarget: 'to'
 			});
 		}

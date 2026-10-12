@@ -61,6 +61,8 @@ interface PushMessage {
 	url?: string;
 	tag?: string;
 	unreadCount?: number;
+	/** Path of the icon set, e.g. `/icons/mail` (#lib/server/push). */
+	icons?: string;
 }
 
 type BadgeNavigator = WorkerNavigator & {
@@ -89,8 +91,8 @@ self.addEventListener('push', (event) => {
 				// A notification that replaces one with the same tag (a reply in the
 				// same thread, the next batch) arrives silently unless told otherwise.
 				renotify: true,
-				icon: '/icon-192.png',
-				badge: '/badge.png',
+				icon: `${message.icons ?? '/icons/mail'}/icon-192.png`,
+				badge: `${message.icons ?? '/icons/mail'}/badge.png`,
 				data: { url: message.url || '/' }
 			} as NotificationOptions),
 			badge?.catch(() => {})

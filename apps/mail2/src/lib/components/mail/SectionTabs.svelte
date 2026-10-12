@@ -12,6 +12,8 @@
 
 <script lang="ts">
 	import { page } from '$app/state';
+	import { MARK } from '#lib/brand';
+	import { offered } from '#lib/features';
 
 	/**
 	 * The shell's sections. One segmented control, drawn the same wherever it
@@ -36,8 +38,8 @@
 	<svg class={className} viewBox="0 0 16 16" fill="none" aria-hidden="true">
 		<g stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
 			{#if href === '/'}
-				<path d="M2 4V12M14 4V12M2 4L8 8" stroke-opacity="0.4" />
-				<path d="M2 4H14L2 12H14" />
+				<path d={MARK.faint} stroke-opacity="0.4" />
+				<path d={MARK.bold} />
 			{:else if href === '/contacts'}
 				<circle cx="8" cy="5.5" r="2.5" />
 				<path d="M3.5 13.5c.6-2.4 2.3-3.5 4.5-3.5s3.9 1.1 4.5 3.5" />
@@ -55,7 +57,7 @@
 {/snippet}
 
 <nav class="z-group {className}" aria-label="Sections">
-	{#each sections as section (section.href)}
+	{#each sections.filter((section) => offered(section.href, page.data.features)) as section (section.href)}
 		<a
 			href={section.href}
 			aria-current={current?.href === section.href ? 'page' : undefined}

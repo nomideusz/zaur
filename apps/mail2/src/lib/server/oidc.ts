@@ -14,7 +14,7 @@ import {
 	type OidcClient,
 	type OidcKeypair
 } from '@zaur/server-auth/oidc';
-import { getFreshOauthSession } from '#lib/server/jmap';
+import { getFreshOauthSession, isOauthSession } from '#lib/server/jmap';
 import { getAccountProfile } from '#lib/server/recovery';
 
 /** OIDC_PROVIDER_CLIENTS (JSON), plus the legacy single-client triple. None → the routes 404. */
@@ -82,7 +82,7 @@ export async function resolveOidcClaims(account: SessionData): Promise<AuthCodeD
 		name: displayName && displayName.toLowerCase() !== email ? displayName : email.split('@')[0]
 	};
 
-	if (account.authMethod === 'oauth' || account.accessToken) {
+	if (isOauthSession(account)) {
 		const endpoint = await userinfoEndpoint();
 		const ask = (token: string) =>
 			fetch(endpoint, {

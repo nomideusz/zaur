@@ -11,6 +11,7 @@
 </script>
 
 <script lang="ts">
+	import { meetName } from '#lib/brand';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/env';
 	import { whoIsHere } from '../../../routes/meet.remote';
@@ -317,7 +318,7 @@
 				<span class="btn-tactile !size-8 !cursor-default !p-0" aria-hidden="true">
 					<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><path d="M3 3H13L3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				</span>
-				<span class="text-[13px] font-semibold text-[var(--z-muted)]">Zaur Meet</span>
+				<span class="text-[13px] font-semibold text-[var(--z-muted)]">{meetName}</span>
 			</div>
 
 			<h1 class="text-[24px] leading-[1.15] font-bold tracking-[-0.025em] text-[var(--z-ink)] max-md:text-[20px]">Ready to join?</h1>

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Draw Zaur Mail's icons: the Z that folds an envelope.
+"""Draw the app's icons, two sets: a plain envelope (static/icons/mail/, the
+default) and Zaur's Z that folds an envelope (static/icons/zaur/), picked at
+runtime by PUBLIC_APP_ICON (#lib/brand.ts mirrors both marks).
 
 On a 16-unit grid, an envelope 12 x 8. Its top edge, the flap's long arm
 running corner to corner, and its bottom edge are one bold stroke — a Z. The
@@ -9,7 +11,10 @@ White on the accent blue, deepening downward (--z-accent-stroke to
 
 Every file comes from the one SVG below, favicon.svg included.
 
-    python3 scripts/generate-icons.py      # writes into static/ (needs cairosvg, Pillow)
+    python3 scripts/generate-icons.py      # writes into static/icons/ (needs cairosvg, Pillow)
+
+The plain set's favicon.ico also goes to static/, for browsers that ask
+/favicon.ico before reading the page.
 """
 import io
 from pathlib import Path
@@ -19,12 +24,12 @@ from PIL import Image
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
 
-# The mark on its grid — mirrored in ZaurMark.svelte.
-FAINT = "M2 4V12M14 4V12M2 4L8 8"
-BOLD = "M2 4H14L2 12H14"
-
-
-def svg(share: float, stroke: float, radius: float, tile: bool = True) -> str:
+# Each mark on its grid, faint stroke then bold — mirrored in src/lib/brand.ts.
+MARKS = {
+    "mail": ("M2 4L8 8L14 4", "M2 4H14V12H2Z"),
+    "zaur": ("M2 4V12M14 4V12M2 4L8 8", "M2 4H14L2 12H14"),
+}
+def svg(mark: tuple[str, str], share: float, stroke: float, radius: float, tile: bool = True) -> str:
     """The mark scaled to `share` of a 16-unit tile with corner `radius`; `tile=False` leaves it bare (alpha only)."""
     back = (
         '<defs><linearGradient id="sky" x2="0" y2="1">'
@@ -40,8 +45,8 @@ def svg(share: float, stroke: float, radius: float, tile: bool = True) -> str:
         f'<g transform="translate(8 8) scale({share}) translate(-8 -8)" fill="none" stroke="#fff"'
         f' stroke-width="{stroke}" stroke-linecap="round" stroke-linejoin="round">'
         '<rect x="2" y="4" width="12" height="8" fill="#fff" fill-opacity="0.12" stroke="none"/>'
-        f'<path d="{FAINT}" stroke-opacity="0.45"/>'
-        f'<path d="{BOLD}"/>'
+        f'<path d="{mark[0]}" stroke-opacity="0.45"/>'
+        f'<path d="{mark[1]}"/>'
         "</g></svg>\n"
     )
 
@@ -51,20 +56,28 @@ def png(source: str, size: int) -> Image.Image:
 
 
 def main() -> None:
+    for name, mark in MARKS.items():
+        out = STATIC / "icons" / name
+        out.mkdir(parents=True, exist_ok=True)
+        draw(out, mark)
+    (STATIC / "favicon.ico").write_bytes((STATIC / "icons" / "mail" / "favicon.ico").read_bytes())
+
+
+def draw(out: Path, mark: tuple[str, str]) -> None:
     # Favicon: the mark nearly fills a rounded tile, heavier so it holds at 16px.
-    favicon = svg(1, 1.7, 3.5)
-    (STATIC / "favicon.svg").write_text(favicon)
+    favicon = svg(mark, 1, 1.7, 3.5)
+    (out / "favicon.svg").write_text(favicon)
     small = png(favicon, 48)
-    small.save(STATIC / "favicon.png", optimize=True)
-    small.save(STATIC / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+    small.save(out / "favicon.png", optimize=True)
+    small.save(out / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
     # App icons: full bleed (the platform masks the corners); the envelope's
     # corners stay inside the maskable safe circle.
     for size, name in ((192, "icon-192.png"), (512, "icon-512.png"), (180, "apple-touch-icon.png")):
-        icon = png(svg(0.72, 1.5, 0), size)
-        (icon.convert("RGB") if name.startswith("apple") else icon).save(STATIC / name, optimize=True)
+        icon = png(svg(mark, 0.72, 1.5, 0), size)
+        (icon.convert("RGB") if name.startswith("apple") else icon).save(out / name, optimize=True)
     # Android draws the status-bar badge from alpha alone.
-    png(svg(1, 1.6, 0, tile=False), 96).save(STATIC / "badge.png", optimize=True)
-    print("wrote", ", ".join(sorted(p.name for p in STATIC.iterdir() if p.is_file())))
+    png(svg(mark, 1, 1.6, 0, tile=False), 96).save(out / "badge.png", optimize=True)
+    print("wrote", ", ".join(sorted(p.name for p in out.iterdir() if p.is_file())))
 
 
 if __name__ == "__main__":

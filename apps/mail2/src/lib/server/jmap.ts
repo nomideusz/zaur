@@ -12,7 +12,9 @@ import { reportError } from '#lib/server/report';
 const REFRESH_SKEW_MS = 90_000;
 const refreshes = new Map<string, Promise<SessionData>>();
 
-function isOauthSession(session: SessionData): boolean {
+/** Refreshable OAuth tokens — not a static API token (authMethod 'token'). */
+export function isOauthSession(session: SessionData): boolean {
+	if (session.authMethod === 'token') return false;
 	return session.authMethod === 'oauth' || (!session.password && Boolean(session.accessToken));
 }
 
@@ -113,6 +115,11 @@ export async function getFreshOauthSession(
  */
 export async function createConnectedClient(account: SessionData): Promise<JMAPClient> {
 	const serverUrl = process.env.JMAP_INTERNAL_URL || account.serverUrl;
+	if (account.authMethod === 'token') {
+		const client = new JMAPClient(serverUrl, account.username, account.accessToken ?? '', false, true);
+		await client.connect();
+		return client;
+	}
 	if (!isOauthSession(account)) {
 		const client = new JMAPClient(serverUrl, account.username, account.password ?? '');
 		await client.connect();

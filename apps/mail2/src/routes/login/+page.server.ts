@@ -1,6 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
-import { safeNext } from '#lib/server/login';
+import { jmapAuthMode, safeNext } from '#lib/server/login';
 import { isPasswordResetEnabled } from '#lib/server/recovery';
 import { postLogoutTarget } from '@zaur/server-auth/oidc';
 import { allOidcRedirectUris, findOidcClient, findOidcClientByOrigin } from '#lib/server/oidc';
@@ -50,6 +50,8 @@ export const load: PageServerLoad = ({ cookies, url }) => {
 		welcome: url.searchParams.get('welcome') === '1',
 		registerUrl: process.env.PUBLIC_REGISTER_URL?.trim() || null,
 		resetEnabled: isPasswordResetEnabled(),
+		/** JMAP_AUTH: `token` asks for an API token instead of a password; `stalwart` keeps the email field strict. */
+		authMode: jmapAuthMode(),
 		// Filled in from a password reset or a sign-up that just finished.
 		email: url.searchParams.get('email')?.trim() ?? '',
 		addingTo: adding ? active!.username : null

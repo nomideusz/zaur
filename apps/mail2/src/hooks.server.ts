@@ -17,6 +17,16 @@ export const init: ServerInit = () => {
 	});
 };
 
+/** The origin of PUBLIC_TRACEWAY_DSN ({token}@{url}/api/report), for CSP connect-src; null when unset. */
+function tracewayOrigin(dsn = process.env.PUBLIC_TRACEWAY_DSN?.trim()): string | null {
+	try {
+		return dsn ? new URL(dsn.slice(dsn.indexOf('@') + 1)).origin : null;
+	} catch {
+		return null;
+	}
+}
+const TRACEWAY = tracewayOrigin();
+
 // Camera and microphone stay off everywhere but a call.
 const LOCKED = 'camera=(), microphone=(), geolocation=()';
 const MEET = 'camera=(self), microphone=(self), display-capture=(self), geolocation=()';
@@ -50,6 +60,10 @@ export const handle: Handle = async ({ event, resolve }) => {
 		return new Response(`Cross-site ${event.request.method} form submissions are forbidden`, { status: 403 });
 	}
 	const response = await resolve(event);
+	const csp = response.headers.get('content-security-policy');
+	if (csp && TRACEWAY) {
+		response.headers.set('content-security-policy', csp.replace("connect-src 'self'", `connect-src 'self' ${TRACEWAY}`));
+	}
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

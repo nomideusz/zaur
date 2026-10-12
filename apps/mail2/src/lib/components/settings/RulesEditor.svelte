@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { appName } from '#lib/brand';
 	import {
 		emptyRule,
 		ruleProblems,
@@ -233,7 +234,7 @@
 					<path d="M8 5v3.6M8 10.7v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
 				</svg>
 				<div class="min-w-0 flex-1">
-					<p class="text-[13px] font-semibold">A filtering script here was not written by Zaur</p>
+					<p class="text-[13px] font-semibold">A filtering script here was not written by {appName}</p>
 					<p class="mt-0.5 text-[12.5px] leading-normal">
 						Rules stay read-only until you hand this account over — taking over replaces that script.
 					</p>

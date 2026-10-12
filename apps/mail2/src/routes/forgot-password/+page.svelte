@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { addressKind, appName, mailDomain } from '#lib/brand';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
 	import AuthCard, { fieldClass, inputClass, linkClass } from '#lib/components/auth/AuthCard.svelte';
 	import { requestReset } from '../reset.remote';
@@ -11,7 +12,7 @@
 </script>
 
 <svelte:head>
-	<title>Forgot password · Zaur Mail</title>
+	<title>Forgot password · {appName}</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -22,7 +23,7 @@
 		<p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">
 			{data.viaRecovery
 				? 'The link goes to the address your invitation came to.'
-				: 'Your Zaur address, or the personal email your invitation came to. The link goes to your recovery email.'}
+				: `Your ${addressKind}, or the personal email your invitation came to. The link goes to your recovery email.`}
 		</p>
 		<form {...requestReset} class="mt-[18px] flex flex-col gap-2.5">
 			<label class={fieldClass}>
@@ -38,7 +39,7 @@
 					autocorrect="off"
 					spellcheck="false"
 					enterkeyhint="send"
-					placeholder={data.viaRecovery ? 'you@gmail.com' : 'you@zaur.app'}
+					placeholder={data.viaRecovery ? 'you@gmail.com' : `you@${mailDomain}`}
 					aria-label="Email"
 					disabled={pending}
 					class={inputClass}

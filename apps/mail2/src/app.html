@@ -2,12 +2,13 @@
 <html lang="en">
 	<head>
 		<meta charset="utf-8" />
-		<!-- Icons are the Z that folds an envelope, all drawn by scripts/generate-icons.py -->
-		<link rel="icon" href="%sveltekit.assets%/favicon.svg" type="image/svg+xml" />
-		<link rel="icon" href="%sveltekit.assets%/favicon.png" type="image/png" sizes="48x48" />
-		<link rel="apple-touch-icon" href="%sveltekit.assets%/apple-touch-icon.png" />
+		<!-- Icons: the set PUBLIC_APP_ICON picks (#lib/brand), drawn by scripts/generate-icons.py.
+		     The manifest is a route, so it can carry PUBLIC_APP_NAME. -->
+		<link rel="icon" href="%sveltekit.assets%/icons/%sveltekit.env.PUBLIC_APP_ICON%/favicon.svg" type="image/svg+xml" />
+		<link rel="icon" href="%sveltekit.assets%/icons/%sveltekit.env.PUBLIC_APP_ICON%/favicon.png" type="image/png" sizes="48x48" />
+		<link rel="apple-touch-icon" href="%sveltekit.assets%/icons/%sveltekit.env.PUBLIC_APP_ICON%/apple-touch-icon.png" />
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
-		<meta name="apple-mobile-web-app-title" content="Zaur Mail" />
+		<meta name="apple-mobile-web-app-title" content="%sveltekit.env.PUBLIC_APP_NAME%" />
 		<!-- `viewport-fit=cover`: the page reaches under the home indicator and the
 		     notch, and `.z-safe` (styles/base.css) keeps the app clear of both. -->
 		<meta

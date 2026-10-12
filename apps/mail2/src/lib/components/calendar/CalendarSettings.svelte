@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { mailDomain } from '#lib/brand';
 	import { untrack } from 'svelte';
 	import type { Calendar, CalendarShareRole } from '@zaur/mail-core';
 	import { CALENDAR_COLORS, calendarDeleteBlockedReason, calendarKey, shareRoleFromRights } from '@zaur/mail-core';
@@ -245,7 +246,7 @@
 						<input
 							type="email"
 							class="z-field !h-[30px] min-w-0 flex-1 basis-[180px] max-md:text-base"
-							placeholder="colleague@zaur.app"
+							placeholder="colleague@{mailDomain}"
 							aria-label="Share with"
 							bind:value={email}
 							autocomplete="off"
