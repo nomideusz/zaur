@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Documenso',
+			desc: 'Documenso: the open-source DocuSign alternative. Send PDFs for signature and get them back digitally sealed, with the signing certificate and your admin account created on first boot.',
+			deploy: 'https://railway.com/deploy/documenso-production',
+			source: 'https://github.com/nomideusz/documenso-railway'
+		},
+		{
 			name: 'Open WebUI + LiteLLM',
 			desc: 'Open WebUI in front of a LiteLLM gateway: a ChatGPT-style workspace for your team, with models from OpenAI, Anthropic, OpenRouter and 100+ providers, virtual keys and spend tracking, on Postgres.',
 			deploy: 'https://railway.com/deploy/open-webui-litellm',
