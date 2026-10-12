@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Airweave',
+			desc: 'Airweave: the open-source context retrieval layer for AI agents. Syncs Notion, Slack, GitHub, Drive and 50+ more apps into Vespa hybrid search, with Temporal workers and a password-protected gateway.',
+			deploy: 'https://railway.com/deploy/airweave',
+			source: 'https://github.com/nomideusz/airweave-railway'
+		},
+		{
 			name: 'Activepieces',
 			desc: 'Activepieces: the open-source Zapier and n8n alternative. Visual flow builder with hundreds of integrations, AI agents and MCP, on Postgres and Redis with a scalable worker service and sandboxed code steps.',
 			deploy: 'https://railway.com/deploy/activepieces-workflows',
