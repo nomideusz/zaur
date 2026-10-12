@@ -773,9 +773,9 @@
 
 	// Sites people read or look at, as opposed to apps that keep state. The tag
 	// says the relationship: client work, an experiment, or (untagged) my own.
-	// Spec rows are facts visible on the live site. Client work first. The lead
-	// shows its whole first screen; the others show captured details (plates.ts fragments).
-	const websites: { id: string; name: string; desc: string; href: string; tag?: string; lead?: boolean; specs: [string, string][] }[] = [
+	// Spec rows are facts visible on the live site. Strongest first: the lead
+	// spans the row, the two features share the next one, the rest sit three across.
+	const websites: { id: string; name: string; desc: string; href: string; tag?: string; lead?: boolean; feature?: boolean; specs: [string, string][] }[] = [
 		{
 			id: 'pikastro',
 			name: 'pikastro.eu',
@@ -790,6 +790,30 @@
 			]
 		},
 		{
+			id: 'kurcz',
+			name: 'kurcz.pl',
+			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
+			feature: true,
+			href: 'https://kurcz.pl',
+			specs: [
+				['Built with', 'Astro, no JavaScript on article pages'],
+				['Covers', 'Causes, first aid, prevention guides'],
+				['Languages', 'Polish, English']
+			]
+		},
+		{
+			id: 'wibroakustyka',
+			name: 'wibroakustyka.ai',
+			desc: 'Product site for the Graal vibroacoustic wellness chair.',
+			feature: true,
+			href: 'https://wibroakustyka.ai',
+			tag: 'Client work',
+			specs: [
+				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
+				['Includes', 'News and the Health & Longevity Summit 2026']
+			]
+		},
+		{
 			id: 'tutitutu',
 			name: 'tutitutu.pl',
 			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
@@ -801,14 +825,25 @@
 			]
 		},
 		{
-			id: 'wibroakustyka',
-			name: 'wibroakustyka.ai',
-			desc: 'Product site for the Graal vibroacoustic wellness chair.',
-			href: 'https://wibroakustyka.ai',
-			tag: 'Client work',
+			id: 'kruk',
+			name: 'kruk.live',
+			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
+			href: 'https://kruk.live',
+			tag: 'Experiment',
 			specs: [
-				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
-				['Includes', 'News and the Health & Longevity Summit 2026']
+				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
+				['Mode', 'Real-time and collaborative']
+			]
+		},
+		{
+			id: 'recycling',
+			name: 'recycling.kompi.pl',
+			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
+			href: 'https://recycling.kompi.pl',
+			tag: 'Experiment',
+			specs: [
+				['Data', 'Thousands of collection points, with a page for every city'],
+				['Includes', 'Interactive map, city pages, a recycling guide']
 			]
 		},
 		{
@@ -831,39 +866,6 @@
 			specs: [
 				['Format', 'One page, in Polish and English'],
 				['Covers', 'Treatments and the therapist']
-			]
-		},
-		{
-			id: 'kurcz',
-			name: 'kurcz.pl',
-			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
-			href: 'https://kurcz.pl',
-			specs: [
-				['Built with', 'Astro, no JavaScript on article pages'],
-				['Covers', 'Causes, first aid, prevention guides'],
-				['Languages', 'Polish, English']
-			]
-		},
-		{
-			id: 'recycling',
-			name: 'recycling.kompi.pl',
-			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
-			href: 'https://recycling.kompi.pl',
-			tag: 'Experiment',
-			specs: [
-				['Data', 'Thousands of collection points, with a page for every city'],
-				['Includes', 'Interactive map, city pages, a recycling guide']
-			]
-		},
-		{
-			id: 'kruk',
-			name: 'kruk.live',
-			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
-			href: 'https://kruk.live',
-			tag: 'Experiment',
-			specs: [
-				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
-				['Mode', 'Real-time and collaborative']
 			]
 		},
 		{
@@ -1270,6 +1272,52 @@
 	</article>
 {/snippet}
 
+{#snippet pkgNode(p: (typeof pkgs)[number])}
+	{@const s = stock[p.name]}
+	{@const cmd = `pnpm add ${p.name}`}
+	{@const o = offsets[p.id]}
+	<article
+		class="node node--pkg"
+		class:node--feature={p.live}
+		class:dim={reach && !reach.has(p.id)}
+		class:held={dragging === p.id}
+		id="pkg-{p.id}"
+		data-node={p.id}
+		aria-labelledby="pkg-{p.id}-name"
+		style:translate={o ? `${o.x}px ${o.y}px` : null}
+		onpointerenter={() => (active = p.id)}
+		onpointerleave={() => (active = null)}
+		onfocusin={() => (active = p.id)}
+		onfocusout={() => (active = null)}
+	>
+		<!-- svelte-ignore a11y_no_static_element_interactions (dragging is a pointer-only extra) -->
+		<header class="node__head" onpointerdown={(e) => grab(e, p.id)}>
+			<span class="part">{@render hl(p.part)}</span>
+			<h3 id="pkg-{p.id}-name">{@render hl(p.id)}</h3>
+			<span class="ver mono" class:ver--off={!s}>{s ? `v${s.version}` : registryDown ? '—' : '…'}</span>
+		</header>
+		{#if p.live === 'sky'}
+			<LiveSky name={p.id} />
+		{/if}
+		<div class="node__body">
+			<p class="node__desc">{@render hl(p.desc)}</p>
+			<p class="facts">
+				<span class:zero={s?.deps === 0}>{s ? `${s.deps} ${s.deps === 1 ? 'dep' : 'deps'}` : '… deps'}</span>
+				<span>{s?.license ?? '…'}</span>
+			</p>
+			<button type="button" class="cmd" onclick={() => copy(cmd)} aria-label="Copy “{cmd}”">
+				<code>{cmd}</code>
+				<span class="cmd__state">{#if copied === cmd}<Icon name="check" /> Copied{:else}<Icon name="copy" /> Copy{/if}</span>
+			</button>
+			<p class="links">
+				<a href={p.npm}>npm</a>
+				{#if p.demo}<a href={p.demo}>Demo</a>{/if}
+				{#if p.source}<a href={p.source}>Source</a>{/if}
+			</p>
+		</div>
+	</article>
+{/snippet}
+
 <svelte:window {onkeydown} />
 
 <svelte:head>
@@ -1308,25 +1356,29 @@
 	</header>
 
 	<main class="canvas">
-		<section class="hello" aria-labelledby="hello-title">
-			<h1 id="hello-title">I build software and keep it running.</h1>
-			<p class="hello__lede">
-				Apps, open-source packages and one-click deploy templates, all made and run by me. Every
-				connection is real: an app is wired only to the packages it actually imports.
-			</p>
-			<p class="hello__meta" aria-live="polite">
-				<span class="count">
-					{#if needle}{total} of {all} nodes match{:else}{all} nodes{/if}
-				</span>
-				{#if wide}
-					<span>Hover a node to trace its wires. Sweep a screenshot to flip through its screens. Drag a node by its header.</span>
-				{:else}
-					<span>Swipe a screenshot to flip through its screens.</span>
-				{/if}
-				{#if moved}
-					<button type="button" class="link" onclick={() => (offsets = {})}>Put the nodes back</button>
-				{/if}
-			</p>
+		<section class="hello" class:hello--feature={shownPkgs.some((p) => p.live)} aria-labelledby="hello-title">
+			<div class="hello__intro">
+				<h1 id="hello-title">I build software and keep it running.</h1>
+				<p class="hello__lede">
+					Apps, open-source packages and one-click deploy templates, all made and run by me. Every
+					connection is real: an app is wired only to the packages it actually imports.
+				</p>
+				<p class="hello__meta" aria-live="polite">
+					<span class="count">
+						{#if needle}{total} of {all} nodes match{:else}{all} nodes{/if}
+					</span>
+					{#if wide}
+						<span>Hover a node to trace its wires. Sweep a screenshot to flip through its screens. Drag a node by its header.</span>
+					{:else}
+						<span>Swipe a screenshot to flip through its screens.</span>
+					{/if}
+					{#if moved}
+						<button type="button" class="link" onclick={() => (offsets = {})}>Put the nodes back</button>
+					{/if}
+				</p>
+			</div>
+			<!-- The package whose whole point is being live runs beside the headline, at full size. -->
+			{#each shownPkgs.filter((p) => p.live) as p (p.id)}{@render pkgNode(p)}{/each}
 		</section>
 
 		{#if !total && !shownSites.length}
@@ -1369,57 +1421,12 @@
 				</div>
 			</section>
 
-			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.length && !shownSkills.length && !shownApps.some((a) => placed(a) === 'middle')}>
+			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.some((p) => !p.live) && !shownSkills.length && !shownApps.some((a) => placed(a) === 'middle')}>
 				<h2 class="frame-label" id="packages-title">
 					Packages <span class="n">{shownPkgs.length}</span>
 					<span class="frame-note">Live from npm{#if registryDown}; the registry didn't answer, so some figures are missing{/if}</span>
 				</h2>
-				{#each shownPkgs as p (p.id)}
-					{@const s = stock[p.name]}
-					{@const cmd = `pnpm add ${p.name}`}
-					{@const o = offsets[p.id]}
-					<article
-						class="node node--pkg"
-						class:node--pkg-wide={p.live}
-						class:dim={reach && !reach.has(p.id)}
-						class:held={dragging === p.id}
-						id="pkg-{p.id}"
-						data-node={p.id}
-						aria-labelledby="pkg-{p.id}-name"
-						style:translate={o ? `${o.x}px ${o.y}px` : null}
-						onpointerenter={() => (active = p.id)}
-						onpointerleave={() => (active = null)}
-						onfocusin={() => (active = p.id)}
-						onfocusout={() => (active = null)}
-					>
-						<!-- svelte-ignore a11y_no_static_element_interactions (dragging is a pointer-only extra) -->
-						<header class="node__head" onpointerdown={(e) => grab(e, p.id)}>
-							<span class="part">{@render hl(p.part)}</span>
-							<h3 id="pkg-{p.id}-name">{@render hl(p.id)}</h3>
-							<span class="ver mono" class:ver--off={!s}>{s ? `v${s.version}` : registryDown ? '—' : '…'}</span>
-						</header>
-						{#if p.live === 'sky'}
-							<LiveSky name={p.id} />
-						{/if}
-						<div class="node__body">
-							<p class="node__desc">{@render hl(p.desc)}</p>
-							<p class="facts">
-								<span class:zero={s?.deps === 0}>{s ? `${s.deps} ${s.deps === 1 ? 'dep' : 'deps'}` : '… deps'}</span>
-								<span>{s?.license ?? '…'}</span>
-							</p>
-							<button type="button" class="cmd" onclick={() => copy(cmd)} aria-label="Copy “{cmd}”">
-								<code>{cmd}</code>
-								<span class="cmd__state">{#if copied === cmd}<Icon name="check" /> Copied{:else}<Icon name="copy" /> Copy{/if}</span>
-							</button>
-							<p class="links">
-								<a href={p.npm}>npm</a>
-								{#if p.demo}<a href={p.demo}>Demo</a>{/if}
-								{#if p.source}<a href={p.source}>Source</a>{/if}
-							</p>
-						</div>
-					</article>
-				{/each}
-				{#each shownApps.filter((a) => placed(a) === 'middle') as a (a.id)}{@render appNode(a)}{/each}
+				{#each shownPkgs.filter((p) => !p.live) as p (p.id)}{@render pkgNode(p)}{/each}
 				{#each shownSkills as s (s.name)}
 					<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
 						<header class="node__head">
@@ -1433,6 +1440,7 @@
 						</div>
 					</article>
 				{/each}
+				{#each shownApps.filter((a) => placed(a) === 'middle') as a (a.id)}{@render appNode(a)}{/each}
 			</section>
 
 			<svg class="ports" aria-hidden="true">
@@ -1451,7 +1459,7 @@
 			</div>
 			<div class="sites__grid">
 				{#each shownSites as w (w.id)}
-					<article class="node node--site" class:node--site-lead={w.lead} id={w.id} aria-labelledby="{w.id}-name">
+					<article class="node node--site" class:node--site-lead={w.lead} class:node--site-feature={w.feature} id={w.id} aria-labelledby="{w.id}-name">
 						<header class="node__head">
 							<span class="part">{@render hl(w.part)}</span>
 							<h3 id="{w.id}-name">{@render hl(w.name)}</h3>
