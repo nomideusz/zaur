@@ -154,6 +154,12 @@
 
 	const templates = [
 		{
+			name: 'Open WebUI + LiteLLM',
+			desc: 'Open WebUI in front of a LiteLLM gateway: a ChatGPT-style workspace for your team, with models from OpenAI, Anthropic, OpenRouter and 100+ providers, virtual keys and spend tracking, on Postgres.',
+			deploy: 'https://railway.com/deploy/open-webui-litellm',
+			source: 'https://github.com/nomideusz/open-webui-litellm-railway'
+		},
+		{
 			name: 'Mautic Production',
 			desc: 'Email campaigns, segments and lead scoring, with the cron jobs and queue workers that actually send them.',
 			deploy: 'https://railway.com/deploy/mautic-production',
