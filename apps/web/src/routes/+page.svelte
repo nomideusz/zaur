@@ -164,6 +164,12 @@
 
 	const templates = [
 		{
+			name: 'Oryx (SRS Stack)',
+			desc: 'Oryx by the SRS team: stream from OBS over RTMP, play back as HLS/FLV, restream to YouTube, Twitch and others at once, loop videos as a 24/7 virtual live stream, and record to MP4.',
+			deploy: 'https://railway.com/deploy/oryx',
+			source: 'https://github.com/nomideusz/oryx-railway'
+		},
+		{
 			name: 'MCSManager',
 			desc: 'MCSManager, the popular multi-user game server panel: install Paper, Fabric, Forge or NeoForge from its app market and run them from a web console with file manager and schedules.',
 			deploy: 'https://railway.com/deploy/mcsmanager',
