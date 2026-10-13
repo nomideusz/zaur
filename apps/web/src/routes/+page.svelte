@@ -164,6 +164,12 @@
 
 	const templates = [
 		{
+			name: 'MCSManager',
+			desc: 'MCSManager, the popular multi-user game server panel: install Paper, Fabric, Forge or NeoForge from its app market and run them from a web console with file manager and schedules.',
+			deploy: 'https://railway.com/deploy/mcsmanager',
+			source: 'https://github.com/nomideusz/mcsmanager-railway'
+		},
+		{
 			name: 'Opik',
 			desc: 'Opik by Comet: open-source LLM tracing, LLM-as-a-judge evaluation, datasets, experiments and prompt management, on ClickHouse with an embedded Keeper, MySQL, Redis and MinIO, behind basic auth.',
 			deploy: 'https://railway.com/deploy/opik-llm',
