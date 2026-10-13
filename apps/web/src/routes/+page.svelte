@@ -164,6 +164,12 @@
 
 	const templates = [
 		{
+			name: 'Rustrak',
+			desc: 'Rustrak: self-hosted error tracking that speaks the Sentry protocol. Point any Sentry SDK at it by changing the DSN, and get issues, logs, transactions and release health from one small Rust process on SQLite.',
+			deploy: 'https://railway.com/deploy/rustrak',
+			source: 'https://github.com/nomideusz/rustrak-railway'
+		},
+		{
 			name: 'Oryx (SRS Stack)',
 			desc: 'Oryx by the SRS team: stream from OBS over RTMP, play back as HLS/FLV, restream to YouTube, Twitch and others at once, loop videos as a 24/7 virtual live stream, and record to MP4.',
 			deploy: 'https://railway.com/deploy/oryx',
