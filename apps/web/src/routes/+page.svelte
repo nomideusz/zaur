@@ -164,6 +164,12 @@
 
 	const templates = [
 		{
+			name: 'DataLens',
+			desc: 'DataLens: open-source business intelligence from Yandex. Connect Postgres, ClickHouse, MySQL and more, build charts and dashboards in the browser.',
+			deploy: 'https://railway.com/deploy/datalens',
+			source: 'https://github.com/nomideusz/datalens-railway'
+		},
+		{
 			name: 'Evo CRM',
 			desc: 'Evo CRM Community from the Evolution API team: an omnichannel support inbox with AI agents, WhatsApp through a bundled Evolution API, contacts, pipelines, segments and campaigns. Unmodified official images, 15 services, uploads in a Railway bucket.',
 			deploy: 'https://railway.com/deploy/evo-crm',
