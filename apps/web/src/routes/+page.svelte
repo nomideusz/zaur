@@ -164,6 +164,12 @@
 
 	const templates = [
 		{
+			name: 'Orca Server',
+			desc: 'Orca, the IDE for fleets of parallel coding agents, running 24/7: Claude Code, Codex and OpenCode preinstalled, used from the browser, desktop or phone app.',
+			deploy: 'https://railway.com/deploy/orca-server',
+			source: 'https://github.com/nomideusz/orca-railway'
+		},
+		{
 			name: 'DataLens',
 			desc: 'DataLens: open-source business intelligence from Yandex. Connect Postgres, ClickHouse, MySQL and more, build charts and dashboards in the browser.',
 			deploy: 'https://railway.com/deploy/datalens',
