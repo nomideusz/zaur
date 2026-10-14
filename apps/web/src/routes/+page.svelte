@@ -164,6 +164,12 @@
 
 	const templates = [
 		{
+			name: 'Evo CRM',
+			desc: 'Evo CRM Community from the Evolution API team: an omnichannel support inbox with AI agents, WhatsApp through a bundled Evolution API, contacts, pipelines, segments and campaigns. Unmodified official images, 15 services, uploads in a Railway bucket.',
+			deploy: 'https://railway.com/deploy/evo-crm',
+			source: 'https://github.com/nomideusz/evo-crm-railway'
+		},
+		{
 			name: 'Rustrak',
 			desc: 'Rustrak: self-hosted error tracking that speaks the Sentry protocol. Point any Sentry SDK at it by changing the DSN, and get issues, logs, transactions and release health from one small Rust process on SQLite.',
 			deploy: 'https://railway.com/deploy/rustrak',
