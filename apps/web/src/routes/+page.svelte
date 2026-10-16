@@ -59,7 +59,7 @@
 				['Meet', 'Video calls inside Mail']
 			],
 			built: [
-				'A SvelteKit mail client over JMAP: installable and offline-capable, with push notifications, calendar, contacts, files, rich compose and several accounts.',
+				'A mail client over JMAP on SvelteKit 3 and remote functions, started on the pre-release: installable and offline-capable, with push notifications, calendar, contacts, files, rich compose and several accounts.',
 				'Its own sign-in. Mail is the OpenID Connect provider for Music, Photos and Bartube, and a sign-up portal creates real mailboxes through the Stalwart admin API.',
 				'The servers behind it: Stalwart mail on a VPS run through Dokploy, restic backups to a second machine, errors and traces in a self-hosted Traceway.'
 			],
