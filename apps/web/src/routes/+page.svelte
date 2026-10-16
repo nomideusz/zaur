@@ -989,6 +989,20 @@
 			]
 		},
 		{
+			id: 'radiobartek',
+			name: 'radiobartek.com',
+			desc: 'A 24/7 internet radio station with an AI DJ who talks between the tracks in a clone of my voice.',
+			href: 'https://radiobartek.com',
+			tag: 'AI radio',
+			basket: 'side',
+			specs: [
+				['Engine', 'Open-source SUB/WAVE with my own skins and patches; the sky is zaur-world through its React adapter'],
+				['Voice', 'A Python bridge to Fish Audio speech that clones a voice from a short clip'],
+				['Music', 'About 35 new tracks a day, picked from ListenBrainz recommendations']
+			],
+			uses: ['zaur-world']
+		},
+		{
 			id: 'kurcz',
 			name: 'kurcz.pl',
 			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
@@ -1011,18 +1025,6 @@
 			specs: [
 				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
 				['Mode', 'Real-time and collaborative']
-			]
-		},
-		{
-			id: 'radiobartek',
-			name: 'radiobartek.com',
-			desc: 'Internet radio station, self-hosted on AzuraCast.',
-			href: 'https://radiobartek.com',
-			tag: 'Radio',
-			basket: 'side',
-			specs: [
-				['Stream', 'AzuraCast, self-hosted'],
-				['Player', 'One page, one button: listen']
 			]
 		}
 	];
