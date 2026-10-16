@@ -27,6 +27,7 @@ const TYPES = {
   ".woff": "font/woff",
   ".woff2": "font/woff2",
   ".txt": "text/plain; charset=utf-8",
+  ".xml": "application/xml; charset=utf-8",
 };
 
 // Daily Google Search clicks for szkolyjogi.pl, read with the yoga panel's

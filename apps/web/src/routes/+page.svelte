@@ -8,6 +8,22 @@
 	const title = 'Zaur — apps, packages, templates';
 	const description =
 		'Everything I build in one place: Zaur apps, open-source npm packages, one-click Railway templates, and live websites.';
+	const site = 'https://zaur.app/';
+	const ld = {
+		'@context': 'https://schema.org',
+		'@graph': [
+			{ '@type': 'WebSite', '@id': `${site}#site`, url: site, name: 'Zaur', description, publisher: { '@id': `${site}#org` } },
+			{
+				'@type': 'Organization',
+				'@id': `${site}#org`,
+				name: 'Zaur',
+				url: site,
+				logo: `${site}icon-512.png`,
+				email: 'nom@zaur.app',
+				sameAs: ['https://github.com/nomideusz', 'https://www.npmjs.com/~nomideusz']
+			}
+		]
+	};
 
 	const products = [
 		{
@@ -1056,6 +1072,18 @@
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
+	<link rel="canonical" href={site} />
+	<meta property="og:type" content="website" />
+	<meta property="og:site_name" content="Zaur" />
+	<meta property="og:url" content={site} />
+	<meta property="og:title" content={title} />
+	<meta property="og:description" content={description} />
+	<meta property="og:image" content="{site}og.png" />
+	<meta property="og:image:width" content="1200" />
+	<meta property="og:image:height" content="630" />
+	<meta property="og:image:alt" content="Zaur package names with their versions beside the words Projects, packages, templates." />
+	<meta name="twitter:card" content="summary_large_image" />
+	{@html `<script type="application/ld+json">${JSON.stringify(ld)}</script>`}
 </svelte:head>
 
 <header class="bar">
