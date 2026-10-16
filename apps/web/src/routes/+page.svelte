@@ -1,10 +1,9 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
-	import Icon from '#lib/Icon.svelte';
+	import { onMount } from 'svelte';
 	import { kinds, kindOf } from '#lib/template-kinds';
-	import Peek from '#lib/Peek.svelte';
-	import LiveSky from '#lib/LiveSky.svelte';
-	import { platesFor, capturedOn, type Plates } from '#lib/plates';
+	import { platesFor } from '#lib/plates';
+
+	let { data } = $props();
 
 	const title = 'Zaur — apps, packages, templates';
 	const description =
@@ -961,656 +960,754 @@
 		]
 	};
 
-	// Part numbers: templates count up from the oldest, so a new card at the
-	// top of the list gets the next number and existing ones never shift.
-	// Graph placement: lead apps fill the left column and the rest the right
-	// one, unless `column` says otherwise ('middle' sits under the packages).
-	const placed = (a: { lead?: boolean; column?: string }) => a.column ?? (a.lead ? 'left' : 'right');
-	const apps = products.map((p, i) => ({
-		...p,
-		part: `A${i + 1}`,
-		specs: specs[p.id] ?? [],
-		uses: p.uses ?? [],
-		plates: platesFor(p.id, p.name)
-	}));
-	const sites = websites.map((w, i) => ({ ...w, part: `W${i + 1}`, plates: platesFor(w.id, w.name) }));
-	const pkgs = packages.map((p, i) => {
-		const id = p.name.split('/')[1];
-		return { ...p, part: `P${i + 1}`, id };
-	});
-	const skls = skills.map((s, i) => ({ ...s, part: `S${i + 1}` }));
-	// Stack column: the services a template's own description names.
-	const stackWords: [RegExp, string][] = [
-		[/postgres|pgvector/i, 'Postgres'],
-		[/mariadb|mysql/i, 'MariaDB'],
-		[/mongodb/i, 'MongoDB'],
-		[/redis/i, 'Redis'],
-		[/clickhouse/i, 'ClickHouse'],
-		[/elasticsearch/i, 'Elasticsearch'],
-		[/bucket/i, 'Bucket'],
-		[/backups?/i, 'Backups']
-	];
-	const stackOf = (desc: string) => stackWords.filter(([re]) => re.test(desc)).map(([, w]) => w);
-	const tpls = templates.map((t, i) => ({
-		...t,
-		part: `T${templates.length - i}`,
-		kind: kindOf(t.name),
-		stack: stackOf(t.desc)
-	}));
-
-	let query = $state('');
-	let search: HTMLInputElement;
-	const needle = $derived(query.trim().toLowerCase());
-	const hits = (...fields: (string | undefined)[]) =>
-		!needle || fields.some((f) => f?.toLowerCase().includes(needle));
-
-	const shownApps = $derived(apps.filter((a) => hits(a.part, a.name, a.desc, ...a.specs.flat())));
-	// The right column's account cluster: Mail, Register and Music share one sign-in.
-	const clustered = $derived(shownApps.filter((a) => placed(a) === 'right' && a.cluster));
-
-	// "Look inside": every project's real screens, opened from its peek strip.
-	// The strip's frame and the dialog's plate share a view-transition name, so
-	// the frame morphs into the dialog and back when the browser supports it.
-	type Project = {
-		id: string;
-		part: string;
-		name: string;
-		href: string;
-		plates: Plates | null;
-		source?: string;
-		account?: boolean;
+	// Lead projects come first, in the order the poster shows them; any project
+	// not named here follows in catalog order.
+	const order = ['szkolyjogi', 'fixtar', 'thebest', 'festivals', 'kino', 'mail', 'music', 'register'];
+	const rank = (id: string) => (order.indexOf(id) + 1 || order.length + 1);
+	// Windows: a capture of the live site (src/lib/windows, provenance embedded),
+	// replaced by the site itself in an iframe where the site allows framing.
+	const shots = import.meta.glob('../lib/windows/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
+	const shot = (id: string) => shots[`../lib/windows/${id}.webp`];
+	const framable = new Set(['szkolyjogi']);
+	const host = (href: string) => new URL(href).host;
+	// Which of a project's packages its three chips show first.
+	const chipsFirst: Record<string, string[]> = {
+		szkolyjogi: ['svelte-search', 'svelte-i18n', 'zaur-world'],
+		thebest: ['svelte-search', 'svelte-calendar', 'svelte-qr']
 	};
-	let viewer: HTMLDialogElement;
-	let viewing = $state<Project | null>(null);
-	let frame = $state(0);
-	let morphing = $state<string | null>(null);
-	const captured = new Date(capturedOn).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+	const chipOrder = (id: string, uses: string[]) => {
+		const first = chipsFirst[id] ?? [];
+		return [...first.filter((u) => uses.includes(u)), ...uses.filter((u) => !first.includes(u))];
+	};
 
-	async function transition(change: () => void) {
-		if (!document.startViewTransition || matchMedia('(prefers-reduced-motion: reduce)').matches) return change();
-		await document.startViewTransition(async () => {
-			change();
-			await tick();
-		}).finished;
-	}
-	async function lookInside(p: Project, at = 0) {
-		morphing = p.id;
-		frame = at;
-		await tick();
-		await transition(() => {
-			morphing = null;
-			viewing = p;
-			viewer.showModal();
-		});
-	}
-	async function closeViewer() {
-		const p = viewing;
-		if (!p) return;
-		await transition(() => {
-			viewer.close();
-			viewing = null;
-			morphing = p.id;
-		});
-		morphing = null;
-	}
-	function viewerKeys(e: KeyboardEvent) {
-		const n = viewing?.plates?.frames.length ?? 0;
-		if (n < 2) return;
-		if (e.key === 'ArrowRight') frame = (frame + 1) % n;
-		else if (e.key === 'ArrowLeft') frame = (frame + n - 1) % n;
-		else return;
-		e.preventDefault();
-	}
-	const shownPkgs = $derived(pkgs.filter((p) => hits(p.part, p.name, p.desc)));
-	const shownSkills = $derived(skls.filter((s) => hits(s.part, s.name, s.desc)));
-	const shownTpls = $derived(tpls.filter((t) => hits(t.part, t.name, t.desc, t.kind, ...t.stack)));
-	const shownSites = $derived(sites.filter((w) => hits(w.part, w.name, w.desc, w.tag, ...w.specs.flat())));
-	const groups = $derived(
-		kinds
-			.map(([kind]) => ({ kind, rows: shownTpls.filter((t) => t.kind === kind) }))
-			.filter((g) => g.rows.length)
-	);
-	// Wires: one per real import, drawn only while both ends are on the canvas.
-	const edges = $derived(
-		shownApps.flatMap((a) =>
-			a.uses.filter((id) => shownPkgs.some((p) => p.id === id)).map((to) => ({ from: a.id, to, key: `${a.id}>${to}` }))
-		)
-	);
+	const pkgs = packages.map((p) => ({ ...p, id: p.name.split('/')[1] }));
+	const projects = [...products]
+		.sort((a, b) => rank(a.id) - rank(b.id))
+		.map((p) => ({ ...p, uses: chipOrder(p.id, p.uses ?? []), specs: specs[p.id] ?? [], shot: shot(p.id), live: framable.has(p.id) }));
+	const sites = websites.map((w) => ({ ...w, plates: platesFor(w.id, w.name) }));
+	const groups = kinds
+		.map(([kind]) => ({ kind, items: templates.filter((t) => kindOf(t.name) === kind) }))
+		.filter((g) => g.items.length);
+	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
 
-	// Tracing: hovering or focusing a node lights its wires and the nodes they reach.
-	let active = $state<string | null>(null);
-	const reach = $derived.by(() => {
+	// The signature: pointing at a package lights the projects built from it,
+	// pointing at a project lights its packages. No lines, only light.
+	let active = $state<{ kind: 'pkg' | 'proj'; id: string } | null>(null);
+	const litPkgs = $derived.by(() => {
 		if (!active) return null;
-		const ids = new Set([active]);
-		for (const e of edges) {
-			if (e.from === active) ids.add(e.to);
-			if (e.to === active) ids.add(e.from);
-		}
-		return ids;
+		if (active.kind === 'pkg') return new Set([active.id]);
+		return new Set(projects.find((p) => p.id === active!.id)?.uses ?? []);
 	});
-	const lit = (e: { from: string; to: string }) => e.from === active || e.to === active;
-
-	// Nodes drag by their header on wide screens; the wires follow.
-	let offsets = $state<Record<string, { x: number; y: number }>>({});
-	const moved = $derived(Object.keys(offsets).length > 0);
-	let dragging = $state<string | null>(null);
-	let graph = $state<HTMLElement>();
-	let paths = $state<Record<string, string>>({});
-	let ports = $state<{ x: number; y: number }[]>([]);
-	let wide = $state(false);
-
-	function grab(e: PointerEvent, id: string) {
-		if (!wide || e.button !== 0 || (e.target as HTMLElement).closest('a, button')) return;
-		const head = e.currentTarget as HTMLElement;
-		const from = offsets[id] ?? { x: 0, y: 0 };
-		head.setPointerCapture(e.pointerId);
-		dragging = id;
-		const move = (m: PointerEvent) => {
-			offsets[id] = { x: from.x + m.clientX - e.clientX, y: from.y + m.clientY - e.clientY };
-		};
-		const drop = () => {
-			dragging = null;
-			head.removeEventListener('pointermove', move);
-			head.removeEventListener('pointerup', drop);
-			head.removeEventListener('pointercancel', drop);
-		};
-		head.addEventListener('pointermove', move);
-		head.addEventListener('pointerup', drop);
-		head.addEventListener('pointercancel', drop);
-	}
-
-	// Port to port, measured from the rendered nodes. Packages sit between their
-	// consumers, so a wire leaves and enters on whichever side faces the other end.
-	function route() {
-		if (!graph || !wide) return;
-		const g = graph.getBoundingClientRect();
-		const box = (id: string) => graph!.querySelector(`[data-node="${id}"]`)?.getBoundingClientRect();
-		const next: Record<string, string> = {};
-		const dots = new Map<string, { x: number; y: number }>();
-		for (const e of edges) {
-			const a = box(e.from);
-			const b = box(e.to);
-			if (!a || !b) continue;
-			const right = a.left + a.width / 2 < b.left + b.width / 2;
-			const p = { x: (right ? a.right : a.left) - g.left, y: a.top + 22 - g.top };
-			const q = { x: (right ? b.left : b.right) - g.left, y: b.top + 22 - g.top };
-			const dx = Math.max(48, Math.abs(q.x - p.x) * 0.45) * (right ? 1 : -1);
-			next[e.key] = `M${p.x} ${p.y}C${p.x + dx} ${p.y} ${q.x - dx} ${q.y} ${q.x} ${q.y}`;
-			dots.set(`${p.x},${p.y}`, p).set(`${q.x},${q.y}`, q);
-		}
-		paths = next;
-		ports = [...dots.values()];
-	}
-
-	$effect(() => {
-		void [edges, offsets[dragging ?? ''], wide, Object.keys(offsets).length];
-		tick().then(route);
+	const litProjs = $derived.by(() => {
+		if (!active) return null;
+		if (active.kind === 'proj') return new Set([active.id]);
+		return new Set(projects.filter((p) => p.uses.includes(active!.id)).map((p) => p.id));
 	});
+	const point = (kind: 'pkg' | 'proj', id: string) => () => {
+		active = { kind, id };
+		if (kind === 'pkg') reveal();
+	};
+	const leave = () => (active = null);
 
-	const total = $derived(shownApps.length + shownPkgs.length + shownSkills.length + shownTpls.length + shownSites.length);
-	const all = apps.length + pkgs.length + skls.length + tpls.length + sites.length;
-
-	const index = $derived([
-		{ href: '#apps', label: 'Apps', count: shownApps.length },
-		{ href: '#packages', label: 'Packages', count: shownPkgs.length },
-		{ href: '#skills', label: 'Skills', count: shownSkills.length },
-		{ href: '#websites', label: 'Websites', count: shownSites.length },
-		{ href: '#templates', label: 'Templates', count: shownTpls.length }
-	]);
-
-	// Split text around the search term so matches can be marked without {@html}.
-	function pieces(text: string) {
-		if (!needle) return [{ text, hit: false }];
-		const out: { text: string; hit: boolean }[] = [];
-		const lower = text.toLowerCase();
-		let at = 0;
-		for (let i = lower.indexOf(needle); i !== -1; i = lower.indexOf(needle, at)) {
-			if (i > at) out.push({ text: text.slice(at, i), hit: false });
-			out.push({ text: text.slice(i, i + needle.length), hit: true });
-			at = i + needle.length;
+	// When a lit project sits below the column's fold, bring the first one up.
+	let column = $state<HTMLElement>();
+	function reveal() {
+		const first = column?.querySelector<HTMLElement>('.proj.lit');
+		if (!column || !first) return;
+		const top = first.offsetTop - column.offsetTop;
+		if (top < column.scrollTop || top + 40 > column.scrollTop + column.clientHeight) {
+			const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+			column.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
 		}
-		if (at < text.length) out.push({ text: text.slice(at), hit: false });
-		return out;
 	}
 
-	// Live stock data: current version, runtime dependencies and licence, read
-	// from the npm registry in the visitor's browser.
-	let stock = $state<Record<string, { version: string; deps: number; license?: string }>>({});
+	// Seeded once from the prerendered numbers; npm refreshes them on mount.
+	// svelte-ignore state_referenced_locally
+	let versions = $state<Record<string, string>>({ ...data.versions });
 	let registryDown = $state(false);
-
-	// szkolyjogi.pl search clicks, served by static-server.mjs from Search Console.
 	let traffic = $state<{ clicksPerDay: number; monthAgo: number | null } | null>(null);
 	let trafficDown = $state(false);
+	let frameWidth = $state(541);
+	let framed = $state(false);
+	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 
 	onMount(() => {
-		const mq = matchMedia('(min-width: 861px)');
-		const sync = () => {
-			wide = mq.matches;
-			if (!wide) offsets = {};
+		// A link to a fold (the Templates tab, a shared #websites URL) opens it.
+		const unfold = () => {
+			const el = location.hash && document.getElementById(location.hash.slice(1));
+			if (el instanceof HTMLDetailsElement) el.open = true;
 		};
-		sync();
-		mq.addEventListener('change', sync);
-		// Live data and font loading change node heights, so the wires re-route.
-		const ro = new ResizeObserver(() => route());
-		if (graph) for (const el of [graph, ...graph.querySelectorAll('.col, .stack')]) ro.observe(el);
-		document.fonts?.ready.then(route);
-
+		unfold();
+		addEventListener('hashchange', unfold);
 		fetch('/api/traffic')
 			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
 			.then((t) => (traffic = t))
 			.catch(() => (trafficDown = true));
-
-		for (const p of packages) {
+		for (const p of pkgs) {
 			fetch(`https://registry.npmjs.org/${p.name}/latest`)
 				.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-				.then((j) => {
-					stock[p.name] = {
-						version: j.version,
-						deps: Object.keys(j.dependencies ?? {}).length,
-						license: j.license
-					};
-				})
+				.then((j) => (versions[p.id] = j.version))
 				.catch(() => (registryDown = true));
 		}
-
-		return () => {
-			mq.removeEventListener('change', sync);
-			ro.disconnect();
-		};
+		return () => removeEventListener('hashchange', unfold);
 	});
-
-	let copied = $state('');
-	let copiedTimer: ReturnType<typeof setTimeout>;
-	async function copy(text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-			copied = text;
-			clearTimeout(copiedTimer);
-			copiedTimer = setTimeout(() => (copied = ''), 1600);
-		} catch {
-			search?.focus();
-		}
-	}
-
-	function onkeydown(e: KeyboardEvent) {
-		const t = e.target as HTMLElement;
-		if (e.key === '/' && !t.closest('input, textarea, [contenteditable]')) {
-			e.preventDefault();
-			search.focus();
-		}
-	}
 </script>
-
-{#snippet hl(text: string)}{#each pieces(text) as p, i (i)}{#if p.hit}<mark>{p.text}</mark>{:else}{p.text}{/if}{/each}{/snippet}
-
-{#snippet appNode(a: (typeof apps)[number])}
-	{@const o = offsets[a.id]}
-	<article
-		class="node node--app"
-		class:node--lead={a.lead}
-		class:dim={reach && !reach.has(a.id)}
-		class:held={dragging === a.id}
-		id={a.id}
-		data-node={a.id}
-		aria-labelledby="{a.id}-name"
-		style:translate={o ? `${o.x}px ${o.y}px` : null}
-		onpointerenter={() => (active = a.id)}
-		onpointerleave={() => (active = null)}
-		onfocusin={() => (active = a.id)}
-		onfocusout={() => (active = null)}
-	>
-		<!-- svelte-ignore a11y_no_static_element_interactions (dragging is a pointer-only extra) -->
-	<header class="node__head" onpointerdown={(e) => grab(e, a.id)}>
-			<span class="part">{@render hl(a.part)}</span>
-			<h3 id="{a.id}-name">{@render hl(a.name)}</h3>
-			<span class="host">{new URL(a.href).host}</span>
-		</header>
-		{#if a.plates}
-			<Peek plates={a.plates} name={a.name} morph={morphing === a.id ? frame : null} onopen={(k) => lookInside(a, k)} />
-		{/if}
-		<div class="node__body">
-			{#if a.client}<p class="tag">Client work</p>{/if}
-			<p class="node__desc">{@render hl(a.desc)}</p>
-			{#if a.id === 'szkolyjogi'}
-				<div class="readout">
-					<span class="dot" class:dot--off={!traffic}></span>
-					<p>
-						<strong>{traffic ? traffic.clicksPerDay : trafficDown ? '—' : '…'}</strong>
-						search clicks a day{#if traffic?.monthAgo && traffic.monthAgo < traffic.clicksPerDay}, up from {traffic.monthAgo} a month ago{/if}
-						<small>Google Search Console, last 7 days</small>
-					</p>
-				</div>
-			{/if}
-			<dl class="props">
-				{#each a.specs as [k, v] (k)}
-					<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
-				{/each}
-			</dl>
-			{#if a.uses.length}
-				<p class="imports">
-					<span>Imports</span>
-					{#each a.uses as u (u)}<a class="port-chip mono" href="#pkg-{u}">{u}</a>{/each}
-				</p>
-			{/if}
-			{#if a.account}
-				<p class="node__note">Needs a Zaur address. <a href="#register">Get one free</a>.</p>
-				<div class="actions">
-					<a class="btn" href={a.href}>Sign in to {a.name} <Icon name="out" /></a>
-					<a class="node__link" href={a.source}>Source</a>
-				</div>
-			{:else}
-				<div class="actions">
-					<a class="btn" href={a.href}>Open {a.name} <Icon name="out" /></a>
-					{#if a.source}<a class="node__link" href={a.source}>Source</a>{/if}
-				</div>
-			{/if}
-		</div>
-	</article>
-{/snippet}
-
-{#snippet pkgNode(p: (typeof pkgs)[number])}
-	{@const s = stock[p.name]}
-	{@const cmd = `pnpm add ${p.name}`}
-	{@const o = offsets[p.id]}
-	<article
-		class="node node--pkg"
-		class:node--feature={p.live}
-		class:dim={reach && !reach.has(p.id)}
-		class:held={dragging === p.id}
-		id="pkg-{p.id}"
-		data-node={p.id}
-		aria-labelledby="pkg-{p.id}-name"
-		style:translate={o ? `${o.x}px ${o.y}px` : null}
-		onpointerenter={() => (active = p.id)}
-		onpointerleave={() => (active = null)}
-		onfocusin={() => (active = p.id)}
-		onfocusout={() => (active = null)}
-	>
-		<!-- svelte-ignore a11y_no_static_element_interactions (dragging is a pointer-only extra) -->
-		<header class="node__head" onpointerdown={(e) => grab(e, p.id)}>
-			<span class="part">{@render hl(p.part)}</span>
-			<h3 id="pkg-{p.id}-name">{@render hl(p.id)}</h3>
-			<span class="ver mono" class:ver--off={!s}>{s ? `v${s.version}` : registryDown ? '—' : '…'}</span>
-		</header>
-		{#if p.live === 'sky'}
-			<LiveSky name={p.id} />
-		{/if}
-		<div class="node__body">
-			<p class="node__desc">{@render hl(p.desc)}</p>
-			<p class="facts">
-				<span class:zero={s?.deps === 0}>{s ? `${s.deps} ${s.deps === 1 ? 'dep' : 'deps'}` : '… deps'}</span>
-				<span>{s?.license ?? '…'}</span>
-			</p>
-			<button type="button" class="cmd" onclick={() => copy(cmd)} aria-label="Copy “{cmd}”">
-				<code>{cmd}</code>
-				<span class="cmd__state">{#if copied === cmd}<Icon name="check" /> Copied{:else}<Icon name="copy" /> Copy{/if}</span>
-			</button>
-			<p class="links">
-				<a href={p.npm}>npm</a>
-				{#if p.demo}<a href={p.demo}>Demo</a>{/if}
-				{#if p.source}<a href={p.source}>Source</a>{/if}
-			</p>
-		</div>
-	</article>
-{/snippet}
-
-<svelte:window {onkeydown} />
 
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
-	<meta property="og:type" content="website" />
-	<meta property="og:url" content="https://zaur.app/" />
-	<meta property="og:title" content={title} />
-	<meta property="og:description" content={description} />
-	<link rel="canonical" href="https://zaur.app/" />
 </svelte:head>
 
-<div class="board">
-	<header class="bar">
-		<a class="logo" href="/" aria-label="Zaur home">ZAUR</a>
-		<nav class="bar__nav" aria-label="Sections">
-			{#each index as s (s.href)}
-				<a href={s.href} class:empty={!s.count}>{s.label} <span class="n">{s.count}</span></a>
-			{/each}
-		</nav>
-		<div class="finder" role="search">
-			<label class="visually-hidden" for="find">Find anything on the canvas</label>
-			<Icon name="search" />
-			<input
-				id="find"
-				type="search"
-				bind:this={search}
-				bind:value={query}
-				placeholder="postgres, svelte, browser, T42…"
-				autocomplete="off"
-				spellcheck="false"
-			/>
-			<kbd aria-hidden="true">/</kbd>
-		</div>
-		<a class="bar__mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
-	</header>
+<header class="bar">
+	<a class="mark" href="/" aria-label="Zaur, home">ZAUR</a>
+	<nav class="tabs" aria-label="Sections">
+		<a href="#projects">Projects</a>
+		<a href="#packages">Packages</a>
+		<a href="#templates">Templates</a>
+	</nav>
+	<a class="mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
+</header>
 
-	<main class="canvas">
-		<section class="hello" class:hello--feature={shownPkgs.some((p) => p.live)} aria-labelledby="hello-title">
-			<div class="hello__intro">
-				<h1 id="hello-title">I build software and keep it running.</h1>
-				<p class="hello__lede">
-					Apps, open-source packages and one-click deploy templates, all made and run by me. Every
-					connection is real: an app is wired only to the packages it actually imports.
-				</p>
-				<p class="hello__meta" aria-live="polite">
-					<span class="count">
-						{#if needle}{total} of {all} nodes match{:else}{all} nodes{/if}
-					</span>
-					{#if wide}
-						<span>Hover a node to trace its wires. Sweep a screenshot to flip through its screens. Drag a node by its header.</span>
-					{:else}
-						<span>Swipe a screenshot to flip through its screens.</span>
-					{/if}
-					{#if moved}
-						<button type="button" class="link" onclick={() => (offsets = {})}>Put the nodes back</button>
-					{/if}
-				</p>
-			</div>
-			<!-- The package whose whole point is being live runs beside the headline, at full size. -->
-			{#each shownPkgs.filter((p) => p.live) as p (p.id)}{@render pkgNode(p)}{/each}
+<main>
+	<h1 class="sr">Zaur: projects and the packages they are built from</h1>
+	<div class="poster" class:pointing={active}>
+		<section class="programme" id="packages" aria-labelledby="packages-h">
+			<h2 class="sr" id="packages-h">Packages</h2>
+			<ul>
+				{#each pkgs as p (p.id)}
+					<li class:lit={litPkgs?.has(p.id)}>
+						<a
+							class="row"
+							href={p.demo ?? p.npm}
+							onpointerenter={point('pkg', p.id)}
+							onpointerleave={leave}
+							onfocus={point('pkg', p.id)}
+							onblur={leave}
+						>
+							<span class="name">{p.id}</span>
+							<span class="sr">: {p.desc}</span>
+							<span class="ver" aria-label="version {version(p.id)}">{version(p.id)}</span>
+						</a>
+					</li>
+				{/each}
+			</ul>
 		</section>
 
-		{#if !total && !shownSites.length}
-			<div class="nothing">
-				<p>Nothing on the canvas matches “{query.trim()}”.</p>
-				<button type="button" class="btn btn--light" onclick={() => ((query = ''), search.focus())}>Clear the search</button>
-			</div>
-		{/if}
-
-		<div class="graph" class:tracing={reach} bind:this={graph} hidden={!shownApps.length && !shownPkgs.length && !shownSkills.length}>
-			<svg class="wires" aria-hidden="true">
-				{#each edges as e, i (e.key)}
-					{#if paths[e.key]}
-						<path d={paths[e.key]} pathLength="1" class:lit={reach && lit(e)} style:--i={i} />
-						{#if reach && lit(e)}<path class="flow" d={paths[e.key]} pathLength="1" />{/if}
-					{/if}
-				{/each}
-			</svg>
-
-			<section class="col col--apps" id="apps" aria-labelledby="apps-title" hidden={!shownApps.length}>
-				<h2 class="frame-label" id="apps-title">
-					Apps <span class="n">{shownApps.length}</span>
-					<span class="frame-note">Products and client work I run today</span>
-				</h2>
-				<div class="stack stack--lead">
-					{#each shownApps.filter((a) => placed(a) === 'left') as a (a.id)}{@render appNode(a)}{/each}
-				</div>
-				<p class="frame-label frame-label--more" aria-hidden="true">More apps</p>
-				<div class="stack">
-					{#if clustered.length}
-						<section class="cluster" aria-labelledby="cluster-title">
-							<p class="cluster__label" id="cluster-title">
-								One Zaur account
-								<span>Register creates it; Mail and Music sign in with it.</span>
-							</p>
-							{#each clustered as a (a.id)}{@render appNode(a)}{/each}
-						</section>
-					{/if}
-					{#each shownApps.filter((a) => placed(a) === 'right' && !a.cluster) as a (a.id)}{@render appNode(a)}{/each}
-				</div>
-			</section>
-
-			<section class="col col--pkgs" id="packages" aria-labelledby="packages-title" hidden={!shownPkgs.some((p) => !p.live) && !shownSkills.length && !shownApps.some((a) => placed(a) === 'middle')}>
-				<h2 class="frame-label" id="packages-title">
-					Packages <span class="n">{shownPkgs.length}</span>
-					<span class="frame-note">Live from npm{#if registryDown}; the registry didn't answer, so some figures are missing{/if}</span>
-				</h2>
-				{#each shownPkgs.filter((p) => !p.live) as p (p.id)}{@render pkgNode(p)}{/each}
-				{#each shownSkills as s (s.name)}
-					<article class="node node--skill" id="skills" aria-labelledby="skill-{s.part}" class:dim={!!reach}>
-						<header class="node__head">
-							<span class="part">{@render hl(s.part)}</span>
-							<h3 id="skill-{s.part}">{@render hl(s.name)}</h3>
-							<span class="host">Agent skill</span>
-						</header>
-						<div class="node__body">
-							<p class="node__desc">{@render hl(s.desc)}</p>
-							<div class="actions"><a class="btn btn--quiet" href={s.source}>Source <Icon name="out" /></a></div>
-						</div>
-					</article>
-				{/each}
-				{#each shownApps.filter((a) => placed(a) === 'middle') as a (a.id)}{@render appNode(a)}{/each}
-			</section>
-
-			<svg class="ports" aria-hidden="true">
-				{#each ports as p (`${p.x},${p.y}`)}<circle cx={p.x} cy={p.y} r="5.5" />{/each}
-			</svg>
-		</div>
-
-		<section class="frame sites" id="websites" aria-labelledby="websites-title" hidden={!shownSites.length}>
-			<div class="frame__top">
-				<h2 class="frame-label" id="websites-title">Websites <span class="n">{shownSites.length}</span></h2>
-				<p>
-					I have been making websites since 2000, when I was 17: by hand, from the first HTML to
-					custom CMSes, until AI took over. The proof is this page, which Claude built with me.
-					These are the other sites still online, a mix of client work and experiments.
-				</p>
-			</div>
-			<div class="sites__grid">
-				{#each shownSites as w (w.id)}
-					<article class="node node--site" class:node--site-lead={w.lead} class:node--site-feature={w.feature} id={w.id} aria-labelledby="{w.id}-name">
-						<header class="node__head">
-							<span class="part">{@render hl(w.part)}</span>
-							<h3 id="{w.id}-name">{@render hl(w.name)}</h3>
-							{#if w.lead}<span class="host">{new URL(w.href).host}</span>{/if}
-						</header>
-						{#if w.plates}
-							<Peek plates={w.plates} name={w.name} morph={morphing === w.id ? frame : null} onopen={(k) => lookInside(w, k)} />
+		<section class="projects" id="projects" aria-labelledby="projects-h" bind:this={column}>
+			<h2 class="sr" id="projects-h">Projects</h2>
+			{#each projects as a (a.id)}
+				<article
+					class="proj"
+					class:lit={litProjs?.has(a.id)}
+					class:bare={!a.shot}
+					onpointerenter={point('proj', a.id)}
+					onpointerleave={leave}
+					onfocusin={point('proj', a.id)}
+					onfocusout={leave}
+				>
+					<div class="body">
+						<h3>
+							{#if a.live}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
+							<a href={a.href}>{a.name}</a>
+						</h3>
+						<p class="where">
+							<span>{host(a.href)}</span>
+							{#if a.live && !trafficDown}
+								<span>{traffic?.clicksPerDay ?? '…'} search clicks a day · Google Search</span>
+							{:else if a.client}
+								<span>client work</span>
+							{:else if a.account}
+								<span>needs a Zaur address</span>
+							{/if}
+						</p>
+						{#if a.shot}
+							<a class="window" href={a.href} tabindex="-1" aria-hidden="true" bind:clientWidth={frameWidth}>
+								<img src={a.shot} alt="" width="1200" height="663" loading={a.live ? 'eager' : 'lazy'} />
+								{#if a.live}
+									<iframe
+										src={a.href}
+										title="{a.name}, live"
+										loading="lazy"
+										tabindex="-1"
+										class:shown={framed}
+										style:--s={frameWidth / 1440}
+										onload={() => (framed = true)}
+									></iframe>
+								{/if}
+							</a>
+						{:else}
+							<p class="desc">{a.desc}</p>
 						{/if}
-						<div class="node__body">
-							{#if w.tag}<p class="tag">{@render hl(w.tag)}</p>{/if}
-							<p class="node__desc">{@render hl(w.desc)}</p>
-							<dl class="props">
-								{#each w.specs as [k, v] (k)}
-									<div><dt>{k}</dt><dd>{@render hl(v)}</dd></div>
-								{/each}
-							</dl>
-							<div class="actions"><a class="btn btn--quiet" href={w.href}>Open <Icon name="out" /></a></div>
-						</div>
-					</article>
-				{/each}
-			</div>
-		</section>
-
-		<section class="frame" id="templates" aria-labelledby="templates-title" hidden={!shownTpls.length}>
-			<div class="frame__top">
-				<h2 class="frame-label" id="templates-title">Railway templates <span class="n">{shownTpls.length}</span></h2>
-				<p>
-					One-click deploys, many with the admin created on first boot and nightly backups to a
-					Railway bucket. New to Railway? <a href="https://railway.com?referralCode=sLjDXb">Get $20 of credit</a>
-					(a referral link, so I may earn a commission).
-				</p>
-			</div>
-			<div class="tpl-groups" class:searching={needle}>
-				{#each groups as g (g.kind)}
-					<section class="node node--tpl" aria-label="{g.kind} templates">
-						<header class="node__head">
-							<h3>{@render hl(g.kind)} <span class="n">{g.rows.length}</span></h3>
-						</header>
-						<ul class="tpl-list">
-							{#each g.rows as t (t.name)}
-								<li class="tpl" id={t.part}>
-									<span class="part">{@render hl(t.part)}</span>
-									<p class="tpl__text">
-										<span class="tpl__name">{@render hl(t.name)}</span>
-										<span class="tpl__desc" title={t.desc}>{@render hl(t.desc)}</span>
-									</p>
-									<span class="tpl__act">
-										<a href="{t.deploy}?referralCode=sLjDXb" class="deploy" aria-label="Deploy {t.name} on Railway">Deploy</a>
-										<a href={t.source} class="tpl__src" aria-label="{t.name} source">Source</a>
-									</span>
+					</div>
+					{#if a.uses.length}
+						<ul class="chips" aria-label="Built with">
+							{#each a.uses.slice(0, 3) as u (u)}
+								<li class:lit={litPkgs?.has(u)}>
+									<a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a>
 								</li>
 							{/each}
+							{#if a.uses.length > 3}
+								<li class="more">+{a.uses.length - 3} more</li>
+							{/if}
 						</ul>
-					</section>
+					{/if}
+				</article>
+			{/each}
+		</section>
+	</div>
+
+	<section class="folds" aria-label="More">
+		<details id="templates">
+			<summary>
+				<h2>Templates · {templates.length}</h2>
+				{@render toggle()}
+			</summary>
+			<div class="fold">
+				<p class="lede">One-click Railway deploys: every template is open source and runs unmodified upstream images.</p>
+				{#each groups as g (g.kind)}
+					<h3>{g.kind}</h3>
+					<ul class="table">
+						{#each g.items as t (t.name)}
+							<li>
+								<a class="t-name" href={t.deploy}>{t.name}</a>
+								<p>{t.desc}</p>
+								<a class="t-src" href={t.source}>Source</a>
+							</li>
+						{/each}
+					</ul>
 				{/each}
 			</div>
-		</section>
+		</details>
 
-		<footer class="close">
-			<p class="close__line">
-				Need something that isn't on the canvas, or want to work together?
-				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
-			</p>
-			<p class="close__small">
-				© 2026 Zaur · <a href="https://github.com/nomideusz">github.com/nomideusz</a> ·
-				<a href="https://register.zaur.app">Get an @zaur.app address</a>
-			</p>
-		</footer>
-	</main>
-
-	<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions (a backdrop click closes; Esc is handled by oncancel) -->
-	<dialog
-		class="plates"
-		class:plates--site={viewing?.part.startsWith('W')}
-		bind:this={viewer}
-		aria-labelledby="plates-title"
-		oncancel={(e) => (e.preventDefault(), closeViewer())}
-		onclick={(e) => e.target === viewer && closeViewer()}
-		onkeydown={viewerKeys}
-	>
-		{#if viewing?.plates}
-			{@const pl = viewing.plates}
-			{@const f = pl.frames[frame] ?? pl.frames[0]}
-			<header class="node__head plates__head">
-				<span class="part">{viewing.part}</span>
-				<h2 id="plates-title">{viewing.name}</h2>
-				<span class="host">{new URL(viewing.href).host}</span>
-				<button type="button" class="btn btn--quiet" onclick={closeViewer}>Close</button>
-			</header>
-			<div class="plates__stage" class:plates__stage--phone={pl.phone}>
-				<figure class="plates__main">
-					<img src={f.src} width={f.w} height={f.h} alt={f.alt} decoding="async" style:view-transition-name="plate" />
-					<figcaption>{f.alt}</figcaption>
-				</figure>
-				{#if pl.phone}
-					<img class="plates__phone" src={pl.phone.src} width={pl.phone.w} height={pl.phone.h} alt={pl.phone.alt} loading="lazy" decoding="async" />
-				{/if}
-			</div>
-			{#if pl.frames.length > 1}
-				<div class="plates__thumbs" role="tablist" aria-label="Screens of {viewing.name}">
-					{#each pl.frames as t, k (t.src)}
-						<button type="button" role="tab" class="plates__thumb" aria-selected={k === frame} onclick={() => (frame = k)}>
-							<img src={t.src} width={t.w} height={t.h} alt="" loading="lazy" decoding="async" />
-							<span class="visually-hidden">{t.alt}</span>
-						</button>
+		<details id="websites">
+			<summary>
+				<h2>Websites · {websites.length}</h2>
+				{@render toggle()}
+			</summary>
+			<div class="fold">
+				<ul class="sites">
+					{#each sites as w (w.id)}
+						<li>
+							{#if w.plates}
+								<img src={w.plates.frames[0].src} alt={w.plates.frames[0].alt} width="1200" height="750" loading="lazy" />
+							{/if}
+							<div>
+								<h3><a href={w.href}>{w.name}</a>{#if w.tag}<span>{w.tag}</span>{/if}</h3>
+								<p>{w.desc}</p>
+								<dl>
+									{#each w.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+								</dl>
+							</div>
+						</li>
 					{/each}
-				</div>
-			{/if}
-			<div class="plates__foot">
-				<p class="plates__note">Captured from the live site on {captured}.</p>
-				<div class="actions">
-					<a class="btn" href={viewing.href}>{viewing.account ? 'Sign in to' : 'Open'} {viewing.name} <Icon name="out" /></a>
-					{#if viewing.source}<a class="node__link" href={viewing.source}>Source</a>{/if}
-				</div>
+				</ul>
 			</div>
-		{/if}
-	</dialog>
-</div>
+		</details>
+
+		<details id="skills">
+			<summary>
+				<h2>Skills · {skills.length}</h2>
+				{@render toggle()}
+			</summary>
+			<div class="fold">
+				<ul class="table">
+					{#each skills as s (s.name)}
+						<li>
+							<a class="t-name" href={s.source}>{s.name}</a>
+							<p>{s.desc}</p>
+							<a class="t-src" href={s.source}>Source</a>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		</details>
+	</section>
+</main>
+
+<footer class="foot">
+	<p>© 2026 Zaur</p>
+	<a href="https://github.com/nomideusz">github.com/nomideusz</a>
+	<a href="https://register.zaur.app">Get an @zaur.app address</a>
+</footer>
+
+{#snippet toggle()}
+	<svg class="toggle" viewBox="0 0 24 24" aria-hidden="true">
+		<path d="M4 12h16" />
+		<path class="v" d="M12 4v16" />
+	</svg>
+{/snippet}
+
+<style>
+	/* Every first-viewport measure is in vw: the poster scales as one sheet.
+	   Numbers come from the approved comp at 2512 wide (layout.css scaffold). */
+	.bar {
+		position: sticky;
+		top: 0;
+		z-index: 2;
+		display: grid;
+		grid-template-columns: 49.5vw 10.15vw 11.15vw 11.4vw 1fr;
+		align-items: stretch;
+		height: 3.66vw;
+		background: var(--ink);
+		color: var(--paper);
+	}
+	.mark {
+		align-self: center;
+		padding-left: 1.31vw;
+		font-weight: 800;
+		font-size: 2.24vw;
+		letter-spacing: -0.01em;
+		line-height: 1;
+		text-decoration: none;
+	}
+	.tabs {
+		display: contents;
+	}
+	.tabs a,
+	.mail {
+		display: grid;
+		place-items: center;
+		font-size: 1.2vw;
+		text-decoration: none;
+	}
+	.tabs a {
+		border-left: var(--rule) solid var(--bar-rule);
+	}
+	.tabs a:last-child {
+		border-right: var(--rule) solid var(--bar-rule);
+	}
+	.mail {
+		justify-items: start;
+		padding-left: 6.93vw;
+		font-size: 1.45vw;
+	}
+	.bar a:hover {
+		color: var(--orange);
+	}
+	.bar :focus-visible {
+		outline-color: var(--orange);
+		outline-offset: -3px;
+	}
+
+	.poster {
+		display: grid;
+		grid-template-columns: 63.42vw 1fr;
+		border-bottom: var(--rule-heavy) solid var(--ink);
+	}
+
+	/* The programme: package names as the poster. */
+	.programme {
+		background: var(--orange);
+		border-right: var(--rule-heavy) solid var(--ink);
+	}
+	.programme li + li .row {
+		border-top: var(--rule) solid var(--orange-rule);
+	}
+	.row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 5.135vw;
+		padding: 0.15vw 1.64vw 0 1.39vw;
+		text-decoration: none;
+	}
+	.name {
+		font-weight: 700;
+		font-size: 4.87vw;
+		line-height: 1;
+		letter-spacing: -0.03em;		/* Descenders cross the rule below, as on the poster. */
+		translate: 0 0.1em;
+	}
+	.ver {
+		padding-top: 0.45vw;
+		font-variant-numeric: tabular-nums;
+		font-size: 1.53vw;
+	}
+	.lit .row {
+		background: var(--orange-lit);
+		box-shadow: inset 0 calc(-1 * var(--rule)) var(--paper);
+	}
+	.lit .name {
+		color: var(--paper);
+	}
+	.row:focus-visible {
+		outline: none;
+	}
+
+	/* The column: live projects, three in view, the rest a scroll away. */
+	.projects {
+		contain: size;
+		overflow-y: auto;
+		background: var(--lilac);
+		scrollbar-width: thin;
+		scrollbar-color: var(--ink) var(--lilac);
+	}
+	.proj {
+		display: grid;
+		grid-template-columns: 23.3vw 1fr;
+	}
+	.proj + .proj {
+		border-top: var(--rule-heavy) solid var(--ink);
+	}
+	.proj:not(.bare) {
+		height: calc(51.35vw / 3);
+	}
+	.body {
+		padding: 1.2vw 1.15vw 0.9vw 1.19vw;
+		border-right: var(--rule) solid var(--ink);
+	}
+	h3 {
+		display: flex;
+		align-items: center;
+		gap: 0.5vw;
+		font-weight: 700;
+		font-size: 1.5vw;
+		line-height: 1.1;
+		letter-spacing: -0.02em;
+	}
+	h3 a {
+		text-decoration: none;
+	}
+	h3 a:hover {
+		text-decoration: underline;
+	}
+	.dot {
+		width: 0.8vw;
+		height: 0.8vw;
+		border-radius: 50%;
+		background: var(--live);
+	}
+	.dot.off {
+		background: var(--quiet);
+	}
+	.where {
+		display: flex;
+		justify-content: space-between;
+		gap: 1em;
+		margin-top: 0.15vw;
+		font-size: max(12px, 0.9vw);
+	}
+	.where span + span {
+		font-size: max(12px, 0.78vw);
+		text-align: right;
+	}
+	.window {
+		position: relative;
+		display: block;
+		margin-top: 0.85vw;
+		aspect-ratio: 541 / 299;
+		overflow: hidden;
+		border: var(--rule) solid var(--ink);
+		background: var(--paper);
+	}
+	.window img {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		object-position: top;
+	}
+	.window iframe {
+		position: absolute;
+		inset: 0 auto auto 0;
+		width: 1440px;
+		height: calc(1440px * 299 / 541);
+		border: 0;
+		transform: scale(var(--s, 0.375));
+		transform-origin: 0 0;
+		pointer-events: none;
+		visibility: hidden;
+	}
+	.window iframe.shown {
+		visibility: visible;
+	}
+	.desc {
+		margin-top: 0.8vw;
+		max-width: 38ch;
+		font-size: max(13px, 0.95vw);
+	}
+	.chips {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.48vw;
+		padding: 6.33vw 1.35vw 1.07vw 0.66vw;
+	}
+	.bare .chips {
+		padding-top: 1.07vw;
+	}
+	.chip {
+		display: flex;
+		align-items: center;
+		gap: 1.2em;
+		height: 2.39vw;
+		min-height: 28px;
+		padding: 0 0.55vw;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		font-size: max(12px, 1vw);
+		white-space: nowrap;
+		text-decoration: none;
+	}
+	.chips .lit .chip {
+		background: var(--chip);
+	}
+	.more {
+		padding-left: 0.6vw;
+		font-size: max(12px, 0.95vw);
+	}
+	.pointing .proj:not(.lit) {
+		color: color-mix(in srgb, var(--ink) 45%, var(--lilac));
+	}
+	.pointing .proj:not(.lit) .window,
+	.pointing .proj:not(.lit) .chip {
+		opacity: 0.35;
+	}
+
+	/* Folds: closed catalogs, opened in place. */
+	.folds details {
+		border-bottom: var(--rule) solid var(--ink);
+		interpolate-size: allow-keywords;
+	}
+	/* The one authored moment: a short height reveal where supported; elsewhere folds open instantly. */
+	.folds details::details-content {
+		height: 0;
+		overflow: clip;
+		transition:
+			height 220ms cubic-bezier(0.2, 0, 0, 1),
+			content-visibility 220ms allow-discrete;
+	}
+	.folds details[open]::details-content {
+		height: auto;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.folds details::details-content {
+			transition: none;
+		}
+	}
+	summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 3.7vw;
+		min-height: 3rem;
+		padding: 0 1.29vw 0 1.39vw;
+		cursor: pointer;
+		list-style: none;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary h2 {
+		font-weight: 800;
+		font-size: max(1.75rem, 3.07vw);
+		line-height: 1;
+		letter-spacing: -0.03em;
+	}
+	summary:hover {
+		background: color-mix(in srgb, var(--ink) 6%, var(--ground));
+	}
+	summary:focus-visible {
+		outline-offset: -4px;
+	}
+	.toggle {
+		width: max(2.25rem, 2.6vw);
+		height: max(2rem, 2.4vw);
+		padding: 0.35vw;
+		border: var(--rule) solid var(--ink);
+		fill: none;
+		stroke: var(--ink);
+		stroke-width: 1.6;
+	}
+	details[open] .toggle .v {
+		display: none;
+	}
+	details[open] summary {
+		border-bottom: var(--rule) solid var(--ink);
+	}
+
+	.fold {
+		padding: 2rem 1.39vw 3rem;
+	}
+	.lede {
+		max-width: 60ch;
+		margin-bottom: 1.5rem;
+		font-size: 1.125rem;
+	}
+	.fold h3 {
+		margin: 2.5rem 0 0.5rem;
+		font-size: 1.5rem;
+	}
+	.fold h3:first-of-type {
+		margin-top: 0;
+	}
+	.table li {
+		display: grid;
+		grid-template-columns: minmax(12rem, 18rem) minmax(0, 62ch) auto;
+		gap: 0.5rem 2rem;
+		align-items: baseline;
+		padding: 0.75rem 0;
+		border-top: var(--rule) solid var(--ink);
+	}
+	.t-name {
+		font-weight: 800;
+		font-size: 1.125rem;
+	}
+	.t-src {
+		justify-self: end;
+	}
+
+	.sites li {
+		display: grid;
+		grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
+		gap: 2rem;
+		padding: 1.5rem 0;
+		border-top: var(--rule) solid var(--ink);
+	}
+	.sites img {
+		width: 100%;
+		height: auto;
+		border: var(--rule) solid var(--ink);
+	}
+	.sites h3 {
+		margin: 0;
+		gap: 1rem;
+		font-size: 1.5rem;
+	}
+	.sites h3 span {
+		font-weight: 500;
+		font-size: 0.875rem;
+		padding: 0.1rem 0.5rem;
+		border: var(--rule) solid var(--ink);
+		letter-spacing: 0;
+	}
+	.sites p {
+		max-width: 62ch;
+		margin: 0.5rem 0 1rem;
+	}
+	.sites dl div {
+		display: grid;
+		grid-template-columns: 8rem 1fr;
+		gap: 1rem;
+		padding: 0.25rem 0;
+	}
+	.sites dt {
+		color: var(--quiet);
+	}
+
+	.foot {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 2rem;
+		padding: 1.5rem 1.39vw 2rem;
+		font-size: 0.9375rem;
+	}
+
+	/* Below 900 the sheet stops scaling and becomes a stack. */
+	@media (max-width: 900px) {
+		.bar {
+			grid-template-columns: 1fr 1fr 1fr;
+			height: auto;
+		}
+		.mark {
+			grid-column: 1 / 3;
+			padding: 0.9rem 1rem;
+			font-size: 1.5rem;
+		}
+		.mail {
+			grid-column: 3;
+			grid-row: 1;
+			padding-right: 1rem;
+			font-size: 0.875rem;
+		}
+		.tabs a {
+			height: 2.75rem;
+			font-size: 0.9375rem;
+			border-top: var(--rule) solid var(--bar-rule);
+			border-left: 0;
+		}
+		.tabs a + a {
+			border-left: var(--rule) solid var(--bar-rule);
+		}
+		.tabs a:last-child {
+			border-right: 0;
+		}
+		.poster {
+			grid-template-columns: 1fr;
+		}
+		.programme {
+			border-right: 0;
+			border-bottom: var(--rule-heavy) solid var(--ink);
+		}
+		.row {
+			height: 11vw;
+			padding: 0 1rem;
+		}
+		.name {
+			font-size: 8.4vw;
+		}
+		.ver {
+			font-size: 0.9375rem;
+		}
+		.projects {
+			contain: none;
+			overflow: visible;
+		}
+		.proj {
+			grid-template-columns: 1fr;
+		}
+		.proj:not(.bare) {
+			height: auto;
+		}
+		.body {
+			padding: 1.25rem 1rem 0;
+			border-right: 0;
+		}
+		h3 {
+			gap: 0.5rem;
+			font-size: 1.5rem;
+		}
+		.dot {
+			width: 0.75rem;
+			height: 0.75rem;
+		}
+		.window {
+			margin-top: 1rem;
+		}
+		.desc {
+			margin-top: 0.5rem;
+		}
+		.chips,
+		.bare .chips {
+			flex-flow: row wrap;
+			gap: 0.5rem;
+			padding: 1rem;
+		}
+		.chip {
+			height: 2.25rem;
+			padding: 0 0.6rem;
+			font-size: 0.875rem;
+		}
+		.more {
+			align-self: center;
+			font-size: 0.875rem;
+		}
+		summary {
+			padding: 0 1rem;
+		}
+		.fold {
+			padding: 1.5rem 1rem 2.5rem;
+		}
+		.table li,
+		.sites li {
+			grid-template-columns: 1fr;
+			gap: 0.5rem;
+		}
+		.t-src {
+			justify-self: start;
+		}
+		.foot {
+			padding: 1.5rem 1rem 2rem;
+		}
+	}
+</style>
