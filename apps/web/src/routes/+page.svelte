@@ -111,6 +111,30 @@
 			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
 		},
 		{
+			id: 'kino',
+			name: 'Kino',
+			kind: 'Cinema listings',
+			href: 'https://kino.net.pl',
+			what: 'What plays in Polish cinemas today, hour by hour, with the small studio, culture-centre and film-club cinemas the big apps miss.',
+			proof: [
+				['Data', '230 cinemas in 174 towns, crawled every 6 hours'],
+				['Includes', 'Town pages, a page per film, a panel where cinemas fix their own facts']
+			],
+			uses: ['svelte-i18n', 'svelte-notify']
+		},
+		{
+			id: 'kompi',
+			name: 'Kompi',
+			kind: 'E-waste map',
+			href: 'https://kompi.pl',
+			what: 'One map of the places in Poland that take back e-waste, batteries and bulbs, filtered by what they accept and how.',
+			proof: [
+				['Data', '30,036 collection points in 1,951 cities, scraped by a Python crawler'],
+				['Map', 'MapLibre, address search, nearest points from your location']
+			],
+			uses: []
+		},
+		{
 			id: 'festivals',
 			name: 'Friendly Festivals',
 			kind: 'Festival directory',
@@ -121,34 +145,6 @@
 				['Tests', '31 test files']
 			],
 			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
-		},
-		{
-			id: 'kino',
-			name: 'Kino',
-			kind: 'Cinema listings',
-			href: 'https://kino.net.pl',
-			what: 'What plays in Polish cinemas today, hour by hour, with the small studio and culture-centre cinemas first.',
-			proof: [['Data', 'Programmes crawled every 6 hours']],
-			uses: ['svelte-i18n', 'svelte-notify']
-		},
-		{
-			id: 'fixtar',
-			name: 'Fixtar',
-			kind: 'Client shop',
-			href: 'https://fixtar.pl',
-			what: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
-			proof: [
-				['Products', 'Synced from BaseLinker'],
-				['Payments', 'PayU, Przelewy24'],
-				['SEO', 'Built to the client’s technical SEO spec: Product and Offer schema, five split sitemaps, canonical and noindex rules'],
-				['Feeds', 'Google Shopping feed generated from the same data as the schema']
-			],
-			growth: {
-				title: 'Clicks from Google to product and blog pages',
-				months: [['Jun', 19], ['Jul', 60], ['Aug', 92], ['Sep', 130]],
-				note: 'Impressions on those pages grew from 768 to 4,061 a month. Source: Google Search Console, October 2026.'
-			},
-			uses: ['svelte-search']
 		}
 	];
 
@@ -897,18 +893,47 @@
 		}
 	];
 
-	// Sites people read or look at, as opposed to apps that keep state. The tag
-	// says the relationship: client work, an experiment, or (untagged) my own.
-	// Spec rows are facts visible on the live site. Strongest first: the lead
-	// spans the row, the two features share the next one, the rest sit three across.
-	const websites: { id: string; name: string; desc: string; href: string; tag?: string; lead?: boolean; feature?: boolean; specs: [string, string][] }[] = [
+	// Work for clients, then small things of my own. The tag says what the site
+	// is; spec rows are facts visible on the live site. Strongest first.
+	type Site = {
+		id: string;
+		name: string;
+		desc: string;
+		href: string;
+		tag: string;
+		basket: 'client' | 'side';
+		specs: [string, string][];
+		uses?: string[];
+		growth?: Work['growth'];
+	};
+	const websites: Site[] = [
+		{
+			id: 'fixtar',
+			name: 'fixtar.pl',
+			desc: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
+			href: 'https://fixtar.pl',
+			tag: 'Online shop',
+			basket: 'client',
+			specs: [
+				['Products', 'Synced from BaseLinker'],
+				['Payments', 'PayU, Przelewy24'],
+				['SEO', 'Built to the client’s technical SEO spec: Product and Offer schema, five split sitemaps, canonical and noindex rules'],
+				['Feeds', 'Google Shopping feed generated from the same data as the schema']
+			],
+			growth: {
+				title: 'Clicks from Google to product and blog pages',
+				months: [['Jun', 19], ['Jul', 60], ['Aug', 92], ['Sep', 130]],
+				note: 'Impressions on those pages grew from 768 to 4,061 a month. Source: Google Search Console, October 2026.'
+			},
+			uses: ['svelte-search']
+		},
 		{
 			id: 'pikastro',
 			name: 'pikastro.eu',
 			desc: 'A colourful interior design studio in Kraków, with a custom CMS: the owner edits text and photos right on the live page.',
 			href: 'https://pikastro.eu',
-			tag: 'Client work',
-			lead: true,
+			tag: 'Studio site',
+			basket: 'client',
 			specs: [
 				['CMS', 'Custom, click-to-edit on the page, with edit history'],
 				['Storage', 'Netlify Blobs, no database'],
@@ -916,24 +941,12 @@
 			]
 		},
 		{
-			id: 'kurcz',
-			name: 'kurcz.pl',
-			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
-			feature: true,
-			href: 'https://kurcz.pl',
-			specs: [
-				['Built with', 'Astro, no JavaScript on article pages'],
-				['Covers', 'Causes, first aid, prevention guides'],
-				['Languages', 'Polish, English']
-			]
-		},
-		{
 			id: 'wibroakustyka',
 			name: 'wibroakustyka.ai',
 			desc: 'Product site for the Graal vibroacoustic wellness chair.',
-			feature: true,
 			href: 'https://wibroakustyka.ai',
-			tag: 'Client work',
+			tag: 'Product site',
+			basket: 'client',
 			specs: [
 				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
 				['Includes', 'News and the Health & Longevity Summit 2026']
@@ -944,32 +957,11 @@
 			name: 'tutitutu.pl',
 			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
 			href: 'https://tutitutu.pl',
-			tag: 'Client work',
+			tag: 'Portfolio',
+			basket: 'client',
 			specs: [
 				['CMS', 'Custom, written by hand before AI: the studio edits its own realisations'],
 				['Sections', 'Realisations, workshop, publications, references']
-			]
-		},
-		{
-			id: 'kruk',
-			name: 'kruk.live',
-			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
-			href: 'https://kruk.live',
-			tag: 'Experiment',
-			specs: [
-				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
-				['Mode', 'Real-time and collaborative']
-			]
-		},
-		{
-			id: 'recycling',
-			name: 'recycling.kompi.pl',
-			desc: 'Where to hand in e-waste, batteries, oils and tyres, anywhere in Poland.',
-			href: 'https://recycling.kompi.pl',
-			tag: 'Experiment',
-			specs: [
-				['Data', 'Thousands of collection points, with a page for every city'],
-				['Includes', 'Interactive map, city pages, a recycling guide']
 			]
 		},
 		{
@@ -977,7 +969,8 @@
 			name: 'intertechpoland.pl',
 			desc: 'Equipment catalogue and industry news for the Polish representative of Picarro and UGT.',
 			href: 'https://intertechpoland.pl',
-			tag: 'Client work',
+			tag: 'Catalogue',
+			basket: 'client',
 			specs: [
 				['Energy', 'Emissions monitoring and reduction, leak detection, pipe replacement'],
 				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors']
@@ -988,10 +981,36 @@
 			name: 'gabinet-polaczenie.pl',
 			desc: 'Acupuncture clinic in Kraków offering treatments that complement conventional care.',
 			href: 'https://gabinet-polaczenie.pl',
-			tag: 'Client work',
+			tag: 'Clinic site',
+			basket: 'client',
 			specs: [
 				['Format', 'One page, in Polish and English'],
 				['Covers', 'Treatments and the therapist']
+			]
+		},
+		{
+			id: 'kurcz',
+			name: 'kurcz.pl',
+			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
+			href: 'https://kurcz.pl',
+			tag: 'Health guide',
+			basket: 'side',
+			specs: [
+				['Built with', 'Astro, no JavaScript on article pages'],
+				['Covers', 'Causes, first aid, prevention guides'],
+				['Languages', 'Polish, English']
+			]
+		},
+		{
+			id: 'kruk',
+			name: 'kruk.live',
+			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
+			href: 'https://kruk.live',
+			tag: 'Mini-apps',
+			basket: 'side',
+			specs: [
+				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
+				['Mode', 'Real-time and collaborative']
 			]
 		},
 		{
@@ -999,7 +1018,8 @@
 			name: 'radiobartek.com',
 			desc: 'Internet radio station, self-hosted on AzuraCast.',
 			href: 'https://radiobartek.com',
-			tag: 'Experiment',
+			tag: 'Radio',
+			basket: 'side',
 			specs: [
 				['Stream', 'AzuraCast, self-hosted'],
 				['Player', 'One page, one button: listen']
@@ -1016,9 +1036,16 @@
 
 	const pkgs = packages.map((p) => ({ ...p, id: p.name.split('/')[1] }));
 	const flagships = work.filter((w) => w.built);
-	const others = work.filter((w) => !w.built);
-	const usedIn = (id: string) => work.filter((w) => w.uses.includes(id)).map((w) => w.name);
-	const sites = websites.map((w) => ({ ...w, plates: platesFor(w.id, w.name) }));
+	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
+	// Every smaller project renders as the same card: a picture, then the facts.
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; tall?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	const others: Card[] = work
+		.filter((w) => !w.built)
+		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
+	const siteCards = (basket: Site['basket']): Card[] =>
+		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, tall: true }));
+	const clients = siteCards('client');
+	const side = siteCards('side');
 	const groups = kinds
 		.map(([kind]) => ({ kind, items: templates.filter((t) => kindOf(t.name) === kind) }))
 		.filter((g) => g.items.length);
@@ -1072,6 +1099,31 @@
 	});
 </script>
 
+{#snippet card(c: Card)}
+	<li id={c.id}>
+		{#if c.img}
+			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
+				<img src={c.img} alt="" width="1200" height={c.tall ? 750 : 662} loading="lazy" />
+			</a>
+		{/if}
+		<div class="site">
+			<h3><a href={c.href}>{c.name}</a><span>{c.tag}</span></h3>
+			<p>{c.desc}</p>
+			<dl>
+				{#each c.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+			</dl>
+			{#if c.growth}{@render growth(c.growth)}{/if}
+			{#if c.uses?.length}
+				<ul class="chips">
+					{#each c.uses as u (u)}
+						<li><a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a></li>
+					{/each}
+				</ul>
+			{/if}
+		</div>
+	</li>
+{/snippet}
+
 {#snippet growth(g: NonNullable<Work['growth']>)}
 	{@const top = Math.max(...g.months.map(([, n]) => n))}
 	<figure class="growth">
@@ -1100,7 +1152,7 @@
 	<meta property="og:image" content="{site}og.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="Bartosz Dymet, frontend engineer, beside the product names Zaur, Szkoły Jogi, thebest.travel, Friendly Festivals, Kino and Fixtar." />
+	<meta property="og:image:alt" content="Bartosz Dymet, frontend engineer, beside the product names Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi and Friendly Festivals." />
 	<meta name="twitter:card" content="summary_large_image" />
 	{@html `<script type="application/ld+json">${JSON.stringify(ld)}</script>`}
 </svelte:head>
@@ -1108,9 +1160,9 @@
 <header class="bar">
 	<a class="mark" href="/">Bartosz Dymet</a>
 	<nav class="tabs" aria-label="Sections">
-		<a href="#work">Work</a>
-		<a href="#packages">Packages</a>
-		<a href="#websites">Websites</a>
+		<a href="#work">Products</a>
+		<a href="#clients">Clients</a>
+		<a href="#packages">Open source</a>
 		<a href="#how">How I work</a>
 	</nav>
 	<a class="mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
@@ -1172,7 +1224,7 @@
 	</div>
 
 	<section class="work" id="work" aria-labelledby="work-h">
-		<div class="strip"><h2 id="work-h">Work · {work.length} products</h2></div>
+		<div class="strip"><h2 id="work-h">Products · {work.length}</h2></div>
 		{#each flagships as w (w.id)}
 			{@const live = framable.has(w.id)}
 			<article class="case" id={w.id}>
@@ -1230,23 +1282,8 @@
 				</div>
 			</article>
 		{/each}
-		<ul class="others">
-			{#each others as w (w.id)}
-				<li id={w.id}>
-					<h3><a href={w.href}>{w.name}</a><span class="tag">{w.kind}</span></h3>
-					<p class="meta">{host(w.href)}</p>
-					<p class="what">{w.what}</p>
-					<dl class="facts">
-						{#each w.proof ?? [] as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-					</dl>
-					{#if w.growth}{@render growth(w.growth)}{/if}
-					<ul class="chips">
-						{#each w.uses as u (u)}
-							<li><a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a></li>
-						{/each}
-					</ul>
-				</li>
-			{/each}
+		<ul class="sites">
+			{#each others as c (c.id)}{@render card(c)}{/each}
 		</ul>
 	</section>
 
@@ -1269,43 +1306,7 @@
 		</ul>
 	</section>
 
-	<section class="websites" id="websites" aria-labelledby="websites-h">
-		<div class="strip"><h2 id="websites-h">Websites · {websites.length}</h2></div>
-		<p class="lede">Sites I designed and built for clients, and a few experiments of my own.</p>
-		<ul class="sites">
-			{#each sites as w (w.id)}
-				<li>
-					{#if w.plates}
-						<a class="shot" href={w.href} tabindex="-1" aria-hidden="true">
-							<img src={w.plates.frames[0].src} alt="" width="1200" height="750" loading="lazy" />
-						</a>
-					{/if}
-					<div class="site">
-						<h3><a href={w.href}>{w.name}</a>{#if w.tag}<span>{w.tag}</span>{/if}</h3>
-						<p>{w.desc}</p>
-						<dl>
-							{#each w.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-						</dl>
-					</div>
-				</li>
-			{/each}
-		</ul>
-	</section>
-
-	<section class="how" id="how" aria-labelledby="how-h">
-		<div class="strip"><h2 id="how-h">How I work</h2></div>
-		<ul class="how-grid">
-			{#each how as x (x.h)}
-				<li>
-					<h3>{x.h}</h3>
-					<p>{x.p}</p>
-					{#if x.link}<a href={x.link[1]}>{x.link[0]}</a>{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
-
-	<section class="folds" aria-label="More">
+	<section class="folds" aria-label="More open source">
 		<details id="templates">
 			<summary>
 				<h2>Railway templates · {templates.length}</h2>
@@ -1345,6 +1346,35 @@
 				</ul>
 			</div>
 		</details>
+	</section>
+
+	<section class="websites" id="clients" aria-labelledby="clients-h">
+		<div class="strip"><h2 id="clients-h">Client work · {clients.length}</h2></div>
+		<p class="lede">An online shop and five websites for businesses: designed, built and kept running.</p>
+		<ul class="sites">
+			{#each clients as c (c.id)}{@render card(c)}{/each}
+		</ul>
+	</section>
+
+	<section class="websites" id="side" aria-labelledby="side-h">
+		<div class="strip"><h2 id="side-h">Side projects · {side.length}</h2></div>
+		<p class="lede">Small things I made for myself and keep online.</p>
+		<ul class="sites">
+			{#each side as c (c.id)}{@render card(c)}{/each}
+		</ul>
+	</section>
+
+	<section class="how" id="how" aria-labelledby="how-h">
+		<div class="strip"><h2 id="how-h">How I work</h2></div>
+		<ul class="how-grid">
+			{#each how as x (x.h)}
+				<li>
+					<h3>{x.h}</h3>
+					<p>{x.p}</p>
+					{#if x.link}<a href={x.link[1]}>{x.link[0]}</a>{/if}
+				</li>
+			{/each}
+		</ul>
 	</section>
 </main>
 
@@ -1589,9 +1619,6 @@
 		border: var(--rule) solid var(--ink);
 		background: var(--paper);
 	}
-	.others .growth {
-		margin: 0 0 1rem;
-	}
 	.growth figcaption {
 		font-weight: 700;
 	}
@@ -1734,20 +1761,6 @@
 		gap: 0.5rem 1.5rem;
 		margin-top: 1.1rem;
 		font-weight: 700;
-	}
-	.others {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-	}
-	.others > li {
-		padding: 1.2rem 1.39vw 1.4rem;
-		scroll-margin-top: 4vw;
-	}
-	.others > li + li {
-		border-left: var(--rule) solid var(--ink);
-	}
-	.others h3 {
-		font-size: max(1.25rem, 1.6vw);
 	}
 
 	/* Packages: the shared building blocks, one ruled row each. */
@@ -1917,17 +1930,17 @@
 		display: grid;
 		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
-	.sites li {
+	.sites > li {
 		display: flex;
 		flex-direction: column;
 		border-right: var(--rule) solid var(--ink);
 		border-bottom: var(--rule) solid var(--ink);
 	}
-	.sites li:nth-child(3n) {
+	.sites > li:nth-child(3n) {
 		border-right: 0;
 	}
-	.sites li:nth-last-child(-n + 3):nth-child(3n + 1),
-	.sites li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
+	.sites > li:nth-last-child(-n + 3):nth-child(3n + 1),
+	.sites > li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
 		border-bottom: 0;
 	}
 	.shot {
@@ -1966,7 +1979,7 @@
 		border-radius: 3px;
 		letter-spacing: 0;
 	}
-	.sites p {
+	.site > p {
 		max-width: 52ch;
 		margin: 0.5rem 0 0.9rem;
 	}
@@ -1982,6 +1995,10 @@
 	}
 	.sites dt {
 		color: var(--quiet);
+	}
+	.site .growth,
+	.site .chips {
+		margin-top: 1rem;
 	}
 
 	.foot {
@@ -2073,7 +2090,6 @@
 			font-size: 0.875rem;
 		}
 		.case,
-		.others,
 		.how-grid {
 			grid-template-columns: 1fr;
 		}
@@ -2083,11 +2099,9 @@
 			border-bottom: var(--rule) solid var(--ink);
 		}
 		.case-body,
-		.others > li,
 		.how-grid li {
 			padding: 1.25rem 1rem 1.5rem;
 		}
-		.others > li + li,
 		.how-grid li + li {
 			border-left: 0;
 			border-top: var(--rule) solid var(--ink);
@@ -2126,13 +2140,13 @@
 		.sites {
 			grid-template-columns: 1fr;
 		}
-		.sites li,
-		.sites li:nth-last-child(-n + 3):nth-child(3n + 1),
-		.sites li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
+		.sites > li,
+		.sites > li:nth-last-child(-n + 3):nth-child(3n + 1),
+		.sites > li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
 			border-right: 0;
 			border-bottom: var(--rule) solid var(--ink);
 		}
-		.sites li:last-child {
+		.sites > li:last-child {
 			border-bottom: 0;
 		}
 		.site {

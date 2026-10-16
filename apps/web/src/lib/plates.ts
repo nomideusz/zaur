@@ -38,7 +38,7 @@ const screens: Record<string, string[]> = {
 		'the first-aid guide for an acute cramp',
 		'the night cramps article'
 	],
-	recycling: ['the home page, where to hand in e-waste, batteries, oils and tyres', 'collection points in Kraków', 'the recycling guide'],
+	fixtar: ['the shop home page'],
 	tutitutu: ['the home page', 'the realisations gallery', 'a showroom realisation'],
 	kruk: ['the KRUK home page', 'the real-time drawing board', 'the kanban board'],
 	wibroakustyka: ['the Graal acoustic chair', 'how vibroacoustics works', 'what an acoustic chair is'],
