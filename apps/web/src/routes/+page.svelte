@@ -5,99 +5,174 @@
 
 	let { data } = $props();
 
-	const title = 'Zaur — apps, packages, templates';
+	const title = 'Bartosz Dymet — frontend engineer, Svelte and TypeScript';
 	const description =
-		'Everything I build in one place: Zaur apps, open-source npm packages, one-click Railway templates, and live websites.';
+		'I design, build and run complete products: the Zaur mail suite, Szkoły Jogi, thebest.travel and more, with the open-source Svelte packages they share.';
 	const site = 'https://zaur.app/';
+	const github = 'https://github.com/nomideusz';
 	const ld = {
 		'@context': 'https://schema.org',
 		'@graph': [
-			{ '@type': 'WebSite', '@id': `${site}#site`, url: site, name: 'Zaur', description, publisher: { '@id': `${site}#org` } },
+			{ '@type': 'ProfilePage', '@id': `${site}#page`, url: site, name: title, description, mainEntity: { '@id': `${site}#me` } },
 			{
-				'@type': 'Organization',
-				'@id': `${site}#org`,
-				name: 'Zaur',
+				'@type': 'Person',
+				'@id': `${site}#me`,
+				name: 'Bartosz Dymet',
+				jobTitle: 'Frontend engineer',
 				url: site,
-				logo: `${site}icon-512.png`,
 				email: 'nom@zaur.app',
-				sameAs: ['https://github.com/nomideusz', 'https://www.npmjs.com/~nomideusz']
+				address: { '@type': 'PostalAddress', addressLocality: 'Kraków', addressCountry: 'PL' },
+				knowsAbout: ['Svelte', 'SvelteKit', 'TypeScript', 'Web accessibility', 'Web performance'],
+				sameAs: [github, 'https://www.npmjs.com/~nomideusz']
 			}
 		]
 	};
 
-	const products = [
+	// The work, in the order an employer should read it. Flagships carry a full
+	// case study; every claim is a fact from the product's own repo.
+	type Work = {
+		id: string;
+		name: string;
+		kind: string;
+		href: string;
+		what: string;
+		uses: string[];
+		source?: string;
+		built?: string[];
+		proof?: [string, string][];
+		parts?: [string, string][];
+		growth?: { title: string; months: [string, number][]; note: string };
+	};
+	const work: Work[] = [
+		{
+			id: 'zaur',
+			name: 'Zaur',
+			kind: 'Mail suite',
+			href: 'https://webmail.zaur.app',
+			source: 'https://github.com/nomideusz/zaur',
+			what: 'A private communications suite on one account: mail, calendar, video calls and music, on servers I set up and run.',
+			parts: [
+				['Mail', 'webmail.zaur.app'],
+				['Sign-up', 'register.zaur.app'],
+				['Music', 'music.zaur.app'],
+				['Meet', 'Video calls inside Mail']
+			],
+			built: [
+				'A SvelteKit mail client over JMAP: installable and offline-capable, with push notifications, calendar, contacts, files, rich compose and several accounts.',
+				'Its own sign-in. Mail is the OpenID Connect provider for Music, Photos and Bartube, and a sign-up portal creates real mailboxes through the Stalwart admin API.',
+				'The servers behind it: Stalwart mail on a VPS run through Dokploy, restic backups to a second machine, errors and traces in a self-hosted Traceway.'
+			],
+			proof: [
+				['Tests', '50 test files across the client and its shared packages; Playwright for sign-up'],
+				['Decisions', '5 architecture decision records'],
+				['Delivery', 'GitHub Actions deploys; agent conventions in AGENTS.md'],
+				['Code', 'Public on GitHub']
+			],
+			uses: ['svelte-calendar']
+		},
 		{
 			id: 'szkolyjogi',
 			name: 'Szkoły Jogi',
-			desc: 'The directory of yoga and pilates schools in Poland: class schedules, pass prices, reviews and online sign-up.',
+			kind: 'Directory and booking',
 			href: 'https://szkolyjogi.pl',
-			lead: true,
+			what: 'The directory of yoga and pilates schools in Poland: class schedules, pass prices, reviews and online sign-up.',
+			built: [
+				'The public directory in Polish, English and Ukrainian, with schedules, prices, reviews and booking.',
+				'A separate panel app for schools: passes, recurring classes, refund rules, VAT split and staff roles.',
+				'A Python scraper that refreshes school data three times a day into Postgres. CI builds both apps as images and deploys them.'
+			],
+			proof: [
+				['Tests', '83 test files (Vitest)'],
+				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres, Better Auth'],
+				['Built on', 'All 10 of my packages']
+			],
+			growth: {
+				title: 'Clicks from Google search, per month',
+				months: [['Apr', 8], ['May', 5], ['Jun', 6], ['Jul', 336], ['Aug', 953], ['Sep', 2692]],
+				note: 'Average position went from 21.6 in June to 9.5 in September, with 244,000 impressions in the last 28 days. Source: Google Search Console, October 2026.'
+			},
 			uses: ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify']
-		},
-		{
-			id: 'fixtar',
-			name: 'Fixtar',
-			desc: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
-			href: 'https://fixtar.pl',
-			lead: true,
-			client: true,
-			uses: ['svelte-search']
-		},
-		{
-			id: 'mail',
-			name: 'Mail',
-			desc: 'A clean inbox and your own @zaur.app address.',
-			href: 'https://webmail.zaur.app',
-			uses: ['svelte-calendar'],
-			source: 'https://github.com/nomideusz/zaur/tree/main/apps/mail2',
-			account: true,
-			// Mail, Register and Music share one Zaur account, so they sit in one cluster on the canvas.
-			cluster: true
-		},
-		{
-			id: 'register',
-			name: 'Register',
-			desc: 'Create your own @zaur.app email account.',
-			href: 'https://register.zaur.app',
-			cluster: true
-		},
-		{
-			id: 'music',
-			name: 'Music',
-			desc: 'A private, self-hosted music library and radio powered by Navidrome.',
-			href: 'https://music.zaur.app',
-			source: 'https://github.com/nomideusz/zaur/tree/main/apps/music',
-			account: true,
-			cluster: true
 		},
 		{
 			id: 'thebest',
 			name: 'thebest.travel',
-			desc: 'A tour marketplace for Cracow: local guides, live availability and online booking with card payments.',
+			kind: 'Tour booking',
 			href: 'https://thebest.travel',
-			lead: true,
+			what: 'A tour marketplace for Cracow: local guides, live availability and online booking.',
+			built: [
+				'Tour pages with live availability, time slots, pricing and cancellation policies, all from svelte-scheduler.',
+				'Checkout on Stripe Connect, still in test mode while the business side is set up.',
+				'English and Polish, deployed on Railway.'
+			],
+			proof: [
+				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres'],
+				['Built on', '8 of my 10 packages']
+			],
 			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
 		},
 		{
 			id: 'festivals',
 			name: 'Friendly Festivals',
-			desc: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
+			kind: 'Festival directory',
 			href: 'https://festivals.zaur.app',
-			lead: true,
-			// A lead node placed in the right column so the three graph columns stay level.
-			column: 'right',
+			what: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
+			proof: [
+				['Includes', 'Lineups, editions, reviews, organiser claims'],
+				['Tests', '31 test files']
+			],
 			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
 		},
 		{
 			id: 'kino',
 			name: 'Kino',
-			desc: 'What plays in Polish cinemas today, hour by hour, with the small studio and culture-centre cinemas first.',
+			kind: 'Cinema listings',
 			href: 'https://kino.net.pl',
-			lead: true,
-			// Under the packages: a fourth lead node in any side column left that one hanging.
-			column: 'middle',
+			what: 'What plays in Polish cinemas today, hour by hour, with the small studio and culture-centre cinemas first.',
+			proof: [['Data', 'Programmes crawled every 6 hours']],
 			uses: ['svelte-i18n', 'svelte-notify']
 		},
+		{
+			id: 'fixtar',
+			name: 'Fixtar',
+			kind: 'Client shop',
+			href: 'https://fixtar.pl',
+			what: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
+			proof: [
+				['Products', 'Synced from BaseLinker'],
+				['Payments', 'PayU, Przelewy24'],
+				['SEO', 'Built to the client’s technical SEO spec: Product and Offer schema, five split sitemaps, canonical and noindex rules'],
+				['Feeds', 'Google Shopping feed generated from the same data as the schema']
+			],
+			growth: {
+				title: 'Clicks from Google to product and blog pages',
+				months: [['Jun', 19], ['Jul', 60], ['Aug', 92], ['Sep', 130]],
+				note: 'Impressions on those pages grew from 768 to 4,061 a month. Source: Google Search Console, October 2026.'
+			},
+			uses: ['svelte-search']
+		}
+	];
+
+	// How I work: what both kinds of employer ask about, each with its evidence.
+	const how: { h: string; p: string; link?: [string, string] }[] = [
+		{
+			h: 'Whole products',
+			p: 'From the first screen to the server it runs on: interface, API, database, deploys and monitoring, and the upkeep after launch.'
+		},
+		{
+			h: 'With an agent',
+			p: 'Claude Code is my daily tool. Each repo carries an AGENTS.md with the conventions the agent works from, and I publish agent skills.',
+			link: ['Zaur AGENTS.md', 'https://github.com/nomideusz/zaur/blob/main/AGENTS.md']
+		},
+		{
+			h: 'Tested and written down',
+			p: 'Vitest and node:test for logic, Playwright for the flows that matter, and architecture decisions recorded as ADRs.',
+			link: ['Zaur ADRs', 'https://github.com/nomideusz/zaur/tree/main/docs/decisions']
+		},
+		{
+			h: 'Run in production',
+			p: 'Docker on VPSes managed with Dokploy, deploys from GitHub Actions, errors and traces in a self-hosted Traceway, restic backups.',
+			link: ['107 Railway templates', '#templates']
+		}
 	];
 
 	const packages = [
@@ -932,110 +1007,38 @@
 		}
 	];
 
-	// Spec rows per app; every value is a fact from the app's own repo.
-	const specs: Record<string, [string, string][]> = {
-		szkolyjogi: [
-			['Covers', 'Yoga and pilates schools across Poland'],
-			['Built on', 'All 10 packages in this catalog'],
-			['Languages', 'Polish, English, Ukrainian']
-		],
-		fixtar: [
-			['Products', 'Synced from BaseLinker'],
-			['Payments', 'PayU, Przelewy24'],
-			['Search', '@nomideusz/svelte-search'],
-			['Feeds', 'Google Merchant']
-		],
-		mail: [
-			['Server', 'Stalwart, self-hosted'],
-			['Protocol', 'JMAP'],
-			['Includes', 'Calendar, contacts, files, Meet video calls'],
-			['Client', 'Installable web app, push notifications, several accounts'],
-			['Sign-in', 'One Zaur account for Mail, Music, Photos and Bartube']
-		],
-		register: [
-			['Creates', 'A real @zaur.app mailbox'],
-			['Talks to', 'Stalwart admin API']
-		],
-		thebest: [
-			['Covers', 'Guided tours in Cracow'],
-			['Payments', 'Stripe'],
-			['Languages', 'English, Polish']
-		],
-		festivals: [
-			['Covers', 'Festivals worldwide'],
-			['Includes', 'Lineups, editions, reviews, organiser claims']
-		],
-		kino: [
-			['Covers', 'Cinemas across Poland, small ones first'],
-			['Data', 'Programmes crawled every 6 hours']
-		],
-		music: [
-			['Server', 'Navidrome, self-hosted'],
-			['Client', 'Installable web app'],
-			['Sign-in', 'Your Zaur account']
-		]
-	};
-
-	// Lead projects come first, in the order the poster shows them; any project
-	// not named here follows in catalog order.
-	const order = ['szkolyjogi', 'fixtar', 'thebest', 'festivals', 'kino', 'mail', 'music', 'register'];
-	const rank = (id: string) => (order.indexOf(id) + 1 || order.length + 1);
 	// Windows: a capture of the live site (src/lib/windows, provenance embedded),
 	// replaced by the site itself in an iframe where the site allows framing.
 	const shots = import.meta.glob('../lib/windows/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 	const shot = (id: string) => shots[`../lib/windows/${id}.webp`];
 	const framable = new Set(['szkolyjogi']);
 	const host = (href: string) => new URL(href).host;
-	// Which of a project's packages its three chips show first.
-	const chipsFirst: Record<string, string[]> = {
-		szkolyjogi: ['svelte-search', 'svelte-i18n', 'zaur-world'],
-		thebest: ['svelte-search', 'svelte-calendar', 'svelte-qr']
-	};
-	const chipOrder = (id: string, uses: string[]) => {
-		const first = chipsFirst[id] ?? [];
-		return [...first.filter((u) => uses.includes(u)), ...uses.filter((u) => !first.includes(u))];
-	};
 
 	const pkgs = packages.map((p) => ({ ...p, id: p.name.split('/')[1] }));
-	const projects = [...products]
-		.sort((a, b) => rank(a.id) - rank(b.id))
-		.map((p) => ({ ...p, uses: chipOrder(p.id, p.uses ?? []), specs: specs[p.id] ?? [], shot: shot(p.id), live: framable.has(p.id) }));
+	const flagships = work.filter((w) => w.built);
+	const others = work.filter((w) => !w.built);
+	const usedIn = (id: string) => work.filter((w) => w.uses.includes(id)).map((w) => w.name);
 	const sites = websites.map((w) => ({ ...w, plates: platesFor(w.id, w.name) }));
 	const groups = kinds
 		.map(([kind]) => ({ kind, items: templates.filter((t) => kindOf(t.name) === kind) }))
 		.filter((g) => g.items.length);
 	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
 
-	// The signature: pointing at a package lights the projects built from it,
-	// pointing at a project lights its packages. No lines, only light.
-	let active = $state<{ kind: 'pkg' | 'proj'; id: string } | null>(null);
+	// The signature: pointing at a product lights the packages it is built from,
+	// pointing at a package lights the products that use it. No lines, only light.
+	let active = $state<{ kind: 'pkg' | 'work'; id: string } | null>(null);
 	const litPkgs = $derived.by(() => {
 		if (!active) return null;
 		if (active.kind === 'pkg') return new Set([active.id]);
-		return new Set(projects.find((p) => p.id === active!.id)?.uses ?? []);
+		return new Set(work.find((w) => w.id === active!.id)?.uses ?? []);
 	});
-	const litProjs = $derived.by(() => {
+	const litWork = $derived.by(() => {
 		if (!active) return null;
-		if (active.kind === 'proj') return new Set([active.id]);
-		return new Set(projects.filter((p) => p.uses.includes(active!.id)).map((p) => p.id));
+		if (active.kind === 'work') return new Set([active.id]);
+		return new Set(work.filter((w) => w.uses.includes(active!.id)).map((w) => w.id));
 	});
-	const point = (kind: 'pkg' | 'proj', id: string) => () => {
-		active = { kind, id };
-		if (kind === 'pkg') reveal();
-	};
+	const point = (kind: 'pkg' | 'work', id: string) => () => (active = { kind, id });
 	const leave = () => (active = null);
-
-	// When a lit project sits below the column's fold, bring the first one up.
-	let column = $state<HTMLElement>();
-	function reveal() {
-		const first = column?.querySelector<HTMLElement>('.proj.lit');
-		if (!column || !first) return;
-		const top = first.offsetTop - column.offsetTop;
-		if (top < column.scrollTop || top + 40 > column.scrollTop + column.clientHeight) {
-			const smooth = !matchMedia('(prefers-reduced-motion: reduce)').matches;
-			column.scrollTo({ top, behavior: smooth ? 'smooth' : 'auto' });
-		}
-	}
 
 	// Seeded once from the prerendered numbers; npm refreshes them on mount.
 	// svelte-ignore state_referenced_locally
@@ -1069,6 +1072,22 @@
 	});
 </script>
 
+{#snippet growth(g: NonNullable<Work['growth']>)}
+	{@const top = Math.max(...g.months.map(([, n]) => n))}
+	<figure class="growth">
+		<figcaption>{g.title}</figcaption>
+		<ol>
+			{#each g.months as [m, n] (m)}
+				<li>
+					<span class="col"><b>{n.toLocaleString('en')}</b><i style:height="{(n / top) * 100}%"></i></span>
+					<span class="mo">{m}</span>
+				</li>
+			{/each}
+		</ol>
+		<p>{g.note}</p>
+	</figure>
+{/snippet}
+
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
@@ -1081,112 +1100,178 @@
 	<meta property="og:image" content="{site}og.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="Zaur package names with their versions beside the words Projects, packages, templates." />
+	<meta property="og:image:alt" content="Bartosz Dymet, frontend engineer, beside the product names Zaur, Szkoły Jogi, thebest.travel, Friendly Festivals, Kino and Fixtar." />
 	<meta name="twitter:card" content="summary_large_image" />
 	{@html `<script type="application/ld+json">${JSON.stringify(ld)}</script>`}
 </svelte:head>
 
 <header class="bar">
-	<a class="mark" href="/" aria-label="Zaur, home">ZAUR</a>
+	<a class="mark" href="/">Bartosz Dymet</a>
 	<nav class="tabs" aria-label="Sections">
-		<a href="#projects">Projects</a>
+		<a href="#work">Work</a>
 		<a href="#packages">Packages</a>
 		<a href="#websites">Websites</a>
-		<a href="#templates">Templates</a>
+		<a href="#how">How I work</a>
 	</nav>
 	<a class="mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
 </header>
 
 <main>
-	<h1 class="sr">Zaur: projects and the packages they are built from</h1>
 	<div class="poster" class:pointing={active}>
-		<section class="programme" id="packages" aria-labelledby="packages-h">
-			<h2 class="sr" id="packages-h">Packages</h2>
+		<nav class="programme" aria-label="Products">
 			<ul>
-				{#each pkgs as p (p.id)}
-					<li class:lit={litPkgs?.has(p.id)}>
+				{#each work as w (w.id)}
+					<li class:lit={litWork?.has(w.id)}>
 						<a
 							class="row"
-							href={p.demo ?? p.npm}
-							onpointerenter={point('pkg', p.id)}
+							href="#{w.id}"
+							onpointerenter={point('work', w.id)}
 							onpointerleave={leave}
-							onfocus={point('pkg', p.id)}
+							onfocus={point('work', w.id)}
 							onblur={leave}
 						>
-							<span class="name">{p.id}</span>
-							<span class="sr">: {p.desc}</span>
-							<span class="ver" aria-label="version {version(p.id)}">{version(p.id)}</span>
+							<span class="name">{w.name}</span>
+							<span class="ver">{w.kind}</span>
 						</a>
 					</li>
 				{/each}
 			</ul>
-		</section>
+		</nav>
 
-		<section class="projects" id="projects" aria-labelledby="projects-h" bind:this={column}>
-			<h2 class="sr" id="projects-h">Projects</h2>
-			{#each projects as a (a.id)}
-				<article
-					class="proj"
-					class:lit={litProjs?.has(a.id)}
-					class:bare={!a.shot}
-					onpointerenter={point('proj', a.id)}
-					onpointerleave={leave}
-					onfocusin={point('proj', a.id)}
-					onfocusout={leave}
-				>
-					<div class="body">
-						<h3>
-							{#if a.live}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
-							<a href={a.href}>{a.name}</a>
-						</h3>
-						<p class="where">
-							<span>{host(a.href)}</span>
-							{#if a.live && !trafficDown}
-								<span>{traffic?.clicksPerDay ?? '…'} search clicks a day · Google Search</span>
-							{:else if a.client}
-								<span>client work</span>
-							{:else if a.account}
-								<span>needs a Zaur address</span>
-							{/if}
-						</p>
-						{#if a.shot}
-							<a class="window" href={a.href} tabindex="-1" aria-hidden="true" bind:clientWidth={frameWidth}>
-								<img src={a.shot} alt="" width="1200" height="663" loading={a.live ? 'eager' : 'lazy'} />
-								{#if a.live}
-									<iframe
-										src={a.href}
-										title="{a.name}, live"
-										loading="lazy"
-										tabindex="-1"
-										class:shown={framed}
-										style:--s={frameWidth / 1440}
-										onload={() => (framed = true)}
-									></iframe>
-								{/if}
+		<section class="intro" aria-labelledby="who">
+			<h1 id="who">Bartosz Dymet</h1>
+			<p class="role">Frontend engineer · Svelte and TypeScript · Kraków</p>
+			<p class="pitch">
+				I design, build and run complete products: the interface, the backend, the servers and the tests. Six are live.
+				Point at one to see the packages it is built from.
+			</p>
+			<p class="links">
+				<a href={github}>github.com/nomideusz</a>
+				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
+			</p>
+			<div class="kit">
+				<h2>Built from my open-source packages</h2>
+				<ul class="chips">
+					{#each pkgs as p (p.id)}
+						<li class:lit={litPkgs?.has(p.id)}>
+							<a
+								class="chip"
+								href="#pkg-{p.id}"
+								onpointerenter={point('pkg', p.id)}
+								onpointerleave={leave}
+								onfocus={point('pkg', p.id)}
+								onblur={leave}
+							>
+								<span>{p.id}</span><span>{version(p.id)}</span>
 							</a>
-						{:else}
-							<p class="desc">{a.desc}</p>
-						{/if}
-					</div>
-					{#if a.uses.length}
-						<ul class="chips" aria-label="Built with">
-							{#each a.uses.slice(0, 3) as u (u)}
-								<li class:lit={litPkgs?.has(u)}>
-									<a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a>
-								</li>
-							{/each}
-							{#if a.uses.length > 3}
-								<li class="more">+{a.uses.length - 3} more</li>
-							{/if}
-						</ul>
-					{/if}
-				</article>
-			{/each}
+						</li>
+					{/each}
+				</ul>
+			</div>
 		</section>
 	</div>
 
+	<section class="work" id="work" aria-labelledby="work-h">
+		<div class="strip"><h2 id="work-h">Work · {work.length} products</h2></div>
+		{#each flagships as w (w.id)}
+			{@const live = framable.has(w.id)}
+			<article class="case" id={w.id}>
+				<div class="media">
+					{#if shot(w.id)}
+						<a class="window" href={w.href} tabindex="-1" aria-hidden="true" bind:clientWidth={frameWidth}>
+							<img src={shot(w.id)} alt="" width="1200" height="663" loading={live ? 'eager' : 'lazy'} />
+							{#if live}
+								<iframe
+									src={w.href}
+									title="{w.name}, live"
+									loading="lazy"
+									tabindex="-1"
+									class:shown={framed}
+									style:--s={frameWidth / 1440}
+									onload={() => (framed = true)}
+								></iframe>
+							{/if}
+						</a>
+					{:else if w.parts}
+						<ul class="parts">
+							{#each w.parts as [n, h] (n)}
+								<li><b>{n}</b><span>{h}</span></li>
+							{/each}
+						</ul>
+					{/if}
+					{#if w.growth}{@render growth(w.growth)}{/if}
+				</div>
+				<div class="case-body">
+					<h3>
+						{#if live}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
+						<a href={w.href}>{w.name}</a>
+						<span class="tag">{w.kind}</span>
+					</h3>
+					<p class="meta">
+						{host(w.href)}{#if live && !trafficDown}<span> · {traffic?.clicksPerDay ?? '…'} search clicks a day from Google</span>{/if}
+					</p>
+					<p class="what">{w.what}</p>
+					<h4>What I built</h4>
+					<ul class="built">
+						{#each w.built ?? [] as b (b)}<li>{b}</li>{/each}
+					</ul>
+					<dl class="facts">
+						{#each w.proof ?? [] as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+					</dl>
+					<ul class="chips">
+						{#each w.uses as u (u)}
+							<li><a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a></li>
+						{/each}
+					</ul>
+					<p class="go">
+						<a href={w.href}>Open {host(w.href)}</a>
+						{#if w.source}<a href={w.source}>Source on GitHub</a>{/if}
+					</p>
+				</div>
+			</article>
+		{/each}
+		<ul class="others">
+			{#each others as w (w.id)}
+				<li id={w.id}>
+					<h3><a href={w.href}>{w.name}</a><span class="tag">{w.kind}</span></h3>
+					<p class="meta">{host(w.href)}</p>
+					<p class="what">{w.what}</p>
+					<dl class="facts">
+						{#each w.proof ?? [] as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+					</dl>
+					{#if w.growth}{@render growth(w.growth)}{/if}
+					<ul class="chips">
+						{#each w.uses as u (u)}
+							<li><a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a></li>
+						{/each}
+					</ul>
+				</li>
+			{/each}
+		</ul>
+	</section>
+
+	<section class="packages" id="packages" aria-labelledby="packages-h">
+		<div class="strip"><h2 id="packages-h">Packages · {pkgs.length}</h2></div>
+		<p class="lede">The building blocks my products share, published on npm under @nomideusz.</p>
+		<ul class="ptable">
+			{#each pkgs as p (p.id)}
+				<li id="pkg-{p.id}">
+					<a class="p-name" href={p.npm}>{p.id}</a>
+					<span class="p-ver">{version(p.id)}</span>
+					<p>{p.desc}</p>
+					<p class="p-used">{usedIn(p.id).length ? `Used in ${usedIn(p.id).join(', ')}` : ''}</p>
+					<p class="p-links">
+						{#if p.demo}<a href={p.demo}>Demo</a>{/if}
+						{#if p.source}<a href={p.source}>Source</a>{/if}
+					</p>
+				</li>
+			{/each}
+		</ul>
+	</section>
+
 	<section class="websites" id="websites" aria-labelledby="websites-h">
 		<div class="strip"><h2 id="websites-h">Websites · {websites.length}</h2></div>
+		<p class="lede">Sites I designed and built for clients, and a few experiments of my own.</p>
 		<ul class="sites">
 			{#each sites as w (w.id)}
 				<li>
@@ -1207,14 +1292,27 @@
 		</ul>
 	</section>
 
+	<section class="how" id="how" aria-labelledby="how-h">
+		<div class="strip"><h2 id="how-h">How I work</h2></div>
+		<ul class="how-grid">
+			{#each how as x (x.h)}
+				<li>
+					<h3>{x.h}</h3>
+					<p>{x.p}</p>
+					{#if x.link}<a href={x.link[1]}>{x.link[0]}</a>{/if}
+				</li>
+			{/each}
+		</ul>
+	</section>
+
 	<section class="folds" aria-label="More">
 		<details id="templates">
 			<summary>
-				<h2>Templates · {templates.length}</h2>
+				<h2>Railway templates · {templates.length}</h2>
 				{@render toggle()}
 			</summary>
 			<div class="fold">
-				<p class="lede">One-click Railway deploys: every template is open source and runs unmodified upstream images.</p>
+				<p class="lede">Infrastructure work: one-click deploys of open-source software on Railway. Every template runs unmodified upstream images.</p>
 				{#each groups as g (g.kind)}
 					<h3>{g.kind}</h3>
 					<ul class="table">
@@ -1251,8 +1349,8 @@
 </main>
 
 <footer class="foot">
-	<p>© 2026 Zaur</p>
-	<a href="https://github.com/nomideusz">github.com/nomideusz</a>
+	<p>© 2026 Bartosz Dymet</p>
+	<a href={github}>github.com/nomideusz</a>
 	<a href="https://register.zaur.app">Get an @zaur.app address</a>
 </footer>
 
@@ -1271,7 +1369,7 @@
 		top: 0;
 		z-index: 2;
 		display: grid;
-		grid-template-columns: 38.35vw 10.15vw 11.15vw 11.15vw 11.4vw 1fr;
+		grid-template-columns: 38.35vw 9.4vw 10.4vw 10.4vw 11.9vw 1fr;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -1321,7 +1419,7 @@
 		border-bottom: var(--rule-heavy) solid var(--ink);
 	}
 
-	/* The programme: package names as the poster. */
+	/* The programme: product names as the poster. */
 	.programme {
 		background: var(--orange);
 		border-right: var(--rule-heavy) solid var(--ink);
@@ -1331,10 +1429,10 @@
 	}
 	.row {
 		display: flex;
-		align-items: center;
+		align-items: flex-end;
 		justify-content: space-between;
-		height: 5.135vw;
-		padding: 0.15vw 1.64vw 0 1.39vw;
+		height: 7.5vw;
+		padding: 0 1.64vw 0.35vw 1.39vw;
 		text-decoration: none;
 	}
 	.name {
@@ -1345,8 +1443,7 @@
 		translate: 0 0.1em;
 	}
 	.ver {
-		padding-top: 0.45vw;
-		font-variant-numeric: tabular-nums;
+		padding-bottom: 1.05vw;
 		font-size: 1.53vw;
 	}
 	.lit .row {
@@ -1360,34 +1457,82 @@
 		outline: none;
 	}
 
-	/* The column: live projects, three in view, the rest a scroll away. */
-	.projects {
-		contain: size;
-		overflow-y: auto;
+	/* The intro: who, in the column beside the products. */
+	.intro {
+		display: flex;
+		flex-direction: column;
+		padding: 2vw 1.6vw 1.6vw;
 		background: var(--lilac);
-		scrollbar-width: thin;
-		scrollbar-color: var(--ink) var(--lilac);
 	}
-	.proj {
-		display: grid;
-		grid-template-columns: 23.3vw 1fr;
+	.intro h1 {
+		font-weight: 800;
+		font-size: 3.7vw;
+		line-height: 0.95;
+		letter-spacing: -0.035em;
 	}
-	.proj + .proj {
-		border-top: var(--rule-heavy) solid var(--ink);
+	.role {
+		margin-top: 0.8vw;
+		font-weight: 700;
+		font-size: max(14px, 1.3vw);
 	}
-	.proj:not(.bare) {
-		height: calc(51.35vw / 3);
+	.pitch {
+		max-width: 32ch;
+		margin-top: 1.5vw;
+		font-size: max(15px, 1.45vw);
+		line-height: 1.35;
 	}
-	.body {
-		padding: 1.2vw 1.15vw 0.9vw 1.19vw;
-		border-right: var(--rule) solid var(--ink);
+	.links {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4vw 1.6vw;
+		margin-top: 1.3vw;
+		font-size: max(13px, 1.05vw);
 	}
-	h3 {
+	.kit {
+		margin-top: auto;
+		padding-top: 1.6vw;
+	}
+	.kit h2 {
+		margin-bottom: 0.7vw;
+		font-weight: 700;
+		font-size: max(12px, 0.95vw);
+	}
+
+	.chips {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45vw;
+	}
+	.chip {
 		display: flex;
 		align-items: center;
-		gap: 0.5vw;
+		gap: 1em;
+		height: 2.2vw;
+		min-height: 28px;
+		padding: 0 0.55vw;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		font-size: max(12px, 0.95vw);
+		white-space: nowrap;
+		text-decoration: none;
+	}
+	.chip span + span {
+		font-variant-numeric: tabular-nums;
+	}
+	.chip:hover,
+	.chips .lit .chip {
+		background: var(--chip);
+	}
+	.pointing .kit li:not(.lit) .chip {
+		opacity: 0.35;
+	}
+
+	h3 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 0.75rem;
 		font-weight: 700;
-		font-size: 1.5vw;
 		line-height: 1.1;
 		letter-spacing: -0.02em;
 	}
@@ -1397,30 +1542,120 @@
 	h3 a:hover {
 		text-decoration: underline;
 	}
+	.tag {
+		padding: 0.05rem 0.45rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		font-weight: 500;
+		font-size: 0.8125rem;
+		letter-spacing: 0;
+	}
 	.dot {
-		width: 0.8vw;
-		height: 0.8vw;
+		width: 0.75rem;
+		height: 0.75rem;
 		border-radius: 50%;
 		background: var(--live);
 	}
 	.dot.off {
 		background: var(--quiet);
 	}
-	.where {
-		display: flex;
-		justify-content: space-between;
-		gap: 1em;
-		margin-top: 0.15vw;
-		font-size: max(12px, 0.9vw);
+	.meta {
+		margin-top: 0.3rem;
+		font-size: 0.875rem;
 	}
-	.where span + span {
-		font-size: max(12px, 0.78vw);
-		text-align: right;
+	.what {
+		max-width: 60ch;
+		margin-top: 0.75rem;
+		font-size: max(1rem, 1.1vw);
+	}
+	.facts {
+		margin: 1rem 0;
+		font-size: 0.875rem;
+	}
+	.facts div {
+		display: grid;
+		grid-template-columns: 6.5rem 1fr;
+		gap: 0.75rem;
+		padding: 0.25rem 0;
+		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
+	}
+	.facts dt {
+		color: var(--quiet);
+	}
+
+	.growth {
+		margin: 1.39vw 0 0;
+		padding: 1rem 1.2rem 1.1rem;
+		border: var(--rule) solid var(--ink);
+		background: var(--paper);
+	}
+	.others .growth {
+		margin: 0 0 1rem;
+	}
+	.growth figcaption {
+		font-weight: 700;
+	}
+	.growth ol {
+		display: flex;
+		gap: 0.5rem;
+		height: 10rem;
+		margin-top: 0.75rem;
+	}
+	.growth li {
+		flex: 1;
+		display: grid;
+		grid-template-rows: 1fr auto;
+	}
+	.growth .col {
+		display: flex;
+		flex-direction: column;
+		justify-content: flex-end;
+		padding-top: 1.25rem;
+		border-bottom: var(--rule) solid var(--ink);
+	}
+	.growth b {
+		font-size: 0.8125rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.growth i {
+		display: block;
+		min-height: 2px;
+		background: var(--ink);
+	}
+	.growth li:last-child i {
+		background: var(--orange);
+	}
+	.growth .mo {
+		padding-top: 0.25rem;
+		font-size: 0.8125rem;
+		color: var(--quiet);
+	}
+	.growth p {
+		margin-top: 0.75rem;
+		font-size: 0.875rem;
+	}
+
+	/* Work: three case studies, then the rest in a ruled row. */
+	.work,
+	.packages,
+	.websites,
+	.how {
+		border-bottom: var(--rule-heavy) solid var(--ink);
+	}
+	.case {
+		display: grid;
+		grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+		border-bottom: var(--rule) solid var(--ink);
+		scroll-margin-top: 4vw;
+	}
+	.media {
+		padding: 1.39vw;
+		border-right: var(--rule) solid var(--ink);
+		background: var(--lilac);
 	}
 	.window {
 		position: relative;
 		display: block;
-		margin-top: 0.85vw;
 		aspect-ratio: 541 / 299;
 		overflow: hidden;
 		border: var(--rule) solid var(--ink);
@@ -1447,47 +1682,135 @@
 	.window iframe.shown {
 		visibility: visible;
 	}
-	.desc {
-		margin-top: 0.8vw;
-		max-width: 38ch;
-		font-size: max(13px, 0.95vw);
-	}
-	.chips {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 0.48vw;
-		padding: 6.33vw 1.35vw 1.07vw 0.66vw;
-	}
-	.bare .chips {
-		padding-top: 1.07vw;
-	}
-	.chip {
-		display: flex;
-		align-items: center;
-		gap: 1.2em;
-		height: 2.39vw;
-		min-height: 28px;
-		padding: 0 0.55vw;
+	.parts {
+		display: grid;
+		aspect-ratio: 541 / 299;
+		align-content: center;
 		border: var(--rule) solid var(--ink);
-		border-radius: 3px;
-		font-size: max(12px, 1vw);
-		white-space: nowrap;
-		text-decoration: none;
+		background: var(--paper);
 	}
-	.chips .lit .chip {
+	.parts li {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.6vw 1.2vw;
+	}
+	.parts li + li {
+		border-top: var(--rule) solid var(--ink);
+	}
+	.parts b {
+		font-weight: 700;
+		font-size: max(1.5rem, 3vw);
+		line-height: 1;
+		letter-spacing: -0.03em;
+	}
+	.parts span {
+		font-size: max(0.8125rem, 1vw);
+		text-align: right;
+	}
+	.case-body {
+		padding: 1.4vw 1.39vw 1.6vw;
+	}
+	.case h3 {
+		font-size: max(1.5rem, 2.4vw);
+	}
+	.case h4 {
+		margin: 1.25rem 0 0.4rem;
+		font-weight: 700;
+		font-size: 0.875rem;
+	}
+	.built {
+		max-width: 66ch;
+		padding-left: 1.1em;
+		list-style: square;
+	}
+	.built li + li {
+		margin-top: 0.35rem;
+	}
+	.go {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem 1.5rem;
+		margin-top: 1.1rem;
+		font-weight: 700;
+	}
+	.others {
+		display: grid;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	.others > li {
+		padding: 1.2rem 1.39vw 1.4rem;
+		scroll-margin-top: 4vw;
+	}
+	.others > li + li {
+		border-left: var(--rule) solid var(--ink);
+	}
+	.others h3 {
+		font-size: max(1.25rem, 1.6vw);
+	}
+
+	/* Packages: the shared building blocks, one ruled row each. */
+	.packages .lede,
+	.websites .lede {
+		max-width: none;
+		margin: 0;
+		padding: 1.25rem 1.39vw;
+		border-bottom: var(--rule) solid var(--ink);
+	}
+	.ptable li {
+		display: grid;
+		grid-template-columns: minmax(13rem, 21vw) 4.5rem minmax(0, 1fr) minmax(9rem, 17vw) 7.5rem;
+		gap: 0.5rem 2rem;
+		align-items: baseline;
+		padding: 0.85rem 1.39vw;
+		scroll-margin-top: 4vw;
+	}
+	.ptable li + li {
+		border-top: var(--rule) solid var(--ink);
+	}
+	.ptable li:target {
 		background: var(--chip);
 	}
-	.more {
-		padding-left: 0.6vw;
-		font-size: max(12px, 0.95vw);
+	.p-name {
+		font-weight: 700;
+		font-size: max(1.25rem, 1.8vw);
+		letter-spacing: -0.02em;
+		text-decoration: none;
 	}
-	.pointing .proj:not(.lit) {
-		color: color-mix(in srgb, var(--ink) 45%, var(--lilac));
+	.p-name:hover {
+		text-decoration: underline;
 	}
-	.pointing .proj:not(.lit) .window,
-	.pointing .proj:not(.lit) .chip {
-		opacity: 0.35;
+	.p-ver {
+		font-variant-numeric: tabular-nums;
+	}
+	.p-used {
+		color: var(--quiet);
+		font-size: 0.875rem;
+	}
+	.p-links {
+		display: flex;
+		gap: 1rem;
+		justify-self: end;
+	}
+
+	/* How I work: four ruled cells. */
+	.how-grid {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+	.how-grid li {
+		padding: 1.2rem 1.39vw 1.5rem;
+	}
+	.how-grid li + li {
+		border-left: var(--rule) solid var(--ink);
+	}
+	.how-grid h3 {
+		font-size: max(1.25rem, 1.6vw);
+	}
+	.how-grid p {
+		max-width: 40ch;
+		margin: 0.6rem 0 0.8rem;
 	}
 
 	/* Folds: closed catalogs, opened in place. */
@@ -1586,9 +1909,6 @@
 	}
 
 	/* Websites: always open, a grid of client sites ruled like the poster. */
-	.websites {
-		border-bottom: var(--rule-heavy) solid var(--ink);
-	}
 	.strip {
 		cursor: auto;
 		border-bottom: var(--rule) solid var(--ink);
@@ -1710,57 +2030,85 @@
 			border-bottom: var(--rule-heavy) solid var(--ink);
 		}
 		.row {
-			height: 11vw;
-			padding: 0 1rem;
+			height: 13vw;
+			padding: 0 1rem 0.2rem;
 		}
 		.name {
 			font-size: 8.4vw;
 		}
 		.ver {
-			font-size: 0.9375rem;
+			padding-bottom: 0.6rem;
+			font-size: 0.8125rem;
 		}
-		.projects {
-			contain: none;
-			overflow: visible;
+		.intro {
+			order: -1;
+			padding: 1.5rem 1rem;
+			border-bottom: var(--rule-heavy) solid var(--ink);
 		}
-		.proj {
-			grid-template-columns: 1fr;
+		.intro h1 {
+			font-size: 2.75rem;
 		}
-		.proj:not(.bare) {
-			height: auto;
-		}
-		.body {
-			padding: 1.25rem 1rem 0;
-			border-right: 0;
-		}
-		h3 {
-			gap: 0.5rem;
-			font-size: 1.5rem;
-		}
-		.dot {
-			width: 0.75rem;
-			height: 0.75rem;
-		}
-		.window {
-			margin-top: 1rem;
-		}
-		.desc {
+		.role {
 			margin-top: 0.5rem;
 		}
-		.chips,
-		.bare .chips {
-			flex-flow: row wrap;
+		.pitch {
+			margin-top: 1rem;
+		}
+		.links {
+			gap: 0.4rem 1.5rem;
+			margin-top: 1rem;
+		}
+		.kit {
+			padding-top: 1.5rem;
+		}
+		.kit h2 {
+			margin-bottom: 0.5rem;
+		}
+		.chips {
 			gap: 0.5rem;
-			padding: 1rem;
 		}
 		.chip {
 			height: 2.25rem;
 			padding: 0 0.6rem;
 			font-size: 0.875rem;
 		}
-		.more {
-			align-self: center;
-			font-size: 0.875rem;
+		.case,
+		.others,
+		.how-grid {
+			grid-template-columns: 1fr;
+		}
+		.media {
+			padding: 1rem;
+			border-right: 0;
+			border-bottom: var(--rule) solid var(--ink);
+		}
+		.case-body,
+		.others > li,
+		.how-grid li {
+			padding: 1.25rem 1rem 1.5rem;
+		}
+		.others > li + li,
+		.how-grid li + li {
+			border-left: 0;
+			border-top: var(--rule) solid var(--ink);
+		}
+		.parts li {
+			padding: 0.5rem 0.75rem;
+		}
+		.packages .lede,
+		.websites .lede {
+			padding: 1rem;
+		}
+		.ptable li {
+			grid-template-columns: 1fr auto;
+			gap: 0.25rem 1rem;
+			padding: 1rem;
+		}
+		.ptable li > p {
+			grid-column: 1 / -1;
+		}
+		.p-links {
+			justify-self: start;
 		}
 		summary {
 			padding: 0 1rem;
