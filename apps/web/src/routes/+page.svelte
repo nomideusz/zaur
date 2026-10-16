@@ -1091,6 +1091,7 @@
 	<nav class="tabs" aria-label="Sections">
 		<a href="#projects">Projects</a>
 		<a href="#packages">Packages</a>
+		<a href="#websites">Websites</a>
 		<a href="#templates">Templates</a>
 	</nav>
 	<a class="mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
@@ -1184,6 +1185,28 @@
 		</section>
 	</div>
 
+	<section class="websites" id="websites" aria-labelledby="websites-h">
+		<div class="strip"><h2 id="websites-h">Websites · {websites.length}</h2></div>
+		<ul class="sites">
+			{#each sites as w (w.id)}
+				<li>
+					{#if w.plates}
+						<a class="shot" href={w.href} tabindex="-1" aria-hidden="true">
+							<img src={w.plates.frames[0].src} alt="" width="1200" height="750" loading="lazy" />
+						</a>
+					{/if}
+					<div class="site">
+						<h3><a href={w.href}>{w.name}</a>{#if w.tag}<span>{w.tag}</span>{/if}</h3>
+						<p>{w.desc}</p>
+						<dl>
+							{#each w.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+						</dl>
+					</div>
+				</li>
+			{/each}
+		</ul>
+	</section>
+
 	<section class="folds" aria-label="More">
 		<details id="templates">
 			<summary>
@@ -1204,31 +1227,6 @@
 						{/each}
 					</ul>
 				{/each}
-			</div>
-		</details>
-
-		<details id="websites">
-			<summary>
-				<h2>Websites · {websites.length}</h2>
-				{@render toggle()}
-			</summary>
-			<div class="fold">
-				<ul class="sites">
-					{#each sites as w (w.id)}
-						<li>
-							{#if w.plates}
-								<img src={w.plates.frames[0].src} alt={w.plates.frames[0].alt} width="1200" height="750" loading="lazy" />
-							{/if}
-							<div>
-								<h3><a href={w.href}>{w.name}</a>{#if w.tag}<span>{w.tag}</span>{/if}</h3>
-								<p>{w.desc}</p>
-								<dl>
-									{#each w.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-								</dl>
-							</div>
-						</li>
-					{/each}
-				</ul>
 			</div>
 		</details>
 
@@ -1273,7 +1271,7 @@
 		top: 0;
 		z-index: 2;
 		display: grid;
-		grid-template-columns: 49.5vw 10.15vw 11.15vw 11.4vw 1fr;
+		grid-template-columns: 38.35vw 10.15vw 11.15vw 11.15vw 11.4vw 1fr;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -1513,7 +1511,8 @@
 			transition: none;
 		}
 	}
-	summary {
+	summary,
+	.strip {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -1526,7 +1525,8 @@
 	summary::-webkit-details-marker {
 		display: none;
 	}
-	summary h2 {
+	summary h2,
+	.strip h2 {
 		font-weight: 800;
 		font-size: max(1.75rem, 3.07vw);
 		line-height: 1;
@@ -1585,39 +1585,80 @@
 		justify-self: end;
 	}
 
-	.sites li {
+	/* Websites: always open, a grid of client sites ruled like the poster. */
+	.websites {
+		border-bottom: var(--rule-heavy) solid var(--ink);
+	}
+	.strip {
+		cursor: auto;
+		border-bottom: var(--rule) solid var(--ink);
+	}
+	.sites {
 		display: grid;
-		grid-template-columns: minmax(0, 20rem) minmax(0, 1fr);
-		gap: 2rem;
-		padding: 1.5rem 0;
-		border-top: var(--rule) solid var(--ink);
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+	}
+	.sites li {
+		display: flex;
+		flex-direction: column;
+		border-right: var(--rule) solid var(--ink);
+		border-bottom: var(--rule) solid var(--ink);
+	}
+	.sites li:nth-child(3n) {
+		border-right: 0;
+	}
+	.sites li:nth-last-child(-n + 3):nth-child(3n + 1),
+	.sites li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
+		border-bottom: 0;
+	}
+	.shot {
+		display: block;
+		border-bottom: var(--rule) solid var(--ink);
 	}
 	.sites img {
+		display: block;
 		width: 100%;
 		height: auto;
-		border: var(--rule) solid var(--ink);
+	}
+	.site {
+		padding: 1.1rem 1.39vw 1.4rem;
 	}
 	.sites h3 {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.25rem 0.75rem;
 		margin: 0;
-		gap: 1rem;
-		font-size: 1.5rem;
+		font-weight: 700;
+		font-size: max(1.25rem, 1.5vw);
+		letter-spacing: -0.02em;
+	}
+	.sites h3 a {
+		text-decoration: none;
+	}
+	.sites h3 a:hover {
+		text-decoration: underline;
 	}
 	.sites h3 span {
 		font-weight: 500;
-		font-size: 0.875rem;
-		padding: 0.1rem 0.5rem;
+		font-size: 0.8125rem;
+		padding: 0.05rem 0.45rem;
 		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
 		letter-spacing: 0;
 	}
 	.sites p {
-		max-width: 62ch;
-		margin: 0.5rem 0 1rem;
+		max-width: 52ch;
+		margin: 0.5rem 0 0.9rem;
+	}
+	.sites dl {
+		font-size: 0.875rem;
 	}
 	.sites dl div {
 		display: grid;
-		grid-template-columns: 8rem 1fr;
-		gap: 1rem;
-		padding: 0.25rem 0;
+		grid-template-columns: 6.5rem 1fr;
+		gap: 0.75rem;
+		padding: 0.2rem 0;
+		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
 	}
 	.sites dt {
 		color: var(--quiet);
@@ -1634,7 +1675,7 @@
 	/* Below 900 the sheet stops scaling and becomes a stack. */
 	@media (max-width: 900px) {
 		.bar {
-			grid-template-columns: 1fr 1fr 1fr;
+			grid-template-columns: repeat(4, 1fr);
 			height: auto;
 		}
 		.mark {
@@ -1643,14 +1684,15 @@
 			font-size: 1.5rem;
 		}
 		.mail {
-			grid-column: 3;
+			grid-column: 3 / 5;
 			grid-row: 1;
+			justify-self: end;
 			padding-right: 1rem;
 			font-size: 0.875rem;
 		}
 		.tabs a {
 			height: 2.75rem;
-			font-size: 0.9375rem;
+			font-size: 0.875rem;
 			border-top: var(--rule) solid var(--bar-rule);
 			border-left: 0;
 		}
@@ -1726,10 +1768,27 @@
 		.fold {
 			padding: 1.5rem 1rem 2.5rem;
 		}
-		.table li,
-		.sites li {
+		.table li {
 			grid-template-columns: 1fr;
 			gap: 0.5rem;
+		}
+		.strip {
+			padding: 0 1rem;
+		}
+		.sites {
+			grid-template-columns: 1fr;
+		}
+		.sites li,
+		.sites li:nth-last-child(-n + 3):nth-child(3n + 1),
+		.sites li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
+			border-right: 0;
+			border-bottom: var(--rule) solid var(--ink);
+		}
+		.sites li:last-child {
+			border-bottom: 0;
+		}
+		.site {
+			padding: 1rem 1rem 1.25rem;
 		}
 		.t-src {
 			justify-self: start;
