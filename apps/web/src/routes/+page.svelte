@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { kinds, kindOf } from '#lib/template-kinds';
 	import { platesFor } from '#lib/plates';
+	import Radio from '#lib/Radio.svelte';
 
 	let { data } = $props();
 
@@ -905,6 +906,8 @@
 		specs: [string, string][];
 		uses?: string[];
 		growth?: Work['growth'];
+		/** Played and drawn live on this page instead of a screenshot. */
+		live?: boolean;
 	};
 	const websites: Site[] = [
 		{
@@ -995,6 +998,7 @@
 			href: 'https://radiobartek.com',
 			tag: 'AI radio',
 			basket: 'side',
+			live: true,
 			specs: [
 				['Engine', 'Open-source SUB/WAVE with my own skins and patches; the sky is zaur-world through its React adapter'],
 				['Voice', 'A Python bridge to Fish Audio speech that clones a voice from a short clip'],
@@ -1040,7 +1044,7 @@
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; tall?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; tall?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
 		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
@@ -1103,7 +1107,9 @@
 
 {#snippet card(c: Card)}
 	<li id={c.id}>
-		{#if c.img}
+		{#if c.live}
+			<Radio href={c.href} />
+		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
 				<img src={c.img} alt="" width="1200" height={c.tall ? 750 : 662} loading="lazy" />
 			</a>
@@ -1289,6 +1295,22 @@
 		</ul>
 	</section>
 
+	<section class="websites" id="clients" aria-labelledby="clients-h">
+		<div class="strip"><h2 id="clients-h">Client work · {clients.length}</h2></div>
+		<p class="lede">An online shop and five websites for businesses: designed, built and kept running.</p>
+		<ul class="sites">
+			{#each clients as c (c.id)}{@render card(c)}{/each}
+		</ul>
+	</section>
+
+	<section class="websites" id="side" aria-labelledby="side-h">
+		<div class="strip"><h2 id="side-h">Side projects · {side.length}</h2></div>
+		<p class="lede">Small things I made for myself and keep online.</p>
+		<ul class="sites">
+			{#each side as c (c.id)}{@render card(c)}{/each}
+		</ul>
+	</section>
+
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">Packages · {pkgs.length}</h2></div>
 		<p class="lede">The building blocks my products share, published on npm under @nomideusz.</p>
@@ -1348,22 +1370,6 @@
 				</ul>
 			</div>
 		</details>
-	</section>
-
-	<section class="websites" id="clients" aria-labelledby="clients-h">
-		<div class="strip"><h2 id="clients-h">Client work · {clients.length}</h2></div>
-		<p class="lede">An online shop and five websites for businesses: designed, built and kept running.</p>
-		<ul class="sites">
-			{#each clients as c (c.id)}{@render card(c)}{/each}
-		</ul>
-	</section>
-
-	<section class="websites" id="side" aria-labelledby="side-h">
-		<div class="strip"><h2 id="side-h">Side projects · {side.length}</h2></div>
-		<p class="lede">Small things I made for myself and keep online.</p>
-		<ul class="sites">
-			{#each side as c (c.id)}{@render card(c)}{/each}
-		</ul>
 	</section>
 
 	<section class="how" id="how" aria-labelledby="how-h">
@@ -1666,10 +1672,13 @@
 
 	/* Work: three case studies, then the rest in a ruled row. */
 	.work,
-	.packages,
 	.websites,
 	.how {
 		border-bottom: var(--rule-heavy) solid var(--ink);
+	}
+	/* Open source runs on into the folds, so the heavy rule closes the last fold. */
+	.packages {
+		border-bottom: var(--rule) solid var(--ink);
 	}
 	.case {
 		display: grid;
@@ -1832,6 +1841,9 @@
 	.folds details {
 		border-bottom: var(--rule) solid var(--ink);
 		interpolate-size: allow-keywords;
+	}
+	.folds details:last-child {
+		border-bottom-width: var(--rule-heavy);
 	}
 	/* The one authored moment: a short height reveal where supported; elsewhere folds open instantly. */
 	.folds details::details-content {
