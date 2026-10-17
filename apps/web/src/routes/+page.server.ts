@@ -4,9 +4,10 @@ const names = ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 
 
 // The sites the page can show live. Each is checked at prerender, and only one
 // whose headers let zaur.app frame it gets a live window; the rest keep their capture.
+// Fixtar is a client's shop and stays a capture.
 const sites = [
 	'https://szkolyjogi.pl', 'https://thebest.travel', 'https://kino.net.pl', 'https://kompi.pl', 'https://festivals.zaur.app',
-	'https://fixtar.pl', 'https://pikastro.eu', 'https://wibroakustyka.ai', 'https://tutitutu.pl', 'https://intertechpoland.pl',
+	'https://pikastro.eu', 'https://wibroakustyka.ai', 'https://tutitutu.pl', 'https://intertechpoland.pl',
 	'https://gabinet-polaczenie.pl', 'https://kurcz.pl', 'https://kruk.live'
 ];
 

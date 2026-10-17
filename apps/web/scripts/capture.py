@@ -1,6 +1,7 @@
-"""Re-shoot plates from the live sites: python3 scripts/capture.py [id ...]
+"""Re-shoot captures from the live sites: python3 scripts/capture.py [id ...]
 
-Desktop: 1440x900 at DPR 2, scaled to 1200x750 (<id>-1.webp).
+Plates: 1440x900 at DPR 2, scaled to 1200x750 (<id>-1.webp, or <id>-<n> per FRAMES url).
+Windows: 1280x800 at DPR 2, the live window's desktop width, scaled to 1200x750.
 Phone: 390x844 at DPR 2, kept at 780x1688 (<id>-phone.webp).
 Each file gets a .webp.json provenance note, as DESIGN.md asks.
 """
@@ -10,7 +11,7 @@ from pathlib import Path
 from PIL import Image
 from playwright.sync_api import sync_playwright
 
-PLATES = Path(__file__).resolve().parent.parent / 'src/lib/plates'
+LIB = Path(__file__).resolve().parent.parent / 'src/lib'
 SITES = {
     'fixtar': 'https://fixtar.pl',
     'pikastro': 'https://pikastro.eu',
@@ -20,7 +21,18 @@ SITES = {
     'polaczenie': 'https://gabinet-polaczenie.pl',
     'kurcz': 'https://kurcz.pl',
     'kruk': 'https://kruk.live',
+}
+# Products shown in a live window: the capture stands in until the site loads.
+WINDOWS = {
+    'szkolyjogi': 'https://szkolyjogi.pl',
+    'thebest': 'https://thebest.travel',
+    'kino': 'https://kino.net.pl',
     'kompi': 'https://kompi.pl',
+    'festivals': 'https://festivals.zaur.app',
+}
+# Look-inside frames, in the order plates.ts describes them.
+FRAMES = {
+    'szkolyjogi': ['https://szkolyjogi.pl/en/krakow/yoga-shala-krakow', 'https://szkolyjogi.pl/en/krakow/dzisiaj', 'https://szkolyjogi.pl/en/krakow'],
 }
 CONSENT = re.compile(r'^\s*(akceptuj|zaakceptuj|zgadzam|accept|allow all|ok|rozumiem)', re.I)
 HIDE = '::-webkit-scrollbar{display:none} html{scrollbar-width:none}'
@@ -41,19 +53,22 @@ def shoot(browser, url, w, h):
     page.close()
     return Image.open(io.BytesIO(png))
 
-def save(img, name, note):
-    img.save(PLATES / f'{name}.webp', quality=82, method=6)
-    (PLATES / f'{name}.webp.json').write_text(json.dumps(
+def save(img, name, note, dir='plates'):
+    img.save(LIB / dir / f'{name}.webp', quality=82, method=6)
+    (LIB / dir / f'{name}.webp.json').write_text(json.dumps(
         {'prompt': f'Live capture, not generated: {note}', 'createdAt': datetime.now(timezone.utc).isoformat()}, indent=2) + '\n')
 
-ids = sys.argv[1:] or list(SITES)
+ids = sys.argv[1:] or [*SITES, *WINDOWS]
 day = datetime.now().date().isoformat()
+desk = lambda url, w, h: f'{url} screenshotted with Playwright Chromium at {w}x{h}, DPR 2, scrollbars hidden, consent banner dismissed, on {day}; scaled to 1200x750 webp.'
 with sync_playwright() as p:
     browser = p.chromium.launch()
     for id in ids:
-        url = SITES[id]
-        save(shoot(browser, url, 1440, 900).resize((1200, 750), Image.LANCZOS), f'{id}-1',
-             f'{url} screenshotted with Playwright Chromium at 1440x900, DPR 2, scrollbars hidden, consent banner dismissed, on {day}; scaled to 1200x750 webp.')
+        url = SITES.get(id) or WINDOWS[id]
+        if id in WINDOWS:
+            save(shoot(browser, url, 1280, 800).resize((1200, 750), Image.LANCZOS), id, desk(url, 1280, 800), 'windows')
+        for n, u in enumerate(FRAMES.get(id) or ([url] if id in SITES else []), 1):
+            save(shoot(browser, u, 1440, 900).resize((1200, 750), Image.LANCZOS), f'{id}-{n}', desk(u, 1440, 900))
         save(shoot(browser, url, 390, 844), f'{id}-phone',
              f'{url} screenshotted with Playwright Chromium at a 390x844 phone viewport, DPR 2, scrollbars hidden, consent banner dismissed, on {day}; kept at 780x1688 webp.')
         print('ok', id)

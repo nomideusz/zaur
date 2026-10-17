@@ -1057,12 +1057,12 @@
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; frame?: boolean; tall?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
 		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
-		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), frame: isLive(w.href), tall: true }));
+		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), frame: isLive(w.href) }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	const groups = kinds
@@ -1124,7 +1124,7 @@
 			<div class="shot"><Live href={c.href} name={c.name} shot={c.img} phone={c.phone} /></div>
 		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
-				<img src={c.img} alt="" width="1200" height={c.tall ? 750 : 662} loading="lazy" />
+				<img src={c.img} alt="" width="1200" height="750" loading="lazy" />
 			</a>
 		{/if}
 		<div class="site">
@@ -1254,7 +1254,7 @@
 						<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
 					{:else if shot(w.id)}
 						<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
-							<img src={shot(w.id)} alt="" width="1200" height="663" loading="lazy" />
+							<img src={shot(w.id)} alt="" width="1200" height="750" loading="lazy" />
 						</a>
 					{:else if w.parts}
 						<ul class="parts">
@@ -1703,7 +1703,7 @@
 	.window {
 		position: relative;
 		display: block;
-		aspect-ratio: 541 / 299;
+		aspect-ratio: 16 / 10;
 		overflow: hidden;
 		border: var(--rule) solid var(--ink);
 		background: var(--paper);
