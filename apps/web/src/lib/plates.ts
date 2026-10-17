@@ -61,6 +61,9 @@ const fragmentsFor = (id: string, name: string): Plate[] | undefined => {
 	return list.length ? list : undefined;
 };
 
+/** The phone capture of a project, shown inset on its card. */
+export const phoneFor = (id: string) => file(`${id}-phone`);
+
 const live = (id: string, name: string): Plates => ({
 	frames: framesFor(id, name),
 	fragments: fragmentsFor(id, name),

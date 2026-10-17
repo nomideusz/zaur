@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { kinds, kindOf } from '#lib/template-kinds';
-	import { platesFor } from '#lib/plates';
+	import { platesFor, phoneFor } from '#lib/plates';
 	import Radio from '#lib/Radio.svelte';
 
 	let { data } = $props();
@@ -1056,12 +1056,12 @@
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; tall?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; tall?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
-		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
+		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
-		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, tall: true }));
+		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), tall: true }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	const groups = kinds
@@ -1124,6 +1124,7 @@
 		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
 				<img src={c.img} alt="" width="1200" height={c.tall ? 750 : 662} loading="lazy" />
+				{#if c.phone}<img class="phone" src={c.phone} alt="" width="390" height="844" loading="lazy" />{/if}
 			</a>
 		{/if}
 		<div class="site">
@@ -1970,8 +1971,24 @@
 		border-bottom: 0;
 	}
 	.shot {
+		position: relative;
 		display: block;
+		overflow: hidden;
 		border-bottom: var(--rule) solid var(--ink);
+	}
+	/* The same site on a phone, standing in the corner of the desktop shot. */
+	.sites img.phone {
+		position: absolute;
+		right: 5%;
+		bottom: 0;
+		width: auto;
+		height: 88%;
+		aspect-ratio: 390 / 844;
+		object-fit: cover;
+		object-position: top;
+		border: var(--rule) solid var(--ink);
+		border-bottom: 0;
+		background: var(--paper);
 	}
 	.sites img {
 		display: block;
