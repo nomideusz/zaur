@@ -1057,12 +1057,16 @@
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; page?: string; pagePhone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
 		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
-		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), frame: isLive(w.href) }));
+		websites.filter((w) => w.basket === basket).map((w) => {
+			// A site that may not be framed scrolls through whole-page captures instead.
+			const page = shot(`${w.id}-page`);
+			return { ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), page, pagePhone: shot(`${w.id}-page-phone`), frame: !!page || isLive(w.href) };
+		});
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	const groups = kinds
@@ -1121,7 +1125,7 @@
 		{#if c.live}
 			<Radio href={c.href} />
 		{:else if c.frame}
-			<div class="shot"><Live href={c.href} name={c.name} shot={c.img} phone={c.phone} /></div>
+			<div class="shot"><Live href={c.href} name={c.name} shot={c.img} phone={c.phone} page={c.page} pagePhone={c.pagePhone} /></div>
 		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
 				<img src={c.img} alt="" width="1200" height="750" loading="lazy" />

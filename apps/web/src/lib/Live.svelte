@@ -4,7 +4,9 @@
 	// A site running inside the page, at a desktop or a phone width. A click hands
 	// it the pointer so it can be used without leaving; when the pointer leaves,
 	// the page gets its scroll back. The capture shows until the site has loaded.
-	let { href, name, shot, phone }: { href: string; name: string; shot?: string; phone?: string } = $props();
+	// A site that may not be framed passes whole-page captures instead (page,
+	// pagePhone), which the same click lets the visitor scroll through.
+	let { href, name, shot, phone, page, pagePhone }: { href: string; name: string; shot?: string; phone?: string; page?: string; pagePhone?: string } = $props();
 
 	const DESKTOP = 1280;
 	const PHONE = 390;
@@ -13,11 +15,14 @@
 	let loaded = $state(false);
 	let w = $state(0);
 	let h = $state(0);
+	let screen: HTMLDivElement;
+	const view = (m: boolean) => ((mobile = m), screen.scrollTo(0, 0));
 	const host = $derived(new URL(href).host);
 	const vw = $derived(mobile ? PHONE : DESKTOP);
 	const s = $derived(w ? Math.min(1, w / vw) : 0.35);
 	const left = $derived(Math.max(0, (w - vw * s) / 2));
 	const still = $derived(mobile ? (phone ?? shot) : shot);
+	const sheet = $derived(page && (mobile ? (pagePhone ?? page) : page));
 
 	onMount(() => (mobile = matchMedia('(max-width: 600px)').matches));
 </script>
@@ -26,31 +31,43 @@
 	<div class="bar">
 		<span class="host">{host}</span>
 		<span class="views" role="group" aria-label="Screen width">
-			<button type="button" aria-pressed={!mobile} onclick={() => (mobile = false)}>Desktop</button>
-			<button type="button" aria-pressed={mobile} onclick={() => (mobile = true)}>Mobile</button>
+			<button type="button" aria-pressed={!mobile} onclick={() => view(false)}>Desktop</button>
+			<button type="button" aria-pressed={mobile} onclick={() => view(true)}>Mobile</button>
 		</span>
 		<a href={href} target="_blank" rel="noopener">Open ↗</a>
 	</div>
-	<!-- Leaving only drops the pointer hand-off; the cover button is the control. -->
+	<!-- Leaving only drops the pointer hand-off; the cover button is the control.
+	     A finger lifting also "leaves", so only a mouse or pen hands it back. -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<div class="screen" bind:clientWidth={w} bind:clientHeight={h} onpointerleave={() => (active = false)}>
-		{#if !loaded && still}
-			<img src={still} alt="" style:left="{left}px" style:width="{vw * s}px" />
+	<div
+		class="screen"
+		bind:this={screen}
+		class:scroll={sheet && active}
+		bind:clientWidth={w}
+		bind:clientHeight={h}
+		onpointerleave={(e) => e.pointerType !== 'touch' && (active = false)}
+	>
+		{#if sheet}
+			<img class="sheet" src={sheet} alt="{name}, the whole page" loading="lazy" style:margin-left="{left}px" style:width="{vw * s}px" />
+		{:else}
+			{#if !loaded && still}
+				<img src={still} alt="" style:left="{left}px" style:width="{vw * s}px" />
+			{/if}
+			<iframe
+				src={href}
+				title="{name}, live"
+				loading="lazy"
+				class:shown={loaded}
+				style:left="{left}px"
+				style:width="{vw}px"
+				style:height="{h / s}px"
+				style:transform="scale({s})"
+				onload={() => (loaded = true)}
+			></iframe>
 		{/if}
-		<iframe
-			src={href}
-			title="{name}, live"
-			loading="lazy"
-			class:shown={loaded}
-			style:left="{left}px"
-			style:width="{vw}px"
-			style:height="{h / s}px"
-			style:transform="scale({s})"
-			onload={() => (loaded = true)}
-		></iframe>
 		{#if !active}
 			<button type="button" class="cover" onclick={() => (active = true)} aria-label="Use {name} here">
-				<span>Click to use it here</span>
+				<span>{sheet ? 'Click to scroll through it' : 'Click to use it here'}</span>
 			</button>
 		{/if}
 	</div>
@@ -113,6 +130,15 @@
 		top: 0;
 		display: block;
 		background: var(--paper);
+	}
+	.scroll {
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		scrollbar-width: thin;
+	}
+	img.sheet {
+		position: static;
+		height: auto;
 	}
 	img {
 		height: 100%;
