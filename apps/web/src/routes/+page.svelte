@@ -2,6 +2,7 @@
 	import { onMount } from 'svelte';
 	import { kinds, kindOf } from '#lib/template-kinds';
 	import { platesFor, phoneFor } from '#lib/plates';
+	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 
 	let { data } = $props();
@@ -1046,22 +1047,22 @@
 	];
 
 	// Windows: a capture of the live site (src/lib/windows, provenance embedded),
-	// replaced by the site itself in an iframe where the site allows framing.
+	// replaced by the site itself where its headers allow framing (checked at prerender).
 	const shots = import.meta.glob('../lib/windows/*.webp', { eager: true, import: 'default' }) as Record<string, string>;
 	const shot = (id: string) => shots[`../lib/windows/${id}.webp`];
-	const framable = new Set(['szkolyjogi']);
+	const isLive = (href: string) => data.live.includes(href);
 	const host = (href: string) => new URL(href).host;
 
 	const pkgs = packages.map((p) => ({ ...p, id: p.name.split('/')[1] }));
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; tall?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; frame?: boolean; tall?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
-		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
+		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
-		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), tall: true }));
+		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), frame: isLive(w.href), tall: true }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	const groups = kinds
@@ -1091,8 +1092,6 @@
 	let registryDown = $state(false);
 	let traffic = $state<{ clicksPerDay: number; monthAgo: number | null } | null>(null);
 	let trafficDown = $state(false);
-	let frameWidth = $state(541);
-	let framed = $state(false);
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 
 	onMount(() => {
@@ -1121,10 +1120,11 @@
 	<li id={c.id}>
 		{#if c.live}
 			<Radio href={c.href} />
+		{:else if c.frame}
+			<div class="shot"><Live href={c.href} name={c.name} shot={c.img} phone={c.phone} /></div>
 		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
 				<img src={c.img} alt="" width="1200" height={c.tall ? 750 : 662} loading="lazy" />
-				{#if c.phone}<img class="phone" src={c.phone} alt="" width="390" height="844" loading="lazy" />{/if}
 			</a>
 		{/if}
 		<div class="site">
@@ -1247,23 +1247,14 @@
 	<section class="work" id="work" aria-labelledby="work-h">
 		<div class="strip"><h2 id="work-h">Products · {work.length}</h2></div>
 		{#each flagships as w (w.id)}
-			{@const live = framable.has(w.id)}
+			{@const gsc = w.id === 'szkolyjogi'}
 			<article class="case" id={w.id}>
 				<div class="media">
-					{#if shot(w.id)}
-						<a class="window" href={w.href} tabindex="-1" aria-hidden="true" bind:clientWidth={frameWidth}>
-							<img src={shot(w.id)} alt="" width="1200" height="663" loading={live ? 'eager' : 'lazy'} />
-							{#if live}
-								<iframe
-									src={w.href}
-									title="{w.name}, live"
-									loading="lazy"
-									tabindex="-1"
-									class:shown={framed}
-									style:--s={frameWidth / 1440}
-									onload={() => (framed = true)}
-								></iframe>
-							{/if}
+					{#if shot(w.id) && isLive(w.href)}
+						<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
+					{:else if shot(w.id)}
+						<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
+							<img src={shot(w.id)} alt="" width="1200" height="663" loading="lazy" />
 						</a>
 					{:else if w.parts}
 						<ul class="parts">
@@ -1276,12 +1267,12 @@
 				</div>
 				<div class="case-body">
 					<h3>
-						{#if live}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
+						{#if gsc}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
 						<a href={w.href}>{w.name}</a>
 						<span class="tag">{w.kind}</span>
 					</h3>
 					<p class="meta">
-						{host(w.href)}{#if live && !trafficDown}<span> · {traffic?.clicksPerDay ?? '…'} search clicks a day from Google</span>{/if}
+						{host(w.href)}{#if gsc && !trafficDown}<span> · {traffic?.clicksPerDay ?? '…'} search clicks a day from Google</span>{/if}
 					</p>
 					<p class="what">{w.what}</p>
 					<h4>What I built</h4>
@@ -1695,7 +1686,7 @@
 	}
 	.case {
 		display: grid;
-		grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+		grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 		border-bottom: var(--rule) solid var(--ink);
 		scroll-margin-top: 4vw;
 	}
@@ -1703,6 +1694,11 @@
 		padding: 1.39vw;
 		border-right: var(--rule) solid var(--ink);
 		background: var(--lilac);
+	}
+	/* The live window stays in view while the case beside it is read. */
+	.media > :global(.live) {
+		position: sticky;
+		top: calc(3.66vw + 1.39vw); /* below the sticky bar */
 	}
 	.window {
 		position: relative;
@@ -1718,20 +1714,6 @@
 		height: 100%;
 		object-fit: cover;
 		object-position: top;
-	}
-	.window iframe {
-		position: absolute;
-		inset: 0 auto auto 0;
-		width: 1440px;
-		height: calc(1440px * 299 / 541);
-		border: 0;
-		transform: scale(var(--s, 0.375));
-		transform-origin: 0 0;
-		pointer-events: none;
-		visibility: hidden;
-	}
-	.window iframe.shown {
-		visibility: visible;
 	}
 	.parts {
 		display: grid;
@@ -1976,19 +1958,8 @@
 		overflow: hidden;
 		border-bottom: var(--rule) solid var(--ink);
 	}
-	/* The same site on a phone, standing in the corner of the desktop shot. */
-	.sites img.phone {
-		position: absolute;
-		right: 5%;
-		bottom: 0;
-		width: auto;
-		height: 88%;
-		aspect-ratio: 390 / 844;
-		object-fit: cover;
-		object-position: top;
-		border: var(--rule) solid var(--ink);
-		border-bottom: 0;
-		background: var(--paper);
+	.shot > :global(.live) {
+		border: 0;
 	}
 	.sites img {
 		display: block;
