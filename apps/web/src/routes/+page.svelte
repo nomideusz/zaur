@@ -21,7 +21,7 @@
 				name: 'Bartosz Dymet',
 				jobTitle: 'Frontend engineer',
 				url: site,
-				email: 'nom@zaur.app',
+				email: 'bartek@zaur.app',
 				address: { '@type': 'PostalAddress', addressLocality: 'Kraków', addressCountry: 'PL' },
 				knowsAbout: ['Svelte', 'SvelteKit', 'TypeScript', 'Web accessibility', 'Web performance'],
 				sameAs: [github, 'https://www.npmjs.com/~nomideusz']
@@ -67,6 +67,7 @@
 				['Tests', '50 test files across the client and its shared packages; Playwright for sign-up'],
 				['Decisions', '5 architecture decision records'],
 				['Delivery', 'GitHub Actions deploys; agent conventions in AGENTS.md'],
+				['AI', 'Mail sorted by an LLM into a fixed set of labels, with a confidence floor, a timeout and a headers-only privacy mode'],
 				['Code', 'Public on GitHub']
 			],
 			uses: ['svelte-calendar']
@@ -80,10 +81,13 @@
 			built: [
 				'The public directory in Polish, English and Ukrainian, with schedules, prices, reviews and booking.',
 				'A separate panel app for schools: passes, recurring classes, refund rules, VAT split and staff roles.',
-				'A Python scraper that refreshes school data three times a day into Postgres. CI builds both apps as images and deploys them.'
+				'A Python scraper that reads school websites, price lists and timetable images with LLMs. Answers are forced into schemas, the model returns null rather than guessing, monthly prices are computed in code, and a read that would shrink a stored schedule below 40% keeps the old classes.',
+				'A database trigger stops the scraper overwriting anything a school edited itself. CI builds both apps as images and deploys them.'
 			],
 			proof: [
 				['Tests', '83 test files (Vitest)'],
+				['Models', 'Benchmarked before use; one was dropped for inventing 15 classes on an empty page'],
+				['Speed', 'Home-page layout shift cut from 0.11 to 0.00 with metric-matched font fallbacks'],
 				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres, Better Auth'],
 				['Built on', 'All 10 of my packages']
 			],
@@ -107,6 +111,7 @@
 			],
 			proof: [
 				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres'],
+				['Payments', 'A repeated Stripe webhook is ignored once the booking is paid'],
 				['Built on', '8 of my 10 packages']
 			],
 			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
@@ -119,6 +124,7 @@
 			what: 'What plays in Polish cinemas today, hour by hour, with the small studio, culture-centre and film-club cinemas the big apps miss.',
 			proof: [
 				['Data', '230 cinemas in 174 towns, crawled every 6 hours'],
+				['Sources', '12 ticketing-site readers that keep the last good data on an empty read. When one site blocked the server, I switched source and measured the cost: 6% of films missed, none wrong'],
 				['Includes', 'Town pages, a page per film, a panel where cinemas fix their own facts']
 			],
 			uses: ['svelte-i18n', 'svelte-notify']
@@ -143,6 +149,7 @@
 			what: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
 			proof: [
 				['Includes', 'Lineups, editions, reviews, organiser claims'],
+				['Facts', 'A fact read by an LLM is kept only if its quote is on the fetched page; nothing publishes without approval'],
 				['Tests', '31 test files']
 			],
 			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
@@ -159,6 +166,10 @@
 			h: 'With an agent',
 			p: 'Claude Code is my daily tool. Each repo carries an AGENTS.md with the conventions the agent works from, and I publish agent skills.',
 			link: ['Zaur AGENTS.md', 'https://github.com/nomideusz/zaur/blob/main/AGENTS.md']
+		},
+		{
+			h: 'AI that is checked',
+			p: 'LLMs read and sort data in Szkoły Jogi, Friendly Festivals and Zaur Mail. Output is forced into schemas and checked against the source page, the model may answer null, and what cannot be checked waits for a person.'
 		},
 		{
 			h: 'Tested and written down',
@@ -919,7 +930,7 @@
 			basket: 'client',
 			specs: [
 				['Products', 'Synced from BaseLinker'],
-				['Payments', 'PayU, Przelewy24'],
+				['Payments', 'PayU, Przelewy24; a payment marks the order paid once, and only that request pushes it to BaseLinker and sends the email'],
 				['SEO', 'Built to the client’s technical SEO spec: Product and Offer schema, five split sitemaps, canonical and noindex rules'],
 				['Feeds', 'Google Shopping feed generated from the same data as the schema']
 			],
@@ -1028,7 +1039,8 @@
 			basket: 'side',
 			specs: [
 				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
-				['Mode', 'Real-time and collaborative']
+				['Mode', 'Real-time and collaborative'],
+				['Note', 'An experiment with Phoenix LiveView; the Elixir is written by Claude Code']
 			]
 		}
 	];
@@ -1173,7 +1185,7 @@
 		<a href="#packages">Open source</a>
 		<a href="#how">How I work</a>
 	</nav>
-	<a class="mail" href="mailto:nom@zaur.app">nom@zaur.app</a>
+	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 </header>
 
 <main>
@@ -1207,7 +1219,7 @@
 			</p>
 			<p class="links">
 				<a href={github}>github.com/nomideusz</a>
-				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
+				<a href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 			</p>
 			<div class="kit">
 				<h2>Built from my open-source packages</h2>
@@ -1821,7 +1833,7 @@
 	/* How I work: four ruled cells. */
 	.how-grid {
 		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
+		grid-template-columns: repeat(5, minmax(0, 1fr));
 	}
 	.how-grid li {
 		padding: 1.2rem 1.39vw 1.5rem;
