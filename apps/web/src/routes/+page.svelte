@@ -1245,7 +1245,7 @@
 	</div>
 
 	<section class="work" id="work" aria-labelledby="work-h">
-		<div class="strip"><h2 id="work-h">Products · {work.length}</h2></div>
+		<div class="strip"><h2 id="work-h">Products <span class="n">· {work.length}</span></h2></div>
 		{#each flagships as w (w.id)}
 			{@const gsc = w.id === 'szkolyjogi'}
 			<article class="case" id={w.id}>
@@ -1300,7 +1300,7 @@
 	</section>
 
 	<section class="websites" id="clients" aria-labelledby="clients-h">
-		<div class="strip"><h2 id="clients-h">Client work · {clients.length}</h2></div>
+		<div class="strip"><h2 id="clients-h">Client work <span class="n">· {clients.length}</span></h2></div>
 		<p class="lede">An online shop and five websites for businesses: designed, built and kept running.</p>
 		<ul class="sites">
 			{#each clients as c (c.id)}{@render card(c)}{/each}
@@ -1308,7 +1308,7 @@
 	</section>
 
 	<section class="websites" id="side" aria-labelledby="side-h">
-		<div class="strip"><h2 id="side-h">Side projects · {side.length}</h2></div>
+		<div class="strip"><h2 id="side-h">Side projects <span class="n">· {side.length}</span></h2></div>
 		<p class="lede">Small things I made for myself and keep online.</p>
 		<ul class="sites">
 			{#each side as c (c.id)}{@render card(c)}{/each}
@@ -1316,7 +1316,7 @@
 	</section>
 
 	<section class="packages" id="packages" aria-labelledby="packages-h">
-		<div class="strip"><h2 id="packages-h">Packages · {pkgs.length}</h2></div>
+		<div class="strip"><h2 id="packages-h">Packages <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">The building blocks my products share, published on npm under @nomideusz.</p>
 		<ul class="ptable">
 			{#each pkgs as p (p.id)}
@@ -1391,9 +1391,12 @@
 </main>
 
 <footer class="foot">
-	<p>© 2026 Bartosz Dymet</p>
-	<a href={github}>github.com/nomideusz</a>
-	<a href="https://register.zaur.app">Get an @zaur.app address</a>
+	<a class="write" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
+	<div class="small">
+		<p>© 2026 Bartosz Dymet</p>
+		<a href={github}>github.com/nomideusz</a>
+		<a href="https://register.zaur.app">Get an @zaur.app address</a>
+	</div>
 </footer>
 
 {#snippet toggle()}
@@ -1695,11 +1698,6 @@
 		border-right: var(--rule) solid var(--ink);
 		background: var(--lilac);
 	}
-	/* The live window stays in view while the case beside it is read. */
-	.media > :global(.live) {
-		position: sticky;
-		top: calc(3.66vw + 1.39vw); /* below the sticky bar */
-	}
 	.window {
 		position: relative;
 		display: block;
@@ -1746,7 +1744,9 @@
 		padding: 1.4vw 1.39vw 1.6vw;
 	}
 	.case h3 {
-		font-size: max(1.5rem, 2.4vw);
+		font-weight: 800;
+		font-size: max(2rem, 3.6vw);
+		letter-spacing: -0.035em;
 	}
 	.case h4 {
 		margin: 1.25rem 0 0.4rem;
@@ -1877,6 +1877,15 @@
 		line-height: 1;
 		letter-spacing: -0.03em;
 	}
+	/* An open section starts on an ink band, its name at programme scale. */
+	.strip h2 {
+		font-size: max(2.5rem, 5.4vw);
+		letter-spacing: -0.04em;
+		translate: 0 0.1em;
+	}
+	.strip .n {
+		color: var(--orange);
+	}
 	summary:hover {
 		background: color-mix(in srgb, var(--ink) 6%, var(--ground));
 	}
@@ -1905,7 +1914,8 @@
 	.lede {
 		max-width: 60ch;
 		margin-bottom: 1.5rem;
-		font-size: 1.125rem;
+		font-size: max(1.125rem, 1.45vw);
+		line-height: 1.3;
 	}
 	.fold h3 {
 		margin: 2.5rem 0 0.5rem;
@@ -1932,12 +1942,16 @@
 
 	/* Websites: always open, a grid of client sites ruled like the poster. */
 	.strip {
+		height: auto;
+		padding-top: 1.6vw;
+		padding-bottom: 1.1vw;
 		cursor: auto;
-		border-bottom: var(--rule) solid var(--ink);
+		background: var(--ink);
+		color: var(--paper);
 	}
 	.sites {
 		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
+		grid-template-columns: repeat(2, minmax(0, 1fr));
 	}
 	.sites > li {
 		display: flex;
@@ -1945,11 +1959,22 @@
 		border-right: var(--rule) solid var(--ink);
 		border-bottom: var(--rule) solid var(--ink);
 	}
-	.sites > li:nth-child(3n) {
+	.sites > li:nth-child(2n),
+	.sites > li:last-child {
 		border-right: 0;
 	}
-	.sites > li:nth-last-child(-n + 3):nth-child(3n + 1),
-	.sites > li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
+	.sites > li:last-child,
+	.sites > li:nth-last-child(2):nth-child(odd) {
+		border-bottom: 0;
+	}
+	/* An odd one out takes the whole row: the site beside its facts. */
+	.sites > li:last-child:nth-child(odd) {
+		grid-column: 1 / -1;
+		flex-direction: row;
+	}
+	.sites > li:last-child:nth-child(odd) > .shot {
+		flex: 0 0 50%;
+		border-right: var(--rule) solid var(--ink);
 		border-bottom: 0;
 	}
 	.shot {
@@ -1975,9 +2000,9 @@
 		align-items: baseline;
 		gap: 0.25rem 0.75rem;
 		margin: 0;
-		font-weight: 700;
-		font-size: max(1.25rem, 1.5vw);
-		letter-spacing: -0.02em;
+		font-weight: 800;
+		font-size: max(1.5rem, 2.4vw);
+		letter-spacing: -0.035em;
 	}
 	.sites h3 a {
 		text-decoration: none;
@@ -2015,11 +2040,31 @@
 		margin-top: 1rem;
 	}
 
+	/* The page closes on one more programme row: the address, at poster scale. */
 	.foot {
+		background: var(--orange);
+	}
+	.write {
+		display: block;
+		padding: 2.4vw 1.39vw 0;
+		border-bottom: var(--rule) solid var(--orange-rule);
+		font-weight: 700;
+		font-size: max(2.5rem, 8.4vw);
+		line-height: 1;
+		letter-spacing: -0.04em;
+		text-decoration: none;
+		overflow-wrap: anywhere;
+	}
+	.write:hover,
+	.write:focus-visible {
+		background: var(--orange-lit);
+		color: var(--paper);
+	}
+	.foot .small {
 		display: flex;
 		flex-wrap: wrap;
 		gap: 0.5rem 2rem;
-		padding: 1.5rem 1.39vw 2rem;
+		padding: 1.25rem 1.39vw 2rem;
 		font-size: 0.9375rem;
 	}
 
@@ -2149,14 +2194,20 @@
 			gap: 0.5rem;
 		}
 		.strip {
-			padding: 0 1rem;
+			padding: 1rem 1rem 0.6rem;
 		}
 		.sites {
 			grid-template-columns: 1fr;
 		}
 		.sites > li,
-		.sites > li:nth-last-child(-n + 3):nth-child(3n + 1),
-		.sites > li:nth-last-child(-n + 3):nth-child(3n + 1) ~ li {
+		.sites > li:nth-last-child(2):nth-child(odd) {
+			border-right: 0;
+			border-bottom: var(--rule) solid var(--ink);
+		}
+		.sites > li:last-child:nth-child(odd) {
+			flex-direction: column;
+		}
+		.sites > li:last-child:nth-child(odd) > .shot {
 			border-right: 0;
 			border-bottom: var(--rule) solid var(--ink);
 		}
@@ -2169,8 +2220,11 @@
 		.t-src {
 			justify-self: start;
 		}
-		.foot {
-			padding: 1.5rem 1rem 2rem;
+		.write {
+			padding: 1.5rem 1rem 0;
+		}
+		.foot .small {
+			padding: 1.25rem 1rem 2rem;
 		}
 	}
 </style>
