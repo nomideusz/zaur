@@ -37,6 +37,8 @@
 		name: string;
 		kind: string;
 		href: string;
+		/** The domain its section title shows, when it is not href's host. */
+		site?: string;
 		what: string;
 		uses: string[];
 		source?: string;
@@ -51,6 +53,7 @@
 			name: 'Zaur',
 			kind: 'Mail suite',
 			href: 'https://webmail.zaur.app',
+			site: 'zaur.app',
 			source: 'https://github.com/nomideusz/zaur',
 			what: 'A private communications suite on one account: mail, calendar, video calls and music, on servers I set up and run.',
 			parts: [
@@ -1060,7 +1063,7 @@
 	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; page?: string; pagePhone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
-		.map((w) => ({ id: w.id, name: w.name, tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
+		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
 		websites.filter((w) => w.basket === basket).map((w) => {
 			// A site that may not be framed scrolls through whole-page captures instead.
@@ -1252,6 +1255,7 @@
 		<div class="strip"><h2 id="work-h">Products <span class="n">· {work.length}</span></h2></div>
 		{#each flagships as w (w.id)}
 			{@const gsc = w.id === 'szkolyjogi'}
+			{@const title = w.site ?? host(w.href)}
 			<article class="case" id={w.id}>
 				<div class="media">
 					{#if shot(w.id) && isLive(w.href)}
@@ -1272,12 +1276,14 @@
 				<div class="case-body">
 					<h3>
 						{#if gsc}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
-						<a href={w.href}>{w.name}</a>
+						<a href={w.href}>{title}</a>
 						<span class="tag">{w.kind}</span>
 					</h3>
-					<p class="meta">
-						{host(w.href)}{#if gsc && !trafficDown}<span> · {traffic?.clicksPerDay ?? '…'} search clicks a day from Google</span>{/if}
-					</p>
+					{#if host(w.href) !== title}
+						<p class="meta">{host(w.href)}</p>
+					{:else if gsc && !trafficDown}
+						<p class="meta">{traffic?.clicksPerDay ?? '…'} search clicks a day from Google</p>
+					{/if}
 					<p class="what">{w.what}</p>
 					<h4>What I built</h4>
 					<ul class="built">
