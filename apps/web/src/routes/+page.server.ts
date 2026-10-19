@@ -4,15 +4,10 @@ import { loadTemplates } from '#lib/templates';
 // numbers; the page refreshes them from npm on load.
 const names = ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify'];
 
-// The sites the page can show live. Each is checked at prerender, and only one
-// whose headers let zaur.app frame it gets a live window; the rest keep their capture.
-// Fixtar is a client's shop and stays a capture.
-const sites = [
-	'https://szkolyjogi.pl', 'https://thebest.travel', 'https://kino.net.pl', 'https://kompi.pl', 'https://festivals.zaur.app',
-	'https://pikastro.eu', 'https://wibroakustyka.ai', 'https://tutitutu.pl', 'https://intertechpoland.pl',
-	'https://gabinet-polaczenie.pl', 'https://kurcz.pl', 'https://kruk.live',
-	'https://demo.zaur.app', 'https://register.zaur.app', 'https://svelte-calendar.xyz'
-];
+// The sites the page can show live: the flagships, the Zaur demos and the
+// calendar's demo. Each is checked at prerender, and only one whose headers let
+// zaur.app frame it gets a live window; the rest keep their capture.
+const sites = ['https://szkolyjogi.pl', 'https://thebest.travel', 'https://demo.zaur.app', 'https://register.zaur.app', 'https://svelte-calendar.xyz'];
 
 /** Whether these response headers let https://zaur.app put the page in a frame. */
 export function _framable(h: Headers) {

@@ -57,7 +57,7 @@ typography:
     lineHeight: 1.45
   label:
     fontFamily: "'Inter Tight', system-ui, sans-serif"
-    fontSize: "max(12px, 0.95vw)"
+    fontSize: "max(13px, 0.95vw)"
     fontWeight: 500
     fontFeature: "'tnum'"
   caption:
@@ -144,7 +144,7 @@ The page is a single Swiss concert poster in the International Typographic Style
 
 The first viewport scales as one object: every measure in it is in vw (or the poster unit, below), derived from a 2512px-wide comp, so the poster keeps its proportions at any width above 900px. Below 900px the sheet stops scaling and becomes a stack. The interaction is the poster answering back: pointing at a product lights the packages it is built from, pointing at a package lights the products that use it, and the swap is instant.
 
-Everything shown is real. Windows run the live site (a capture underneath until it loads, or whole-page captures to scroll for a site that may not be framed). Version numbers are read from npm, not typed. The search-traffic readout comes from Google Search Console and disappears when the source is unavailable. The system refuses the SaaS hero and the wired node graph, and keeps the portfolio's case studies honest by filling them with running sites instead of mock-ups.
+Everything shown is real. Windows run the live site for the flagships and the calendar's demo (a capture underneath until it loads); every smaller project shows a capture. Version numbers are read from npm, not typed. The search-traffic readout comes from Google Search Console and disappears when the source is unavailable: a weekly chart only where a site gets 20+ clicks a day, 28-day totals elsewhere, nothing under 1,000 impressions. The system refuses the SaaS hero and the wired node graph, and keeps the portfolio's case studies honest by filling them with running sites instead of mock-ups.
 
 **Key Characteristics:**
 - Three flat fields (orange programme, lilac column and media, warm-grey ground) plus ink bands, separated by ink rules; no fourth field colour.
@@ -168,7 +168,7 @@ A signal-orange and lilac poster on warm grey, held together by near-black ink.
 
 ### Neutral
 - **Ink** (ink): text, frames, rules, the top bar, section bands, focus outline, selection background. Also the `theme-color`.
-- **Warm Ground** (ground): page background, case bodies, site cards and folds. Fold summary hover is ground with 6% ink.
+- **Warm Ground** (ground): page background, case bodies, site rows and folds. Fold summary hover is ground with 6% ink.
 - **Paper** (paper): text on ink, the lit row name, the inset rule under a lit row, window toolbars and backing.
 - **Chip White** (chip): fill of a lit or hovered chip or kit row, and of a package row reached by its anchor.
 - **Bar Rule** (bar-rule): the dividers between tabs inside the black bar.
@@ -193,26 +193,26 @@ A signal-orange and lilac poster on warm grey, held together by near-black ink.
 - **Band** (800, max(2.5rem, 5.4vw), -0.04em): section names on their ink band, nudged down 0.1em, the count after a middle dot in Signal Orange.
 - **Case title** (800, max(2rem, 3.6vw), -0.035em): the host or name heading a case study.
 - **Headline** (800, max(1.75rem, 3.07vw), line-height 1, -0.03em): fold summaries ("Railway templates · 119").
-- **Title** (800, max(1.5rem, 2.4vw), -0.035em): site card names; package names in the table run 700 at max(1.25rem, 1.8vw).
-- **Wordmark** (800, 2.24vw, -0.01em): the name in the bar; 1.5rem on mobile.
+- **Title** (800, max(1.5rem, 2.2vw), -0.035em; 1.375rem on mobile): site row names; package names in the table run 700 at max(1.25rem, 1.8vw).
+- **Wordmark** (800, 2.24vw, -0.01em): the name in the bar, above 900px only.
 - **Body** (500, 1rem / 1.45): descriptions, capped at 52–66ch; a case's lead line runs at max(1rem, 1.1vw), section ledes at max(1.125rem, 1.45vw).
-- **Label** (500, max(12px, 0.95 poster units), tabular numerals): chips, kit rows (1.25 units), versions, tabs (1.2vw), programme "kind" (1.53vw).
-- **Caption** (500, 0.8125–0.875rem): the small text below the poster: tags, meta lines, spec lists, window toolbars, figure captions, chart values, install lines. 0.8125rem for tags and chart figures, 0.875rem for the rest, 0.9375rem in the footer.
+- **Label** (500, max(13px, 0.95 poster units), tabular numerals): chips, kit rows (1.25 units), versions, tabs (1.2vw), programme "kind" (1.53vw).
+- **Caption** (500, 0.8125–0.875rem): the small text below the poster: tags, meta lines, spec lists, window toolbars, figure captions, chart values, install lines. 0.8125rem for tags and chart figures, 0.9375rem for spec lists and the footer, 0.875rem for the rest.
 
 ### Named Rules
 **The Type Is The Image Rule.** The poster's picture is its type. Product names stay at display scale in the programme and section names at band scale; never shrink them to make room for decoration.
 
 **The Tabular Versions Rule.** Every version number uses tabular numerals and sits flush right in its row or chip.
 
-**The Caption Floor Rule.** Small text never goes below 0.8125rem (or 12px on the poster); anything smaller is cut, not shrunk.
+**The Caption Floor Rule.** Small text never goes below 0.8125rem (13px on the poster); anything smaller is cut, not shrunk.
 
 ## Layout
 
-Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black bar (3.66vw tall) runs across the top: the name in the first 28vw, five tabs (Products, Clients, Packages, Templates, How I work) in fixed tracks, the address at the right. The poster below is a two-column grid: the programme at 63.42vw, the intro column filling the rest. The programme's rows share the screen under the bar (between 5vw and 11.25vw each), and the poster unit `--u` (1vw, defined page-wide) shrinks with them on short screens so the names and the intro still fit. The intro stacks name, role, pitch and links, then the package kit fills the rest of the column as a ruled list.
+Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black bar (3.66vw tall) runs across the top: the name in the first 28vw, five tabs in page order (How I work, Products, Clients, Packages, Templates) in fixed tracks, the address at the right. The poster below is a two-column grid: the programme at 63.42vw, the intro column filling the rest. The programme's rows share the screen under the bar (between 5vw and 11.25vw each), and the poster unit `--u` (1vw, defined page-wide) shrinks with them on short screens so the names and the intro still fit. The intro stacks name, role, pitch and links (GitHub, LinkedIn; no CV, no availability banner), then the package kit fills the rest of the column as a ruled list.
 
-Below the poster every section is full width. A case study is a two-track grid (media 1.35fr on lilac, body 1fr on ground) with a 1.39vw gutter. Site cards run two columns; an odd last card takes the whole row, window and facts side by side. Tables (packages, catalogs) are multi-track grids with flush-right actions. How I work is five ruled cells. Section gutters are 1.39vw; content inside uses rem.
+Below the poster every section is full width. A case study is a two-track grid (media 1.35fr on lilac, body 1fr on ground) with a 1.39vw gutter. How I work comes straight after the poster, five ruled cells. Smaller work runs as ruled rows: capture (18vw), name and description, facts. Side projects sit in a fold with the catalogs. Tables (packages, catalogs) are multi-track grids with flush-right actions. On desktop a case body rides sticky beside a taller window. Section gutters are 1.39vw; content inside uses rem.
 
-At 900px and below the sheet becomes a stack: the bar splits into a name and address row plus five equal tabs, the intro moves above the programme, the kit wraps as outlined chips, the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. Anchors land under the two-row bar (6.25rem scroll padding; 4rem above 900px).
+At 900px and below the sheet becomes a stack: the bar is one row of five equal tabs (the name and address live in the intro), the intro moves above the programme, the kit becomes one link to Packages, site rows float a 7.5rem capture with the text running round it, the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. Anchors land under the bar (3.25rem scroll padding; 4rem above 900px). A skip link leads to the content.
 
 ## Elevation & Depth
 
@@ -244,7 +244,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 
 ### Chips
 - **Style:** 2px ink outline, 3px corner, transparent, package name and version separated by 1em; sized in poster units (2.2 high, 0.55 padding), 2.25rem high on mobile.
-- **Use:** under a case study or site card, naming the packages it is built from, each linking to npm.
+- **Use:** under a case study or site row, naming the packages it is built from, each linking to npm.
 - **Lit / hover:** fill turns Chip White.
 
 ### Section Band
@@ -255,11 +255,11 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 
 ### Live Window
 - **Style:** 2px ink frame, a Paper toolbar (host, Desktop / Mobile switch, Open ↗), then a 16:10 screen (4:5 under 600px). Desktop renders the site at 1280 wide scaled to fit; Mobile at a real 390 wide, centred on lilac. A capture shows until the site loads; meanwhile a Quiet status dot before the host blinks (two steps, no easing; still under reduced motion) and a corner label reads "Loading the live site…". Loaded, the dot turns Live Green. The site is framed only when the window comes within half a screen of view, so windows never race each other.
-- **Use:** the cover button hands the site the pointer ("Click" or, without hover, "Tap" to use it here); while it is in use an ink Done button gives the page its scroll back, and a mouse leaving does too. An inactive site is inert, out of the tab order. A site that may not be framed shows whole-page captures to scroll instead. Never sticky.
+- **Use:** the cover button hands the site the pointer ("Click" or, without hover, "Tap" to use it here); while it is in use an ink Done button gives the page its scroll back, and a mouse leaving does too. An inactive site is inert, out of the tab order. Focus moves to Done on hand-off and back to the cover after. The width switch is labelled with the site's name. Never sticky.
 - **Touch:** toolbar controls are at least 2.25rem high.
 
-### Site Card
-- **Style:** a window (live, radio, or capture) above the facts: title with an outlined tag, a short description, a spec list, optional chart and chips. Two columns, ruled; an odd last card spans both.
+### Site Row
+- **Style:** a 2px-framed capture (or the radio), then title with an outlined tag, an optional search line, a short description and chips, then the spec list in its own column. One ruled row each.
 
 ### Package Table
 - **Style:** one 2px-ruled row per package: name, version, description with its install line (an outlined `npm i …` that selects in one click), "Used in" in Quiet, Demo and Source flush right. A row reached by its anchor fills Chip White.
@@ -292,4 +292,4 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 - **Don't** connect packages and products with drawn lines; the link is shown by lighting.
 - **Don't** put numbers before product names, or type a usage figure that does not come from a live source.
 - **Don't** introduce a second typeface or a fourth field colour.
-- **Don't** set text below the caption floor (0.8125rem, or 12px on the poster).
+- **Don't** set text below the caption floor (0.8125rem, 13px on the poster).

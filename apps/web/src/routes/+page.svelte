@@ -14,6 +14,7 @@
 		'I design, build and run complete products: the Zaur mail suite, Szkoły Jogi, thebest.travel and more, with the open-source Svelte packages they share.';
 	const site = 'https://zaur.app/';
 	const github = 'https://github.com/nomideusz';
+	const linkedin = 'https://www.linkedin.com/in/bartosz-dymet';
 	const ld = {
 		'@context': 'https://schema.org',
 		'@graph': [
@@ -27,7 +28,7 @@
 				email: 'bartek@zaur.app',
 				address: { '@type': 'PostalAddress', addressLocality: 'Kraków', addressCountry: 'PL' },
 				knowsAbout: ['Svelte', 'SvelteKit', 'TypeScript', 'Web accessibility', 'Web performance'],
-				sameAs: [github, 'https://www.npmjs.com/~nomideusz']
+				sameAs: [github, linkedin, 'https://www.npmjs.com/~nomideusz']
 			}
 		]
 	};
@@ -192,7 +193,7 @@
 	const packages = [
 		{
 			name: '@nomideusz/zaur-world',
-			desc: 'A living ambient sky — real sun times, weather, true star positions, eclipses, and a pixel dinosaur who lives in it. Zero dependencies.',
+			desc: 'A living ambient sky: real sun times, weather, true star positions, eclipses, and a pixel dinosaur who lives in it. Zero dependencies.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/zaur-world',
 			demo: 'https://dino.zaur.app',
 			source: 'https://github.com/nomideusz/zaur-world',
@@ -210,28 +211,28 @@
 		},
 		{
 			name: '@nomideusz/svelte-search',
-			desc: 'Full-text search for Svelte 5 — FTS5, fuzzy matching, geo proximity, autocomplete, Polish locale.',
+			desc: 'Full-text search for Svelte 5: FTS5, fuzzy matching, geo proximity, autocomplete, Polish locale.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-search',
 			demo: 'https://svelte-search-eight.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-search'
 		},
 		{
 			name: '@nomideusz/svelte-i18n',
-			desc: 'Lightweight i18n for Svelte 5 — runes-based locale state, flat JSON messages, URL-locale routing.',
+			desc: 'Lightweight i18n for Svelte 5: runes-based locale state, flat JSON messages, URL-locale routing.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-i18n',
 			demo: 'https://svelte-i18n-five.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-i18n'
 		},
 		{
 			name: '@nomideusz/svelte-geometrize',
-			desc: 'Geometric image placeholders — triangles resolve into the real photo as it loads.',
+			desc: 'Geometric image placeholders: triangles resolve into the real photo as it loads.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-geometrize',
 			demo: 'https://svelte-geometrize.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-geometrize'
 		},
 		{
 			name: '@nomideusz/svelte-qr',
-			desc: 'Zero-dependency QR codes for Svelte 5 — pure TypeScript encoder, SVG output.',
+			desc: 'Zero-dependency QR codes for Svelte 5: a pure TypeScript encoder with SVG output.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
 			demo: 'https://svelte-qr.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-qr'
@@ -245,17 +246,17 @@
 		},
 		{
 			name: '@nomideusz/svelte-scheduler',
-			desc: 'Booking and scheduling logic for Svelte 5 — tour slots, pricing, cancellation policies.',
+			desc: 'Booking and scheduling logic for Svelte 5: tour slots, pricing, cancellation policies.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
 		},
 		{
 			name: '@nomideusz/svelte-payments',
-			desc: 'Provider-agnostic payments for the booking platform — Mollie server adapter + Stripe Connect UI.',
+			desc: 'Provider-agnostic payments for booking apps: a Mollie server adapter and a Stripe Connect UI.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments'
 		},
 		{
 			name: '@nomideusz/svelte-notify',
-			desc: 'Email notification template library for the booking platform.',
+			desc: 'Email notification templates for booking apps.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
 		}
 	];
@@ -412,17 +413,14 @@
 	const pkgs = packages.map((p) => ({ ...p, id: p.name.split('/')[1] }));
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
-	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; page?: string; pagePhone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[] };
+	// Every smaller project renders as the same ruled row: a capture, then the facts.
+	// Live windows are kept for the flagships, so the page stays short.
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; live?: boolean; desc: string; specs: [string, string][]; uses?: string[] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
-		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
+		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), tag: w.kind, href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
-		websites.filter((w) => w.basket === basket).map((w) => {
-			// A site that may not be framed scrolls through whole-page captures instead.
-			const page = shot(`${w.id}-page`);
-			return { ...w, img: platesFor(w.id, w.name)?.frames[0].src, phone: phoneFor(w.id), page, pagePhone: shot(`${w.id}-page-phone`), frame: !!page || isLive(w.href) };
-		});
+		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	// A featured package whose demo may be framed gets a case of its own, not a row.
@@ -450,17 +448,19 @@
 	let versions = $state<Record<string, string>>({ ...data.versions });
 	let registryDown = $state(false);
 	// Google Search, live from the server: a day's median for each recent week.
-	// Clicks where a site has them, impressions where it is too new to.
+	// Only a site with real daily clicks gets the weekly chart; the others show
+	// their 28-day totals, and a site under 1,000 impressions shows nothing.
 	type Search = { metric: 'clicks' | 'impressions'; perDay: number; weeks: [string, number][]; clicks28: number; impressions28: number; through: string };
 	const searched = ['szkolyjogi', 'fixtar', 'kino', 'kompi', 'festivals'];
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
-	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
+	const charted = (t?: Search) => t?.metric === 'clicks' && t.perDay >= 20;
+	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || (traffic[id]?.impressions28 ?? 0) >= 1000);
 	const perDay = (id: string) => {
 		const t = traffic?.[id];
 		if (!t) return 'Reading Google Search…';
-		const n = t.perDay.toLocaleString('en');
-		return t.metric === 'clicks' ? `${n} search clicks a day from Google` : `Shown in Google search ${n} times a day`;
+		const n = (x: number) => x.toLocaleString('en');
+		return charted(t) ? `${n(t.perDay)} search clicks a day from Google` : `${n(t.clicks28)} clicks and ${n(t.impressions28)} impressions from Google search in 28 days`;
 	};
 	const compact = new Intl.NumberFormat('en', { notation: 'compact' });
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
@@ -470,7 +470,10 @@
 		// A link to a fold (the Templates tab, a shared #websites URL) opens it.
 		const unfold = () => {
 			const el = location.hash && document.getElementById(location.hash.slice(1));
-			if (el instanceof HTMLDetailsElement) el.open = true;
+			if (el instanceof HTMLDetailsElement) {
+				el.open = true;
+				el.scrollIntoView();
+			}
 		};
 		unfold();
 		addEventListener('hashchange', unfold);
@@ -491,25 +494,19 @@
 {#snippet card(c: Card)}
 	<li id={c.id}>
 		{#if c.live}
-			<Radio href={c.href} />
-		{:else if c.frame}
-			<div class="shot"><Live href={c.href} name={c.name} shot={c.img} phone={c.phone} page={c.page} pagePhone={c.pagePhone} /></div>
+			<div class="shot wide"><Radio href={c.href} /></div>
 		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
-				<img src={c.img} alt="" width="1200" height="750" loading="lazy" />
+				<img src={c.img} alt="" width="1200" height="750" loading="lazy" decoding="async" />
 			</a>
 		{/if}
 		<div class="site">
 			<h3>
 				{#if searching(c.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
-				<a href={c.href}>{c.name}</a><span>{c.tag}</span>
+				<a href={c.href}>{c.name}</a> <span>{c.tag}</span>
 			</h3>
 			{#if searching(c.id)}<p class="meta">{perDay(c.id)}</p>{/if}
 			<p>{c.desc}</p>
-			<dl>
-				{#each c.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-			</dl>
-			{#if traffic?.[c.id]}{@render growth(c.id, traffic[c.id])}{/if}
 			{#if c.uses?.length}
 				<ul class="chips">
 					{#each c.uses as u (u)}
@@ -518,6 +515,9 @@
 				</ul>
 			{/if}
 		</div>
+		<dl>
+			{#each c.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+		</dl>
 	</li>
 {/snippet}
 
@@ -525,9 +525,7 @@
 	{@const top = Math.max(1, ...t.weeks.map(([, n]) => n))}
 	{@const short = (d: string) => `${Number(d.slice(8))} ${new Date(d).toLocaleDateString('en', { month: 'short', timeZone: 'UTC' })}`}
 	<figure class="growth">
-		<figcaption>
-			{id === 'fixtar' ? 'Clicks from Google to product and blog pages' : t.metric === 'clicks' ? 'Clicks from Google search' : 'Times shown in Google search'}, a typical day each week
-		</figcaption>
+		<figcaption>Clicks from Google search, a typical day each week</figcaption>
 		<ol>
 			{#each t.weeks as [d, n], i (d)}
 				{@const month = i === 0 || d.slice(5, 7) !== t.weeks[i - 1][0].slice(5, 7)}
@@ -561,19 +559,20 @@
 	{@html `<script type="application/ld+json">${JSON.stringify(ld)}</script>`}
 </svelte:head>
 
+<a class="skip" href="#main">Skip to content</a>
 <header class="bar">
 	<a class="mark" href="#top">Bartosz Dymet</a>
 	<nav class="tabs" aria-label="Sections">
+		<a href="#how">How I work</a>
 		<a href="#work">Products</a>
 		<a href="#clients">Clients</a>
 		<a href="#packages">Packages</a>
 		<a href="#templates">Templates</a>
-		<a href="#how">How I work</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 </header>
 
-<main>
+<main id="main">
 	<div class="poster" class:pointing={litPkgs?.size} style:--rows={work.length}>
 		<nav class="programme" aria-label="Products">
 			<ul>
@@ -602,9 +601,12 @@
 				I design, build and run complete products.
 			</p>
 			<p class="links">
-				<a href={github}>github.com/nomideusz</a>
+				<a class="phone" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
+				<a href={github}>GitHub</a>
+				<a href={linkedin}>LinkedIn</a>
 			</p>
 			<div class="kit">
+				<a class="kit-all" href="#packages">Built from {pkgs.length} open-source packages</a>
 				<h2>Built from my open-source packages</h2>
 				<ul class="chips">
 					{#each pkgs as p (p.id)}
@@ -625,6 +627,19 @@
 			</div>
 		</section>
 	</div>
+
+	<section class="how" id="how" aria-labelledby="how-h">
+		<div class="strip"><h2 id="how-h">How I work</h2></div>
+		<ul class="how-grid">
+			{#each how as x (x.h)}
+				<li>
+					<h3>{x.h}</h3>
+					<p>{x.p}</p>
+					{#if x.link}<a href={x.link[1]}>{x.link[0]}</a>{/if}
+				</li>
+			{/each}
+		</ul>
+	</section>
 
 	<section class="work" id="work" aria-labelledby="work-h">
 		<div class="strip"><h2 id="work-h">Products <span class="n">· {work.length}</span></h2></div>
@@ -699,13 +714,6 @@
 		</ul>
 	</section>
 
-	<section class="websites" id="side" aria-labelledby="side-h">
-		<div class="strip"><h2 id="side-h">Side projects <span class="n">· {side.length}</span></h2></div>
-		<p class="lede">Small things I made for myself and keep online.</p>
-		<ul class="sites">
-			{#each side as c (c.id)}{@render card(c)}{/each}
-		</ul>
-	</section>
 
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">Packages <span class="n">· {pkgs.length}</span></h2></div>
@@ -750,7 +758,18 @@
 		</ul>
 	</section>
 
-	<section class="folds" aria-label="More open source">
+	<section class="folds" aria-label="More">
+		<details class="websites" id="side">
+			<summary>
+				<h2>Side projects · {side.length}</h2>
+				{@render toggle()}
+			</summary>
+			<p class="lede">Small things I made for myself and keep online.</p>
+			<ul class="sites">
+				{#each side as c (c.id)}{@render card(c)}{/each}
+			</ul>
+		</details>
+
 		<details id="templates">
 			<summary>
 				<h2>Railway templates · {templateCount}</h2>
@@ -792,26 +811,14 @@
 		</details>
 	</section>
 
-	<section class="how" id="how" aria-labelledby="how-h">
-		<div class="strip"><h2 id="how-h">How I work</h2></div>
-		<ul class="how-grid">
-			{#each how as x (x.h)}
-				<li>
-					<h3>{x.h}</h3>
-					<p>{x.p}</p>
-					{#if x.link}<a href={x.link[1]}>{x.link[0]}</a>{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
 </main>
 
 <footer class="foot">
 	<a class="write" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 	<div class="small">
 		<p>© 2026 Bartosz Dymet</p>
-		<a href={github}>github.com/nomideusz</a>
-		<a href="https://register.zaur.app">Get an @zaur.app address</a>
+		<a href={github}>GitHub</a>
+		<a href={linkedin}>LinkedIn</a>
 	</div>
 </footer>
 
@@ -830,7 +837,7 @@
 		top: 0;
 		z-index: 2;
 		display: grid;
-		grid-template-columns: 28vw 9.4vw 9.4vw 9.4vw 10.4vw 10.4vw 1fr;
+		grid-template-columns: 28vw 10.4vw 9.4vw 9.4vw 9.4vw 10.4vw 1fr;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -872,6 +879,19 @@
 	.bar :focus-visible {
 		outline-color: var(--orange);
 		outline-offset: -3px;
+	}
+	.skip {
+		position: absolute;
+		top: 0.5rem;
+		left: 0.5rem;
+		z-index: 3;
+		padding: 0.5rem 0.9rem;
+		background: var(--paper);
+		font-weight: 700;
+		translate: 0 -200%;
+	}
+	.skip:focus {
+		translate: none;
 	}
 
 	/* The rows share the screen under the bar, so the sheet fills the first view
@@ -917,7 +937,8 @@
 		background: var(--orange-lit);
 		box-shadow: inset 0 calc(-1 * var(--rule)) var(--paper);
 	}
-	.lit .name {
+	.lit .name,
+	.lit .ver {
 		color: var(--paper);
 	}
 	.row:focus-visible {
@@ -962,7 +983,12 @@
 	.kit h2 {
 		margin-bottom: calc(0.7 * var(--u));
 		font-weight: 700;
-		font-size: max(12px, calc(0.95 * var(--u)));
+		font-size: max(13px, calc(0.95 * var(--u)));
+	}
+	/* On a phone the packages are one link to their section; the sheet lists them. */
+	.kit-all,
+	.links .phone {
+		display: none;
 	}
 
 	.chips {
@@ -979,7 +1005,7 @@
 		padding: 0 calc(0.55 * var(--u));
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
-		font-size: max(12px, calc(0.95 * var(--u)));
+		font-size: max(13px, calc(0.95 * var(--u)));
 		white-space: nowrap;
 		text-decoration: none;
 	}
@@ -1017,7 +1043,7 @@
 			border: 0;
 			border-bottom: var(--rule) solid var(--ink);
 			border-radius: 0;
-			font-size: max(12px, calc(1.25 * var(--u)));
+			font-size: max(13px, calc(1.25 * var(--u)));
 		}
 	}
 
@@ -1067,7 +1093,7 @@
 	}
 	.facts {
 		margin: 1rem 0;
-		font-size: 0.875rem;
+		font-size: 0.9375rem;
 	}
 	.facts div {
 		display: grid;
@@ -1224,6 +1250,14 @@
 	}
 	.case-body {
 		padding: 1.4vw 1.39vw 1.6vw;
+	}
+	/* Beside a taller window the text rides along, so its column is never left empty. */
+	@media (min-width: 901px) {
+		.case-body {
+			position: sticky;
+			top: 3.66vw;
+			align-self: start;
+		}
 	}
 	.case h3 {
 		font-weight: 800;
@@ -1439,7 +1473,7 @@
 		white-space: nowrap;
 	}
 
-	/* Websites: always open, a grid of client sites ruled like the poster. */
+	/* A section opens on an ink band. */
 	.strip {
 		height: auto;
 		padding-top: 1.6vw;
@@ -1448,50 +1482,30 @@
 		background: var(--ink);
 		color: var(--paper);
 	}
-	.sites {
-		display: grid;
-		grid-template-columns: repeat(2, minmax(0, 1fr));
-	}
+	/* The rest of the work: one ruled row each, a small capture beside the name
+	   and what it is, the facts in a column of their own. */
 	.sites > li {
-		display: flex;
-		flex-direction: column;
-		border-right: var(--rule) solid var(--ink);
-		border-bottom: var(--rule) solid var(--ink);
+		display: grid;
+		grid-template-columns: minmax(11rem, 18vw) minmax(0, 1fr) minmax(0, 1.1fr);
+		gap: 0 1.39vw;
+		align-items: start;
+		padding: 1.1rem 1.39vw 1.3rem;
 	}
-	.sites > li:nth-child(2n),
-	.sites > li:last-child {
-		border-right: 0;
-	}
-	.sites > li:last-child,
-	.sites > li:nth-last-child(2):nth-child(odd) {
-		border-bottom: 0;
-	}
-	/* An odd one out takes the whole row: the site beside its facts. */
-	.sites > li:last-child:nth-child(odd) {
-		grid-column: 1 / -1;
-		flex-direction: row;
-	}
-	.sites > li:last-child:nth-child(odd) > .shot {
-		flex: 0 0 50%;
-		border-right: var(--rule) solid var(--ink);
-		border-bottom: 0;
+	.sites > li + li {
+		border-top: var(--rule) solid var(--ink);
 	}
 	.shot {
-		position: relative;
 		display: block;
 		overflow: hidden;
-		border-bottom: var(--rule) solid var(--ink);
+		border: var(--rule) solid var(--ink);
 	}
-	.shot > :global(.live) {
-		border: 0;
+	.shot :global(.radio) {
+		border-bottom: 0;
 	}
 	.sites img {
 		display: block;
 		width: 100%;
 		height: auto;
-	}
-	.site {
-		padding: 1.1rem 1.39vw 1.4rem;
 	}
 	.sites h3 {
 		display: flex;
@@ -1500,10 +1514,11 @@
 		gap: 0.25rem 0.75rem;
 		margin: 0;
 		font-weight: 800;
-		font-size: max(1.5rem, 2.4vw);
+		font-size: max(1.5rem, 2.2vw);
 		letter-spacing: -0.035em;
 	}
 	.sites h3 a {
+		overflow-wrap: anywhere;
 		text-decoration: none;
 	}
 	.sites h3 a:hover {
@@ -1517,12 +1532,12 @@
 		border-radius: 3px;
 		letter-spacing: 0;
 	}
-	.site > p {
+	.site > p:not(.meta) {
 		max-width: 52ch;
-		margin: 0.5rem 0 0.9rem;
+		margin-top: 0.5rem;
 	}
 	.sites dl {
-		font-size: 0.875rem;
+		font-size: 0.9375rem;
 	}
 	.sites dl div {
 		display: grid;
@@ -1531,12 +1546,14 @@
 		padding: 0.2rem 0;
 		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
 	}
+	.sites dl div:first-child {
+		border-top: 0;
+	}
 	.sites dt {
 		color: var(--quiet);
 	}
-	.site .growth,
 	.site .chips {
-		margin-top: 1rem;
+		margin-top: 0.9rem;
 	}
 
 	/* The page closes on one more programme row: the address, at poster scale. */
@@ -1573,22 +1590,17 @@
 			grid-template-columns: repeat(5, 1fr);
 			height: auto;
 		}
-		.mark {
-			grid-column: 1 / 4;
-			padding: 0.9rem 1rem;
-			font-size: 1.5rem;
-		}
+		/* One row of sections; the name and the address are in the intro below. */
+		.mark,
 		.mail {
-			grid-column: 4 / 6;
-			grid-row: 1;
-			justify-self: end;
-			padding-right: 1rem;
-			font-size: 0.875rem;
+			display: none;
 		}
 		.tabs a {
 			height: 2.75rem;
+			padding: 0 0.25rem;
 			font-size: 0.8125rem;
-			border-top: var(--rule) solid var(--bar-rule);
+			line-height: 1.1;
+			text-align: center;
 			border-left: 0;
 		}
 		.tabs a + a {
@@ -1635,10 +1647,18 @@
 			margin-top: 1rem;
 		}
 		.kit {
-			padding-top: 1.5rem;
+			padding-top: 1.25rem;
 		}
-		.kit h2 {
-			margin-bottom: 0.5rem;
+		.kit h2,
+		.kit .chips {
+			display: none;
+		}
+		.kit-all,
+		.links .phone {
+			display: inline;
+		}
+		.kit-all {
+			font-weight: 700;
 		}
 		.chips {
 			gap: 0.5rem;
@@ -1713,26 +1733,30 @@
 		.strip {
 			padding: 1rem 1rem 0.6rem;
 		}
-		.sites {
-			grid-template-columns: minmax(0, 1fr);
-		}
-		.sites > li,
-		.sites > li:nth-last-child(2):nth-child(odd) {
-			border-right: 0;
-			border-bottom: var(--rule) solid var(--ink);
-		}
-		.sites > li:last-child:nth-child(odd) {
-			flex-direction: column;
-		}
-		.sites > li:last-child:nth-child(odd) > .shot {
-			border-right: 0;
-			border-bottom: var(--rule) solid var(--ink);
-		}
-		.sites > li:last-child {
-			border-bottom: 0;
-		}
-		.site {
+		/* The text runs round a small capture; chips and facts take the full width. */
+		.sites > li {
+			display: flow-root;
 			padding: 1rem 1rem 1.25rem;
+		}
+		.shot {
+			float: left;
+			width: 7.5rem;
+			margin: 0.25rem 1rem 0.5rem 0;
+		}
+		.shot.wide {
+			float: none;
+			width: auto;
+			margin: 0 0 0.9rem;
+		}
+		.sites h3 {
+			font-size: 1.375rem;
+		}
+		.site .chips,
+		.sites dl {
+			clear: both;
+		}
+		.sites dl {
+			margin-top: 0.9rem;
 		}
 		.t-src {
 			justify-self: start;

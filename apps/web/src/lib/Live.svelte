@@ -1,13 +1,11 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 
 	// A site running inside the page, at a desktop or a phone width. A click hands
 	// it the pointer so it can be used without leaving; when the pointer leaves,
 	// the page gets its scroll back. The capture shows until the site has loaded.
-	// A site that may not be framed passes whole-page captures instead (page,
-	// pagePhone), which the same click lets the visitor scroll through. A demo
-	// can name the address it stands in for (label).
-	let { href, name, label, shot, phone, page, pagePhone }: { href: string; name: string; label?: string; shot?: string; phone?: string; page?: string; pagePhone?: string } = $props();
+	// A demo can name the address it stands in for (label).
+	let { href, name, label, shot, phone }: { href: string; name: string; label?: string; shot?: string; phone?: string } = $props();
 
 	const DESKTOP = 1280;
 	const PHONE = 390;
@@ -21,21 +19,28 @@
 	let w = $state(0);
 	let h = $state(0);
 	let screen: HTMLDivElement;
-	const view = (m: boolean) => {
-		// A whole-page capture swaps image with the width, and loads again.
-		if (page && m !== mobile) loaded = false;
-		mobile = m;
-		screen.scrollTo(0, 0);
+	let cover = $state<HTMLButtonElement>();
+	let done = $state<HTMLButtonElement>();
+	// Keyboard focus follows the hand-off: into the bar's Done, then back.
+	const use = async () => {
+		if (!loaded) return;
+		active = true;
+		await tick();
+		done?.focus();
+	};
+	const finish = async () => {
+		active = false;
+		await tick();
+		cover?.focus();
 	};
 	const host = $derived(label ?? new URL(href).host);
 	const vw = $derived(mobile ? PHONE : DESKTOP);
 	const s = $derived(w ? Math.min(1, w / vw) : 0.35);
 	const left = $derived(Math.max(0, (w - vw * s) / 2));
 	const still = $derived(mobile ? (phone ?? shot) : shot);
-	const sheet = $derived(page && (mobile ? (pagePhone ?? page) : page));
 
 	onMount(() => {
-		view(matchMedia('(max-width: 600px)').matches);
+		mobile = matchMedia('(max-width: 600px)').matches;
 		touch = matchMedia('(hover: none)').matches;
 		const io = new IntersectionObserver(
 			([e]) => {
@@ -52,12 +57,12 @@
 
 <div class="live">
 	<div class="bar">
-		<span class="host">{#if !page}<span class="dot" class:on={loaded} aria-hidden="true"></span>{/if}{host}</span>
-		<span class="views" role="group" aria-label="Screen width">
-			<button type="button" aria-pressed={!mobile} onclick={() => view(false)}>Desktop</button>
-			<button type="button" aria-pressed={mobile} onclick={() => view(true)}>Mobile</button>
+		<span class="host"><span class="dot" class:on={loaded} aria-hidden="true"></span>{host}</span>
+		<span class="views" role="group" aria-label="{name}: screen width">
+			<button type="button" aria-pressed={!mobile} onclick={() => (mobile = false)}>Desktop</button>
+			<button type="button" aria-pressed={mobile} onclick={() => (mobile = true)}>Mobile</button>
 		</span>
-		{#if active}<button type="button" class="done" onclick={() => (active = false)}>Done</button>{/if}
+		{#if active}<button type="button" class="done" bind:this={done} onclick={finish}>Done</button>{/if}
 		<a href={href} target="_blank" rel="noopener">Open ↗</a>
 	</div>
 	<!-- Leaving only drops the pointer hand-off; the cover button is the control.
@@ -66,38 +71,31 @@
 	<div
 		class="screen"
 		bind:this={screen}
-		class:scroll={sheet && active}
 		bind:clientWidth={w}
 		bind:clientHeight={h}
 		onpointerleave={(e) => e.pointerType !== 'touch' && (active = false)}
 	>
-		{#if sheet}
-			{#key sheet}
-				<img class="sheet" src={sheet} alt="{name}, the whole page" loading="lazy" decoding="async" style:margin-left="{left}px" style:width="{vw * s}px" onload={() => (loaded = true)} />
-			{/key}
-		{:else}
-			{#if !loaded && still}
-				<img src={still} alt="" loading="lazy" decoding="async" style:left="{left}px" style:width="{vw * s}px" />
-			{/if}
-			{#if near}
-				<iframe
-					src={href}
-					title="{name}, live"
-					class:shown={loaded}
-					inert={!active}
-					style:left="{left}px"
-					style:width="{vw}px"
-					style:height="{h / s}px"
-					style:transform="scale({s})"
-					onload={() => (loaded = true)}
-				></iframe>
-			{/if}
+		{#if !loaded && still}
+			<img src={still} alt="" loading="lazy" decoding="async" style:left="{left}px" style:width="{vw * s}px" />
+		{/if}
+		{#if near}
+			<iframe
+				src={href}
+				title="{name}, live"
+				class:shown={loaded}
+				inert={!active}
+				style:left="{left}px"
+				style:width="{vw}px"
+				style:height="{h / s}px"
+				style:transform="scale({s})"
+				onload={() => (loaded = true)}
+			></iframe>
 		{/if}
 		{#if !active}
-			<button type="button" class="cover" class:wait={!loaded} aria-disabled={!loaded} onclick={() => loaded && (active = true)} aria-label={loaded ? `Use ${name} here` : `${name} is loading`}>
+			<button type="button" class="cover" class:wait={!loaded} bind:this={cover} aria-disabled={!loaded} onclick={use} aria-label={loaded ? `Use ${name} here` : `${name} is loading`}>
 				<span>
-					{#if !loaded}{sheet ? 'Loading the page…' : still ? 'Loading the live site…' : 'Loading…'}
-					{:else}{touch ? 'Tap' : 'Click'} {sheet ? 'to scroll through it' : 'to use it here'}{/if}
+					{#if !loaded}{still ? 'Loading the live site…' : 'Loading…'}
+					{:else}{touch ? 'Tap' : 'Click'} to use it here{/if}
 				</span>
 			</button>
 		{/if}
@@ -190,15 +188,6 @@
 		top: 0;
 		display: block;
 		background: var(--paper);
-	}
-	.scroll {
-		overflow-y: auto;
-		overscroll-behavior: contain;
-		scrollbar-width: thin;
-	}
-	img.sheet {
-		position: static;
-		height: auto;
 	}
 	/* A capture keeps its own proportions; a taller screen shows it at the top. */
 	img {

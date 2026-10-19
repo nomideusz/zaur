@@ -78,10 +78,10 @@ html {
 	text-size-adjust: 100%;
 	scroll-padding-top: 4rem;
 }
-/* Under 900 the bar stacks into two rows. */
+/* Under 900 the bar is one row of section tabs. */
 @media (max-width: 900px) {
 	html {
-		scroll-padding-top: 6.25rem;
+		scroll-padding-top: 3.25rem;
 	}
 }
 
