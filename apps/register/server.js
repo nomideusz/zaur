@@ -58,12 +58,12 @@ app.use((req, res, next) => {
       "img-src 'self' data:",
       `connect-src 'self'${tracewayOrigin ? ' ' + tracewayOrigin : ''}`,
       `form-action 'self' ${siteConfig.webmailLoginUrl}`,
-      "frame-ancestors 'none'",
+      // zaur.app shows the portal live; nothing else may frame it.
+      'frame-ancestors https://zaur.app',
       "base-uri 'self'",
       "object-src 'none'",
     ].join('; '),
   );
-  res.setHeader('X-Frame-Options', 'DENY');
   res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
   res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   next();

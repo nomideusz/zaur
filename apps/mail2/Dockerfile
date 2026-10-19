@@ -42,9 +42,13 @@ RUN addgroup --system --gid 1001 nodejs && \
 
 COPY --from=builder /out ./
 COPY --from=builder /app/apps/mail2/build ./build
+# The public demo (DEMO_JMAP_URL=http://127.0.0.1:9911, src/lib/server/demo.ts)
+# runs over this fake mail server; restarting it every 30 minutes resets the
+# sample mailbox. The real client never starts it.
+COPY --from=builder /app/apps/mail2/tests/smoke/fake-jmap.mjs ./demo/fake-jmap.mjs
 
 USER sveltekit
 
 EXPOSE 3000
 
-CMD ["node", "build"]
+CMD ["sh", "-c", "if [ -n \"$DEMO_JMAP_URL\" ]; then while :; do timeout 1800 node demo/fake-jmap.mjs; done & fi; exec node build"]

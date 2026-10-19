@@ -1,6 +1,7 @@
 import { redirect } from '@sveltejs/kit';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import { featuresOf, offered, type Features } from '#lib/features';
+import { DEMO_JMAP_URL, signInDemo } from '#lib/server/demo';
 import { createConnectedClient } from '#lib/server/jmap';
 import { meetConfig } from '#lib/server/meet';
 import type { LayoutServerLoad } from './$types';
@@ -15,7 +16,12 @@ import type { LayoutServerLoad } from './$types';
  * then everything shows and each pane says what it could not load.
  */
 export const load: LayoutServerLoad = async ({ cookies, url, untrack }) => {
-	const session = readSessionFull(cookies);
+	let session = readSessionFull(cookies);
+	// The demo signs a visitor in on arrival; the cookie it sets reads back at once.
+	if (!session && DEMO_JMAP_URL) {
+		signInDemo(cookies);
+		session = readSessionFull(cookies);
+	}
 	const active = session ? getActiveAccount(session) : undefined;
 	if (!session || !active) {
 		const target = url.pathname === '/' && url.search === '' ? '' : `?next=${encodeURIComponent(url.pathname + url.search)}`;

@@ -2,6 +2,7 @@ import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit/hooks'
 import { building, dev } from '$app/env';
 import { SESSION_RECORD_MAX_AGE_MS, startStoreMaintenance } from '@zaur/server-auth';
 import { legacyRedirect } from '#lib/legacy-links';
+import { DEMO_JMAP_URL } from '#lib/server/demo';
 import { pushWatcher } from '#lib/server/push-watcher';
 import { reportError } from '#lib/server/report';
 
@@ -64,7 +65,13 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (csp && TRACEWAY) {
 		response.headers.set('content-security-policy', csp.replace("connect-src 'self'", `connect-src 'self' ${TRACEWAY}`));
 	}
-	response.headers.set('X-Frame-Options', 'DENY');
+	// The demo is framed on zaur.app; the real client is never framed.
+	if (DEMO_JMAP_URL) {
+		const policy = response.headers.get('content-security-policy');
+		if (policy) response.headers.set('content-security-policy', policy.replace("frame-ancestors 'none'", 'frame-ancestors https://zaur.app'));
+	} else {
+		response.headers.set('X-Frame-Options', 'DENY');
+	}
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
 	response.headers.set('Permissions-Policy', event.url.pathname.startsWith('/meet/') ? MEET : LOCKED);

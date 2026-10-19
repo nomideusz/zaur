@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import { DEMO_JMAP_URL } from '#lib/server/demo';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import { jmapAuthMode, safeNext } from '#lib/server/login';
 import { isPasswordResetEnabled } from '#lib/server/recovery';
@@ -24,6 +25,8 @@ import type { PageServerLoad } from './$types';
  * this browser's session (the account menu's "Add account").
  */
 export const load: PageServerLoad = ({ cookies, url }) => {
+	// The demo has no sign-in: the gate signs every visitor in to the sample mailbox.
+	if (DEMO_JMAP_URL) redirect(303, '/');
 	const session = readSessionFull(cookies);
 	const active = session ? getActiveAccount(session) : undefined;
 	const adding = url.searchParams.get('mode') === 'add' && Boolean(active);

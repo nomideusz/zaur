@@ -47,6 +47,8 @@
 		proof?: [string, string][];
 		parts?: [string, string][];
 		growth?: { title: string; months: [string, number][]; note: string };
+		/** Live windows shown instead of a capture, when the product itself sits behind a sign-in. */
+		demos?: { href: string; name: string; note: string }[];
 	};
 	const work: Work[] = [
 		{
@@ -62,6 +64,10 @@
 				['Sign-up', 'register.zaur.app'],
 				['Music', 'music.zaur.app'],
 				['Meet', 'Video calls inside Mail']
+			],
+			demos: [
+				{ href: 'https://demo.zaur.app', name: 'Zaur Mail demo', note: 'The real client over a sample mailbox; nothing is sent, and it resets every 30 minutes.' },
+				{ href: 'https://register.zaur.app', name: 'Zaur sign-up', note: 'The real sign-up: an account made here is a working mailbox.' }
 			],
 			built: [
 				'A mail client over JMAP on SvelteKit 3 and remote functions, started on the pre-release: installable and offline-capable, with push notifications, calendar, contacts, files, rich compose and several accounts.',
@@ -609,9 +615,17 @@
 		{#each flagships as w (w.id)}
 			{@const gsc = w.id === 'szkolyjogi'}
 			{@const title = w.site ?? host(w.href)}
+			{@const demos = w.demos?.filter((d) => isLive(d.href)) ?? []}
 			<article class="case" id={w.id}>
 				<div class="media">
-					{#if shot(w.id) && isLive(w.href)}
+					{#if demos.length}
+						{#each demos as d (d.href)}
+							<figure class="demo">
+								<Live href={d.href} name={d.name} />
+								<figcaption>{d.note}</figcaption>
+							</figure>
+						{/each}
+					{:else if shot(w.id) && isLive(w.href)}
 						<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
 					{:else if shot(w.id)}
 						<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
@@ -1081,6 +1095,13 @@
 		height: 100%;
 		object-fit: cover;
 		object-position: top;
+	}
+	.demo + .demo {
+		margin-top: 1.39vw;
+	}
+	.demo figcaption {
+		margin-top: 0.4rem;
+		font-size: 0.875rem;
 	}
 	.parts {
 		display: grid;

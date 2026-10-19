@@ -13,6 +13,19 @@
   }
 
   // The eye on a password field: <button data-reveal="<input id>" aria-pressed>.
+  // Framed on zaur.app: a link to another site (mail refuses to be framed)
+  // opens in a new tab instead of inside the frame.
+  function initFramedLinks() {
+    if (window.top === window.self) return;
+    document.addEventListener('click', (e) => {
+      const a = e.target.closest?.('a[href]');
+      if (a && a.origin !== location.origin) {
+        a.target = '_blank';
+        a.rel = 'noopener';
+      }
+    });
+  }
+
   function initReveal() {
     document.querySelectorAll('[data-reveal]').forEach((button) => {
       const input = document.getElementById(button.dataset.reveal);
@@ -35,6 +48,7 @@
 
   async function init() {
     initReveal();
+    initFramedLinks();
     const cfg = window.ZAUR_SITE || (await getConfig());
     if (cfg) {
       window.ZAUR_SITE = cfg;
