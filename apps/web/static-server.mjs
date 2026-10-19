@@ -5,8 +5,8 @@
 
 import { createSign } from "node:crypto";
 import { createServer } from "node:http";
-import { readFile, stat } from "node:fs/promises";
-import { extname, join, normalize, resolve } from "node:path";
+import { appendFile, mkdir, readFile, stat } from "node:fs/promises";
+import { dirname, extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const PORT = Number(process.env.PORT ?? 4173);
@@ -137,6 +137,110 @@ async function sendTraffic(res) {
   res.end(body ? JSON.stringify(body) : "");
 }
 
+// Anonymous visits (src/lib/visit.ts): one JSON line per beacon, no IP, no
+// cookie. STATS_FILE should sit on a volume so deploys keep it; /stats shows
+// it to whoever has STATS_KEY. A crawler is dropped by its user agent.
+const STATS_FILE = process.env.STATS_FILE ?? "/data/visits.jsonl";
+const BOT = /bot|crawl|spider|slurp|headless|lighthouse|preview|inspect|fetch|curl|wget|python|java\/|monitor/i;
+const str = (v, max) => (typeof v === "string" && v ? v.slice(0, max) : undefined);
+const num = (v) => (Number.isFinite(v) ? Math.round(v) : undefined);
+
+async function recordHit(req, res) {
+  let body = "";
+  for await (const chunk of req) {
+    body += chunk;
+    if (body.length > 4096) break;
+  }
+  res.writeHead(204, { "cache-control": "no-store" });
+  res.end();
+  const ua = req.headers["user-agent"] ?? "";
+  if (!ua || BOT.test(ua)) return;
+  let h;
+  try {
+    h = JSON.parse(body);
+  } catch {
+    return;
+  }
+  if (!/^[\w-]{6,16}$/.test(h.id ?? "") || !["view", "end"].includes(h.k)) return;
+  const line = {
+    t: new Date().toISOString(),
+    id: h.id,
+    k: h.k,
+    ...(h.k === "view"
+      ? {
+          tag: str(h.tag, 40),
+          ref: str(h.ref, 100),
+          tz: str(h.tz, 40),
+          lang: str(h.lang, 20),
+          w: num(h.w),
+          device: /Mobi|Android|iPhone|iPad/.test(ua) ? "phone" : "desktop",
+        }
+      : {
+          secs: num(h.secs),
+          depth: num(h.depth),
+          clicks: Array.isArray(h.clicks) ? h.clicks.slice(0, 40).map((c) => str(c, 80)).filter(Boolean) : undefined,
+        }),
+  };
+  // The reply is already sent, so a failed write is only logged.
+  try {
+    await mkdir(dirname(STATS_FILE), { recursive: true });
+    await appendFile(STATS_FILE, JSON.stringify(line) + "\n");
+  } catch (err) {
+    console.error("[stats]", err.message);
+  }
+}
+
+const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
+
+// Visits newest first, each view joined with its last end. ?tag= narrows it.
+async function sendStats(url, res) {
+  if (!process.env.STATS_KEY || url.searchParams.get("key") !== process.env.STATS_KEY) {
+    res.writeHead(404);
+    res.end("not found");
+    return;
+  }
+  const lines = (await readFile(STATS_FILE, "utf8").catch(() => "")).split("\n").filter(Boolean);
+  const visits = new Map();
+  for (const l of lines) {
+    let h;
+    try {
+      h = JSON.parse(l);
+    } catch {
+      continue;
+    }
+    if (h.k === "view") visits.set(h.id, h);
+    else if (visits.has(h.id)) Object.assign(visits.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks });
+  }
+  const only = url.searchParams.get("tag");
+  const all = [...visits.values()].reverse();
+  const shown = only ? all.filter((v) => v.tag === only) : all;
+  const when = (t) => new Date(t).toLocaleString("en-GB", { timeZone: "Europe/Warsaw", dateStyle: "short", timeStyle: "short" });
+  const days = new Map();
+  for (const v of all) days.set(v.t.slice(0, 10), (days.get(v.t.slice(0, 10)) ?? 0) + 1);
+  const tags = new Map();
+  for (const v of all) if (v.tag) tags.set(v.tag, [...(tags.get(v.tag) ?? []), v]);
+  const key = encodeURIComponent(url.searchParams.get("key"));
+  const html = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width"><meta name="robots" content="noindex">
+<title>zaur.app visits</title>
+<style>body{font:14px/1.4 system-ui,sans-serif;margin:1rem;color:#0b0a09;background:#f8f6f1}table{border-collapse:collapse;width:100%}td,th{padding:.3rem .5rem;border-top:1px solid #0002;text-align:left;vertical-align:top}th{font-weight:600}tr.tag{background:#b8aff355}a{color:inherit}.n{font-variant-numeric:tabular-nums;text-align:right}h2{margin:1.5rem 0 .5rem;font-size:1rem}</style>
+<h1 style="font-size:1.25rem">zaur.app visits · ${all.length}</h1>
+<h2>Tagged links</h2>
+<table><tr><th>Tag</th><th class="n">Visits</th><th>Last</th></tr>${[...tags]
+    .map(([t, vs]) => `<tr><td><a href="?key=${key}&tag=${encodeURIComponent(t)}">${esc(t)}</a></td><td class="n">${vs.length}</td><td>${when(vs[0].t)}</td></tr>`)
+    .join("") || '<tr><td colspan="3">None yet. Hand out zaur.app/?r=company</td></tr>'}</table>
+<h2>Last 30 days</h2>
+<table><tr><th>Day</th><th class="n">Visits</th></tr>${[...days].slice(0, 30).map(([d, n]) => `<tr><td>${d}</td><td class="n">${n}</td></tr>`).join("")}</table>
+<h2>${only ? `Visits from ${esc(only)} · <a href="?key=${key}">all</a>` : "Latest visits"}</h2>
+<table><tr><th>When</th><th>Tag</th><th>From</th><th>Where</th><th>Device</th><th class="n">Time</th><th class="n">Read</th><th>Opened</th></tr>${shown
+    .slice(0, 300)
+    .map(
+      (v) => `<tr${v.tag ? ' class="tag"' : ""}><td>${when(v.t)}</td><td>${esc(v.tag)}</td><td>${esc(v.ref)}</td><td>${esc(v.tz)} · ${esc(v.lang)}</td><td>${v.device} ${v.w ?? ""}</td><td class="n">${v.secs == null ? "" : v.secs < 60 ? `${v.secs}s` : `${Math.floor(v.secs / 60)}m ${v.secs % 60}s`}</td><td class="n">${v.depth == null ? "" : v.depth + "%"}</td><td>${esc(v.clicks?.join(", "))}</td></tr>`,
+    )
+    .join("")}</table>`;
+  res.writeHead(200, { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" });
+  res.end(html);
+}
+
 function safeJoin(root, pathname) {
   const decoded = decodeURIComponent(pathname);
   const target = resolve(join(root, normalize(decoded)));
@@ -162,6 +266,15 @@ const server = createServer(async (req, res) => {
         "cache-control": "no-store",
       });
       res.end(JSON.stringify({ ok: true }));
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/hit") {
+      await recordHit(req, res);
+      return;
+    }
+    if (req.method === "GET" && url.pathname === "/stats") {
+      await sendStats(url, res);
       return;
     }
 

@@ -3,6 +3,7 @@
 	import { platesFor, phoneFor } from '#lib/plates';
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
+	import { track } from '#lib/visit';
 
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
@@ -465,6 +466,7 @@
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 
 	onMount(() => {
+		track();
 		// A link to a fold (the Templates tab, a shared #websites URL) opens it.
 		const unfold = () => {
 			const el = location.hash && document.getElementById(location.hash.slice(1));
