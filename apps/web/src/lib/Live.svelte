@@ -15,10 +15,18 @@
 	let active = $state(false);
 	let touch = $state(false);
 	let loaded = $state(false);
+	// The site is put in its frame only when the window comes near the screen, so
+	// the first windows load alone instead of racing every site on the page.
+	let near = $state(false);
 	let w = $state(0);
 	let h = $state(0);
 	let screen: HTMLDivElement;
-	const view = (m: boolean) => ((mobile = m), screen.scrollTo(0, 0));
+	const view = (m: boolean) => {
+		// A whole-page capture swaps image with the width, and loads again.
+		if (page && m !== mobile) loaded = false;
+		mobile = m;
+		screen.scrollTo(0, 0);
+	};
 	const host = $derived(label ?? new URL(href).host);
 	const vw = $derived(mobile ? PHONE : DESKTOP);
 	const s = $derived(w ? Math.min(1, w / vw) : 0.35);
@@ -27,14 +35,24 @@
 	const sheet = $derived(page && (mobile ? (pagePhone ?? page) : page));
 
 	onMount(() => {
-		mobile = matchMedia('(max-width: 600px)').matches;
+		view(matchMedia('(max-width: 600px)').matches);
 		touch = matchMedia('(hover: none)').matches;
+		const io = new IntersectionObserver(
+			([e]) => {
+				if (!e.isIntersecting) return;
+				near = true;
+				io.disconnect();
+			},
+			{ rootMargin: '50% 0px' }
+		);
+		io.observe(screen);
+		return () => io.disconnect();
 	});
 </script>
 
 <div class="live">
 	<div class="bar">
-		<span class="host">{host}</span>
+		<span class="host">{#if !page}<span class="dot" class:on={loaded} aria-hidden="true"></span>{/if}{host}</span>
 		<span class="views" role="group" aria-label="Screen width">
 			<button type="button" aria-pressed={!mobile} onclick={() => view(false)}>Desktop</button>
 			<button type="button" aria-pressed={mobile} onclick={() => view(true)}>Mobile</button>
@@ -54,27 +72,33 @@
 		onpointerleave={(e) => e.pointerType !== 'touch' && (active = false)}
 	>
 		{#if sheet}
-			<img class="sheet" src={sheet} alt="{name}, the whole page" loading="lazy" style:margin-left="{left}px" style:width="{vw * s}px" />
+			{#key sheet}
+				<img class="sheet" src={sheet} alt="{name}, the whole page" loading="lazy" decoding="async" style:margin-left="{left}px" style:width="{vw * s}px" onload={() => (loaded = true)} />
+			{/key}
 		{:else}
 			{#if !loaded && still}
-				<img src={still} alt="" style:left="{left}px" style:width="{vw * s}px" />
+				<img src={still} alt="" loading="lazy" decoding="async" style:left="{left}px" style:width="{vw * s}px" />
 			{/if}
-			<iframe
-				src={href}
-				title="{name}, live"
-				loading="lazy"
-				class:shown={loaded}
-				inert={!active}
-				style:left="{left}px"
-				style:width="{vw}px"
-				style:height="{h / s}px"
-				style:transform="scale({s})"
-				onload={() => (loaded = true)}
-			></iframe>
+			{#if near}
+				<iframe
+					src={href}
+					title="{name}, live"
+					class:shown={loaded}
+					inert={!active}
+					style:left="{left}px"
+					style:width="{vw}px"
+					style:height="{h / s}px"
+					style:transform="scale({s})"
+					onload={() => (loaded = true)}
+				></iframe>
+			{/if}
 		{/if}
 		{#if !active}
-			<button type="button" class="cover" onclick={() => (active = true)} aria-label="Use {name} here">
-				<span>{touch ? 'Tap' : 'Click'} {sheet ? 'to scroll through it' : 'to use it here'}</span>
+			<button type="button" class="cover" class:wait={!loaded} aria-disabled={!loaded} onclick={() => loaded && (active = true)} aria-label={loaded ? `Use ${name} here` : `${name} is loading`}>
+				<span>
+					{#if !loaded}{sheet ? 'Loading the page…' : still ? 'Loading the live site…' : 'Loading…'}
+					{:else}{touch ? 'Tap' : 'Click'} {sheet ? 'to scroll through it' : 'to use it here'}{/if}
+				</span>
 			</button>
 		{/if}
 	</div>
@@ -101,6 +125,26 @@
 		overflow: hidden;
 		text-overflow: ellipsis;
 		white-space: nowrap;
+	}
+	/* Quiet and blinking while the site loads, Live Green once it runs. */
+	.dot {
+		display: inline-block;
+		width: 0.5rem;
+		height: 0.5rem;
+		margin-right: 0.45rem;
+		border-radius: 50%;
+		background: var(--quiet);
+		vertical-align: 0.05em;
+		animation: wait 1s steps(2, jump-none) infinite;
+	}
+	.dot.on {
+		background: var(--live);
+		animation: none;
+	}
+	@keyframes wait {
+		to {
+			opacity: 0.25;
+		}
 	}
 	.views {
 		display: flex;
@@ -168,11 +212,14 @@
 	iframe.shown {
 		visibility: visible;
 	}
+	/* The label sits in a corner, so a touch screen that always shows it still
+	   shows the site. */
 	.cover {
 		position: absolute;
 		inset: 0;
 		display: grid;
-		place-items: center;
+		place-items: end start;
+		padding: 0.6rem;
 		border: 0;
 		background: none;
 		cursor: pointer;
@@ -189,13 +236,22 @@
 		transition: opacity 0.15s;
 	}
 	.cover:hover span,
-	.cover:focus-visible span {
+	.cover:focus-visible span,
+	.wait span {
 		opacity: 1;
 	}
-	/* A phone screen needs height more than width. */
+	.wait {
+		cursor: progress;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.dot {
+			animation: none;
+		}
+	}
+	/* A phone screen needs height more than width, but not the whole screen. */
 	@media (max-width: 600px) {
 		.screen {
-			aspect-ratio: 3 / 4;
+			aspect-ratio: 4 / 5;
 		}
 	}
 	@media (hover: none) {

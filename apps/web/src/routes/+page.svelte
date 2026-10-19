@@ -1650,6 +1650,10 @@
 		.how-grid {
 			grid-template-columns: minmax(0, 1fr);
 		}
+		.case,
+		.ptable li {
+			scroll-margin-top: 0;
+		}
 		/* Twelve weeks on a phone: the bars stay, the latest number and the
 		   month starts label them. */
 		.growth ol {

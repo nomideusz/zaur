@@ -151,7 +151,7 @@ Everything shown is real. Windows run the live site (a capture underneath until 
 - One family, Inter Tight, self-hosted at 500 / 700 / 800.
 - Type is the image: product names at poster scale, descenders crossing the rules below them; section names at the same scale on ink.
 - No shadows, gradients or rounding, except the 3px corner on chips, tags and small controls, and the round live dot.
-- Instant hover swaps; the only authored motion is the fold's short height reveal.
+- Instant hover swaps; the only authored motion is the fold's short height reveal (and a live window's status dot blinking while its site loads).
 - Live data or nothing: versions, traffic and windows come from live sources.
 
 ## Colors
@@ -254,7 +254,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 - **Style:** media on lilac (a live window, stacked demo windows with captions, a parts list, or a growth chart), body on ground: case title with an outlined tag, a meta line, the lead, "What I built" as a square-bulleted list, a spec list with Quiet labels and 25% ink hairlines, chips, then bold action links.
 
 ### Live Window
-- **Style:** 2px ink frame, a Paper toolbar (host, Desktop / Mobile switch, Open ↗), then a 16:10 screen (3:4 under 600px). Desktop renders the site at 1280 wide scaled to fit; Mobile at a real 390 wide, centred on lilac. A capture shows until the site loads.
+- **Style:** 2px ink frame, a Paper toolbar (host, Desktop / Mobile switch, Open ↗), then a 16:10 screen (4:5 under 600px). Desktop renders the site at 1280 wide scaled to fit; Mobile at a real 390 wide, centred on lilac. A capture shows until the site loads; meanwhile a Quiet status dot before the host blinks (two steps, no easing; still under reduced motion) and a corner label reads "Loading the live site…". Loaded, the dot turns Live Green. The site is framed only when the window comes within half a screen of view, so windows never race each other.
 - **Use:** the cover button hands the site the pointer ("Click" or, without hover, "Tap" to use it here); while it is in use an ink Done button gives the page its scroll back, and a mouse leaving does too. An inactive site is inert, out of the tab order. A site that may not be framed shows whole-page captures to scroll instead. Never sticky.
 - **Touch:** toolbar controls are at least 2.25rem high.
 
