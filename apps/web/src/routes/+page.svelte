@@ -550,7 +550,7 @@
 </header>
 
 <main>
-	<div class="poster" class:pointing={active}>
+	<div class="poster" class:pointing={active} style:--rows={work.length}>
 		<nav class="programme" aria-label="Products">
 			<ul>
 				{#each work as w (w.id)}
@@ -821,7 +821,13 @@
 		outline-offset: -3px;
 	}
 
+	/* The rows share the screen under the bar, so the sheet fills the first view
+	   whatever its shape (up to 1.5 times the comp's 7.5vw rows, past which a tall
+	   window would only get empty bands). --u is 1vw until a row is shorter than
+	   the comp's; then the names and the intro shrink with it to fit the screen. */
 	.poster {
+		--row: clamp(5vw, (100svh - 3.66vw - var(--rule-heavy)) / var(--rows), 11.25vw);
+		--u: min(1vw, var(--row) / 7.5);
 		display: grid;
 		grid-template-columns: 63.42vw 1fr;
 		border-bottom: var(--rule-heavy) solid var(--ink);
@@ -839,13 +845,13 @@
 		display: flex;
 		align-items: flex-end;
 		justify-content: space-between;
-		height: 7.5vw;
+		height: var(--row);
 		padding: 0 1.64vw 0.35vw 1.39vw;
 		text-decoration: none;
 	}
 	.name {
 		font-weight: 700;
-		font-size: 4.87vw;
+		font-size: calc(4.87 * var(--u));
 		line-height: 1;
 		letter-spacing: -0.03em;		/* Descenders cross the rule below, as on the poster. */
 		translate: 0 0.1em;
@@ -869,58 +875,58 @@
 	.intro {
 		display: flex;
 		flex-direction: column;
-		padding: 2vw 1.6vw 1.6vw;
+		padding: calc(2 * var(--u)) calc(1.6 * var(--u)) calc(1.6 * var(--u));
 		background: var(--lilac);
 	}
 	.intro h1 {
 		font-weight: 800;
-		font-size: 3.7vw;
+		font-size: calc(3.7 * var(--u));
 		line-height: 0.95;
 		letter-spacing: -0.035em;
 	}
 	.role {
-		margin-top: 0.8vw;
+		margin-top: calc(0.8 * var(--u));
 		font-weight: 700;
-		font-size: max(14px, 1.3vw);
+		font-size: max(14px, calc(1.3 * var(--u)));
 	}
 	.pitch {
 		max-width: 32ch;
-		margin-top: 1.5vw;
-		font-size: max(15px, 1.45vw);
+		margin-top: calc(1.5 * var(--u));
+		font-size: max(15px, calc(1.45 * var(--u)));
 		line-height: 1.35;
 	}
 	.links {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4vw 1.6vw;
-		margin-top: 1.3vw;
-		font-size: max(13px, 1.05vw);
+		gap: calc(0.4 * var(--u)) calc(1.6 * var(--u));
+		margin-top: calc(1.3 * var(--u));
+		font-size: max(13px, calc(1.05 * var(--u)));
 	}
 	.kit {
 		margin-top: auto;
-		padding-top: 1.6vw;
+		padding-top: calc(1.6 * var(--u));
 	}
 	.kit h2 {
-		margin-bottom: 0.7vw;
+		margin-bottom: calc(0.7 * var(--u));
 		font-weight: 700;
-		font-size: max(12px, 0.95vw);
+		font-size: max(12px, calc(0.95 * var(--u)));
 	}
 
 	.chips {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.45vw;
+		gap: calc(0.45 * var(--u));
 	}
 	.chip {
 		display: flex;
 		align-items: center;
 		gap: 1em;
-		height: 2.2vw;
+		height: calc(2.2 * var(--u));
 		min-height: 28px;
-		padding: 0 0.55vw;
+		padding: 0 calc(0.55 * var(--u));
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
-		font-size: max(12px, 0.95vw);
+		font-size: max(12px, calc(0.95 * var(--u)));
 		white-space: nowrap;
 		text-decoration: none;
 	}
@@ -1462,6 +1468,7 @@
 			border-right: 0;
 		}
 		.poster {
+			--u: 1vw;
 			grid-template-columns: 1fr;
 		}
 		.programme {
