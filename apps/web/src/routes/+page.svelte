@@ -539,7 +539,7 @@
 </svelte:head>
 
 <header class="bar">
-	<a class="mark" href="/">Bartosz Dymet</a>
+	<a class="mark" href="/" data-sveltekit-reload>Bartosz Dymet</a>
 	<nav class="tabs" aria-label="Sections">
 		<a href="#work">Products</a>
 		<a href="#clients">Clients</a>

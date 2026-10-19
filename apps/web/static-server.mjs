@@ -1,7 +1,7 @@
 // Serves the built `dist/` directory for production hosts (CapRover, etc.).
 // Single-page app routing: any path that doesn't resolve to a real file
-// falls back to index.html. Cache headers favour long-lived hashed assets
-// and a no-cache HTML shell so deploys take effect immediately.
+// falls back to index.html. Cache headers keep hashed assets forever
+// and revalidate everything else, so deploys take effect immediately.
 
 import { createSign } from "node:crypto";
 import { createServer } from "node:http";
@@ -161,10 +161,11 @@ const server = createServer(async (req, res) => {
     }
     const ext = extname(resolved).toLowerCase();
     const type = TYPES[ext] ?? "application/octet-stream";
-    const isHtml = ext === ".html";
-    const cache = isHtml
-      ? "no-cache"
-      : "public, max-age=31536000, immutable";
+    // Only Kit's hashed build output is safe to cache forever; __data.json,
+    // og.png and the rest keep their names across deploys.
+    const cache = url.pathname.startsWith("/_app/immutable/")
+      ? "public, max-age=31536000, immutable"
+      : "no-cache";
     const body = await readFile(resolved);
     res.writeHead(200, { "content-type": type, "cache-control": cache });
     res.end(body);

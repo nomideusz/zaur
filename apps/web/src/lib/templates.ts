@@ -51,8 +51,13 @@ export type Template = { slug: string; name: string; desc: string; deploy: strin
 type Fetch = typeof fetch;
 type Repo = { name: string; full_name: string; html_url: string; default_branch: string; owner: { login: string } };
 
-async function json(f: Fetch, url: string, init?: RequestInit) {
+async function json(f: Fetch, url: string, init?: RequestInit, retry = true): Promise<any> {
 	const r = await f(url, init);
+	// GitHub search allows 10 unauthenticated calls a minute; two builds close together can hit it.
+	if ((r.status === 403 || r.status === 429) && retry) {
+		await new Promise((done) => setTimeout(done, 61_000));
+		return json(f, url, init, false);
+	}
 	if (!r.ok) throw new Error(`${url}: ${r.status}`);
 	return r.json();
 }
