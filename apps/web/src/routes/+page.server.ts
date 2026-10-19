@@ -11,7 +11,7 @@ const sites = [
 	'https://szkolyjogi.pl', 'https://thebest.travel', 'https://kino.net.pl', 'https://kompi.pl', 'https://festivals.zaur.app',
 	'https://pikastro.eu', 'https://wibroakustyka.ai', 'https://tutitutu.pl', 'https://intertechpoland.pl',
 	'https://gabinet-polaczenie.pl', 'https://kurcz.pl', 'https://kruk.live',
-	'https://demo.zaur.app', 'https://register.zaur.app'
+	'https://demo.zaur.app', 'https://register.zaur.app', 'https://svelte-calendar.xyz'
 ];
 
 /** Whether these response headers let https://zaur.app put the page in a frame. */

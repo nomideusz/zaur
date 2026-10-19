@@ -206,10 +206,12 @@
 		},
 		{
 			name: '@nomideusz/svelte-calendar',
-			desc: 'A themeable Svelte 5 calendar with Day and Week views — Planner and Agenda.',
+			desc: 'A themeable Svelte 5 calendar: day, week, scrolling-week and month views, agenda lists, touch-first mobile layouts, drag-and-drop, timezones, a headless API and an embeddable web component.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-calendar',
 			demo: 'https://svelte-calendar.xyz',
-			source: 'https://github.com/nomideusz/svelte-calendar'
+			source: 'https://github.com/nomideusz/svelte-calendar',
+			// Its demo site opens the section as a live window, when it may be framed.
+			featured: true
 		},
 		{
 			name: '@nomideusz/svelte-search',
@@ -695,6 +697,25 @@
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">Packages <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">The building blocks my products share, published on npm under @nomideusz.</p>
+		{#each pkgs.filter((p) => p.featured && p.demo && isLive(p.demo)) as p (p.id)}
+			<article class="case">
+				<div class="media">
+					<Live href={p.demo!} name={p.name} />
+				</div>
+				<div class="case-body">
+					<h3>
+						<a href={p.demo}>{host(p.demo!)}</a>
+						<span class="tag">Package</span>
+					</h3>
+					<p class="meta">{p.name} {version(p.id)}</p>
+					<p class="what">{p.desc}</p>
+					<p class="go">
+						<a href={p.npm}>On npm</a>
+						{#if p.source}<a href={p.source}>Source on GitHub</a>{/if}
+					</p>
+				</div>
+			</article>
+		{/each}
 		<ul class="ptable">
 			{#each pkgs as p (p.id)}
 				<li id="pkg-{p.id}">
