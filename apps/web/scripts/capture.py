@@ -31,6 +31,7 @@ WINDOWS = {
     'kino': 'https://kino.net.pl',
     'kompi': 'https://kompi.pl',
     'festivals': 'https://festivals.zaur.app',
+    'svelte-calendar': 'https://svelte-calendar.xyz',
 }
 # Sites kept out of a live window (fixtar is a client's shop): whole-page captures.
 PAGES = {'fixtar': 'https://fixtar.pl'}

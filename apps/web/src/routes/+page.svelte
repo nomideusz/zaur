@@ -700,7 +700,7 @@
 		{#each pkgs.filter((p) => p.featured && p.demo && isLive(p.demo)) as p (p.id)}
 			<article class="case">
 				<div class="media">
-					<Live href={p.demo!} name={p.name} />
+					<Live href={p.demo!} name={p.name} shot={shot(p.id)} phone={phoneFor(p.id)} />
 				</div>
 				<div class="case-body">
 					<h3>
