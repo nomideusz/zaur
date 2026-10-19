@@ -1,3 +1,5 @@
+import { loadTemplates } from '#lib/templates';
+
 // Package versions baked in at prerender, so the poster ships with real
 // numbers; the page refreshes them from npm on load.
 const names = ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify'];
@@ -19,7 +21,7 @@ export function _framable(h: Headers) {
 }
 
 export async function load({ fetch }) {
-	const [pairs, live] = await Promise.all([
+	const [pairs, live, templates] = await Promise.all([
 		Promise.all(
 			names.map((id) =>
 				fetch(`https://registry.npmjs.org/@nomideusz/${id}/latest`)
@@ -34,10 +36,12 @@ export async function load({ fetch }) {
 					.then((r) => (r.ok && _framable(r.headers) ? href : null))
 					.catch(() => null)
 			)
-		)
+		),
+		loadTemplates(fetch)
 	]);
 	return {
 		versions: Object.fromEntries(pairs.filter(([, v]) => v)) as Record<string, string>,
-		live: live.filter((h) => h !== null)
+		live: live.filter((h) => h !== null),
+		templates
 	};
 }

@@ -1,0 +1,55 @@
+name: Refresh zaur.app templates
+
+# zaur.app builds its Railway templates table from GitHub and Railway at
+# prerender (apps/web/src/lib/templates.ts), so it only changes on a rebuild.
+# Hourly this fingerprints the template repos and, when that changes, calls the
+# web app's Dokploy deploy hook. A template repo can trigger it at once with
+#   gh api repos/nomideusz/zaur/dispatches -f event_type=railway-templates
+
+on:
+  schedule:
+    - cron: '17 * * * *'
+  repository_dispatch:
+    types: [railway-templates]
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fingerprint the template repos
+        id: fp
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          sum=$(gh api -X GET search/repositories --paginate \
+            -f q='topic:railway-template archived:false user:two-workspaces user:nomideusz' -f per_page=100 \
+            --jq '.items[] | "\(.full_name) \(.pushed_at)"' | sort | sha256sum | cut -c1-16)
+          echo "sum=$sum" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether this fingerprint was built
+        id: seen
+        uses: actions/cache/restore@v4
+        with:
+          path: .seen
+          key: templates-${{ steps.fp.outputs.sum }}
+          lookup-only: true
+
+      - name: Rebuild zaur.app
+        if: steps.seen.outputs.cache-hit != 'true' || github.event_name != 'schedule'
+        env:
+          HOOK: ${{ secrets.DOKPLOY_WEB_DEPLOY_HOOK }}
+        # Dokploy only deploys a push to main that touches a watched path.
+        run: |
+          curl -sS -X POST "$HOOK" -H 'content-type: application/json' -H 'x-github-event: push' \
+            -d '{"ref":"refs/heads/main","head_commit":{"message":"Refresh Railway templates"},"commits":[{"modified":["apps/web/src/lib/templates.ts"]}]}' \
+            | tee /dev/stderr | grep -q 'deployed successfully'
+
+      - if: steps.seen.outputs.cache-hit != 'true'
+        run: mkdir -p .seen
+
+      - if: steps.seen.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .seen
+          key: templates-${{ steps.fp.outputs.sum }}
