@@ -28,7 +28,7 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	],
 	[
 		'Business',
-		['odoo', 'erpnext', 'twenty', 'espocrm', 'evo-crm', 'chatwoot', 'zammad', 'invoiceninja', 'lago', 'medusa', 'mautic', 'dittofeed',
+		['odoo', 'erpnext', 'twenty', 'espocrm', 'evo-crm', 'chatwoot', 'zammad', 'invoiceninja', 'lago', 'medusa', 'mautic', 'postiz', 'dittofeed',
 		'formbricks', 'calcom', 'documenso', 'datalens', 'openemr']
 	],
 	[
