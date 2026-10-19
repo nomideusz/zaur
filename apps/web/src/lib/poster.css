@@ -59,6 +59,8 @@
 	--live: #1f9d55;
 	--quiet: #4a4842;
 
+	/* The poster's unit; the poster shrinks it to fit its rows on short screens. */
+	--u: 1vw;
 	--rule: 2px;
 	--rule-heavy: 4px;
 	--sans: 'Inter Tight', system-ui, sans-serif;
@@ -75,6 +77,12 @@ html {
 	-webkit-text-size-adjust: 100%;
 	text-size-adjust: 100%;
 	scroll-padding-top: 4rem;
+}
+/* Under 900 the bar stacks into two rows. */
+@media (max-width: 900px) {
+	html {
+		scroll-padding-top: 6.25rem;
+	}
 }
 
 body {

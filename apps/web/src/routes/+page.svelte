@@ -48,7 +48,7 @@
 		parts?: [string, string][];
 		growth?: { title: string; months: [string, number][]; note: string };
 		/** Live windows shown instead of a capture, when the product itself sits behind a sign-in. */
-		demos?: { href: string; name: string; note: string }[];
+		demos?: { id: string; href: string; name: string; note: string }[];
 	};
 	const work: Work[] = [
 		{
@@ -66,8 +66,8 @@
 				['Meet', 'Video calls inside Mail']
 			],
 			demos: [
-				{ href: 'https://demo.zaur.app', name: 'Zaur Mail demo', note: 'The real client over a sample mailbox; nothing is sent, and it resets every 30 minutes.' },
-				{ href: 'https://register.zaur.app', name: 'Zaur sign-up', note: 'The real sign-up: an account made here is a working mailbox.' }
+				{ id: 'mail-demo', href: 'https://demo.zaur.app', name: 'Zaur Mail demo', note: 'The real client over a sample mailbox; nothing is sent, and it resets every 30 minutes.' },
+				{ id: 'signup', href: 'https://register.zaur.app', name: 'Zaur sign-up', note: 'The real sign-up: an account made here is a working mailbox.' }
 			],
 			built: [
 				'A mail client over JMAP on SvelteKit 3 and remote functions, started on the pre-release: installable and offline-capable, with push notifications, calendar, contacts, files, rich compose and several accounts.',
@@ -551,14 +551,15 @@
 	<nav class="tabs" aria-label="Sections">
 		<a href="#work">Products</a>
 		<a href="#clients">Clients</a>
-		<a href="#packages">Open source</a>
+		<a href="#packages">Packages</a>
+		<a href="#templates">Templates</a>
 		<a href="#how">How I work</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 </header>
 
 <main>
-	<div class="poster" class:pointing={active} style:--rows={work.length}>
+	<div class="poster" class:pointing={litPkgs?.size} style:--rows={work.length}>
 		<nav class="programme" aria-label="Products">
 			<ul>
 				{#each work as w (w.id)}
@@ -583,8 +584,7 @@
 			<h1 id="who">Bartosz Dymet</h1>
 			<p class="role">Frontend engineer · Svelte and TypeScript · Kraków</p>
 			<p class="pitch">
-				I design, build and run complete products: the interface, the backend, the servers and the tests. Six are live.
-				Point at one to see the packages it is built from.
+				I design, build and run complete products.
 			</p>
 			<p class="links">
 				<a href={github}>github.com/nomideusz</a>
@@ -623,7 +623,7 @@
 					{#if demos.length}
 						{#each demos as d (d.href)}
 							<figure class="demo">
-								<Live href={d.href} name={d.name} />
+								<Live href={d.href} name={d.name} shot={shot(d.id)} phone={phoneFor(d.id)} />
 								<figcaption>{d.note}</figcaption>
 							</figure>
 						{/each}
@@ -644,7 +644,7 @@
 				</div>
 				<div class="case-body">
 					<h3>
-						{#if gsc}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
+						{#if gsc && !trafficDown}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
 						<a href={w.href}>{title}</a>
 						<span class="tag">{w.kind}</span>
 					</h3>
@@ -679,7 +679,7 @@
 	</section>
 
 	<section class="websites" id="clients" aria-labelledby="clients-h">
-		<div class="strip"><h2 id="clients-h">Client work <span class="n">· {clients.length}</span></h2></div>
+		<div class="strip"><h2 id="clients-h">Clients <span class="n">· {clients.length}</span></h2></div>
 		<p class="lede">An online shop and five websites for businesses: designed, built and kept running.</p>
 		<ul class="sites">
 			{#each clients as c (c.id)}{@render card(c)}{/each}
@@ -721,7 +721,10 @@
 				<li id="pkg-{p.id}">
 					<a class="p-name" href={p.npm}>{p.id}</a>
 					<span class="p-ver">{version(p.id)}</span>
-					<p>{p.desc}</p>
+					<div>
+						<p>{p.desc}</p>
+						<code class="p-install">npm i {p.name}</code>
+					</div>
 					<p class="p-used">{usedIn(p.id).length ? `Used in ${usedIn(p.id).join(', ')}` : ''}</p>
 					<p class="p-links">
 						{#if p.demo}<a href={p.demo}>Demo</a>{/if}
@@ -745,9 +748,9 @@
 					<ul class="table">
 						{#each g.items as t (t.slug)}
 							<li>
-								<a class="t-name" href={t.deploy}>{t.name}</a>
+								<b class="t-name">{t.name}</b>
 								<p>{t.desc}</p>
-								<a class="t-src" href={t.source}>Source</a>
+								<span class="t-src"><a href={t.deploy}>Deploy on Railway</a><a href={t.source}>Source</a></span>
 							</li>
 						{/each}
 					</ul>
@@ -812,7 +815,7 @@
 		top: 0;
 		z-index: 2;
 		display: grid;
-		grid-template-columns: 38.35vw 9.4vw 10.4vw 10.4vw 11.9vw 1fr;
+		grid-template-columns: 28vw 9.4vw 9.4vw 9.4vw 10.4vw 10.4vw 1fr;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -975,6 +978,33 @@
 	.pointing .kit li:not(.lit) .chip {
 		opacity: 0.35;
 	}
+	/* On the sheet the kit fills the rest of the column as a ruled list, a small
+	   programme of its own beside the big one. */
+	@media (min-width: 901px) {
+		.kit {
+			flex: 1;
+			display: flex;
+			flex-direction: column;
+			margin-top: calc(1.6 * var(--u));
+		}
+		.kit .chips {
+			flex: 1;
+			display: grid;
+			grid-auto-rows: minmax(calc(2 * var(--u)), 1fr);
+			gap: 0;
+			border-top: var(--rule) solid var(--ink);
+		}
+		.kit .chip {
+			justify-content: space-between;
+			height: 100%;
+			min-height: 0;
+			padding: 0 calc(0.4 * var(--u));
+			border: 0;
+			border-bottom: var(--rule) solid var(--ink);
+			border-radius: 0;
+			font-size: max(12px, calc(1.25 * var(--u)));
+		}
+	}
 
 	h3 {
 		display: flex;
@@ -1117,6 +1147,9 @@
 		object-fit: cover;
 		object-position: top;
 	}
+	.demo {
+		margin: 0;
+	}
 	.demo + .demo {
 		margin-top: 1.39vw;
 	}
@@ -1214,6 +1247,17 @@
 	.p-ver {
 		font-variant-numeric: tabular-nums;
 	}
+	.p-install {
+		display: inline-block;
+		margin-top: 0.4rem;
+		padding: 0.1rem 0.45rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		font: inherit;
+		font-size: 0.875rem;
+		user-select: all;
+		overflow-wrap: anywhere;
+	}
 	.p-used {
 		color: var(--quiet);
 		font-size: 0.875rem;
@@ -1224,7 +1268,7 @@
 		justify-self: end;
 	}
 
-	/* How I work: four ruled cells. */
+	/* How I work: five ruled cells. */
 	.how-grid {
 		display: grid;
 		grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1348,7 +1392,10 @@
 		font-size: 1.125rem;
 	}
 	.t-src {
+		display: flex;
+		gap: 1.25rem;
 		justify-self: end;
+		white-space: nowrap;
 	}
 
 	/* Websites: always open, a grid of client sites ruled like the poster. */
@@ -1482,16 +1529,16 @@
 	/* Below 900 the sheet stops scaling and becomes a stack. */
 	@media (max-width: 900px) {
 		.bar {
-			grid-template-columns: repeat(4, 1fr);
+			grid-template-columns: repeat(5, 1fr);
 			height: auto;
 		}
 		.mark {
-			grid-column: 1 / 3;
+			grid-column: 1 / 4;
 			padding: 0.9rem 1rem;
 			font-size: 1.5rem;
 		}
 		.mail {
-			grid-column: 3 / 5;
+			grid-column: 4 / 6;
 			grid-row: 1;
 			justify-self: end;
 			padding-right: 1rem;
@@ -1499,7 +1546,7 @@
 		}
 		.tabs a {
 			height: 2.75rem;
-			font-size: 0.875rem;
+			font-size: 0.8125rem;
 			border-top: var(--rule) solid var(--bar-rule);
 			border-left: 0;
 		}
@@ -1562,7 +1609,7 @@
 		}
 		.case,
 		.how-grid {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 		.media {
 			padding: 1rem;
@@ -1589,7 +1636,8 @@
 			gap: 0.25rem 1rem;
 			padding: 1rem;
 		}
-		.ptable li > p {
+		.ptable li > p,
+		.ptable li > div {
 			grid-column: 1 / -1;
 		}
 		.p-links {
@@ -1609,7 +1657,7 @@
 			padding: 1rem 1rem 0.6rem;
 		}
 		.sites {
-			grid-template-columns: 1fr;
+			grid-template-columns: minmax(0, 1fr);
 		}
 		.sites > li,
 		.sites > li:nth-last-child(2):nth-child(odd) {

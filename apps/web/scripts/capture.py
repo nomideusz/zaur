@@ -32,6 +32,8 @@ WINDOWS = {
     'kompi': 'https://kompi.pl',
     'festivals': 'https://festivals.zaur.app',
     'svelte-calendar': 'https://svelte-calendar.xyz',
+    'mail-demo': 'https://demo.zaur.app',
+    'signup': 'https://register.zaur.app',
 }
 # Sites kept out of a live window (fixtar is a client's shop): whole-page captures.
 PAGES = {'fixtar': 'https://fixtar.pl'}
@@ -45,7 +47,7 @@ HIDE = '::-webkit-scrollbar{display:none} html{scrollbar-width:none}'
 
 def shoot(browser, url, w, h, full=False):
     page = browser.new_page(viewport={'width': w, 'height': h}, device_scale_factor=2,
-                            is_mobile=w < 500, has_touch=w < 500)
+                            is_mobile=w < 500, has_touch=w < 500, bypass_csp=True)
     page.goto(url, wait_until='load', timeout=60000)
     page.add_style_tag(content=HIDE)
     for b in page.get_by_role('button').all():

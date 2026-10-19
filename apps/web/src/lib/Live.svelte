@@ -12,6 +12,7 @@
 	const PHONE = 390;
 	let mobile = $state(false);
 	let active = $state(false);
+	let touch = $state(false);
 	let loaded = $state(false);
 	let w = $state(0);
 	let h = $state(0);
@@ -24,7 +25,10 @@
 	const still = $derived(mobile ? (phone ?? shot) : shot);
 	const sheet = $derived(page && (mobile ? (pagePhone ?? page) : page));
 
-	onMount(() => (mobile = matchMedia('(max-width: 600px)').matches));
+	onMount(() => {
+		mobile = matchMedia('(max-width: 600px)').matches;
+		touch = matchMedia('(hover: none)').matches;
+	});
 </script>
 
 <div class="live">
@@ -34,6 +38,7 @@
 			<button type="button" aria-pressed={!mobile} onclick={() => view(false)}>Desktop</button>
 			<button type="button" aria-pressed={mobile} onclick={() => view(true)}>Mobile</button>
 		</span>
+		{#if active}<button type="button" class="done" onclick={() => (active = false)}>Done</button>{/if}
 		<a href={href} target="_blank" rel="noopener">Open ↗</a>
 	</div>
 	<!-- Leaving only drops the pointer hand-off; the cover button is the control.
@@ -58,6 +63,7 @@
 				title="{name}, live"
 				loading="lazy"
 				class:shown={loaded}
+				inert={!active}
 				style:left="{left}px"
 				style:width="{vw}px"
 				style:height="{h / s}px"
@@ -67,7 +73,7 @@
 		{/if}
 		{#if !active}
 			<button type="button" class="cover" onclick={() => (active = true)} aria-label="Use {name} here">
-				<span>{sheet ? 'Click to scroll through it' : 'Click to use it here'}</span>
+				<span>{touch ? 'Tap' : 'Click'} {sheet ? 'to scroll through it' : 'to use it here'}</span>
 			</button>
 		{/if}
 	</div>
@@ -100,13 +106,20 @@
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
 	}
-	.views button {
-		padding: 0.15rem 0.55rem;
+	.views button,
+	.done {
+		padding: 0.3rem 0.6rem;
 		border: 0;
 		background: none;
 		font: inherit;
 		color: inherit;
 		cursor: pointer;
+	}
+	.done {
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		background: var(--ink);
+		color: var(--paper);
 	}
 	.views button + button {
 		border-left: var(--rule) solid var(--ink);
@@ -116,6 +129,7 @@
 		color: var(--paper);
 	}
 	.bar a {
+		padding: 0.3rem 0;
 		white-space: nowrap;
 	}
 	.screen {
@@ -186,6 +200,15 @@
 	@media (hover: none) {
 		.cover span {
 			opacity: 1;
+		}
+		.views button,
+		.done,
+		.bar a {
+			min-height: 2.25rem;
+		}
+		.bar a {
+			display: inline-grid;
+			align-items: center;
 		}
 	}
 </style>
