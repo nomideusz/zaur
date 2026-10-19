@@ -46,9 +46,8 @@
 		built?: string[];
 		proof?: [string, string][];
 		parts?: [string, string][];
-		growth?: { title: string; months: [string, number][]; note: string };
 		/** Live windows shown instead of a capture, when the product itself sits behind a sign-in. */
-		demos?: { id: string; href: string; name: string; note: string }[];
+		demos?: { id: string; href: string; name: string; label?: string; note: string }[];
 	};
 	const work: Work[] = [
 		{
@@ -66,7 +65,7 @@
 				['Meet', 'Video calls inside Mail']
 			],
 			demos: [
-				{ id: 'mail-demo', href: 'https://demo.zaur.app', name: 'Zaur Mail demo', note: 'The real client over a sample mailbox; nothing is sent, and it resets every 30 minutes.' },
+				{ id: 'mail-demo', href: 'https://demo.zaur.app', name: 'Zaur Mail demo', label: 'webmail.zaur.app', note: 'The real client over a sample mailbox; nothing is sent, and it resets every 30 minutes.' },
 				{ id: 'signup', href: 'https://register.zaur.app', name: 'Zaur sign-up', note: 'The real sign-up: an account made here is a working mailbox.' }
 			],
 			built: [
@@ -102,11 +101,6 @@
 				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres, Better Auth'],
 				['Built on', 'All 10 of my packages']
 			],
-			growth: {
-				title: 'Clicks from Google search, per month',
-				months: [['Apr', 8], ['May', 5], ['Jun', 6], ['Jul', 336], ['Aug', 953], ['Sep', 2692]],
-				note: 'Average position went from 21.6 in June to 9.5 in September, with 244,000 impressions in the last 28 days. Source: Google Search Console, October 2026.'
-			},
 			uses: ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify']
 		},
 		{
@@ -284,7 +278,6 @@
 		basket: 'client' | 'side';
 		specs: [string, string][];
 		uses?: string[];
-		growth?: Work['growth'];
 		/** Played and drawn live on this page instead of a screenshot. */
 		live?: boolean;
 	};
@@ -302,11 +295,6 @@
 				['SEO', 'Built to the client’s technical SEO spec: Product and Offer schema, five split sitemaps, canonical and noindex rules'],
 				['Feeds', 'Google Shopping feed generated from the same data as the schema']
 			],
-			growth: {
-				title: 'Clicks from Google to product and blog pages',
-				months: [['Jun', 19], ['Jul', 60], ['Aug', 92], ['Sep', 130]],
-				note: 'Impressions on those pages grew from 768 to 4,061 a month. Source: Google Search Console, October 2026.'
-			},
 			uses: ['svelte-search']
 		},
 		{
@@ -424,7 +412,7 @@
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	// Every smaller project renders as the same card: a picture, then the facts.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; page?: string; pagePhone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[]; growth?: Work['growth'] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; phone?: string; page?: string; pagePhone?: string; frame?: boolean; live?: boolean; desc: string; specs: [string, string][]; uses?: string[] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
 		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), tag: w.kind, href: w.href, img: shot(w.id), phone: phoneFor(w.id), frame: isLive(w.href), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
@@ -436,6 +424,8 @@
 		});
 	const clients = siteCards('client');
 	const side = siteCards('side');
+	// A featured package whose demo may be framed gets a case of its own, not a row.
+	const shownLive = (p: (typeof pkgs)[number]) => !!(p.featured && p.demo && isLive(p.demo));
 	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
 
 	// The signature: pointing at a product lights the packages it is built from,
@@ -458,8 +448,20 @@
 	// svelte-ignore state_referenced_locally
 	let versions = $state<Record<string, string>>({ ...data.versions });
 	let registryDown = $state(false);
-	let traffic = $state<{ clicksPerDay: number; monthAgo: number | null } | null>(null);
+	// Google Search, live from the server: a day's median for each recent week.
+	// Clicks where a site has them, impressions where it is too new to.
+	type Search = { metric: 'clicks' | 'impressions'; perDay: number; weeks: [string, number][]; clicks28: number; impressions28: number; through: string };
+	const searched = ['szkolyjogi', 'fixtar', 'kino', 'kompi', 'festivals'];
+	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
+	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
+	const perDay = (id: string) => {
+		const t = traffic?.[id];
+		if (!t) return 'Reading Google Search…';
+		const n = t.perDay.toLocaleString('en');
+		return t.metric === 'clicks' ? `${n} search clicks a day from Google` : `Shown in Google search ${n} times a day`;
+	};
+	const compact = new Intl.NumberFormat('en', { notation: 'compact' });
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 
 	onMount(() => {
@@ -496,12 +498,16 @@
 			</a>
 		{/if}
 		<div class="site">
-			<h3><a href={c.href}>{c.name}</a><span>{c.tag}</span></h3>
+			<h3>
+				{#if searching(c.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
+				<a href={c.href}>{c.name}</a><span>{c.tag}</span>
+			</h3>
+			{#if searching(c.id)}<p class="meta">{perDay(c.id)}</p>{/if}
 			<p>{c.desc}</p>
 			<dl>
 				{#each c.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
 			</dl>
-			{#if c.growth}{@render growth(c.growth)}{/if}
+			{#if traffic?.[c.id]}{@render growth(c.id, traffic[c.id])}{/if}
 			{#if c.uses?.length}
 				<ul class="chips">
 					{#each c.uses as u (u)}
@@ -513,19 +519,26 @@
 	</li>
 {/snippet}
 
-{#snippet growth(g: NonNullable<Work['growth']>)}
-	{@const top = Math.max(...g.months.map(([, n]) => n))}
+{#snippet growth(id: string, t: Search)}
+	{@const top = Math.max(1, ...t.weeks.map(([, n]) => n))}
+	{@const short = (d: string) => `${Number(d.slice(8))} ${new Date(d).toLocaleDateString('en', { month: 'short', timeZone: 'UTC' })}`}
 	<figure class="growth">
-		<figcaption>{g.title}</figcaption>
+		<figcaption>
+			{id === 'fixtar' ? 'Clicks from Google to product and blog pages' : t.metric === 'clicks' ? 'Clicks from Google search' : 'Times shown in Google search'}, a typical day each week
+		</figcaption>
 		<ol>
-			{#each g.months as [m, n] (m)}
+			{#each t.weeks as [d, n], i (d)}
+				{@const month = i === 0 || d.slice(5, 7) !== t.weeks[i - 1][0].slice(5, 7)}
 				<li>
-					<span class="col"><b>{n.toLocaleString('en')}</b><i style:height="{(n / top) * 100}%"></i></span>
-					<span class="mo">{m}</span>
+					<span class="col"><b>{compact.format(n)}</b><i style:height="{(n / top) * 100}%"></i></span>
+					<span class="mo" class:day={!month}>{month ? short(d) : Number(d.slice(8))}</span>
 				</li>
 			{/each}
 		</ol>
-		<p>{g.note}</p>
+		<p>
+			{t.clicks28.toLocaleString('en')} clicks and {t.impressions28.toLocaleString('en')} impressions in the last 28 days, through {short(t.through)}.
+			Live from Google Search Console.
+		</p>
 	</figure>
 {/snippet}
 
@@ -547,7 +560,7 @@
 </svelte:head>
 
 <header class="bar">
-	<a class="mark" href="/" data-sveltekit-reload>Bartosz Dymet</a>
+	<a class="mark" href="#top">Bartosz Dymet</a>
 	<nav class="tabs" aria-label="Sections">
 		<a href="#work">Products</a>
 		<a href="#clients">Clients</a>
@@ -588,7 +601,6 @@
 			</p>
 			<p class="links">
 				<a href={github}>github.com/nomideusz</a>
-				<a href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 			</p>
 			<div class="kit">
 				<h2>Built from my open-source packages</h2>
@@ -615,7 +627,6 @@
 	<section class="work" id="work" aria-labelledby="work-h">
 		<div class="strip"><h2 id="work-h">Products <span class="n">· {work.length}</span></h2></div>
 		{#each flagships as w (w.id)}
-			{@const gsc = w.id === 'szkolyjogi'}
 			{@const title = w.site ?? host(w.href)}
 			{@const demos = w.demos?.filter((d) => isLive(d.href)) ?? []}
 			<article class="case" id={w.id}>
@@ -623,7 +634,7 @@
 					{#if demos.length}
 						{#each demos as d (d.href)}
 							<figure class="demo">
-								<Live href={d.href} name={d.name} shot={shot(d.id)} phone={phoneFor(d.id)} />
+								<Live href={d.href} name={d.name} label={d.label} shot={shot(d.id)} phone={phoneFor(d.id)} />
 								<figcaption>{d.note}</figcaption>
 							</figure>
 						{/each}
@@ -640,18 +651,18 @@
 							{/each}
 						</ul>
 					{/if}
-					{#if w.growth}{@render growth(w.growth)}{/if}
+					{#if traffic?.[w.id]}{@render growth(w.id, traffic[w.id])}{/if}
 				</div>
 				<div class="case-body">
 					<h3>
-						{#if gsc && !trafficDown}<span class="dot" class:off={!traffic && !trafficDown} aria-hidden="true"></span>{/if}
+						{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
 						<a href={w.href}>{title}</a>
 						<span class="tag">{w.kind}</span>
 					</h3>
 					{#if host(w.href) !== title}
 						<p class="meta">{host(w.href)}</p>
-					{:else if gsc && !trafficDown}
-						<p class="meta">{traffic?.clicksPerDay ?? '…'} search clicks a day from Google</p>
+					{:else if searching(w.id)}
+						<p class="meta">{perDay(w.id)}</p>
 					{/if}
 					<p class="what">{w.what}</p>
 					<h4>What I built</h4>
@@ -697,8 +708,8 @@
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">Packages <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">The building blocks my products share, published on npm under @nomideusz.</p>
-		{#each pkgs.filter((p) => p.featured && p.demo && isLive(p.demo)) as p (p.id)}
-			<article class="case">
+		{#each pkgs.filter(shownLive) as p (p.id)}
+			<article class="case" id="pkg-{p.id}">
 				<div class="media">
 					<Live href={p.demo!} name={p.name} shot={shot(p.id)} phone={phoneFor(p.id)} />
 				</div>
@@ -709,6 +720,8 @@
 					</h3>
 					<p class="meta">{p.name} {version(p.id)}</p>
 					<p class="what">{p.desc}</p>
+					<code class="p-install">npm i {p.name}</code>
+					{#if usedIn(p.id).length}<p class="p-used">Used in {usedIn(p.id).join(', ')}</p>{/if}
 					<p class="go">
 						<a href={p.npm}>On npm</a>
 						{#if p.source}<a href={p.source}>Source on GitHub</a>{/if}
@@ -717,7 +730,7 @@
 			</article>
 		{/each}
 		<ul class="ptable">
-			{#each pkgs as p (p.id)}
+			{#each pkgs.filter((p) => !shownLive(p)) as p (p.id)}
 				<li id="pkg-{p.id}">
 					<a class="p-name" href={p.npm}>{p.id}</a>
 					<span class="p-ver">{version(p.id)}</span>
@@ -1035,6 +1048,9 @@
 		border-radius: 50%;
 		background: var(--live);
 	}
+	.sites .dot {
+		align-self: center;
+	}
 	.dot.off {
 		background: var(--quiet);
 	}
@@ -1063,10 +1079,13 @@
 	}
 
 	.growth {
-		margin: 1.39vw 0 0;
+		margin: 0;
 		padding: 1rem 1.2rem 1.1rem;
 		border: var(--rule) solid var(--ink);
 		background: var(--paper);
+	}
+	.media .growth {
+		border-width: var(--rule) 0 0;
 	}
 	.growth figcaption {
 		font-weight: 700;
@@ -1079,6 +1098,7 @@
 	}
 	.growth li {
 		flex: 1;
+		min-width: 0;
 		display: grid;
 		grid-template-rows: 1fr auto;
 	}
@@ -1103,6 +1123,7 @@
 	}
 	.growth .mo {
 		padding-top: 0.25rem;
+		white-space: nowrap;
 		font-size: 0.8125rem;
 		color: var(--quiet);
 	}
@@ -1127,17 +1148,26 @@
 		border-bottom: var(--rule) solid var(--ink);
 		scroll-margin-top: 4vw;
 	}
+	/* The window runs edge to edge and grows to the case's height, so the site
+	   fills the column instead of floating in it. */
 	.media {
-		padding: 1.39vw;
+		display: flex;
+		flex-direction: column;
 		border-right: var(--rule) solid var(--ink);
-		background: var(--lilac);
+		background: var(--paper);
+	}
+	.media > :global(.live),
+	.demo:last-child {
+		flex: 1;
+	}
+	.media :global(.live) {
+		border: 0;
 	}
 	.window {
 		position: relative;
 		display: block;
 		aspect-ratio: 16 / 10;
 		overflow: hidden;
-		border: var(--rule) solid var(--ink);
 		background: var(--paper);
 	}
 	.window img {
@@ -1148,20 +1178,26 @@
 		object-position: top;
 	}
 	.demo {
+		display: flex;
+		flex-direction: column;
 		margin: 0;
 	}
+	.demo :global(.live) {
+		flex: 1;
+	}
 	.demo + .demo {
-		margin-top: 1.39vw;
+		border-top: var(--rule) solid var(--ink);
 	}
 	.demo figcaption {
-		margin-top: 0.4rem;
+		padding: 0.6rem 1.39vw;
+		border-top: var(--rule) solid var(--ink);
+		background: var(--lilac);
 		font-size: 0.875rem;
 	}
 	.parts {
 		display: grid;
 		aspect-ratio: 541 / 299;
 		align-content: center;
-		border: var(--rule) solid var(--ink);
 		background: var(--paper);
 	}
 	.parts li {
@@ -1261,6 +1297,9 @@
 	.p-used {
 		color: var(--quiet);
 		font-size: 0.875rem;
+	}
+	.case-body .p-used {
+		margin-top: 0.6rem;
 	}
 	.p-links {
 		display: flex;
@@ -1468,7 +1507,7 @@
 	.sites h3 a:hover {
 		text-decoration: underline;
 	}
-	.sites h3 span {
+	.sites h3 a + span {
 		font-weight: 500;
 		font-size: 0.8125rem;
 		padding: 0.05rem 0.45rem;
@@ -1611,8 +1650,20 @@
 		.how-grid {
 			grid-template-columns: minmax(0, 1fr);
 		}
+		/* Twelve weeks on a phone: the bars stay, the latest number and the
+		   month starts label them. */
+		.growth ol {
+			gap: 0.3rem;
+		}
+		.growth li:not(:last-child) b,
+		.growth .mo.day,
+		.growth li:first-child:has(+ li .mo:not(.day)) .mo {
+			visibility: hidden;
+		}
+		.growth li:last-child .mo {
+			text-align: right;
+		}
 		.media {
-			padding: 1rem;
 			border-right: 0;
 			border-bottom: var(--rule) solid var(--ink);
 		}

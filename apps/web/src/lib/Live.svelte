@@ -5,8 +5,9 @@
 	// it the pointer so it can be used without leaving; when the pointer leaves,
 	// the page gets its scroll back. The capture shows until the site has loaded.
 	// A site that may not be framed passes whole-page captures instead (page,
-	// pagePhone), which the same click lets the visitor scroll through.
-	let { href, name, shot, phone, page, pagePhone }: { href: string; name: string; shot?: string; phone?: string; page?: string; pagePhone?: string } = $props();
+	// pagePhone), which the same click lets the visitor scroll through. A demo
+	// can name the address it stands in for (label).
+	let { href, name, label, shot, phone, page, pagePhone }: { href: string; name: string; label?: string; shot?: string; phone?: string; page?: string; pagePhone?: string } = $props();
 
 	const DESKTOP = 1280;
 	const PHONE = 390;
@@ -18,7 +19,7 @@
 	let h = $state(0);
 	let screen: HTMLDivElement;
 	const view = (m: boolean) => ((mobile = m), screen.scrollTo(0, 0));
-	const host = $derived(new URL(href).host);
+	const host = $derived(label ?? new URL(href).host);
 	const vw = $derived(mobile ? PHONE : DESKTOP);
 	const s = $derived(w ? Math.min(1, w / vw) : 0.35);
 	const left = $derived(Math.max(0, (w - vw * s) / 2));
@@ -134,6 +135,7 @@
 	}
 	.screen {
 		position: relative;
+		flex: 1;
 		aspect-ratio: 16 / 10;
 		overflow: hidden;
 		background: var(--lilac);
@@ -154,10 +156,9 @@
 		position: static;
 		height: auto;
 	}
+	/* A capture keeps its own proportions; a taller screen shows it at the top. */
 	img {
-		height: 100%;
-		object-fit: cover;
-		object-position: top;
+		height: auto;
 	}
 	iframe {
 		border: 0;
