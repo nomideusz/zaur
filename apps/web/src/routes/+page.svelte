@@ -4,6 +4,7 @@
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import { track } from '#lib/visit';
+	import me from '#lib/me.webp';
 
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
@@ -167,7 +168,7 @@
 	const how: { h: string; p: string; link?: [string, string] }[] = [
 		{
 			h: 'Whole products',
-			p: 'From the first screen to the server it runs on: interface, API, database, deploys and monitoring, and the upkeep after launch.'
+			p: 'From the first screen to the server it runs on: interface, API, database, deploys and monitoring, and the upkeep after launch. I have built websites since 1999, starting with CSS from Eric Meyer’s books.'
 		},
 		{
 			h: 'With an agent',
@@ -327,12 +328,13 @@
 		{
 			id: 'tutitutu',
 			name: 'tutitutu.pl',
-			desc: 'Image-first portfolio for an interior architecture studio founded in 1997.',
+			desc: 'Image-first portfolio for an interior architecture studio founded in 1997, which edits its own site.',
 			href: 'https://tutitutu.pl',
 			tag: 'Portfolio',
 			basket: 'client',
 			specs: [
-				['CMS', 'Custom, written by hand before AI: the studio edits its own realisations'],
+				['CMS', 'Built on Michael Aufreiter’s Editable Website and extended by hand before AI: realisations with drag-and-drop ordering and image cropping'],
+				['Languages', 'Polish, English'],
 				['Sections', 'Realisations, workshop, publications, references']
 			]
 		},
@@ -345,7 +347,8 @@
 			basket: 'client',
 			specs: [
 				['Energy', 'Emissions monitoring and reduction, leak detection, pipe replacement'],
-				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors']
+				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors'],
+				['Built', 'My first hand-written Svelte site; rebuilt on Svelte 5 in 2025']
 			]
 		},
 		{
@@ -595,11 +598,14 @@
 		</nav>
 
 		<section class="intro" aria-labelledby="who">
-			<h1 id="who">Bartosz Dymet</h1>
-			<p class="role">Frontend engineer · Svelte and TypeScript · Kraków</p>
-			<p class="pitch">
-				I design, build and run complete products.
-			</p>
+			<div class="who">
+				<h1 id="who">Bartosz Dymet</h1>
+				<img class="me" src={me} alt="Portrait of Bartosz Dymet" width="480" height="480" />
+				<p class="role">Frontend engineer · Svelte and TypeScript · Kraków</p>
+				<p class="pitch">
+					I design, build and run complete products. Websites since 1999, Svelte for over five years.
+				</p>
+			</div>
 			<p class="links">
 				<a class="phone" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 				<a href={github}>GitHub</a>
@@ -951,6 +957,23 @@
 		flex-direction: column;
 		padding: calc(2 * var(--u)) calc(1.6 * var(--u)) calc(1.6 * var(--u));
 		background: var(--lilac);
+	}
+	/* Name across the top; the portrait sits beside role and pitch. */
+	.who {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: calc(1.2 * var(--u));
+	}
+	.who h1 {
+		grid-column: 1 / -1;
+	}
+	.me {
+		grid-column: 2;
+		grid-row: 2 / span 2;
+		width: calc(7.5 * var(--u));
+		height: auto;
+		margin-top: calc(0.8 * var(--u));
+		border: var(--rule) solid var(--ink);
 	}
 	.intro h1 {
 		font-weight: 800;
@@ -1635,6 +1658,10 @@
 		}
 		.intro h1 {
 			font-size: 2.75rem;
+		}
+		.me {
+			width: 6.5rem;
+			margin-top: 0.5rem;
 		}
 		.role {
 			margin-top: 0.5rem;
