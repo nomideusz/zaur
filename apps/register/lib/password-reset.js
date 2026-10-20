@@ -6,6 +6,7 @@ const stalwart = require('./stalwart');
 const invitations = require('./invitations');
 const inviteMail = require('./invite-mail');
 const { validatePassword } = require('./validation');
+const { breachCount, BREACHED } = require('./pwned');
 
 const TOKENS_FILE =
   process.env.PASSWORD_RESET_TOKENS_PATH || '/app/data/password_reset_tokens.json';
@@ -277,6 +278,9 @@ async function resetPassword(mailboxEmail, token, password, confirmPassword) {
   const validation = validatePassword(password, confirmPassword);
   if (!validation.valid) {
     return { valid: false, error: validation.error };
+  }
+  if (await breachCount(password)) {
+    return { valid: false, error: BREACHED };
   }
 
   const entry = findActiveToken(mailboxEmail, token);

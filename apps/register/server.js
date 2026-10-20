@@ -19,6 +19,7 @@ const {
   generateCaptcha,
   verifyForwardedClientIp,
 } = require('./lib/validation');
+const { breachCount, BREACHED } = require('./lib/pwned');
 const { getSiteConfig } = require('./lib/site-config');
 const { reportError, tracewayOrigin } = require('./lib/report');
 const { requestHandoff, safeNext } = require('./lib/webmail-handoff');
@@ -316,6 +317,9 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
   const passwordValidation = validatePassword(password, confirmPassword);
   if (!passwordValidation.valid) {
     return res.status(400).json({ error: passwordValidation.error });
+  }
+  if (await breachCount(password)) {
+    return res.status(400).json({ error: BREACHED });
   }
 
   if (!recoveryEmail) {

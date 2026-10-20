@@ -50,6 +50,7 @@ import {
 import { reportError } from '#lib/server/report';
 import { appName } from '#lib/brand';
 import { featuresOf } from '#lib/features';
+import { BREACHED, breachCount } from '#lib/server/pwned';
 
 const TOTP_ISSUER = appName;
 const TOTP_SETUP_TTL_MS = 10 * 60_000;
@@ -224,6 +225,7 @@ export const changePassword = form(
 		if (_next === _current) return { ok: false, error: 'Choose a password you have not used here.' };
 		const limited = rateLimited('identity');
 		if (limited) return limited;
+		if (await breachCount(_next)) return { ok: false, error: BREACHED };
 
 		const event = getRequestEvent();
 		const { account } = requireSession();
