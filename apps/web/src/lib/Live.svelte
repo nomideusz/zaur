@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
+	import { t } from '#lib/i18n';
 
 	// A site running inside the page, at a desktop or a phone width. A click hands
 	// it the pointer so it can be used without leaving; when the pointer leaves,
@@ -58,12 +59,12 @@
 <div class="live">
 	<div class="bar">
 		<span class="host"><span class="dot" class:on={loaded} aria-hidden="true"></span>{host}</span>
-		<span class="views" role="group" aria-label="{name}: screen width">
-			<button type="button" aria-pressed={!mobile} onclick={() => (mobile = false)}>Desktop</button>
-			<button type="button" aria-pressed={mobile} onclick={() => (mobile = true)}>Mobile</button>
+		<span class="views" role="group" aria-label={t('live.width', { name })}>
+			<button type="button" aria-pressed={!mobile} onclick={() => (mobile = false)}>{t('live.desktop')}</button>
+			<button type="button" aria-pressed={mobile} onclick={() => (mobile = true)}>{t('live.mobile')}</button>
 		</span>
-		{#if active}<button type="button" class="done" bind:this={done} onclick={finish}>Done</button>{/if}
-		<a href={href} target="_blank" rel="noopener">Open ↗</a>
+		{#if active}<button type="button" class="done" bind:this={done} onclick={finish}>{t('live.done')}</button>{/if}
+		<a href={href} target="_blank" rel="noopener">{t('live.open')}</a>
 	</div>
 	<!-- Leaving only drops the pointer hand-off; the cover button is the control.
 	     A finger lifting also "leaves", so only a mouse or pen hands it back. -->
@@ -81,7 +82,7 @@
 		{#if near}
 			<iframe
 				src={href}
-				title="{name}, live"
+				title={t('live.title', { name })}
 				class:shown={loaded}
 				inert={!active}
 				style:left="{left}px"
@@ -92,10 +93,10 @@
 			></iframe>
 		{/if}
 		{#if !active}
-			<button type="button" class="cover" class:wait={!loaded} bind:this={cover} aria-disabled={!loaded} onclick={use} aria-label={loaded ? `Use ${name} here` : `${name} is loading`}>
+			<button type="button" class="cover" class:wait={!loaded} bind:this={cover} aria-disabled={!loaded} onclick={use} aria-label={t(loaded ? 'live.use' : 'live.loadingName', { name })}>
 				<span>
-					{#if !loaded}{still ? 'Loading the live site…' : 'Loading…'}
-					{:else}{touch ? 'Tap' : 'Click'} to use it here{/if}
+					{#if !loaded}{t(still ? 'live.loadingSite' : 'live.loading')}
+					{:else}{t(touch ? 'live.tap' : 'live.click')}{/if}
 				</span>
 			</button>
 		{/if}

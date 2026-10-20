@@ -1,4 +1,5 @@
 import { loadTemplates } from '#lib/templates';
+import { loadUsage } from '#lib/usage';
 
 // Package versions baked in at prerender, so the poster ships with real
 // numbers; the page refreshes them from npm on load.
@@ -16,8 +17,14 @@ export function _framable(h: Headers) {
 	return !h.get('x-frame-options');
 }
 
-export async function load({ fetch }) {
-	const [pairs, live, templates] = await Promise.all([
+// Every language's page is prerendered from the same numbers: one round of
+// npm, site and GitHub calls per build, not one per language (GitHub search
+// allows ten unauthenticated calls a minute).
+let shared: ReturnType<typeof gather> | undefined;
+export const load = ({ fetch }) => (shared ??= gather(fetch));
+
+async function gather(fetch: typeof globalThis.fetch) {
+	const [pairs, live, templates, uses] = await Promise.all([
 		Promise.all(
 			names.map((id) =>
 				fetch(`https://registry.npmjs.org/@nomideusz/${id}/latest`)
@@ -33,11 +40,16 @@ export async function load({ fetch }) {
 					.catch(() => null)
 			)
 		),
-		loadTemplates(fetch)
+		loadTemplates(fetch),
+		// Which packages each product imports, read from its repo; a product
+		// missing here keeps the list written in +page.svelte.
+		loadUsage(names)
 	]);
 	return {
 		versions: Object.fromEntries(pairs.filter(([, v]) => v)) as Record<string, string>,
 		live: live.filter((h) => h !== null),
-		templates
+		templates,
+		uses,
+		published: names
 	};
 }

@@ -14,6 +14,8 @@ export default defineConfig({
 				precompress: false,
 				strict: true
 			}),
+			// One page per language: / is English, the rest sit under their prefix.
+			prerender: { entries: ['*', '/pl', '/de', '/fr', '/ua'] },
 			compilerOptions: {
 				// Force runes mode for the project, except for libraries. Can be removed in svelte 6.
 				runes: ({ filename }) =>

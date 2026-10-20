@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { t } from '#lib/i18n';
 	import type { WorldHandle } from '@nomideusz/zaur-world';
 
 	// Radio Bartek, live: the station's own sky drawn by zaur-world, and its
@@ -79,12 +80,12 @@
 			<svg viewBox="0 0 24 24" aria-hidden="true">
 				{#if status === 'playing' || status === 'loading'}<path d="M7 5h3v14H7zM14 5h3v14h-3z" />{:else}<path d="M8 5v14l11-7z" />{/if}
 			</svg>
-			<span>{status === 'playing' ? 'Pause' : status === 'loading' ? 'Tuning in…' : 'Listen live'}</span>
+			<span>{t(status === 'playing' ? 'radio.pause' : status === 'loading' ? 'radio.tuning' : 'radio.listen')}</span>
 		</button>
 		<p aria-live="polite">
-			{#if status === 'offline'}The stream is offline right now.
-			{:else if now}<b>{now.title}</b> {now.artist}{#if dj}<span>{` · DJ ${dj}`}</span>{/if}
-			{:else}Radio Bartek, from Kraków{/if}
+			{#if status === 'offline'}{t('radio.offline')}
+			{:else if now}<b>{now.title}</b> {now.artist}{#if dj}<span>{t('radio.dj', { name: dj })}</span>{/if}
+			{:else}{t('radio.idle')}{/if}
 		</p>
 	</div>
 	<audio

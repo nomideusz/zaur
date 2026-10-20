@@ -1,4 +1,48 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-	<url><loc>https://zaur.app/</loc></url>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
+	<url>
+		<loc>https://zaur.app/</loc>
+		<xhtml:link rel="alternate" hreflang="en" href="https://zaur.app/" />
+		<xhtml:link rel="alternate" hreflang="pl" href="https://zaur.app/pl" />
+		<xhtml:link rel="alternate" hreflang="de" href="https://zaur.app/de" />
+		<xhtml:link rel="alternate" hreflang="fr" href="https://zaur.app/fr" />
+		<xhtml:link rel="alternate" hreflang="uk" href="https://zaur.app/ua" />
+		<xhtml:link rel="alternate" hreflang="x-default" href="https://zaur.app/" />
+	</url>
+	<url>
+		<loc>https://zaur.app/pl</loc>
+		<xhtml:link rel="alternate" hreflang="en" href="https://zaur.app/" />
+		<xhtml:link rel="alternate" hreflang="pl" href="https://zaur.app/pl" />
+		<xhtml:link rel="alternate" hreflang="de" href="https://zaur.app/de" />
+		<xhtml:link rel="alternate" hreflang="fr" href="https://zaur.app/fr" />
+		<xhtml:link rel="alternate" hreflang="uk" href="https://zaur.app/ua" />
+		<xhtml:link rel="alternate" hreflang="x-default" href="https://zaur.app/" />
+	</url>
+	<url>
+		<loc>https://zaur.app/de</loc>
+		<xhtml:link rel="alternate" hreflang="en" href="https://zaur.app/" />
+		<xhtml:link rel="alternate" hreflang="pl" href="https://zaur.app/pl" />
+		<xhtml:link rel="alternate" hreflang="de" href="https://zaur.app/de" />
+		<xhtml:link rel="alternate" hreflang="fr" href="https://zaur.app/fr" />
+		<xhtml:link rel="alternate" hreflang="uk" href="https://zaur.app/ua" />
+		<xhtml:link rel="alternate" hreflang="x-default" href="https://zaur.app/" />
+	</url>
+	<url>
+		<loc>https://zaur.app/fr</loc>
+		<xhtml:link rel="alternate" hreflang="en" href="https://zaur.app/" />
+		<xhtml:link rel="alternate" hreflang="pl" href="https://zaur.app/pl" />
+		<xhtml:link rel="alternate" hreflang="de" href="https://zaur.app/de" />
+		<xhtml:link rel="alternate" hreflang="fr" href="https://zaur.app/fr" />
+		<xhtml:link rel="alternate" hreflang="uk" href="https://zaur.app/ua" />
+		<xhtml:link rel="alternate" hreflang="x-default" href="https://zaur.app/" />
+	</url>
+	<url>
+		<loc>https://zaur.app/ua</loc>
+		<xhtml:link rel="alternate" hreflang="en" href="https://zaur.app/" />
+		<xhtml:link rel="alternate" hreflang="pl" href="https://zaur.app/pl" />
+		<xhtml:link rel="alternate" hreflang="de" href="https://zaur.app/de" />
+		<xhtml:link rel="alternate" hreflang="fr" href="https://zaur.app/fr" />
+		<xhtml:link rel="alternate" hreflang="uk" href="https://zaur.app/ua" />
+		<xhtml:link rel="alternate" hreflang="x-default" href="https://zaur.app/" />
+	</url>
 </urlset>

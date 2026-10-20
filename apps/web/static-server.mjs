@@ -289,7 +289,8 @@ const server = createServer(async (req, res) => {
       res.end("bad request");
       return;
     }
-    let resolved = await tryFile(target);
+    // Prerendered pages without a trailing slash are files: /pl is dist/pl.html.
+    let resolved = (await tryFile(target)) ?? (await tryFile(`${target}.html`));
     if (!resolved) {
       // SPA fallback — let the client handle unknown routes.
       resolved = await tryFile(join(ROOT, "index.html"));

@@ -1,41 +1,61 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import { track } from '#lib/visit';
+	import { i18n, t, list, pairs } from '#lib/i18n';
+	import { routing, languages, short } from '#lib/i18n-routing';
 	import me from '#lib/me.webp';
 
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
 	const templateCount = data.templates.reduce((n, g) => n + g.items.length, 0);
 
-	const title = 'Bartosz Dymet — frontend engineer, Svelte and TypeScript';
-	const description =
-		'I design, build and run complete products: the Zaur mail suite, Szkoły Jogi, thebest.travel and more, with the open-source Svelte packages they share.';
-	const site = 'https://zaur.app/';
+	// The layout set the language before this page rendered, and a switch reloads
+	// the page, so every text below is read once, in the right language.
+	const locale = i18n.locale;
+	const intl = intlLocale(locale);
+	const num = (x: number) => x.toLocaleString(intl);
+	const and = new Intl.ListFormat(intl, { type: 'conjunction' });
+
+	const title = t('meta.title');
+	const description = t('meta.description');
+	const origin = 'https://zaur.app';
+	// The English page keeps its trailing-slash root; the others are /pl, /de, /ua.
+	const site = `${origin}${localizeHref('/', locale, routing)}`;
+	const links = alternates('/', routing, origin);
+	// intlLocale leaves bare codes it has no region for (de, fr) as they are; og:locale needs one.
+	const ogRegion: Record<string, string> = { de: 'de-DE', fr: 'fr-FR' };
+	const ogLocale = (l: string) => intlLocale(ogRegion[l] ?? l).replace('-', '_');
 	const github = 'https://github.com/nomideusz';
 	const linkedin = 'https://www.linkedin.com/in/bartosz-dymet';
 	const ld = {
 		'@context': 'https://schema.org',
 		'@graph': [
-			{ '@type': 'ProfilePage', '@id': `${site}#page`, url: site, name: title, description, mainEntity: { '@id': `${site}#me` } },
+			{ '@type': 'ProfilePage', '@id': `${site}#page`, url: site, name: title, description, inLanguage: locale, mainEntity: { '@id': `${origin}/#me` } },
 			{
 				'@type': 'Person',
-				'@id': `${site}#me`,
+				'@id': `${origin}/#me`,
 				name: 'Bartosz Dymet',
-				jobTitle: 'Frontend engineer',
-				url: site,
+				jobTitle: t('meta.jobTitle'),
+				url: `${origin}/`,
 				email: 'bartek@zaur.app',
 				address: { '@type': 'PostalAddress', addressLocality: 'Kraków', addressCountry: 'PL' },
 				knowsAbout: ['Svelte', 'SvelteKit', 'TypeScript', 'Web accessibility', 'Web performance'],
+				knowsLanguage: ['pl', 'en'],
 				sameAs: [github, linkedin, 'https://www.npmjs.com/~nomideusz']
 			}
 		]
 	};
 
 	// The work, in the order an employer should read it. Flagships carry a full
-	// case study; every claim is a fact from the product's own repo.
+	// case study; every claim is a fact from the product's own repo. The words
+	// live in src/lib/messages under work.<id>.*; this keeps the facts that are
+	// not language: ids and links. `uses` is read from each product's code at
+	// build time (src/lib/usage.ts); the lists here are only the fallback for a
+	// build that cannot read the repo.
 	type Work = {
 		id: string;
 		name: string;
@@ -52,149 +72,74 @@
 		/** Live windows shown instead of a capture, when the product itself sits behind a sign-in. */
 		demos?: { id: string; href: string; name: string; label?: string; note: string }[];
 	};
-	const work: Work[] = [
+	type WorkFacts = Pick<Work, 'id' | 'name' | 'href' | 'site' | 'source' | 'uses'> & { demos?: { id: string; href: string; label?: string }[] };
+	const facts: WorkFacts[] = [
 		{
 			id: 'zaur',
 			name: 'Zaur',
-			kind: 'Mail suite',
 			href: 'https://webmail.zaur.app',
 			site: 'zaur.app',
 			source: 'https://github.com/nomideusz/zaur',
-			what: 'A private communications suite on one account: mail, calendar, video calls and music, on servers I set up and run.',
-			parts: [
-				['Mail', 'webmail.zaur.app'],
-				['Sign-up', 'register.zaur.app'],
-				['Music', 'music.zaur.app'],
-				['Meet', 'Video calls inside Mail']
-			],
 			demos: [
-				{ id: 'mail-demo', href: 'https://demo.zaur.app', name: 'Zaur Mail demo', label: 'webmail.zaur.app', note: 'The real client over a sample mailbox; nothing is sent, and it resets every 30 minutes.' },
-				{ id: 'signup', href: 'https://register.zaur.app', name: 'Zaur sign-up', note: 'The real sign-up: an account made here is a working mailbox.' }
-			],
-			built: [
-				'A mail client over JMAP on SvelteKit 3 and remote functions, started on the pre-release: installable and offline-capable, with push notifications, calendar, contacts, files, rich compose and several accounts.',
-				'Its own sign-in. Mail is the OpenID Connect provider for Music, Photos and Bartube, and a sign-up portal creates real mailboxes through the Stalwart admin API.',
-				'The servers behind it: Stalwart mail on a VPS run through Dokploy, restic backups to a second machine, errors and traces in a self-hosted Traceway.'
-			],
-			proof: [
-				['Tests', '50 test files across the client and its shared packages; Playwright for sign-up'],
-				['Decisions', '5 architecture decision records'],
-				['Delivery', 'GitHub Actions deploys; agent conventions in AGENTS.md'],
-				['AI', 'Mail sorted by an LLM into a fixed set of labels, with a confidence floor, a timeout and a headers-only privacy mode'],
-				['Code', 'Public on GitHub']
+				{ id: 'mail-demo', href: 'https://demo.zaur.app', label: 'webmail.zaur.app' },
+				{ id: 'signup', href: 'https://register.zaur.app' }
 			],
 			uses: ['svelte-calendar']
 		},
 		{
 			id: 'szkolyjogi',
 			name: 'Szkoły Jogi',
-			kind: 'Directory and booking',
 			href: 'https://szkolyjogi.pl',
-			what: 'The directory of yoga and pilates schools in Poland: class schedules, pass prices, reviews and online sign-up.',
-			built: [
-				'The public directory in Polish, English and Ukrainian, with schedules, prices, reviews and booking.',
-				'A separate panel app for schools: passes, recurring classes, refund rules, VAT split and staff roles.',
-				'A Python scraper that reads school websites, price lists and timetable images with LLMs. Answers are forced into schemas, the model returns null rather than guessing, monthly prices are computed in code, and a read that would shrink a stored schedule below 40% keeps the old classes.',
-				'A database trigger stops the scraper overwriting anything a school edited itself. CI builds both apps as images and deploys them.'
-			],
-			proof: [
-				['Tests', '83 test files (Vitest)'],
-				['Models', 'Benchmarked before use; one was dropped for inventing 15 classes on an empty page'],
-				['Speed', 'Home-page layout shift cut from 0.11 to 0.00 with metric-matched font fallbacks'],
-				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres, Better Auth'],
-				['Built on', 'All 10 of my packages']
-			],
 			uses: ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify']
 		},
 		{
 			id: 'thebest',
 			name: 'thebest.travel',
-			kind: 'Tour booking',
 			href: 'https://thebest.travel',
-			what: 'A tour marketplace for Cracow: local guides, live availability and online booking.',
-			built: [
-				'Tour pages with live availability, time slots, pricing and cancellation policies, all from svelte-scheduler.',
-				'Checkout on Stripe Connect, still in test mode while the business side is set up.',
-				'English and Polish, deployed on Railway.'
-			],
-			proof: [
-				['Stack', 'SvelteKit, Svelte 5, Drizzle, Postgres'],
-				['Payments', 'A repeated Stripe webhook is ignored once the booking is paid'],
-				['Built on', '8 of my 10 packages']
-			],
 			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
 		},
-		{
-			id: 'kino',
-			name: 'Kino',
-			kind: 'Cinema listings',
-			href: 'https://kino.net.pl',
-			what: 'What plays in Polish cinemas today, hour by hour, with the small studio, culture-centre and film-club cinemas the big apps miss.',
-			proof: [
-				['Data', '230 cinemas in 174 towns, crawled every 6 hours'],
-				['Sources', '12 ticketing-site readers that keep the last good data on an empty read. When one site blocked the server, I switched source and measured the cost: 6% of films missed, none wrong'],
-				['Includes', 'Town pages, a page per film, a panel where cinemas fix their own facts']
-			],
-			uses: ['svelte-i18n', 'svelte-notify']
-		},
-		{
-			id: 'kompi',
-			name: 'Kompi',
-			kind: 'E-waste map',
-			href: 'https://kompi.pl',
-			what: 'One map of the places in Poland that take back e-waste, batteries and bulbs, filtered by what they accept and how.',
-			proof: [
-				['Data', '30,036 collection points in 1,951 cities, scraped by a Python crawler'],
-				['Map', 'MapLibre, address search, nearest points from your location']
-			],
-			uses: []
-		},
-		{
-			id: 'festivals',
-			name: 'Friendly Festivals',
-			kind: 'Festival directory',
-			href: 'https://festivals.zaur.app',
-			what: 'A worldwide directory of friendly, open-minded festivals: ceremony and embodiment gatherings next to boutique music and arts festivals.',
-			proof: [
-				['Includes', 'Lineups, editions, reviews, organiser claims'],
-				['Facts', 'A fact read by an LLM is kept only if its quote is on the fetched page; nothing publishes without approval'],
-				['Tests', '31 test files']
-			],
-			uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify']
-		}
+		{ id: 'kino', name: 'Kino', href: 'https://kino.net.pl', uses: ['svelte-i18n', 'svelte-notify'] },
+		{ id: 'kompi', name: 'Kompi', href: 'https://kompi.pl', uses: [] },
+		{ id: 'festivals', name: 'Friendly Festivals', href: 'https://festivals.zaur.app', uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify'] }
 	];
+	// svelte-ignore state_referenced_locally (prerendered: data never changes)
+	const detected = data.uses;
+	// svelte-ignore state_referenced_locally
+	const total = data.published.length;
+	// A product without built.* messages is a smaller one: it renders as a row.
+	const work: Work[] = facts.map((f) => {
+		const built = list(`work.${f.id}.built`);
+		const parts = pairs(`work.${f.id}.parts`);
+		const uses = detected[f.id] ?? f.uses;
+		// A flagship built on several packages says how many, counted from `uses`.
+		const builtOn: [string, string][] =
+			built.length && uses.length > 1
+				? [[t('work.builtOn.k'), t(uses.length === total ? 'work.builtOn.all' : 'work.builtOn.some', { used: uses.length, total })]]
+				: [];
+		return {
+			...f,
+			uses,
+			kind: t(`work.${f.id}.kind`),
+			what: t(`work.${f.id}.what`),
+			built: built.length ? built : undefined,
+			proof: [...pairs(`work.${f.id}.proof`), ...builtOn],
+			parts: parts.length ? parts : undefined,
+			demos: f.demos?.map((d) => ({ ...d, name: t(`demo.${d.id}.name`), note: t(`demo.${d.id}.note`) }))
+		};
+	});
 
 	// How I work: what both kinds of employer ask about, each with its evidence.
 	const how: { h: string; p: string; link?: [string, string] }[] = [
-		{
-			h: 'Whole products',
-			p: 'From the first screen to the server it runs on: interface, API, database, deploys and monitoring, and the upkeep after launch. I have built websites since 1999, starting with CSS from Eric Meyer’s books.'
-		},
-		{
-			h: 'With an agent',
-			p: 'Claude Code is my daily tool. Each repo carries an AGENTS.md with the conventions the agent works from, and I publish agent skills.',
-			link: ['Zaur AGENTS.md', 'https://github.com/nomideusz/zaur/blob/main/AGENTS.md']
-		},
-		{
-			h: 'AI that is checked',
-			p: 'LLMs read and sort data in Szkoły Jogi, Friendly Festivals and Zaur Mail. Output is forced into schemas and checked against the source page, the model may answer null, and what cannot be checked waits for a person.'
-		},
-		{
-			h: 'Tested and written down',
-			p: 'Vitest and node:test for logic, Playwright for the flows that matter, and architecture decisions recorded as ADRs.',
-			link: ['Zaur ADRs', 'https://github.com/nomideusz/zaur/tree/main/docs/decisions']
-		},
-		{
-			h: 'Run in production',
-			p: 'Docker on VPSes managed with Dokploy, deploys from GitHub Actions, errors and traces in a self-hosted Traceway, restic backups.',
-			link: [`${templateCount} Railway templates`, '#templates']
-		}
-	];
+		{ id: 'whole' },
+		{ id: 'agent', link: [t('how.agent.link'), 'https://github.com/nomideusz/zaur/blob/main/AGENTS.md'] as [string, string] },
+		{ id: 'ai' },
+		{ id: 'tested', link: [t('how.tested.link'), 'https://github.com/nomideusz/zaur/tree/main/docs/decisions'] as [string, string] },
+		{ id: 'run', link: [t('how.run.link', { count: templateCount }), '#templates'] as [string, string] }
+	].map(({ id, link }) => ({ h: t(`how.${id}.h`), p: t(`how.${id}.p`), link }));
 
 	const packages = [
 		{
 			name: '@nomideusz/zaur-world',
-			desc: 'A living ambient sky: real sun times, weather, true star positions, eclipses, and a pixel dinosaur who lives in it. Zero dependencies.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/zaur-world',
 			demo: 'https://dino.zaur.app',
 			source: 'https://github.com/nomideusz/zaur-world',
@@ -203,7 +148,6 @@
 		},
 		{
 			name: '@nomideusz/svelte-calendar',
-			desc: 'A themeable Svelte 5 calendar: day, week, scrolling-week and month views, agenda lists, touch-first mobile layouts, drag-and-drop, timezones, a headless API and an embeddable web component.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-calendar',
 			demo: 'https://svelte-calendar.xyz',
 			source: 'https://github.com/nomideusz/svelte-calendar',
@@ -212,66 +156,47 @@
 		},
 		{
 			name: '@nomideusz/svelte-search',
-			desc: 'Full-text search for Svelte 5: FTS5, fuzzy matching, geo proximity, autocomplete, Polish locale.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-search',
 			demo: 'https://svelte-search-eight.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-search'
 		},
 		{
 			name: '@nomideusz/svelte-i18n',
-			desc: 'Lightweight i18n for Svelte 5: runes-based locale state, flat JSON messages, URL-locale routing.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-i18n',
 			demo: 'https://svelte-i18n-five.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-i18n'
 		},
 		{
 			name: '@nomideusz/svelte-geometrize',
-			desc: 'Geometric image placeholders: triangles resolve into the real photo as it loads.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-geometrize',
 			demo: 'https://svelte-geometrize.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-geometrize'
 		},
 		{
 			name: '@nomideusz/svelte-qr',
-			desc: 'Zero-dependency QR codes for Svelte 5: a pure TypeScript encoder with SVG output.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
 			demo: 'https://svelte-qr.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-qr'
 		},
 		{
 			name: '@nomideusz/svelte-media',
-			desc: 'Image upload, processing, and S3-compatible storage for Svelte 5 apps.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-media',
 			demo: 'https://svelte-media-gamma.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-media'
 		},
-		{
-			name: '@nomideusz/svelte-scheduler',
-			desc: 'Booking and scheduling logic for Svelte 5: tour slots, pricing, cancellation policies.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
-		},
-		{
-			name: '@nomideusz/svelte-payments',
-			desc: 'Provider-agnostic payments for booking apps: a Mollie server adapter and a Stripe Connect UI.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments'
-		},
-		{
-			name: '@nomideusz/svelte-notify',
-			desc: 'Email notification templates for booking apps.',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
-		}
-	];
+		{ name: '@nomideusz/svelte-scheduler', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler' },
+		{ name: '@nomideusz/svelte-payments', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments' },
+		{ name: '@nomideusz/svelte-notify', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify' }
+	] as { name: string; npm: string; demo?: string; source?: string; live?: string; featured?: boolean }[];
 
-	const skills = [
-		{
-			name: 'simple-web-design',
-			desc: "Agent skill for auditing, critiquing, and building better websites — grounded in Anthony Hobday's 15 principles of simple web design.",
-			source: 'https://github.com/nomideusz/simple-web-design'
-		}
-	];
+	const skills = [{ name: 'simple-web-design', source: 'https://github.com/nomideusz/simple-web-design' }].map((s) => ({
+		...s,
+		desc: t(`skill.${s.name}`)
+	}));
 
 	// Work for clients, then small things of my own. The tag says what the site
-	// is; spec rows are facts visible on the live site. Strongest first.
+	// is; spec rows are facts visible on the live site. Strongest first. Words
+	// in site.<id>.*.
 	type Site = {
 		id: string;
 		name: string;
@@ -284,127 +209,24 @@
 		/** Played and drawn live on this page instead of a screenshot. */
 		live?: boolean;
 	};
-	const websites: Site[] = [
-		{
-			id: 'fixtar',
-			name: 'fixtar.pl',
-			desc: 'An online shop for power tools that I built and run for a client: catalogue, checkout, payments and order handling.',
-			href: 'https://fixtar.pl',
-			tag: 'Online shop',
-			basket: 'client',
-			specs: [
-				['Products', 'Synced from BaseLinker'],
-				['Payments', 'PayU, Przelewy24; a payment marks the order paid once, and only that request pushes it to BaseLinker and sends the email'],
-				['SEO', 'Built to the client’s technical SEO spec: Product and Offer schema, five split sitemaps, canonical and noindex rules'],
-				['Feeds', 'Google Shopping feed generated from the same data as the schema']
-			],
-			uses: ['svelte-search']
-		},
-		{
-			id: 'pikastro',
-			name: 'pikastro.eu',
-			desc: 'A colourful interior design studio in Kraków, with a custom CMS: the owner edits text and photos right on the live page.',
-			href: 'https://pikastro.eu',
-			tag: 'Studio site',
-			basket: 'client',
-			specs: [
-				['CMS', 'Custom, click-to-edit on the page, with edit history'],
-				['Storage', 'Netlify Blobs, no database'],
-				['Languages', 'Polish, English']
-			]
-		},
-		{
-			id: 'wibroakustyka',
-			name: 'wibroakustyka.ai',
-			desc: 'Product site for the Graal vibroacoustic wellness chair.',
-			href: 'https://wibroakustyka.ai',
-			tag: 'Product site',
-			basket: 'client',
-			specs: [
-				['Explains', 'What an acoustic chair is and how vibroacoustics works'],
-				['Includes', 'News and the Health & Longevity Summit 2026']
-			]
-		},
-		{
-			id: 'tutitutu',
-			name: 'tutitutu.pl',
-			desc: 'Image-first portfolio for an interior architecture studio founded in 1997, which edits its own site.',
-			href: 'https://tutitutu.pl',
-			tag: 'Portfolio',
-			basket: 'client',
-			specs: [
-				['CMS', 'Built on Michael Aufreiter’s Editable Website and extended by hand before AI: realisations with drag-and-drop ordering and image cropping'],
-				['Languages', 'Polish, English'],
-				['Sections', 'Realisations, workshop, publications, references']
-			]
-		},
-		{
-			id: 'intertech',
-			name: 'intertechpoland.pl',
-			desc: 'Equipment catalogue and industry news for the Polish representative of Picarro and UGT.',
-			href: 'https://intertechpoland.pl',
-			tag: 'Catalogue',
-			basket: 'client',
-			specs: [
-				['Energy', 'Emissions monitoring and reduction, leak detection, pipe replacement'],
-				['Science', 'CRDS spectroscopy, lysimeters, ecotrons, plant sensors'],
-				['Built', 'My first hand-written Svelte site; rebuilt on Svelte 5 in 2025']
-			]
-		},
-		{
-			id: 'polaczenie',
-			name: 'gabinet-polaczenie.pl',
-			desc: 'Acupuncture clinic in Kraków offering treatments that complement conventional care.',
-			href: 'https://gabinet-polaczenie.pl',
-			tag: 'Clinic site',
-			basket: 'client',
-			specs: [
-				['Format', 'One page, in Polish and English'],
-				['Covers', 'Treatments and the therapist']
-			]
-		},
-		{
-			id: 'radiobartek',
-			name: 'radiobartek.com',
-			desc: 'A 24/7 internet radio station with an AI DJ who talks between the tracks in a clone of my voice.',
-			href: 'https://radiobartek.com',
-			tag: 'AI radio',
-			basket: 'side',
-			live: true,
-			specs: [
-				['Engine', 'Open-source SUB/WAVE with my own skins and patches; the sky is zaur-world through its React adapter'],
-				['Voice', 'A Python bridge to Fish Audio speech that clones a voice from a short clip'],
-				['Music', 'About 35 new tracks a day, picked from ListenBrainz recommendations']
-			],
-			uses: ['zaur-world']
-		},
-		{
-			id: 'kurcz',
-			name: 'kurcz.pl',
-			desc: 'Everything about muscle cramps: causes, first aid and prevention, as fast static pages.',
-			href: 'https://kurcz.pl',
-			tag: 'Health guide',
-			basket: 'side',
-			specs: [
-				['Built with', 'Astro, no JavaScript on article pages'],
-				['Covers', 'Causes, first aid, prevention guides'],
-				['Languages', 'Polish, English']
-			]
-		},
-		{
-			id: 'kruk',
-			name: 'kruk.live',
-			desc: 'Five mini-apps live on one site: a drawing board, a kanban, pixel art, friends and a property scraper.',
-			href: 'https://kruk.live',
-			tag: 'Mini-apps',
-			basket: 'side',
-			specs: [
-				['Inside', 'Draw, Kanban, Pixels, Friends, Properties'],
-				['Mode', 'Real-time and collaborative'],
-				['Note', 'An experiment with Phoenix LiveView; the Elixir is written by Claude Code']
-			]
-		}
+	const siteFacts: Pick<Site, 'id' | 'name' | 'href' | 'basket' | 'uses' | 'live'>[] = [
+		{ id: 'fixtar', name: 'fixtar.pl', href: 'https://fixtar.pl', basket: 'client', uses: ['svelte-search'] },
+		{ id: 'pikastro', name: 'pikastro.eu', href: 'https://pikastro.eu', basket: 'client' },
+		{ id: 'wibroakustyka', name: 'wibroakustyka.ai', href: 'https://wibroakustyka.ai', basket: 'client' },
+		{ id: 'tutitutu', name: 'tutitutu.pl', href: 'https://tutitutu.pl', basket: 'client' },
+		{ id: 'intertech', name: 'intertechpoland.pl', href: 'https://intertechpoland.pl', basket: 'client' },
+		{ id: 'polaczenie', name: 'gabinet-polaczenie.pl', href: 'https://gabinet-polaczenie.pl', basket: 'client' },
+		{ id: 'radiobartek', name: 'radiobartek.com', href: 'https://radiobartek.com', basket: 'side', live: true, uses: ['zaur-world'] },
+		{ id: 'kurcz', name: 'kurcz.pl', href: 'https://kurcz.pl', basket: 'side' },
+		{ id: 'kruk', name: 'kruk.live', href: 'https://kruk.live', basket: 'side' }
 	];
+	const websites: Site[] = siteFacts.map((s) => ({
+		...s,
+		uses: detected[s.id] ?? s.uses,
+		tag: t(`site.${s.id}.tag`),
+		desc: t(`site.${s.id}.desc`),
+		specs: pairs(`site.${s.id}.specs`)
+	}));
 
 	// Windows: a capture of the live site (src/lib/windows, provenance embedded),
 	// replaced by the site itself where its headers allow framing (checked at prerender).
@@ -413,9 +235,15 @@
 	const isLive = (href: string) => data.live.includes(href);
 	const host = (href: string) => new URL(href).host;
 
-	const pkgs = packages.map((p) => ({ ...p, id: p.name.split('/')[1] }));
+	const pkgs = packages.map((p) => {
+		const id = p.name.split('/')[1];
+		return { ...p, id, desc: t(`pkg.${id}`) };
+	});
 	const flagships = work.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
+	const usedInText = (id: string) => t('packages.usedIn', { list: and.format(usedIn(id)) });
+	// Group names come from templates.ts in English; the key is their slug.
+	const kindName = (kind: string) => t(`templates.kind.${kind.toLowerCase().replace(/[^a-z]+/g, '-')}`);
 	// Every smaller project renders as the same ruled row: a capture, then the facts.
 	// Live windows are kept for the flagships, so the page stays short.
 	type Card = { id: string; name: string; tag: string; href: string; img?: string; live?: boolean; desc: string; specs: [string, string][]; uses?: string[] };
@@ -460,12 +288,14 @@
 	const charted = (t?: Search) => t?.metric === 'clicks' && t.perDay >= 20;
 	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || (traffic[id]?.impressions28 ?? 0) >= 1000);
 	const perDay = (id: string) => {
-		const t = traffic?.[id];
-		if (!t) return 'Reading Google Search…';
-		const n = (x: number) => x.toLocaleString('en');
-		return charted(t) ? `${n(t.perDay)} search clicks a day from Google` : `${n(t.clicks28)} clicks and ${n(t.impressions28)} impressions from Google search in 28 days`;
+		const s = traffic?.[id];
+		if (!s) return t('search.reading');
+		return charted(s)
+			? t('search.perDay', { count: s.perDay, n: num(s.perDay) })
+			: t('search.totals', { clicks: num(s.clicks28), impressions: num(s.impressions28) });
 	};
-	const compact = new Intl.NumberFormat('en', { notation: 'compact' });
+	const compact = new Intl.NumberFormat(intl, { notation: 'compact' });
+	const day = (d: string) => new Date(d).toLocaleDateString(intl, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 
 	onMount(() => {
@@ -519,28 +349,27 @@
 			{/if}
 		</div>
 		<dl>
-			{#each c.specs as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+			{#each c.specs as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
 		</dl>
 	</li>
 {/snippet}
 
-{#snippet growth(id: string, t: Search)}
-	{@const top = Math.max(1, ...t.weeks.map(([, n]) => n))}
-	{@const short = (d: string) => `${Number(d.slice(8))} ${new Date(d).toLocaleDateString('en', { month: 'short', timeZone: 'UTC' })}`}
+{#snippet growth(id: string, s: Search)}
+	{@const top = Math.max(1, ...s.weeks.map(([, n]) => n))}
 	<figure class="growth">
-		<figcaption>Clicks from Google search, a typical day each week</figcaption>
+		<figcaption>{t('growth.caption')}</figcaption>
 		<ol>
-			{#each t.weeks as [d, n], i (d)}
-				{@const month = i === 0 || d.slice(5, 7) !== t.weeks[i - 1][0].slice(5, 7)}
+			{#each s.weeks as [d, n], i (d)}
+				{@const month = i === 0 || d.slice(5, 7) !== s.weeks[i - 1][0].slice(5, 7)}
 				<li>
 					<span class="col"><b>{compact.format(n)}</b><i style:height="{(n / top) * 100}%"></i></span>
-					<span class="mo" class:day={!month}>{month ? short(d) : Number(d.slice(8))}</span>
+					<span class="mo" class:day={!month}>{month ? day(d) : Number(d.slice(8))}</span>
 				</li>
 			{/each}
 		</ol>
 		<p>
-			{t.clicks28.toLocaleString('en')} clicks and {t.impressions28.toLocaleString('en')} impressions in the last 28 days, through {short(t.through)}.
-			Live from Google Search Console.
+			{t('growth.summary', { clicks: num(s.clicks28), impressions: num(s.impressions28), date: day(s.through) })}
+			{t('growth.source')}
 		</p>
 	</figure>
 {/snippet}
@@ -549,35 +378,41 @@
 	<title>{title}</title>
 	<meta name="description" content={description} />
 	<link rel="canonical" href={site} />
+	{#each links as l (l.hreflang)}<link rel="alternate" hreflang={l.hreflang} href={l.href} />{/each}
 	<meta property="og:type" content="website" />
 	<meta property="og:site_name" content="Zaur" />
+	<meta property="og:locale" content={ogLocale(locale)} />
+	{#each routing.supportedLocales.filter((l) => l !== locale) as l (l)}<meta property="og:locale:alternate" content={ogLocale(l)} />{/each}
 	<meta property="og:url" content={site} />
 	<meta property="og:title" content={title} />
 	<meta property="og:description" content={description} />
 	<meta property="og:image" content="{site}og.png" />
 	<meta property="og:image:width" content="1200" />
 	<meta property="og:image:height" content="630" />
-	<meta property="og:image:alt" content="Bartosz Dymet, frontend engineer, beside the product names Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi and Friendly Festivals." />
+	<meta property="og:image:alt" content={t('meta.ogAlt')} />
 	<meta name="twitter:card" content="summary_large_image" />
 	{@html `<script type="application/ld+json">${JSON.stringify(ld)}</script>`}
 </svelte:head>
 
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#main">{t('nav.skip')}</a>
 <header class="bar">
 	<a class="mark" href="#top">Bartosz Dymet</a>
-	<nav class="tabs" aria-label="Sections">
-		<a href="#how">How I work</a>
-		<a href="#work">Products</a>
-		<a href="#clients">Clients</a>
-		<a href="#packages">Packages</a>
-		<a href="#templates">Templates</a>
+	<nav class="tabs" aria-label={t('nav.sections')}>
+		<a href="#how">{t('nav.how')}</a>
+		<a href="#work">{t('nav.work')}</a>
+		<a href="#clients">{t('nav.clients')}</a>
+		<a href="#packages">{t('nav.packages')}</a>
+		<a href="#templates">{t('nav.templates')}</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
+	<!-- The language switch is @nomideusz/svelte-i18n's own component: it writes
+	     the locale cookie and moves to the same page under the new prefix. -->
+	<span class="lang"><LocaleSwitcher {i18n} {routing} labels={short} label={t('nav.language')} /></span>
 </header>
 
 <main id="main">
 	<div class="poster" class:pointing={litPkgs?.size} style:--rows={work.length}>
-		<nav class="programme" aria-label="Products">
+		<nav class="programme" aria-label={t('nav.products')}>
 			<ul>
 				{#each work as w (w.id)}
 					<li class:lit={litWork?.has(w.id)}>
@@ -600,20 +435,19 @@
 		<section class="intro" aria-labelledby="who">
 			<div class="who">
 				<h1 id="who">Bartosz Dymet</h1>
-				<img class="me" src={me} alt="Portrait of Bartosz Dymet" width="480" height="480" />
-				<p class="role">Frontend engineer · Svelte and TypeScript · Kraków</p>
-				<p class="pitch">
-					I design, build and run complete products. Websites since 1999, Svelte for over five years.
-				</p>
+				<img class="me" src={me} alt={t('intro.portrait')} width="480" height="480" />
+				<p class="role">{t('intro.role')}</p>
+				<p class="pitch">{t('intro.pitch')}</p>
 			</div>
 			<p class="links">
 				<a class="phone" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 				<a href={github}>GitHub</a>
 				<a href={linkedin}>LinkedIn</a>
+				<span class="intro-lang"><LocaleSwitcher {i18n} {routing} labels={languages} label={t('nav.language')} /></span>
 			</p>
 			<div class="kit">
-				<a class="kit-all" href="#packages">Built from {pkgs.length} open-source packages</a>
-				<h2>Built from my open-source packages</h2>
+				<a class="kit-all" href="#packages">{t('intro.kitAll', { count: pkgs.length })}</a>
+				<h2>{t('intro.kit')}</h2>
 				<ul class="chips">
 					{#each pkgs as p (p.id)}
 						<li class:lit={litPkgs?.has(p.id)}>
@@ -635,9 +469,9 @@
 	</div>
 
 	<section class="how" id="how" aria-labelledby="how-h">
-		<div class="strip"><h2 id="how-h">How I work</h2></div>
+		<div class="strip"><h2 id="how-h">{t('how.heading')}</h2></div>
 		<ul class="how-grid">
-			{#each how as x (x.h)}
+			{#each how as x, i (i)}
 				<li>
 					<h3>{x.h}</h3>
 					<p>{x.p}</p>
@@ -648,7 +482,7 @@
 	</section>
 
 	<section class="work" id="work" aria-labelledby="work-h">
-		<div class="strip"><h2 id="work-h">Products <span class="n">· {work.length}</span></h2></div>
+		<div class="strip"><h2 id="work-h">{t('work.heading')} <span class="n">· {work.length}</span></h2></div>
 		{#each flagships as w (w.id)}
 			{@const title = w.site ?? host(w.href)}
 			{@const demos = w.demos?.filter((d) => isLive(d.href)) ?? []}
@@ -669,7 +503,7 @@
 						</a>
 					{:else if w.parts}
 						<ul class="parts">
-							{#each w.parts as [n, h] (n)}
+							{#each w.parts as [n, h], i (i)}
 								<li><b>{n}</b><span>{h}</span></li>
 							{/each}
 						</ul>
@@ -688,12 +522,12 @@
 						<p class="meta">{perDay(w.id)}</p>
 					{/if}
 					<p class="what">{w.what}</p>
-					<h4>What I built</h4>
+					<h4>{t('work.built')}</h4>
 					<ul class="built">
-						{#each w.built ?? [] as b (b)}<li>{b}</li>{/each}
+						{#each w.built ?? [] as b, i (i)}<li>{b}</li>{/each}
 					</ul>
 					<dl class="facts">
-						{#each w.proof ?? [] as [k, v] (k)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+						{#each w.proof ?? [] as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
 					</dl>
 					<ul class="chips">
 						{#each w.uses as u (u)}
@@ -701,8 +535,8 @@
 						{/each}
 					</ul>
 					<p class="go">
-						<a href={w.href}>Open {host(w.href)}</a>
-						{#if w.source}<a href={w.source}>Source on GitHub</a>{/if}
+						<a href={w.href}>{t('work.open', { host: host(w.href) })}</a>
+						{#if w.source}<a href={w.source}>{t('work.source')}</a>{/if}
 					</p>
 				</div>
 			</article>
@@ -713,8 +547,8 @@
 	</section>
 
 	<section class="websites" id="clients" aria-labelledby="clients-h">
-		<div class="strip"><h2 id="clients-h">Clients <span class="n">· {clients.length}</span></h2></div>
-		<p class="lede">An online shop and five websites for businesses: designed, built and kept running.</p>
+		<div class="strip"><h2 id="clients-h">{t('clients.heading')} <span class="n">· {clients.length}</span></h2></div>
+		<p class="lede">{t('clients.lede')}</p>
 		<ul class="sites">
 			{#each clients as c (c.id)}{@render card(c)}{/each}
 		</ul>
@@ -722,8 +556,8 @@
 
 
 	<section class="packages" id="packages" aria-labelledby="packages-h">
-		<div class="strip"><h2 id="packages-h">Packages <span class="n">· {pkgs.length}</span></h2></div>
-		<p class="lede">The building blocks my products share, published on npm under @nomideusz.</p>
+		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
+		<p class="lede">{t('packages.lede')}</p>
 		{#each pkgs.filter(shownLive) as p (p.id)}
 			<article class="case" id="pkg-{p.id}">
 				<div class="media">
@@ -732,15 +566,15 @@
 				<div class="case-body">
 					<h3>
 						<a href={p.demo}>{host(p.demo!)}</a>
-						<span class="tag">Package</span>
+						<span class="tag">{t('packages.tag')}</span>
 					</h3>
 					<p class="meta">{p.name} {version(p.id)}</p>
 					<p class="what">{p.desc}</p>
 					<code class="p-install">npm i {p.name}</code>
-					{#if usedIn(p.id).length}<p class="p-used">Used in {usedIn(p.id).join(', ')}</p>{/if}
+					{#if usedIn(p.id).length}<p class="p-used">{usedInText(p.id)}</p>{/if}
 					<p class="go">
-						<a href={p.npm}>On npm</a>
-						{#if p.source}<a href={p.source}>Source on GitHub</a>{/if}
+						<a href={p.npm}>{t('packages.npm')}</a>
+						{#if p.source}<a href={p.source}>{t('work.source')}</a>{/if}
 					</p>
 				</div>
 			</article>
@@ -754,23 +588,23 @@
 						<p>{p.desc}</p>
 						<code class="p-install">npm i {p.name}</code>
 					</div>
-					<p class="p-used">{usedIn(p.id).length ? `Used in ${usedIn(p.id).join(', ')}` : ''}</p>
+					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
 					<p class="p-links">
-						{#if p.demo}<a href={p.demo}>Demo</a>{/if}
-						{#if p.source}<a href={p.source}>Source</a>{/if}
+						{#if p.demo}<a href={p.demo}>{t('packages.demo')}</a>{/if}
+						{#if p.source}<a href={p.source}>{t('packages.source')}</a>{/if}
 					</p>
 				</li>
 			{/each}
 		</ul>
 	</section>
 
-	<section class="folds" aria-label="More">
+	<section class="folds" aria-label={t('folds.label')}>
 		<details class="websites" id="side">
 			<summary>
-				<h2>Side projects · {side.length}</h2>
+				<h2>{t('side.heading')} · {side.length}</h2>
 				{@render toggle()}
 			</summary>
-			<p class="lede">Small things I made for myself and keep online.</p>
+			<p class="lede">{t('side.lede')}</p>
 			<ul class="sites">
 				{#each side as c (c.id)}{@render card(c)}{/each}
 			</ul>
@@ -778,19 +612,19 @@
 
 		<details id="templates">
 			<summary>
-				<h2>Railway templates · {templateCount}</h2>
+				<h2>{t('templates.heading')} · {templateCount}</h2>
 				{@render toggle()}
 			</summary>
 			<div class="fold">
-				<p class="lede">Infrastructure work: one-click deploys of open-source software on Railway. Every template runs unmodified upstream images.</p>
+				<p class="lede">{t('templates.lede')}</p>
 				{#each data.templates as g (g.kind)}
-					<h3>{g.kind}</h3>
+					<h3>{kindName(g.kind)}</h3>
 					<ul class="table">
-						{#each g.items as t (t.slug)}
+						{#each g.items as tp (tp.slug)}
 							<li>
-								<b class="t-name">{t.name}</b>
-								<p>{t.desc}</p>
-								<span class="t-src"><a href={t.deploy}>Deploy on Railway</a><a href={t.source}>Source</a></span>
+								<b class="t-name">{tp.name}</b>
+								<p>{tp.desc}</p>
+								<span class="t-src"><a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
 							</li>
 						{/each}
 					</ul>
@@ -800,7 +634,7 @@
 
 		<details id="skills">
 			<summary>
-				<h2>Skills · {skills.length}</h2>
+				<h2>{t('skills.heading')} · {skills.length}</h2>
 				{@render toggle()}
 			</summary>
 			<div class="fold">
@@ -809,7 +643,7 @@
 						<li>
 							<a class="t-name" href={s.source}>{s.name}</a>
 							<p>{s.desc}</p>
-							<a class="t-src" href={s.source}>Source</a>
+							<a class="t-src" href={s.source}>{t('skills.source')}</a>
 						</li>
 					{/each}
 				</ul>
@@ -822,9 +656,10 @@
 <footer class="foot">
 	<a class="write" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 	<div class="small">
-		<p>© 2026 Bartosz Dymet</p>
+		<p>{t('foot.copyright')}</p>
 		<a href={github}>GitHub</a>
 		<a href={linkedin}>LinkedIn</a>
+		<span class="foot-lang"><LocaleSwitcher {i18n} {routing} labels={languages} label={t('nav.language')} /></span>
 	</div>
 </footer>
 
@@ -843,7 +678,7 @@
 		top: 0;
 		z-index: 2;
 		display: grid;
-		grid-template-columns: 28vw 10.4vw 9.4vw 9.4vw 9.4vw 10.4vw 1fr;
+		grid-template-columns: 28vw 10.4vw 9.4vw 9.4vw 9.4vw 10.4vw 1fr auto;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -876,11 +711,47 @@
 	}
 	.mail {
 		justify-items: start;
-		padding-left: 6.93vw;
+		padding-left: 3.4vw;
 		font-size: 1.45vw;
 	}
 	.bar a:hover {
 		color: var(--orange);
+	}
+	/* LocaleSwitcher is styled through its own custom properties: black on the
+	   bar, square like everything else on the poster. */
+	.lang {
+		display: grid;
+		place-items: center;
+		padding: 0 1.31vw;
+		border-left: var(--rule) solid var(--bar-rule);
+		--asini-font-sans: inherit;
+		--asini-surface: var(--ink);
+		--asini-text: var(--paper);
+		--asini-border: var(--bar-rule);
+		--asini-border-strong: var(--orange);
+		--asini-accent: var(--orange);
+		--asini-radius-sm: 0;
+	}
+	.lang :global(select) {
+		font-size: 1.2vw;
+		font-weight: 700;
+	}
+	.intro-lang {
+		display: none;
+	}
+	.foot-lang,
+	.intro-lang {
+		--asini-font-sans: inherit;
+		--asini-surface: var(--paper);
+		--asini-text: var(--ink);
+		--asini-border: var(--ink);
+		--asini-border-strong: var(--ink);
+		--asini-accent: var(--ink);
+		--asini-radius-sm: 0;
+	}
+	.foot-lang :global(select),
+	.intro-lang :global(select) {
+		font-size: 0.9375rem;
 	}
 	.bar :focus-visible {
 		outline-color: var(--orange);
@@ -1613,6 +1484,13 @@
 			grid-template-columns: repeat(5, 1fr);
 			height: auto;
 		}
+		/* Five tabs fill a phone's bar; the language moves to the intro's links. */
+		.lang {
+			display: none;
+		}
+		.intro-lang {
+			display: inline;
+		}
 		/* One row of sections; the name and the address are in the intro below. */
 		.mark,
 		.mail {
@@ -1625,6 +1503,8 @@
 			line-height: 1.1;
 			text-align: center;
 			border-left: 0;
+			/* "Arbeitsweise" is wider than a phone's tab: let <html lang> hyphenate it. */
+			hyphens: auto;
 		}
 		.tabs a + a {
 			border-left: var(--rule) solid var(--bar-rule);

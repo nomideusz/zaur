@@ -10,7 +10,14 @@ RUN pnpm install --frozen-lockfile --filter @zaur/web...
 
 COPY apps/web ./apps/web
 
-RUN pnpm --filter @zaur/web build
+# A read-only GitHub token for the prerender (Dokploy build argument). It lifts
+# the API rate limit for the Railway templates table and lets src/lib/usage.ts
+# read the private product repos (asini, radiobartek) to see which packages
+# each product imports. Without it the build still succeeds: those products
+# keep the lists written in +page.svelte. It lives only in this builder stage,
+# never in the runner image.
+ARG GITHUB_TOKEN
+RUN GITHUB_TOKEN=$GITHUB_TOKEN pnpm --filter @zaur/web build
 RUN pnpm --filter @zaur/web --prod deploy /out --legacy
 
 # Copy the prerendered site into the production deployment folder.
