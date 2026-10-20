@@ -4,6 +4,7 @@
 	import { formatEventTime } from '@zaur/mail-core/utils/dates';
 	import { extractMeetingGroup } from '@zaur/mail-core/utils/meet';
 	import { describeRepeat } from '#lib/calendar/schedule';
+	import { isHolidays } from '#lib/calendar/holidays';
 	import MeetIcon from '../meet/MeetIcon.svelte';
 	import { eventParticipants, type EventParticipant } from '../../../routes/calendar.remote';
 
@@ -50,7 +51,10 @@
 			(isRecurringInstance(event) ? 'Repeats' : null)
 	);
 	// Guests, read-only: the series' list for an occurrence. A failed load shows nothing.
-	const guests = $derived(eventParticipants({ id: event.baseEventId ?? event.id, accountId: event.accountId }));
+	// A holiday has none, and no JMAP account to ask.
+	const guests = $derived(
+		isHolidays(event) ? null : eventParticipants({ id: event.baseEventId ?? event.id, accountId: event.accountId })
+	);
 	const answered: Record<EventParticipant['status'], string> = {
 		accepted: 'Going',
 		tentative: 'Maybe',
@@ -118,7 +122,7 @@
 				</div>
 			{/if}
 
-			{#if guests.current?.length}
+			{#if guests?.current?.length}
 				<div>
 					<h3 class={label}>Guests</h3>
 					<ul class="flex flex-col gap-1.5" role="list">

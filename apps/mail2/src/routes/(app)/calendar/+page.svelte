@@ -41,6 +41,16 @@
 		setCalendarVisible,
 		createCalendar
 	} from '../../calendar.remote';
+	import { holidays as holidaysRemote } from '../../holidays.remote';
+	import { prefs, setPref } from '#lib/settings.svelte.ts';
+	import {
+		holidayCountry,
+		holidayEvents,
+		holidaysCalendar,
+		isHolidays,
+		yearsIn
+	} from '#lib/calendar/holidays';
+	import HolidaySettings from '#lib/components/calendar/HolidaySettings.svelte';
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
@@ -171,7 +181,22 @@
 
 	const calendarsResource = $derived(session ? calendarsRemote() : undefined);
 	const calendarsState = $derived(calendarsResource?.current ?? null);
-	const calendarList = $derived(calendarsState?.calendars ?? []);
+	/** Whose public holidays: chosen in their settings, else the browser's language's country. */
+	const detectedCountry = holidayCountry('', typeof navigator === 'undefined' ? undefined : navigator.language);
+	const country = $derived(prefs.holidayCountry === 'none' ? null : prefs.holidayCountry || detectedCountry);
+	const holidaysCal = $derived(
+		calendarsState?.supported && country ? holidaysCalendar(country, prefs.showHolidays) : null
+	);
+	const calendarList = $derived([...(calendarsState?.calendars ?? []), ...(holidaysCal ? [holidaysCal] : [])]);
+	/** A range's holidays, each year asked for once and cached by the query. */
+	async function holidaysIn(start: Date, end: Date): Promise<CalendarEvent[]> {
+		if (!country || !holidaysCal?.isVisible) return [];
+		const code = country;
+		const years = await Promise.all(
+			yearsIn(start, end).map((year) => holidaysRemote({ country: code, year }).catch(() => []))
+		);
+		return years.flatMap((list) => holidayEvents(code, list, start, end));
+	}
 	const eventsResource = $derived(session && calendarsState?.supported ? eventsRemote(range) : undefined);
 
 	// Push: a change made on the phone shows up here.
@@ -210,7 +235,20 @@
 		if (list) kept.set(rangeKey(range), list);
 	});
 	/** The day list's events: the server's answer, or the last one when asking again failed. */
-	const loaded = $derived(eventsResource?.current ?? (eventsResource?.error ? kept.get(rangeKey(range)) : undefined));
+	const fromServer = $derived(eventsResource?.current ?? (eventsResource?.error ? kept.get(rangeKey(range)) : undefined));
+	const rangeStart = $derived(span[0]!);
+	const rangeEnd = $derived(addDays(span[span.length - 1]!, 1));
+	const holidayQueries = $derived(
+		country && holidaysCal?.isVisible
+			? yearsIn(rangeStart, rangeEnd).map((year) => holidaysRemote({ country: country!, year }))
+			: []
+	);
+	const loaded = $derived(
+		fromServer && [
+			...fromServer,
+			...holidayQueries.flatMap((query) => holidayEvents(country!, query.current ?? [], rangeStart, rangeEnd))
+		]
+	);
 	const visibleEvents = $derived(
 		(loaded ?? []).filter((event) =>
 			calendarsOf(event).some((calendar) => calendar?.isVisible !== false)
@@ -275,6 +313,7 @@
 					if (gridRange === bounds) failed = before ? 'kept' : 'nothing';
 					list = before ?? [];
 				}
+				list = [...list, ...(await holidaysIn(range.start, range.end))];
 				return list
 					.filter((event) =>
 						event.calendarIds.some(
@@ -500,6 +539,7 @@
 	}
 
 	async function toggleCalendar(calendar: Calendar, visible: boolean) {
+		if (isHolidays(calendar)) return setPref('showHolidays', visible);
 		try {
 			await setCalendarVisible({ id: calendar.id, accountId: calendar.accountId, visible });
 		} catch (cause) {
@@ -804,6 +844,8 @@
 						onAdd={addCalendar}
 						adding={addingCalendar}
 					/>
+				{:else if mode === 'calendar' && settingsCalendar && isHolidays(settingsCalendar)}
+					<HolidaySettings detected={detectedCountry} onClose={leaveSettings} />
 				{:else if mode === 'calendar' && settingsCalendar && calendarsState}
 					<CalendarSettings
 						bind:this={settings}

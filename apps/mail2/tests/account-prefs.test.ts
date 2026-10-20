@@ -23,9 +23,11 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 		'aiHeadersOnly',
 		'appBadge',
 		'composePlain',
+		'holidayCountry',
 		'markReadOnOpen',
 		'pageSize',
 		'showAvatars',
+		'showHolidays',
 		'showPreview',
 		'showRemoteImages',
 		'undoSendSeconds',
@@ -48,7 +50,9 @@ test('accountPrefsOf: carries only the account keys, whatever else is set', () =
 		aiHeadersOnly: DEFAULT_PREFS.aiHeadersOnly,
 		aiArchiveNewsletters: DEFAULT_PREFS.aiArchiveNewsletters,
 		undoSendSeconds: DEFAULT_PREFS.undoSendSeconds,
-		appBadge: DEFAULT_PREFS.appBadge
+		appBadge: DEFAULT_PREFS.appBadge,
+		holidayCountry: DEFAULT_PREFS.holidayCountry,
+		showHolidays: DEFAULT_PREFS.showHolidays
 	});
 });
 

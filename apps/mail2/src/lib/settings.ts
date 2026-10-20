@@ -42,6 +42,10 @@ export type Prefs = {
 	undoSendSeconds: number;
 	/** The unread count on the installed app's icon. Off, new mail still notifies; the icon stays bare. */
 	appBadge: boolean;
+	/** Whose public holidays the calendar shows: '' for the country this browser's language names, 'none' for none. */
+	holidayCountry: string;
+	/** The holidays calendar's checkbox. */
+	showHolidays: boolean;
 };
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -68,7 +72,9 @@ export const DEFAULT_PREFS: Prefs = {
 	aiHeadersOnly: false,
 	aiArchiveNewsletters: false,
 	undoSendSeconds: 5,
-	appBadge: true
+	appBadge: true,
+	holidayCountry: '',
+	showHolidays: true
 };
 
 /**
@@ -96,7 +102,9 @@ export const ACCOUNT_PREF_KEYS = [
 	'aiHeadersOnly',
 	'aiArchiveNewsletters',
 	'undoSendSeconds',
-	'appBadge'
+	'appBadge',
+	'holidayCountry',
+	'showHolidays'
 ] as const satisfies readonly (keyof Prefs)[];
 
 export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
@@ -115,7 +123,9 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		aiHeadersOnly: prefs.aiHeadersOnly,
 		aiArchiveNewsletters: prefs.aiArchiveNewsletters,
 		undoSendSeconds: prefs.undoSendSeconds,
-		appBadge: prefs.appBadge
+		appBadge: prefs.appBadge,
+		holidayCountry: prefs.holidayCountry,
+		showHolidays: prefs.showHolidays
 	};
 }
 
