@@ -11,6 +11,11 @@ const BOT = /bot|crawl|spider|slurp|headless|lighthouse|preview|inspect|fetch|cu
 const OWNER = "zaur_owner=1";
 const str = (v, max) => (typeof v === "string" && v ? v.slice(0, max) : undefined);
 const num = (v) => (Number.isFinite(v) ? Math.round(v) : undefined);
+// The user agent is read for these two words and never stored. An app's
+// in-app browser is named, as it sends no referrer.
+const browser = (ua) =>
+  [[/LinkedInApp/, "LinkedIn app"], [/FBAN|FBAV/, "Facebook app"], [/Instagram/, "Instagram app"], [/GSA\//, "Google app"], [/Edg/, "Edge"], [/OPR\//, "Opera"], [/SamsungBrowser/, "Samsung"], [/Firefox|FxiOS/, "Firefox"], [/Chrome|CriOS/, "Chrome"], [/Safari/, "Safari"]].find(([re]) => re.test(ua))?.[1] ?? "other";
+const os = (ua) => [[/iPhone|iPad|iPod/, "iOS"], [/Android/, "Android"], [/Windows/, "Windows"], [/Mac OS X/, "macOS"], [/CrOS/, "ChromeOS"], [/Linux/, "Linux"]].find(([re]) => re.test(ua))?.[1] ?? "other";
 
 export async function recordHit(req, res) {
   let body = "";
@@ -33,6 +38,8 @@ export async function recordHit(req, res) {
   // `owner` is the /stats page saying what this device looks like; only a
   // device that holds the cookie may say it.
   if (h.k === "owner" && !me) return;
+  // A real browser knows its time zone; headless Chrome in a container does not.
+  if (h.tz === "Etc/Unknown") return;
   const line = {
     t: new Date().toISOString(),
     id: h.id,
@@ -44,7 +51,14 @@ export async function recordHit(req, res) {
           tz: str(h.tz, 40),
           lang: str(h.lang, 20),
           w: num(h.w),
+          h: num(h.h),
+          screen: /^\d{2,5}x\d{2,5}$/.test(h.screen) ? h.screen : undefined,
+          dpr: Number.isFinite(h.dpr) ? Math.round(h.dpr * 100) / 100 : undefined,
+          dark: h.dark === 1 ? 1 : h.dark === 0 ? 0 : undefined,
+          hash: str(h.hash, 40),
           device: /Mobi|Android|iPhone|iPad/.test(ua) ? "phone" : "desktop",
+          browser: browser(ua),
+          os: os(ua),
           me,
         }
       : {
@@ -73,9 +87,9 @@ const GOOGLE = /^(www\.)?google\.[a-z.]+$/;
 const under = (host, sites) => sites.some((s) => host === s || host.endsWith(`.${s}`));
 export const SOURCES = { tagged: "tagged link", mail: "mail", social: "social", search: "search", ai: "AI chat", own: "own sites", other: "other sites", direct: "direct" };
 
-export function source({ tag, ref }) {
+export function source({ tag, ref, browser }) {
   if (tag) return "tagged";
-  if (!ref) return "direct";
+  if (!ref) return /LinkedIn|Facebook|Instagram/.test(browser) ? "social" : "direct";
   const host = ref.toLowerCase().replace(/:\d+$/, "");
   if (host.split(".").slice(-2).join(".") === "zaur.app") return "own";
   if (under(host, AI)) return "ai";
@@ -85,15 +99,34 @@ export function source({ tag, ref }) {
   return "other";
 }
 
-const sig = (v) => [v.tz, v.lang, v.w, v.device].join("|");
+// A device's look: the base every line has, and the screen, density and
+// system that lines since 2026-10-21 add. With those, the window's width is
+// left out, as a desktop window changes it.
+const base = (v) => [v.tz, v.lang, v.w, v.device].join("|");
+const detail = (v) => (v.screen ? [v.screen, v.dpr, v.os].join("|") : "");
+const full = (v) => [v.tz, v.lang, v.device, detail(v)].join("|");
 
 // Views newest first, each joined with its last end. A view without the
-// cookie is still the owner's when its time zone, language, width and device
-// match a marked view or a device /stats was opened on: the cookie came later,
-// or the visit was in another browser on the same phone (an app's in-app view).
+// cookie is still the owner's when it looks like a marked view or a device
+// /stats was opened on: the cookie came later, or the visit was in another
+// browser on the same phone (an app's in-app view). Time zone, language,
+// width and device must match; screen, density and system too once both
+// sides carry them.
+// ponytail: a stranger with an identical device still counts as mine; add a
+// per-device random mark in the owner cookie if that ever shows up.
 export function visits(text) {
   const byId = new Map();
-  const owner = new Set();
+  const owner = new Map(); // base → details seen with it ("" = none)
+  const fulls = new Set();
+  const claim = (v) => {
+    owner.set(base(v), (owner.get(base(v)) ?? new Set()).add(detail(v)));
+    if (detail(v)) fulls.add(full(v));
+  };
+  const claimed = (v) => {
+    if (detail(v) && fulls.has(full(v))) return true;
+    const seen = owner.get(base(v));
+    return !!seen && (!detail(v) || [...seen].every((d) => d === ""));
+  };
   for (const l of text.split("\n")) {
     if (!l) continue;
     let h;
@@ -102,15 +135,15 @@ export function visits(text) {
     } catch {
       continue;
     }
-    if (h.k === "owner") owner.add(sig(h));
+    if (h.k === "owner") claim(h);
     else if (h.k === "view") byId.set(h.id, h);
     else if (byId.has(h.id)) Object.assign(byId.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks });
   }
   const all = [...byId.values()];
-  for (const v of all) if (v.me === 1) owner.add(sig(v));
+  for (const v of all) if (v.me === 1) claim(v);
   for (const v of all) {
     // A ?r= link was handed to someone else, so only the cookie claims it.
-    v.mine = v.me === 1 || (!v.tag && owner.has(sig(v)));
+    v.mine = v.me === 1 || (!v.tag && claimed(v));
     v.src = source(v);
   }
   return all.reverse();
@@ -173,6 +206,9 @@ export function report(all, { days = 30, who = "others", tag = null, now = Date.
     refs: count(shown, (v) => v.ref).slice(0, 12),
     places: count(shown, (v) => (v.tz ? v.tz.split("/").pop().replace(/_/g, " ") : null)).slice(0, 12),
     langs: count(shown, (v) => v.lang?.split("-")[0]).slice(0, 8),
+    systems: count(shown, (v) => v.os && `${v.os} · ${v.browser}`).slice(0, 10),
+    screens: count(shown, (v) => v.screen && `${v.device} ${v.screen.replace("x", "×")}`).slice(0, 10),
+    dark: shown.some((v) => v.dark != null) ? pct(shown.filter((v) => v.dark === 1).length) : null,
     // What was opened, each target once per visit.
     opened: count(shown, (v) => [...new Set(v.clicks ?? [])]).slice(0, 15),
     tags: count(all.filter(whose), (v) => v.tag).map(([t, n]) => [t, n, all.find((v) => v.tag === t).t]),
@@ -260,6 +296,8 @@ ${barList("Referrers", r.refs, r.visits)}
 ${barList("Opened", r.opened, r.visits)}
 ${barList("Time zones", r.places, r.visits)}
 ${barList("Languages", r.langs, r.visits)}
+${barList("Systems", r.systems, r.visits)}
+${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.screens, r.visits)}
 <section><h2>Tagged links</h2>${
     r.tags.map(([t, n, last]) => `<div class="row"><a href="${link({ tag: t })}">${esc(t)}</a><span class="hint">${when(last)}</span><span class="n">${n}</span></div>`).join("") ||
     '<p class="none">None yet. Hand out zaur.app/?r=company</p>'
@@ -270,12 +308,12 @@ ${barList("Languages", r.langs, r.visits)}
     r.recent
       .map(
         (v) =>
-          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || SOURCES[v.src])}</td><td>${esc(v.tz)} · ${esc(v.lang)}</td><td>${device(v)} <small>${v.w ?? ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
+          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(v.tz)} · ${esc(v.lang)}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
       )
       .join("") || '<tr><td colspan="7" class="hint">No visits in this period.</td></tr>'
   }</table></div>
-<p class="hint">This device is now marked as yours. A visit counts under Mine when it came from a marked device, or shares a time zone, language, screen width and device type with one.</p>
-<script>try{sessionStorage.zaurOwner||navigator.sendBeacon("/api/hit",JSON.stringify({k:"owner",id:crypto.randomUUID().slice(0,12),tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,w:innerWidth}));sessionStorage.zaurOwner=1}catch{}
+<p class="hint">This device is now marked as yours. A visit counts under Mine when it came from a marked device, or looks like one: the same time zone, language, width and device type, and the same screen, density and system where both visits recorded them.</p>
+<script>try{sessionStorage.zaurOwner||navigator.sendBeacon("/api/hit",JSON.stringify({k:"owner",id:crypto.randomUUID().slice(0,12),tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,w:innerWidth,screen:screen.width+"x"+screen.height,dpr:devicePixelRatio}));sessionStorage.zaurOwner=1}catch{}
 setInterval(()=>document.visibilityState==="visible"&&location.reload(),15000)</script>`;
   res.writeHead(200, {
     "content-type": "text/html; charset=utf-8",

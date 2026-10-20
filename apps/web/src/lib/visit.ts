@@ -17,7 +17,12 @@ export function track() {
 		ref: ref === location.host ? undefined : ref,
 		tz: Intl.DateTimeFormat().resolvedOptions().timeZone,
 		lang: navigator.language,
-		w: innerWidth
+		w: innerWidth,
+		h: innerHeight,
+		screen: `${screen.width}x${screen.height}`,
+		dpr: devicePixelRatio,
+		dark: matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0,
+		hash: location.hash || undefined
 	});
 
 	// What was opened: links by where they go, live windows by their label.
