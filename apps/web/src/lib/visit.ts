@@ -23,7 +23,8 @@ export function track() {
 		screen: `${screen.width}x${screen.height}`,
 		dpr: devicePixelRatio,
 		dark: matchMedia('(prefers-color-scheme: dark)').matches ? 1 : 0,
-		hash: location.hash || undefined
+		hash: location.hash || undefined,
+		page: location.pathname
 	});
 
 	// What was opened: links by where they go, live windows by their label.

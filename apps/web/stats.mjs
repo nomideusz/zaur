@@ -95,6 +95,8 @@ export async function recordHit(req, res) {
           dpr: Number.isFinite(h.dpr) ? Math.round(h.dpr * 100) / 100 : undefined,
           dark: h.dark === 1 ? 1 : h.dark === 0 ? 0 : undefined,
           hash: str(h.hash, 40),
+          // Which language version: /, /pl, /de, /fr, /ua.
+          page: /^\/[a-z]{0,2}$/.test(h.page) ? h.page : undefined,
           device: /Mobi|Android|iPhone|iPad/.test(ua) ? "phone" : "desktop",
           browser: browser(ua),
           os: os(ua),
@@ -249,6 +251,7 @@ export function report(all, { days = 30, who = "others", tag = null, now = Date.
     networks: count(shown, (v) => v.org).slice(0, 12),
     business: shown.filter((v) => v.orgType === "business").length,
     langs: count(shown, (v) => v.lang?.split("-")[0]).slice(0, 8),
+    pages: count(shown, (v) => v.page && (v.page === "/" ? "English /" : v.page)),
     systems: count(shown, (v) => v.os && `${v.os} · ${v.browser}`).slice(0, 10),
     screens: count(shown, (v) => v.screen && `${v.device} ${v.screen.replace("x", "×")}`).slice(0, 10),
     dark: shown.some((v) => v.dark != null) ? pct(shown.filter((v) => v.dark === 1).length) : null,
@@ -342,6 +345,7 @@ ${barList("Opened", r.opened, r.visits)}
 ${barList("Places", r.places, r.visits)}
 ${barList(`Networks${r.business ? ` · ${r.business} from a company` : ""}`, r.networks, r.visits)}
 ${barList("Languages", r.langs, r.visits)}
+${barList("Version opened", r.pages, r.visits)}
 ${barList("Systems", r.systems, r.visits)}
 ${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.screens, r.visits)}
 <section><h2>Tagged links</h2>${
@@ -354,7 +358,7 @@ ${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.scr
     r.recent
       .map(
         (v) =>
-          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.city ? `<br><small>${esc(v.tz)}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting ? `<br><small>${esc(v.hosting ? "data centre" : v.orgType)}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
+          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.page && v.page !== "/" ? ` <small>${esc(v.page)}</small>` : ""}${v.city ? `<br><small>${esc(v.tz)}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting ? `<br><small>${esc(v.hosting ? "data centre" : v.orgType)}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
       )
       .join("") || '<tr><td colspan="8" class="hint">No visits in this period.</td></tr>'
   }</table></div>
