@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
+	import { keys } from '#lib/keys.svelte';
 	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
 	import Live from '#lib/Live.svelte';
@@ -298,8 +299,18 @@
 	const day = (d: string) => new Date(d).toLocaleDateString(intl, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 
+	// The package demonstrating itself: the whole page as its message keys, and
+	// back. zaur.app/#keys opens it that way (the demo site links there).
+	const flipKeys = async () => {
+		keys.on = !keys.on;
+		if (location.hash === '#keys') history.replaceState(null, '', location.pathname);
+		await tick();
+		document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
+	};
+
 	onMount(() => {
 		track();
+		if (location.hash === '#keys' && !keys.on) flipKeys();
 		// A link to a fold (the Templates tab, a shared #websites URL) opens it.
 		const unfold = () => {
 			const el = location.hash && document.getElementById(location.hash.slice(1));
@@ -587,6 +598,13 @@
 					<div>
 						<p>{p.desc}</p>
 						<code class="p-install">npm i {p.name}</code>
+						{#if p.id === 'svelte-i18n'}
+							<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
+							<p class="p-try">
+								<button type="button" class="p-keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t(keys.on ? 'packages.i18n.text' : 'packages.i18n.keys')}</button>
+								{i18n.t('packages.i18n.hint')}
+							</p>
+						{/if}
 					</div>
 					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
 					<p class="p-links">
@@ -1237,6 +1255,25 @@
 	}
 	.case-body .p-used {
 		margin-top: 0.6rem;
+	}
+	.p-try {
+		margin-top: 0.6rem;
+		color: var(--quiet);
+		font-size: 0.875rem;
+	}
+	.p-keys {
+		margin-right: 0.4rem;
+		padding: 0.1rem 0.5rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		background: var(--ink);
+		color: var(--paper);
+		font: inherit;
+		cursor: pointer;
+	}
+	.p-keys[aria-pressed='true'] {
+		background: none;
+		color: var(--ink);
 	}
 	.p-links {
 		display: flex;

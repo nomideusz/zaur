@@ -1,5 +1,6 @@
 import { createI18n } from '@nomideusz/svelte-i18n';
 import { routing } from './i18n-routing';
+import { keys } from './keys.svelte';
 import en from './messages/en.json';
 import pl from './messages/pl.json';
 import de from './messages/de.json';
@@ -16,16 +17,16 @@ export const i18n = createI18n({
 	loader: (locale) => messages[locale] ?? en
 });
 
-export const t = i18n.t;
+export const t: typeof i18n.t = (key, params) => (keys.on ? key : i18n.t(key, params));
 
 /** Every message under `prefix.0`, `prefix.1`… in order: lists stay flat JSON keys. */
 export function list(prefix: string): string[] {
 	const out: string[] = [];
 	for (let i = 0; ; i++) {
 		const key = `${prefix}.${i}`;
-		const v = t(key);
+		const v = i18n.t(key);
 		if (v === key) return out;
-		out.push(v);
+		out.push(t(key));
 	}
 }
 
@@ -34,8 +35,7 @@ export function pairs(prefix: string): [string, string][] {
 	const out: [string, string][] = [];
 	for (let i = 0; ; i++) {
 		const key = `${prefix}.${i}.k`;
-		const k = t(key);
-		if (k === key) return out;
-		out.push([k, t(`${prefix}.${i}.v`)]);
+		if (i18n.t(key) === key) return out;
+		out.push([t(key), t(`${prefix}.${i}.v`)]);
 	}
 }

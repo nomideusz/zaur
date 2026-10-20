@@ -4,6 +4,7 @@
 	import text from '#lib/fonts/inter-tight-latin-500.woff2?url';
 	import cyrillic from '#lib/fonts/inter-tight-cyrillic-var.woff2?url';
 	import { i18n } from '#lib/i18n';
+	import { keys } from '#lib/keys.svelte';
 
 	let { data, children } = $props();
 	// The loader is synchronous, so this switches before the page renders: the
@@ -22,4 +23,4 @@
 	<link rel="preload" href={text} as="font" type="font/woff2" crossorigin="anonymous" />
 </svelte:head>
 
-{@render children()}
+{#key keys.on}{@render children()}{/key}

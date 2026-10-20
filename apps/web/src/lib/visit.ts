@@ -3,8 +3,11 @@
 // the network's owner and place it looks up): a random id lives only
 // in this tab so the visit's end can be matched to its start. A link handed out
 // with ?r=<tag> (one per job application) marks who the visit came from.
+let tracked = false;
 export function track() {
-	if (location.hostname !== 'zaur.app' || navigator.webdriver) return;
+	// Once per page load: the svelte-i18n keys switch remounts the page.
+	if (tracked || location.hostname !== 'zaur.app' || navigator.webdriver) return;
+	tracked = true;
 	const id = crypto.randomUUID().slice(0, 12);
 	const send = (body: object) => navigator.sendBeacon('/api/hit', JSON.stringify({ id, ...body }));
 	const q = new URLSearchParams(location.search);
