@@ -3,7 +3,7 @@
 // in this tab so the visit's end can be matched to its start. A link handed out
 // with ?r=<tag> (one per job application) marks who the visit came from.
 export function track() {
-	if (location.hostname !== 'zaur.app') return;
+	if (location.hostname !== 'zaur.app' || navigator.webdriver) return;
 	const id = crypto.randomUUID().slice(0, 12);
 	const send = (body: object) => navigator.sendBeacon('/api/hit', JSON.stringify({ id, ...body }));
 	const q = new URLSearchParams(location.search);
