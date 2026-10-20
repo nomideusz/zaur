@@ -14,6 +14,7 @@
 	// A long list starts folded, so the albums stay within reach.
 	const FOLD = 8;
 	let all = $state(false);
+	let bioOpen = $state(false);
 </script>
 
 <svelte:head><title>{artist.name} · Zaur Music</title></svelte:head>
@@ -37,6 +38,15 @@
 			</div>
 		</div>
 	</header>
+
+	{#await data.about then about}
+		{#if about.top.length}
+			<section class="section">
+				<div class="section-head"><h2>Popular</h2></div>
+				<TrackList songs={about.top} by={artist.name} limit={5} />
+			</section>
+		{/if}
+	{/await}
 
 	{#if songs.length}
 		<section class="section">
@@ -67,6 +77,23 @@
 			</section>
 		{/if}
 	{/await}
+
+	{#await data.about then about}
+		{#if about.bio}
+			<section class="section">
+				<div class="section-head">
+					<h2>About</h2>
+					<!-- ponytail: by length, not by measuring the clamp; a short bio has no fold. -->
+					{#if about.bio.length > 320}
+						<button class="link" type="button" aria-expanded={bioOpen} onclick={() => (bioOpen = !bioOpen)}>
+							{bioOpen ? 'Show less' : 'Show more'}
+						</button>
+					{/if}
+				</div>
+				<p class="bio" class:open={bioOpen || about.bio.length <= 320}>{about.bio}</p>
+			</section>
+		{/if}
+	{/await}
 </div>
 
 <style>
@@ -84,5 +111,19 @@
 	}
 	p {
 		margin: 4px 0 0;
+	}
+	.bio {
+		display: -webkit-box;
+		max-width: 68ch;
+		overflow: hidden;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 4;
+		line-clamp: 4;
+		color: var(--z-muted);
+		line-height: 1.55;
+		white-space: pre-line;
+	}
+	.bio.open {
+		display: block;
 	}
 </style>

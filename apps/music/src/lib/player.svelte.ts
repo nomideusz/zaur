@@ -29,6 +29,7 @@ interface Prefs {
 	repeat?: Repeat;
 	shuffling?: boolean;
 	panel?: boolean;
+	lyrics?: boolean;
 }
 
 function shuffled<T>(items: T[]): T[] {
@@ -119,6 +120,8 @@ class Player {
 	shuffling = $state(false);
 	/** On a wide screen: Now playing beside the page. */
 	panel = $state(true);
+	/** Now playing shows the lyrics where the queue was. */
+	lyrics = $state(false);
 
 	#audio: HTMLAudioElement | undefined;
 	#channel: BroadcastChannel | undefined;
@@ -170,6 +173,11 @@ class Player {
 		}
 	}
 
+	toggleLyrics(): void {
+		this.lyrics = !this.lyrics;
+		this.#savePrefs();
+	}
+
 	/** Called once by the layout with its <audio>; returns the teardown. */
 	attach(audio: HTMLAudioElement): () => void {
 		this.#audio = audio;
@@ -184,6 +192,7 @@ class Player {
 		this.repeat = prefs.repeat ?? 'off';
 		this.shuffling = prefs.shuffling === true;
 		this.panel = prefs.panel !== false;
+		this.lyrics = prefs.lyrics === true;
 		this.#restore();
 		this.#sound();
 		const on = <K extends keyof HTMLMediaElementEventMap>(type: K, fn: () => void) => {
@@ -485,7 +494,7 @@ class Player {
 	}
 
 	#savePrefs(): void {
-		store(PREFS, { volume: this.volume, muted: this.muted, repeat: this.repeat, shuffling: this.shuffling, panel: this.panel } satisfies Prefs);
+		store(PREFS, { volume: this.volume, muted: this.muted, repeat: this.repeat, shuffling: this.shuffling, panel: this.panel, lyrics: this.lyrics } satisfies Prefs);
 	}
 
 	#save(): void {

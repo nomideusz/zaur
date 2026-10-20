@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { api, unreachable } from '#lib/api';
 	import { notify } from '#lib/notice.svelte';
 	import { player } from '#lib/player.svelte';
 	import type { Song } from '#lib/types';
@@ -29,6 +30,20 @@
 		sheet.close();
 		notify(next ? 'Plays next' : 'Added to queue');
 	}
+
+	/** This song, then the library's songs like it. Navidrome asks its agents, so it takes a moment. */
+	async function radio() {
+		const seed = song!;
+		sheet.close();
+		notify('Finding songs like it…', 10_000);
+		const response = await api(`/api/radio/${encodeURIComponent(seed.id)}`).catch(() => undefined);
+		if (!response) return unreachable();
+		if (!response.ok) return notify("Couldn't start a radio");
+		const similar: Song[] = await response.json();
+		if (!similar.length) return notify('Nothing like it in the library yet');
+		player.play([seed, ...similar.filter((other) => other.id !== seed.id)]);
+		notify(`Radio: ${similar.length} songs like it`);
+	}
 </script>
 
 <Sheet bind:this={sheet} label="Song actions">
@@ -39,6 +54,7 @@
 		</p>
 		<button class="z-menu-item" type="button" onclick={() => queue(true)}><Icon name="next" /> Play next</button>
 		<button class="z-menu-item" type="button" onclick={() => queue(false)}><Icon name="plus" /> Add to queue</button>
+		<button class="z-menu-item" type="button" onclick={radio}><Icon name="radio" /> Start radio</button>
 		<button class="z-menu-item" type="button" onclick={() => (sheet.close(), picker.open([song!]))}>
 			<Icon name="playlist" /> Add to playlist…
 		</button>

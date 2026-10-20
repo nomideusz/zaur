@@ -191,6 +191,22 @@ const METHODS = {
 	deletePlaylist: (q) => (playlists.splice(playlists.indexOf(owned(q, 'id')), 1), {}),
 	star: (q) => (q.getAll('id').concat(q.getAll('albumId')).forEach((id) => starred.set(id, new Date().toISOString())), {}),
 	unstar: (q) => (q.getAll('id').concat(q.getAll('albumId')).forEach((id) => starred.delete(id)), {}),
+	getSong: (q) => (songs.has(q.get('id')) ? { song: withStar(songs.get(q.get('id'))) } : null),
+	// Every other song has timed lyrics, a line each 2 s; the rest go on to LRCLIB (which will not know them).
+	getLyricsBySongId: (q) => {
+		const song = songs.get(q.get('id'));
+		if (!song) return null;
+		const timed = all.indexOf(song) % 2 === 0;
+		const line = timed ? Array.from({ length: song.duration / 2 }, (_, i) => ({ start: i * 2000, value: i % 5 === 4 ? '' : `${song.title}, line ${i + 1}` })) : [];
+		return { lyricsList: { structuredLyrics: timed ? [{ synced: true, lang: 'xxx', line }] : [] } };
+	},
+	getSimilarSongs: (q) => ({ similarSongs: { song: all.filter((s) => s.id !== q.get('id')).toSorted(() => rand(3) - 1).slice(0, 12).map(withStar) } }),
+	getArtistInfo2: (q) => {
+		const artist = artists.find((a) => a.id === q.get('id'));
+		const bio = `${artist?.name} make music in a room with &quot;good light&quot;. `.repeat(12);
+		return artist ? { artistInfo2: { biography: `${bio}<a target='_blank' href="https://www.last.fm/music/x">Read more on Last.fm</a>` } } : null;
+	},
+	getTopSongs: (q) => ({ topSongs: { song: all.filter((s) => s.artist === q.get('artist')).slice(0, 10).map(withStar) } }),
 	scrobble: () => ({}),
 	startScan: () => ({ scanStatus: { scanning: true, count: all.length } }),
 	getScanStatus: () => ({ scanStatus: { scanning: false, count: all.length } })

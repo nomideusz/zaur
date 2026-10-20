@@ -239,11 +239,31 @@ of the listener's most played, favourite and recent artists also like. One the
 library has opens its page; any other opens a search, with its albums to add
 (`relatedArtists`, `discover` in `#lib/server/albums`).
 
+**From Navidrome's agents.** Navidrome asks Deezer and its Apple Music plugin
+about artists and songs (Last.fm too, once `ND_LASTFM_APIKEY` is set on it).
+An artist's page shows the bio under About and the five most played songs the
+library has under Popular, both streamed. A song's ⋯ menu has **Start radio**:
+the song, then up to 50 of the library's songs like it (`getSimilarSongs`, a
+few seconds).
+
+**Lyrics.** The button beside the heart in Now playing (and the panel) shows
+the lyrics where the queue was, and the choice is remembered. They come from
+the library first (the file's tags or a `.lrc` beside it), else from LRCLIB
+(lrclib.net, no key), the same recording to within 3 s
+(`#lib/server/lyrics`). Timed ones follow the song in their own scroller, so
+the controls stay put, and a line pressed seeks to it.
+
 ## Tagging what arrives
 
 Songs that reach the library some other way (YouTube rips with the uploader as
 artist and no album) are tagged by `scripts/retag.py`: album, year and cover
-from Deezer, or else each its own single, so nothing shows as "Unknown album".
+from Deezer, else from MusicBrainz (an official album, EP or single by the same
+artist, the year of its first release, the cover from the Cover Art Archive),
+or else each its own single, so nothing shows as "Unknown album". The songs
+filed as singles before MusicBrainz was asked are looked up again with
+`retag.py musicbrainz` (reads only, resumable, about 2 s a song), then
+`retag.py musicbrainz apply`; `retag.py undo musicbrainz-backup.jsonl` puts
+those back.
 The server runs a copy from the data volume every hour (contabo's root crontab:
 `docker exec <music container> python3 /data/retag/retag.py sweep`, log in
 `/srv/zaur-music/retag/sweep.log`); after changing the script, copy it to

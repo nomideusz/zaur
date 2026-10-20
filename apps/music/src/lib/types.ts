@@ -95,3 +95,17 @@ export interface AddJob {
 	error?: string;
 	at: number;
 }
+
+/** A song's words; `start` (ms) on each line when they are timed. */
+export interface Lyrics {
+	synced: boolean;
+	/** library: the file's own tags or a .lrc beside it. */
+	source: 'library' | 'lrclib';
+	lines: { start?: number; text: string }[];
+}
+
+/** What Navidrome's agents know about an artist; each part may be missing. */
+export interface ArtistAbout {
+	bio?: string;
+	top: Song[];
+}

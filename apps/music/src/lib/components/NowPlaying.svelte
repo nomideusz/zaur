@@ -2,6 +2,7 @@
 	import { formatTime, isStarred, player, tintOf, toggleStar } from '#lib/player.svelte';
 	import Cover from './Cover.svelte';
 	import Icon from './Icon.svelte';
+	import Lyrics from './Lyrics.svelte';
 	import Queue from './Queue.svelte';
 
 	/**
@@ -77,7 +78,7 @@
 				<Cover id={song.coverArt} size={600} class="art" />
 				<div class="controls">
 					<div class="about">
-						<div class="min-w-0">
+						<div class="min-w-0 flex-1">
 							<h2>{song.title}</h2>
 							<!-- A line each, so a long artist cannot push the album out of reach.
 							     The sheet closes before the page is gone to (visit.svelte.ts), so Back does not reopen it. -->
@@ -90,6 +91,17 @@
 								</p>
 							{/if}
 						</div>
+						<button
+							class="z-icon-btn !size-9 shrink-0 pointer-coarse:!size-11"
+							class:on={player.lyrics}
+							type="button"
+							aria-label="Lyrics"
+							aria-pressed={player.lyrics}
+							title="Lyrics"
+							onclick={() => player.toggleLyrics()}
+						>
+							<Icon name="lyrics" class="size-5" />
+						</button>
 						<button
 							class="z-icon-btn !size-9 shrink-0 pointer-coarse:!size-11"
 							class:starred={isStarred(song)}
@@ -188,7 +200,7 @@
 				</div>
 			</div>
 
-			<Queue />
+			{#if player.lyrics}<Lyrics />{:else}<Queue />{/if}
 		</div>
 	{/if}
 </dialog>
@@ -405,7 +417,8 @@
 			overflow: visible;
 		}
 		.stage,
-		.body > :global(.queue) {
+		.body > :global(.queue),
+		.body > :global(.lyrics) {
 			min-height: 0;
 			padding-bottom: 24px;
 			overflow-y: auto;

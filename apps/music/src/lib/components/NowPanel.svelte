@@ -2,6 +2,7 @@
 	import { isStarred, player, tintOf, toggleStar } from '#lib/player.svelte';
 	import Cover from './Cover.svelte';
 	import Icon from './Icon.svelte';
+	import Lyrics from './Lyrics.svelte';
 	import Queue from './Queue.svelte';
 
 	/** Now playing beside the page, on a wide screen: the cover, the song, and the queue. Not modal. */
@@ -18,13 +19,24 @@
 		</header>
 		<Cover id={song.coverArt} size={600} class="art" />
 		<div class="about">
-			<div class="min-w-0">
+			<div class="min-w-0 flex-1">
 				<h2>{song.title}</h2>
 				<p>{#if song.artistId}<a href="/artist/{song.artistId}">{song.artist}</a>{:else}<span>{song.artist ?? ''}</span>{/if}</p>
 				{#if song.album}
 					<p>{#if song.albumId}<a href="/album/{song.albumId}">{song.album}</a>{:else}<span>{song.album}</span>{/if}</p>
 				{/if}
 			</div>
+			<button
+				class="z-icon-btn !size-9 shrink-0"
+				class:on={player.lyrics}
+				type="button"
+				aria-label="Lyrics"
+				aria-pressed={player.lyrics}
+				title="Lyrics"
+				onclick={() => player.toggleLyrics()}
+			>
+				<Icon name="lyrics" class="size-5" />
+			</button>
 			<button
 				class="z-icon-btn !size-9 shrink-0"
 				class:starred={isStarred(song)}
@@ -36,7 +48,7 @@
 				<Icon name={isStarred(song) ? 'heart-filled' : 'heart'} class="size-5" />
 			</button>
 		</div>
-		<Queue />
+		{#if player.lyrics}<Lyrics />{:else}<Queue />{/if}
 	</aside>
 {/if}
 
@@ -99,5 +111,8 @@
 	}
 	.starred {
 		color: var(--z-ch-flagged-solid);
+	}
+	.on {
+		color: var(--z-accent);
 	}
 </style>

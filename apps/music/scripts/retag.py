@@ -5,7 +5,10 @@ looked up on Deezer (with its cover). Songs keep their Navidrome IDs (matched by
 
   python3 retag.py plan   -> /data/retag/plan.jsonl   (reads only)
   python3 retag.py apply [plan]  -> writes tags; old tags to /data/retag/backup.jsonl
-  python3 retag.py undo   -> restores tags from backup.jsonl
+  python3 retag.py undo [backup]  -> restores tags from backup.jsonl (or the backup named)
+  python3 retag.py musicbrainz [plan|apply]  -> songs filed as their own single, looked up again on
+                             MusicBrainz (plan, reads only) and refiled when found (apply); undo with
+                             `undo musicbrainz-backup.jsonl`
   python3 retag.py gain   -> ReplayGain track gain/peak (measured by ffmpeg) for every song without one
   python3 retag.py unsplit <plan>  -> retags split albums' smaller parts like the main part (plan from dupes.py
                              unsplit, on the host); old tags to /data/retag/unsplit-backup.jsonl
@@ -13,7 +16,8 @@ looked up on Deezer (with its cover). Songs keep their Navidrome IDs (matched by
   python3 retag.py sweep  -> plan + apply + gain for files that arrived since, then a Navidrome scan
                              (hourly from contabo's crontab; see apps/music/README.md)
 
-A song Deezer does not know becomes its own single (album = its title), so
+A song Deezer does not know is looked up on MusicBrainz (Cover Art Archive for
+the cover); one neither knows becomes its own single (album = its title), so
 nothing lands in Navidrome's "[Unknown Album]".
 """
 import fcntl, hashlib, json, os, re, secrets, subprocess, sys, time, unicodedata, urllib.parse, urllib.request
@@ -56,24 +60,23 @@ def lucene(s):
     return '"' + s.replace('\\', '\\\\').replace('"', '\\"') + '"'
 
 
-last = 0.0
-def get(url):
-    """Deezer's API: 50 requests per 5 s, no key."""
-    global last
+last = {}
+def get(url, gap=0.15):
+    """A JSON API, at most one call per `gap` seconds to its host: Deezer allows 50 per 5 s, MusicBrainz 1 per s."""
+    host = urllib.parse.urlsplit(url).hostname
     for attempt in range(4):
-        wait = 0.15 - (time.time() - last)
+        wait = gap - (time.time() - last.get(host, 0))
         if wait > 0: time.sleep(wait)
-        last = time.time()
+        last[host] = time.time()
         try:
             with urllib.request.urlopen(urllib.request.Request(url, headers={'User-Agent': UA}), timeout=30) as r:
                 body = json.load(r)
             if 'error' in body:
-                print('deezer error', body['error'], file=sys.stderr); time.sleep(5); continue
+                print(host, 'error', body['error'], file=sys.stderr); time.sleep(5); continue
             return body
         except Exception as e:
-            print('deezer error', e, file=sys.stderr); time.sleep(5)
+            print(host, 'error', e, file=sys.stderr); time.sleep(5)
     return {}
-
 
 albums = {}
 def album(album_id):
@@ -117,6 +120,42 @@ def lookup(title, artist):
     }
 
 
+
+def credit(credits):
+    return ''.join(c.get('name', '') + c.get('joinphrase', '') for c in credits or [])
+
+
+MB_KINDS = {'Album': 0, 'EP': 1, 'Single': 2}
+def lookup_mb(title, artist):
+    """Like lookup, from MusicBrainz, for a song Deezer does not know: same title, same artist, an original release."""
+    found = get('https://musicbrainz.org/ws/2/recording?' + urllib.parse.urlencode(
+        {'query': f'recording:{lucene(title)} AND artist:{lucene(artist)}', 'limit': 25, 'fmt': 'json'}), gap=1.5).get('recordings', [])
+    picks = []
+    for rec in found:
+        a, c = norm(artist), norm(credit(rec.get('artist-credit')))
+        if norm(rec.get('title', '')) != norm(title) or not a or not c or (a not in c and c not in a): continue
+        for rel in rec.get('releases', []):
+            group = rel.get('release-group', {})
+            kind = MB_KINDS.get(group.get('primary-type'))
+            if kind is None or group.get('secondary-types') or rel.get('status') != 'Official': continue
+            by = credit(rel.get('artist-credit')) or credit(rec['artist-credit'])
+            if by == 'Various Artists': continue
+            if NOT_ORIGINAL.search(rel.get('title', '')) and not NOT_ORIGINAL.search(title): continue
+            picks.append((kind, rel.get('date') or '9999', rel['title'], rec, group['id'], by))
+    if not picks: return None
+    kind, date, album_title, rec, group, by = min(picks, key=lambda p: p[:2])
+    # A release's date can be a reissue's; the release group's first is the album's year.
+    date = get(f'https://musicbrainz.org/ws/2/release-group/{group}?fmt=json', gap=1.5).get('first-release-date') or date
+    return {
+        'artist': credit(rec['artist-credit']),
+        'title': rec['title'],
+        'album': EDITION.sub('', album_title).strip() or album_title,
+        'albumartist': by,
+        'year': date[:4] if date[:4] != '9999' else None,
+        # Cover Art Archive: none for some, and apply() then keeps the old one.
+        'cover': f'https://coverartarchive.org/release-group/{group}/front-1200',
+    }
+
 def text(tags, key):
     v = tags.get(key)
     return str(v.text[0]) if v is not None and getattr(v, 'text', None) else ''
@@ -149,6 +188,8 @@ def plan():
                 hit, how = lookup(t, a), 'deezer'
                 if not hit:
                     hit, how = lookup(a, t), 'deezer-reverse'
+                if not hit:
+                    hit, how = lookup_mb(t, a), 'musicbrainz'
                 if hit:
                     new = {**hit, 'year': hit['year'] or old['year']}
                 else:
@@ -158,16 +199,17 @@ def plan():
                 # No "Artist - Title": maybe the channel is the artist.
                 t = clean(raw)
                 channel = re.sub(r'\s*(?:-\s*Topic|VEVO|Official)$', '', old['artist'], flags=re.I).strip()
-                hit = lookup(t, channel) if channel else None
+                hit, how = (lookup(t, channel), 'deezer-channel') if channel else (None, None)
+                if channel and not hit: hit, how = lookup_mb(t, channel), 'musicbrainz-channel'
                 if hit: new, how = {**hit, 'year': hit['year'] or old['year']}, 'deezer-channel'
                 else: new, how = {'artist': old['artist'], 'title': t, 'album': t, 'year': old['year']}, 'bare'
             out.write(json.dumps({'path': p, 'how': how, 'old': old, 'new': new}, ensure_ascii=False) + '\n')
             out.flush()
 
 
-def apply(plan_file=f'{OUT}/plan.jsonl'):
+def apply(plan_file=f'{OUT}/plan.jsonl', backup='backup.jsonl'):
     os.makedirs(f'{OUT}/old-covers', exist_ok=True)
-    backup_path = f'{OUT}/backup.jsonl'
+    backup_path = f'{OUT}/{backup}'
     # Never back up a file twice: the second backup would hold the new tags.
     done = {json.loads(l)['path'] for l in open(backup_path)} if os.path.exists(backup_path) else set()
     backup = open(backup_path, 'a')
@@ -184,7 +226,7 @@ def apply(plan_file=f'{OUT}/plan.jsonl'):
             f = f'{OUT}/old-covers/{os.path.basename(plan_file)}-{i}-{j}'
             with open(f, 'wb') as out: out.write(pic.data)
             old_covers.append({'file': f, 'mime': pic.mime, 'type': int(pic.type), 'desc': pic.desc})
-        backup.write(json.dumps({'path': p, 'frames': {f: text(tags, f) for f in ('TIT2', 'TPE1', 'TPE2', 'TALB', 'TDRC')}, 'covers': old_covers}, ensure_ascii=False) + '\n')
+        backup.write(json.dumps({'path': p, 'frames': {f: text(tags, f) for f in ('TIT2', 'TPE1', 'TPE2', 'TALB', 'TDRC', 'TDRL')}, 'covers': old_covers}, ensure_ascii=False) + '\n')
         backup.flush()
         tags.setall('TIT2', [TIT2(encoding=3, text=new['title'])])
         if new['artist']:
@@ -347,9 +389,39 @@ def sweep():
     if apply() + gain(): navidrome('startScan')
 
 
-def undo():
+def musicbrainz(step='plan'):
+    """The songs filed as their own single before MusicBrainz was asked (Deezer did not know them): ask it now.
+    `plan` only asks (musicbrainz.jsonl, resumable); `apply` refiles the found."""
+    path = f'{OUT}/musicbrainz.jsonl'
+    if step == 'apply':
+        # Not while the sweep's gain pass may be writing the same files.
+        lock = open(f'{OUT}/sweep.lock', 'w')
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        # Only the found; a backup of its own, so `undo musicbrainz-backup.jsonl` puts back just these.
+        found = f'{OUT}/musicbrainz-found.jsonl'
+        with open(found, 'w') as f:
+            f.writelines(l for l in open(path) if json.loads(l)['new'])
+        if apply(found, 'musicbrainz-backup.jsonl'): navidrome('startScan')
+        return
+    done = {json.loads(l)['path'] for l in open(path)} if os.path.exists(path) else set()
+    out = open(path, 'a')
+    for line in open(f'{OUT}/plan.jsonl'):
+        row = json.loads(line)
+        p = row['path']
+        if row['how'] not in ('single', 'bare') or p in done or not os.path.exists(p): continue
+        tags = ID3(p)
+        title, artist = text(tags, 'TIT2'), text(tags, 'TPE1')
+        # Filed elsewhere since (by hand, or unsplit): leave it.
+        if text(tags, 'TALB') != title: continue
+        artist = re.sub(r'\s*(?:-\s*Topic|VEVO|Official)$', '', artist, flags=re.I).strip()
+        hit = lookup_mb(clean(title), artist) if artist else None
+        out.write(json.dumps({'path': p, 'how': 'musicbrainz' if hit else 'none', 'new': hit and {**hit, 'year': hit['year'] or text(tags, 'TDRC')}}, ensure_ascii=False) + '\n')
+        out.flush()
+
+
+def undo(backup='backup.jsonl'):
     n = 0
-    for line in open(f'{OUT}/backup.jsonl'):
+    for line in open(f'{OUT}/{backup}'):
         row = json.loads(line)
         # Deleted since (e.g. the wrong Bernstein download).
         if not os.path.exists(row['path']): continue
@@ -366,4 +438,4 @@ def undo():
 
 
 if __name__ == '__main__':
-    {'plan': plan, 'apply': apply, 'undo': undo, 'gain': gain, 'sweep': sweep, 'scan': lambda: navidrome('startScan'), 'unsplit': unsplit, 'unsplit-undo': unsplit_undo}[sys.argv[1]](*sys.argv[2:])
+    {'plan': plan, 'apply': apply, 'undo': undo, 'gain': gain, 'sweep': sweep, 'scan': lambda: navidrome('startScan'), 'unsplit': unsplit, 'unsplit-undo': unsplit_undo, 'musicbrainz': musicbrainz}[sys.argv[1]](*sys.argv[2:])
