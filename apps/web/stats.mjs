@@ -28,12 +28,16 @@ export async function recordHit(req, res) {
   } catch {
     return;
   }
-  if (!/^[\w-]{6,16}$/.test(h.id ?? "") || !["view", "end"].includes(h.k)) return;
+  if (!/^[\w-]{6,16}$/.test(h.id ?? "") || !["view", "end", "owner"].includes(h.k)) return;
+  const me = (req.headers.cookie ?? "").split(/;\s*/).includes(OWNER) ? 1 : 0;
+  // `owner` is the /stats page saying what this device looks like; only a
+  // device that holds the cookie may say it.
+  if (h.k === "owner" && !me) return;
   const line = {
     t: new Date().toISOString(),
     id: h.id,
     k: h.k,
-    ...(h.k === "view"
+    ...(h.k !== "end"
       ? {
           tag: str(h.tag, 40),
           ref: str(h.ref, 100),
@@ -41,7 +45,7 @@ export async function recordHit(req, res) {
           lang: str(h.lang, 20),
           w: num(h.w),
           device: /Mobi|Android|iPhone|iPad/.test(ua) ? "phone" : "desktop",
-          me: (req.headers.cookie ?? "").split(/;\s*/).includes(OWNER) ? 1 : 0,
+          me,
         }
       : {
           secs: num(h.secs),
@@ -83,11 +87,13 @@ export function source({ tag, ref }) {
 
 const sig = (v) => [v.tz, v.lang, v.w, v.device].join("|");
 
-// Views newest first, each joined with its last end. A view logged before the
-// owner cookie existed has no `me`; it is the owner's when a marked view shares
-// its time zone, language, width and device.
+// Views newest first, each joined with its last end. A view without the
+// cookie is still the owner's when its time zone, language, width and device
+// match a marked view or a device /stats was opened on: the cookie came later,
+// or the visit was in another browser on the same phone (an app's in-app view).
 export function visits(text) {
   const byId = new Map();
+  const owner = new Set();
   for (const l of text.split("\n")) {
     if (!l) continue;
     let h;
@@ -96,13 +102,15 @@ export function visits(text) {
     } catch {
       continue;
     }
-    if (h.k === "view") byId.set(h.id, h);
+    if (h.k === "owner") owner.add(sig(h));
+    else if (h.k === "view") byId.set(h.id, h);
     else if (byId.has(h.id)) Object.assign(byId.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks });
   }
   const all = [...byId.values()];
-  const owner = new Set(all.filter((v) => v.me === 1).map(sig));
+  for (const v of all) if (v.me === 1) owner.add(sig(v));
   for (const v of all) {
-    v.mine = v.me === undefined ? owner.has(sig(v)) : v.me === 1;
+    // A ?r= link was handed to someone else, so only the cookie claims it.
+    v.mine = v.me === 1 || (!v.tag && owner.has(sig(v)));
     v.src = source(v);
   }
   return all.reverse();
@@ -266,8 +274,9 @@ ${barList("Languages", r.langs, r.visits)}
       )
       .join("") || '<tr><td colspan="7" class="hint">No visits in this period.</td></tr>'
   }</table></div>
-<p class="hint">This device is marked as yours, so its visits count under Mine. Visits from before the mark are yours when they share a time zone, language, width and device with a marked one.</p>
-<script>setInterval(()=>document.visibilityState==="visible"&&location.reload(),15000)</script>`;
+<p class="hint">This device is now marked as yours. A visit counts under Mine when it came from a marked device, or shares a time zone, language, screen width and device type with one.</p>
+<script>try{sessionStorage.zaurOwner||navigator.sendBeacon("/api/hit",JSON.stringify({k:"owner",id:crypto.randomUUID().slice(0,12),tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,w:innerWidth}));sessionStorage.zaurOwner=1}catch{}
+setInterval(()=>document.visibilityState==="visible"&&location.reload(),15000)</script>`;
   res.writeHead(200, {
     "content-type": "text/html; charset=utf-8",
     "cache-control": "no-store",

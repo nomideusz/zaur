@@ -11,13 +11,15 @@ test("owner visits are told apart, old ones by their signature", () => {
       line({ t: "2026-10-19T11:00:00Z", id: "old-other", w: 393, device: "phone" }),
       line({ t: "2026-10-20T10:00:00Z", id: "marked", me: 1 }),
       line({ t: "2026-10-20T11:00:00Z", id: "new-other", me: 0, tag: "acme" }),
+      line({ t: "2026-10-20T11:30:00Z", id: "phone-before", me: 0, tz: "Europe/Warsaw", lang: "en-GB", w: 393, device: "phone" }),
+      line({ t: "2026-10-20T11:31:00Z", id: "stats-opened", k: "owner", lang: "en-GB", w: 393, device: "phone" }), // /stats on that phone
       JSON.stringify({ k: "end", id: "new-other", secs: 40, depth: 80, clicks: ["mail", "mail"] }),
     ].join("\n"),
   );
-  assert.deepEqual(all.map((v) => [v.id, v.mine]), [["new-other", false], ["marked", true], ["old-other", false], ["old-mine", true]]);
+  assert.deepEqual(all.map((v) => [v.id, v.mine]), [["phone-before", true], ["new-other", false], ["marked", true], ["old-other", false], ["old-mine", true]]);
   const r = report(all, { days: 7, now: Date.parse("2026-10-20T12:00:00Z") });
   assert.equal(r.visits, 2);
-  assert.equal(r.mineCount, 2);
+  assert.equal(r.mineCount, 3);
   assert.deepEqual(r.opened, [["mail", 1]]);
   assert.equal(report(all, { tag: "acme" }).visits, 1);
 });
