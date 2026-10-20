@@ -141,6 +141,8 @@ def lookup_mb(title, artist):
             by = credit(rel.get('artist-credit')) or credit(rec['artist-credit'])
             if by == 'Various Artists': continue
             if NOT_ORIGINAL.search(rel.get('title', '')) and not NOT_ORIGINAL.search(title): continue
+            # Where the recording first came out, not a compilation years later.
+            if rel.get('date') and rel['date'][:4] != (rec.get('first-release-date') or '?')[:4]: continue
             picks.append((kind, rel.get('date') or '9999', rel['title'], rec, group['id'], by))
     if not picks: return None
     kind, date, album_title, rec, group, by = min(picks, key=lambda p: p[:2])
