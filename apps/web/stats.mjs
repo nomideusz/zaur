@@ -1,6 +1,8 @@
 // Anonymous visits for static-server.mjs (src/lib/visit.ts beacons them):
 // /api/hit appends one JSON line per beacon, /stats reads them back for
-// whoever has STATS_KEY. No IP, no visitor id. Opening /stats leaves the
+// whoever has STATS_KEY. No visitor id, and no IP kept: a view's address is
+// looked up at ipapi.is for its network's owner and place, and only those are
+// written. Opening /stats leaves the
 // zaur_owner cookie on that device, so its later visits arrive marked `me`
 // and the page shows them apart from everyone else's.
 import { appendFile, mkdir, readFile } from "node:fs/promises";
@@ -16,6 +18,43 @@ const num = (v) => (Number.isFinite(v) ? Math.round(v) : undefined);
 const browser = (ua) =>
   [[/LinkedInApp/, "LinkedIn app"], [/FBAN|FBAV/, "Facebook app"], [/Instagram/, "Instagram app"], [/GSA\//, "Google app"], [/Edg/, "Edge"], [/OPR\//, "Opera"], [/SamsungBrowser/, "Samsung"], [/Firefox|FxiOS/, "Firefox"], [/Chrome|CriOS/, "Chrome"], [/Safari/, "Safari"]].find(([re]) => re.test(ua))?.[1] ?? "other";
 const os = (ua) => [[/iPhone|iPad|iPod/, "iOS"], [/Android/, "Android"], [/Windows/, "Windows"], [/Mac OS X/, "macOS"], [/CrOS/, "ChromeOS"], [/Linux/, "Linux"]].find(([re]) => re.test(ua))?.[1] ?? "other";
+
+// What an address says, from ipapi.is: the network's owner (a company on an
+// office network, else the ISP) and the place. Without IPAPI_KEY the free
+// tier answers flat strings; with one (free, 1,000 a day) it nests them and
+// adds the owner's kind and a data-centre flag.
+export function network(d) {
+  const company = typeof d.company === "object" ? d.company : { name: d.company };
+  const loc = typeof d.location === "object" ? d.location : d;
+  return {
+    org: str(company?.name, 80),
+    orgType: str(company?.type, 20), // business, isp, hosting, education, government
+    city: str(loc.city, 60),
+    country: str(loc.country, 60),
+    hosting: d.is_datacenter || company?.type === "hosting" ? 1 : undefined,
+  };
+}
+
+// ponytail: one cached lookup per address for a day, in memory; a restart
+// asks again.
+const lookups = new Map();
+function lookup(ip) {
+  if (!ip || /^(127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1$|fc|fd)/.test(ip)) return {};
+  const hit = lookups.get(ip);
+  if (hit && Date.now() - hit.at < 86_400_000) return hit.value;
+  if (lookups.size > 5000) lookups.clear();
+  const key = process.env.IPAPI_KEY ? `&key=${encodeURIComponent(process.env.IPAPI_KEY)}` : "";
+  const value = fetch(`https://api.ipapi.is/?q=${encodeURIComponent(ip)}${key}`, { signal: AbortSignal.timeout(3000) })
+    .then((res) => (res.ok ? res.json() : Promise.reject(new Error(`ipapi ${res.status}`))))
+    .then(network)
+    .catch((err) => {
+      console.error("[stats]", err.message);
+      lookups.delete(ip);
+      return {};
+    });
+  lookups.set(ip, { at: Date.now(), value });
+  return value;
+}
 
 export async function recordHit(req, res) {
   let body = "";
@@ -60,6 +99,8 @@ export async function recordHit(req, res) {
           browser: browser(ua),
           os: os(ua),
           me,
+          // Traefik puts the visitor first in X-Forwarded-For.
+          ...(h.k === "view" ? await lookup((req.headers["x-forwarded-for"] ?? req.socket.remoteAddress ?? "").split(",")[0].trim().replace(/^::ffff:/, "")) : {}),
         }
       : {
           secs: num(h.secs),
@@ -204,7 +245,9 @@ export function report(all, { days = 30, who = "others", tag = null, now = Date.
     bars: tag ? [] : bars,
     sources: count(shown, (v) => v.src),
     refs: count(shown, (v) => v.ref).slice(0, 12),
-    places: count(shown, (v) => (v.tz ? v.tz.split("/").pop().replace(/_/g, " ") : null)).slice(0, 12),
+    places: count(shown, place).slice(0, 12),
+    networks: count(shown, (v) => v.org).slice(0, 12),
+    business: shown.filter((v) => v.orgType === "business").length,
     langs: count(shown, (v) => v.lang?.split("-")[0]).slice(0, 8),
     systems: count(shown, (v) => v.os && `${v.os} · ${v.browser}`).slice(0, 10),
     screens: count(shown, (v) => v.screen && `${v.device} ${v.screen.replace("x", "×")}`).slice(0, 10),
@@ -219,6 +262,8 @@ export function report(all, { days = 30, who = "others", tag = null, now = Date.
 const esc = (v) => String(v ?? "").replace(/[&<>"]/g, (c) => `&#${c.charCodeAt(0)};`);
 const secs = (s) => (s == null ? "—" : s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`);
 const when = (t) => new Date(t).toLocaleString("en-GB", { timeZone: TZ, dateStyle: "short", timeStyle: "short" });
+// The address's place, or for a visit before the lookup its time zone's city.
+const place = (v) => (v.city ? `${v.city}, ${v.country}` : v.country || (v.tz ? v.tz.split("/").pop().replace(/_/g, " ") : null));
 const device = (v) => (v.device === "phone" || v.w < 768 ? "phone" : v.w < 1100 ? "tablet" : "desktop");
 const PERIOD = { 1: "Today", 7: "7 days", 30: "30 days", 90: "90 days" };
 
@@ -294,7 +339,8 @@ ${
 ${barList("Came from", r.sources, r.visits, (k) => SOURCES[k])}
 ${barList("Referrers", r.refs, r.visits)}
 ${barList("Opened", r.opened, r.visits)}
-${barList("Time zones", r.places, r.visits)}
+${barList("Places", r.places, r.visits)}
+${barList(`Networks${r.business ? ` · ${r.business} from a company` : ""}`, r.networks, r.visits)}
 ${barList("Languages", r.langs, r.visits)}
 ${barList("Systems", r.systems, r.visits)}
 ${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.screens, r.visits)}
@@ -304,13 +350,13 @@ ${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.scr
   }</section>
 </div>
 <h2>Latest visits${r.visits > r.recent.length ? ` · ${r.recent.length} of ${r.visits}` : ""}</h2>
-<div class="scroll"><table><tr><th>When</th><th>From</th><th>Where</th><th>Device</th><th class="n">Time</th><th class="n">Read</th><th>Opened</th></tr>${
+<div class="scroll"><table><tr><th>When</th><th>From</th><th>Where</th><th>Network</th><th>Device</th><th class="n">Time</th><th class="n">Read</th><th>Opened</th></tr>${
     r.recent
       .map(
         (v) =>
-          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(v.tz)} · ${esc(v.lang)}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
+          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.city ? `<br><small>${esc(v.tz)}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting ? `<br><small>${esc(v.hosting ? "data centre" : v.orgType)}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
       )
-      .join("") || '<tr><td colspan="7" class="hint">No visits in this period.</td></tr>'
+      .join("") || '<tr><td colspan="8" class="hint">No visits in this period.</td></tr>'
   }</table></div>
 <p class="hint">This device is now marked as yours. A visit counts under Mine when it came from a marked device, or looks like one: the same time zone, language, width and device type, and the same screen, density and system where both visits recorded them.</p>
 <script>try{sessionStorage.zaurOwner||navigator.sendBeacon("/api/hit",JSON.stringify({k:"owner",id:crypto.randomUUID().slice(0,12),tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,w:innerWidth,screen:screen.width+"x"+screen.height,dpr:devicePixelRatio}));sessionStorage.zaurOwner=1}catch{}

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { report, source, visits } from "./stats.mjs";
+import { network, report, source, visits } from "./stats.mjs";
 
 const line = (o) => JSON.stringify({ k: "view", tz: "Europe/Warsaw", lang: "pl", w: 1920, device: "desktop", ...o });
 
@@ -49,4 +49,14 @@ test("sources", () => {
   assert.equal(source({ ref: "gemini.google.com" }), "ai");
   assert.equal(source({ ref: "festivals.zaur.app" }), "own");
   assert.equal(source({ ref: "github.com" }), "other");
+});
+
+test("ipapi.is answers, keyless and keyed", () => {
+  assert.deepEqual(network({ ip: "8.8.8.8", company: "Google LLC", city: "Mountain View", country: "United States" }), {
+    org: "Google LLC", orgType: undefined, city: "Mountain View", country: "United States", hosting: undefined,
+  });
+  const keyed = network({ is_datacenter: true, company: { name: "Hetzner Online GmbH", type: "hosting" }, location: { city: "Falkenstein", country: "Germany" } });
+  assert.equal(keyed.org, "Hetzner Online GmbH");
+  assert.equal(keyed.city, "Falkenstein");
+  assert.equal(keyed.hosting, 1);
 });

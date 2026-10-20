@@ -1,5 +1,6 @@
 // Anonymous visit counting for static-server.mjs (/api/hit, read at /stats).
-// No cookie, nothing kept on the device, no IP stored: a random id lives only
+// No cookie, nothing kept on the device, no IP stored (the server keeps only
+// the network's owner and place it looks up): a random id lives only
 // in this tab so the visit's end can be matched to its start. A link handed out
 // with ?r=<tag> (one per job application) marks who the visit came from.
 export function track() {
