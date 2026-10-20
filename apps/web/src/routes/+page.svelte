@@ -678,7 +678,12 @@
 		top: 0;
 		z-index: 2;
 		display: grid;
-		grid-template-columns: 28vw 10.4vw 9.4vw 9.4vw 9.4vw 10.4vw 1fr auto;
+		/* The comp's tracks, but never narrower than what they hold: between 901
+		   and about 1200 the vw tracks would otherwise overflow by the scrollbar's
+		   width and squeeze the tabs below the caption floor. */
+		grid-template-columns:
+			minmax(max-content, 28vw) minmax(max-content, 10.4vw) repeat(3, minmax(max-content, 9.4vw))
+			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -700,8 +705,10 @@
 	.mail {
 		display: grid;
 		place-items: center;
-		font-size: 1.2vw;
+		padding: 0 0.75vw;
+		font-size: max(13px, 1.2vw);
 		text-decoration: none;
+		white-space: nowrap;
 	}
 	.tabs a {
 		border-left: var(--rule) solid var(--bar-rule);
@@ -712,7 +719,7 @@
 	.mail {
 		justify-items: start;
 		padding-left: 3.4vw;
-		font-size: 1.45vw;
+		font-size: max(13px, 1.45vw);
 	}
 	.bar a:hover {
 		color: var(--orange);
@@ -733,7 +740,7 @@
 		--asini-radius-sm: 0;
 	}
 	.lang :global(select) {
-		font-size: 1.2vw;
+		font-size: max(13px, 1.2vw);
 		font-weight: 700;
 	}
 	.intro-lang {
@@ -1481,7 +1488,7 @@
 	/* Below 900 the sheet stops scaling and becomes a stack. */
 	@media (max-width: 900px) {
 		.bar {
-			grid-template-columns: repeat(5, 1fr);
+			grid-template-columns: repeat(5, minmax(0, 1fr));
 			height: auto;
 		}
 		/* Five tabs fill a phone's bar; the language moves to the intro's links. */
@@ -1504,7 +1511,12 @@
 			text-align: center;
 			border-left: 0;
 			/* "Arbeitsweise" is wider than a phone's tab: let <html lang> hyphenate it. */
+			white-space: normal;
 			hyphens: auto;
+			/* Where the browser has no dictionary for the page's language, a word
+			   wider than its tab still breaks rather than running into the next tab. */
+			min-width: 0;
+			overflow-wrap: break-word;
 		}
 		.tabs a + a {
 			border-left: var(--rule) solid var(--bar-rule);
@@ -1673,6 +1685,105 @@
 		}
 		.foot .small {
 			padding: 1.25rem 1rem 2rem;
+		}
+	}
+
+	/* Phones: a long name ("Friendly Festivals") would meet its kind, so the kind
+	   steps up to the row's top right and the name takes the full width under it,
+	   still sitting on the rule. */
+	@media (max-width: 600px) {
+		.row {
+			display: grid;
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: 1fr auto;
+			height: max(3.75rem, 16vw);
+			padding: 0.45rem 1rem 0.2rem;
+		}
+		.ver {
+			grid-row: 1;
+			justify-self: end;
+			align-self: start;
+			padding: 0;
+			line-height: 1.2;
+		}
+		.name {
+			grid-row: 2;
+			white-space: nowrap;
+		}
+	}
+
+	/* Tablets: the stack keeps its order, but a 7.5rem capture floated in a
+	   768-wide row wastes the screen. The capture takes a column of its own, the
+	   text and facts run beside it, and How I work pairs its cells. */
+	@media (min-width: 601px) and (max-width: 900px) {
+		.sites > li {
+			display: grid;
+			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+			gap: 0 1.25rem;
+		}
+		.shot {
+			grid-row: 1 / span 2;
+			float: none;
+			width: auto;
+			margin: 0;
+		}
+		.sites dl {
+			grid-column: 2;
+		}
+		/* The radio stays a full-width band, its words and facts side by side under it. */
+		.sites > li:has(> .shot.wide) {
+			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+		}
+		.shot.wide {
+			grid-row: auto;
+			grid-column: 1 / -1;
+			margin-bottom: 0.9rem;
+		}
+	}
+
+	/* How I work pairs its cells from tablet up to small laptops: five columns
+	   under about 1280 are too narrow for German compounds such as
+	   "Architekturentscheidungen". */
+	@media (min-width: 601px) and (max-width: 1279px) {
+		.how-grid {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.how-grid li + li {
+			border-top: 0;
+			border-left: 0;
+		}
+		.how-grid li:nth-child(n + 3) {
+			border-top: var(--rule) solid var(--ink);
+		}
+		.how-grid li:nth-child(even) {
+			border-left: var(--rule) solid var(--ink);
+		}
+		.how-grid li:last-child:nth-child(odd) {
+			grid-column: 1 / -1;
+		}
+	}
+
+	/* A finger needs 44px: the links that stand alone as actions grow to it on
+	   touch screens. Links inside running text stay as they are. */
+	@media (pointer: coarse) {
+		.intro .links {
+			align-items: center;
+		}
+		.intro .links a,
+		.intro .kit-all,
+		.go a,
+		.p-links a,
+		.t-src a,
+		a.t-src,
+		.how-grid li > a,
+		.foot .small a {
+			display: inline-flex;
+			align-items: center;
+			min-height: 2.75rem;
+		}
+		.intro-lang :global(select),
+		.foot-lang :global(select) {
+			min-height: 2.75rem;
 		}
 	}
 </style>

@@ -212,7 +212,17 @@ Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black ba
 
 Below the poster every section is full width. A case study is a two-track grid (media 1.35fr on lilac, body 1fr on ground) with a 1.39vw gutter. How I work comes straight after the poster, five ruled cells. Smaller work runs as ruled rows: capture (18vw), name and description, facts. Side projects sit in a fold with the catalogs. Tables (packages, catalogs) are multi-track grids with flush-right actions. On desktop a case body rides sticky beside a taller window. Section gutters are 1.39vw; content inside uses rem.
 
-At 900px and below the sheet becomes a stack: the bar is one row of five equal tabs (the name and address live in the intro), the intro moves above the programme, the kit becomes one link to Packages, site rows float a 7.5rem capture with the text running round it, the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. Anchors land under the bar (3.25rem scroll padding; 4rem above 900px). A skip link leads to the content.
+At 900px and below the sheet becomes a stack: the bar is one row of five equal tabs (the name and address live in the intro, the language menu joins the intro's links), the intro moves above the programme, the kit becomes one link to Packages, the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. A skip link leads to the content.
+
+The stack adapts by width class, not by scaling:
+- **Phones (600px and below):** a programme row sets its kind at the top right and gives the name the full width beneath it, still on the rule, so a long name never meets its kind (rows max(3.75rem, 16vw)). Site rows float a 7.5rem capture with the text running round it. A tab label too wide for its tab breaks rather than overlapping its neighbour; German carries a soft hyphen ("Arbeits-weise").
+- **Tablets (601–900px):** site rows run as two columns, the capture in the first and text and facts in the second (the radio stays a full-width band above its words and facts).
+- **How I work** pairs its cells in two columns from 601 to 1279px, where five columns are too narrow for long German compounds; the last odd cell spans both.
+- **The bar above 900px** keeps the comp's vw tracks but never lets one shrink below its content, and its text never drops below 13px, so it neither overflows by the scrollbar's width nor squeezes the tabs on small laptops.
+- **Touch (`pointer: coarse`):** links that stand alone as actions (intro links, Open and Source, Demo, Deploy on Railway, How I work links, footer links) and the language menus grow to 44px. Links inside running text stay as they are.
+- **Large screens:** the root size grows above 1600px (`clamp(100%, 0.5vw + 0.5rem, 150%)`: 16px up to 1600, about 21px at 2560, 24px at most), so the rem-set reading text keeps pace with the vw-scaled poster.
+
+Anchors land just under the bar: 3.25rem scroll padding at 900px and below, max(4rem, 3.66vw + 0.75rem) above.
 
 ## Elevation & Depth
 
@@ -230,7 +240,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 ### Navigation (top bar)
 - **Style:** sticky black bar, Paper text, tabs separated by 2px Bar Rule dividers. Tabs name the sections they jump to; a fold reached by its tab opens.
 - **States:** links turn Signal Orange on hover; focus ring turns orange and sits inside the link (-3px offset).
-- **Mobile:** name and address on the first row, five equal tabs below with a 2px top rule.
+- **Mobile:** one row of five equal tabs; the name, address and language menu live in the intro. Above 900px the bar ends on the language menu (LocaleSwitcher, square, ink on ink).
 
 ### Programme Row (signature)
 - **Style:** full-width orange row, product name at display scale left, what it is flush right, 2px Ember Rule between rows.
