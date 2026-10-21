@@ -305,15 +305,24 @@
 	// back. zaur.app/#keys opens it that way (the demo site links there).
 	// The switch stays under the pointer while everything around it changes
 	// length; the #keys link, arriving from elsewhere, centres the row instead.
+	// The page above keeps settling for a few frames after the swap (Firefox and
+	// Safari don't anchor scrolling through it), so it is held for a second, on
+	// every resize only: scrolling meanwhile is left alone.
 	const flipKeys = async () => {
 		const at = () => document.querySelector('#pkg-svelte-i18n .p-keys')?.getBoundingClientRect().top;
 		const before = location.hash === '#keys' ? undefined : at();
 		keys.on = !keys.on;
 		if (location.hash === '#keys') history.replaceState(null, '', location.pathname);
 		await tick();
-		const after = at();
-		if (before === undefined || after === undefined) document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
-		else scrollBy({ top: after - before, behavior: 'instant' });
+		if (before === undefined) return document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
+		const hold = () => {
+			const after = at();
+			if (after !== undefined) scrollBy({ top: after - before, behavior: 'instant' });
+		};
+		hold();
+		const settling = new ResizeObserver(hold);
+		settling.observe(document.body);
+		setTimeout(() => settling.disconnect(), 1000);
 	};
 
 	// The other package demonstrating itself: every capture held at its triangles,
