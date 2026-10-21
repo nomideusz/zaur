@@ -3,6 +3,8 @@
 	import { keys } from '#lib/keys.svelte';
 	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
+	import { shapesOf } from '#lib/shapes';
+	import { GeometrizedImage } from '@nomideusz/svelte-geometrize';
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import { track } from '#lib/visit';
@@ -308,9 +310,22 @@
 		document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
 	};
 
+	// The other package demonstrating itself: every capture held at its triangles,
+	// fewer or more of them, and back to the photos. zaur.app/#shapes opens it so.
+	let shapes = $state({ on: false, n: 60 });
+	const flipShapes = async () => {
+		shapes.on = !shapes.on;
+		if (location.hash === '#shapes') {
+			history.replaceState(null, '', location.pathname);
+			await tick();
+			document.querySelector('.sites .geometrize')?.scrollIntoView({ block: 'center' });
+		}
+	};
+
 	onMount(() => {
 		track();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
+		if (location.hash === '#shapes') flipShapes();
 		// A link to a fold (the Templates tab, a shared #websites URL) opens it.
 		const unfold = () => {
 			const el = location.hash && document.getElementById(location.hash.slice(1));
@@ -335,13 +350,26 @@
 	});
 </script>
 
+<!-- A capture paints as its build-time triangles, then opens into the photo;
+     re-keyed on the switch so the triangles play again either way. -->
+{#snippet still(src: string, top = false)}
+	{@const placeholder = shapesOf(src)}
+	{#if placeholder}
+		{#key shapes.on}
+			<GeometrizedImage {placeholder} src={shapes.on ? undefined : src} alt="" loading="lazy" revealMs={900} objectPosition={top ? 'top' : 'center'} />
+		{/key}
+	{:else}
+		<img {src} alt="" width="1200" height="750" loading="lazy" decoding="async" />
+	{/if}
+{/snippet}
+
 {#snippet card(c: Card)}
 	<li id={c.id}>
 		{#if c.live}
 			<div class="shot wide"><Radio href={c.href} /></div>
 		{:else if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
-				<img src={c.img} alt="" width="1200" height="750" loading="lazy" decoding="async" />
+				{@render still(c.img)}
 			</a>
 		{/if}
 		<div class="site">
@@ -510,7 +538,7 @@
 						<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
 					{:else if shot(w.id)}
 						<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
-							<img src={shot(w.id)} alt="" width="1200" height="750" loading="lazy" />
+							{@render still(shot(w.id)!, true)}
 						</a>
 					{:else if w.parts}
 						<ul class="parts">
@@ -603,6 +631,19 @@
 							<p class="p-try">
 								<button type="button" class="p-keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t(keys.on ? 'packages.i18n.text' : 'packages.i18n.keys')}</button>
 								{i18n.t('packages.i18n.hint')}
+							</p>
+						{:else if p.id === 'svelte-geometrize'}
+							<p class="p-try">
+								<button type="button" class="p-keys" aria-pressed={shapes.on} onclick={flipShapes}>{t(shapes.on ? 'packages.geometrize.photos' : 'packages.geometrize.shapes')}</button>
+								{#if shapes.on}
+									<label class="p-n">
+										<input type="range" min="1" max="60" bind:value={shapes.n} aria-label={t('packages.geometrize.count')} />
+										<span>{shapes.n}</span>
+									</label>
+									<!-- fewer: the fit is in order, so dropping its tail leaves the coarse picture -->
+									{@html `<style>.geometrize > svg > g > :nth-child(n + ${shapes.n + 1}) { display: none }</style>`}
+								{/if}
+								<span class="p-hint">{t('packages.geometrize.hint')}</span>
 							</p>
 						{/if}
 					</div>
@@ -1117,6 +1158,9 @@
 		overflow: hidden;
 		background: var(--paper);
 	}
+	.window :global(.geometrize) {
+		height: 100%;
+	}
 	.window img {
 		display: block;
 		width: 100%;
@@ -1270,6 +1314,25 @@
 		color: var(--paper);
 		font: inherit;
 		cursor: pointer;
+	}
+	.p-hint {
+		display: block;
+		margin-top: 0.3rem;
+	}
+	.p-n {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		margin-right: 0.4rem;
+		color: var(--ink);
+		font-variant-numeric: tabular-nums;
+	}
+	.p-n input {
+		width: 8rem;
+		accent-color: var(--ink);
+	}
+	.p-n span {
+		min-width: 3ch;
 	}
 	.p-keys[aria-pressed='true'] {
 		background: none;
