@@ -17,6 +17,19 @@ html {
 	-webkit-tap-highlight-color: transparent;
 	touch-action: manipulation;
 }
+
+/*
+ * What the browser draws by itself wears the palette too: the scrollbars (a shelf's runs under
+ * every row of tiles), the caret and selected text. Both themes, through the tokens.
+ */
+:root {
+	scrollbar-color: var(--z-line) transparent;
+	caret-color: var(--z-accent);
+}
+::selection {
+	background: var(--z-accent-soft);
+	color: var(--z-accent-ink);
+}
 button,
 a,
 nav,

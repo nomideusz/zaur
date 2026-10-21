@@ -111,7 +111,7 @@
 	{#if nothing}
 		<p class="empty-note">Nothing in the library matches “{data.q}”.</p>
 	{:else if !data.q && !isLink(query)}
-		<p class="empty-note">
+		<p class="empty-note intro">
 			Find a song, an album or an artist. What the library doesn't have yet can be added from YouTube, a song or a whole
 			album at a time; so can a YouTube or Bartube link pasted here. The library is shared by everyone on Zaur Music.
 		</p>
@@ -213,6 +213,10 @@
 		gap: 6px;
 		margin: 10px 0 0;
 		color: var(--z-danger);
+	}
+	/* A reading line, not the full width of a wide screen. */
+	.intro {
+		max-width: 68ch;
 	}
 	.looking {
 		animation: pulse 1.2s ease-in-out infinite alternate;
