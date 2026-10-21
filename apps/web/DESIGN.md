@@ -255,6 +255,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 ### Chips
 - **Style:** 2px ink outline, 3px corner, transparent, package name and version separated by 1em; sized in poster units (2.2 high, 0.55 padding), 2.25rem high on mobile.
 - **Use:** under a case study or site row, naming the packages it is built from, each linking to npm.
+- **Version:** the version that product runs, read from its lockfile at build time. When it is behind the latest on npm, the latest follows in Quiet ("0.20.1 → 1.5.0") and the link's accessible name says both. A product that builds the package from source beside it shows the latest alone.
 - **Lit / hover:** fill turns Chip White.
 
 ### Section Band

@@ -228,6 +228,7 @@
 	"packages.geometrize.photos": "Show the screenshots",
 	"packages.geometrize.count": "Number of triangles",
 	"packages.geometrize.hint": "Every screenshot on this page paints first as triangles fitted at build time, then opens into the picture.",
+	"chip.behind": "{pkg}: {name} runs {used}, the latest is {latest}",
 	"pkg.zaur-world": "A living ambient sky: real sun times, weather, true star positions, eclipses, and a pixel dinosaur who lives in it. Zero dependencies.",
 	"pkg.svelte-calendar": "A themeable Svelte 5 calendar: day, week, scrolling-week and month views, agenda lists, touch-first mobile layouts, drag-and-drop, timezones, a headless API and an embeddable web component.",
 	"pkg.svelte-search": "Full-text search for Svelte 5: FTS5, fuzzy matching, geo proximity, autocomplete, Polish locale.",

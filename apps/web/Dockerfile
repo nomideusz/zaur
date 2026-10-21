@@ -12,10 +12,13 @@ COPY apps/web ./apps/web
 
 # A read-only GitHub token for the prerender (Dokploy build argument). It lifts
 # the API rate limit for the Railway templates table and lets src/lib/usage.ts
-# read the private product repos (asini, radiobartek) to see which packages
-# each product imports. Without it the build still succeeds: those products
-# keep the lists written in +page.svelte. It lives only in this builder stage,
-# never in the runner image.
+# read the private product repos (nomideusz/asini, nomideusz/radiobartek and
+# the client's nataliya-varna/fixtar) for which packages each product imports
+# and which version its lockfile pins. A fine-grained token covers one owner
+# only, so reaching both owners takes a classic token with the repo scope (or
+# fixtar keeps its hand-written list). Without a token the build still
+# succeeds: those products keep the lists written in +page.svelte. It lives
+# only in this builder stage, never in the runner image.
 ARG GITHUB_TOKEN
 RUN GITHUB_TOKEN=$GITHUB_TOKEN pnpm --filter @zaur/web build
 RUN pnpm --filter @zaur/web --prod deploy /out --legacy

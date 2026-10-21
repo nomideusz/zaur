@@ -220,7 +220,7 @@
 		{ id: 'intertech', name: 'intertechpoland.pl', href: 'https://intertechpoland.pl', basket: 'client' },
 		{ id: 'polaczenie', name: 'gabinet-polaczenie.pl', href: 'https://gabinet-polaczenie.pl', basket: 'client' },
 		{ id: 'radiobartek', name: 'radiobartek.com', href: 'https://radiobartek.com', basket: 'side', live: true, uses: ['zaur-world'] },
-		{ id: 'kurcz', name: 'kurcz.pl', href: 'https://kurcz.pl', basket: 'side' },
+		{ id: 'kurcz', name: 'kurcz.pl', href: 'https://kurcz.pl', basket: 'side', uses: ['svelte-i18n'] },
 		{ id: 'kruk', name: 'kruk.live', href: 'https://kruk.live', basket: 'side' }
 	];
 	const websites: Site[] = siteFacts.map((s) => ({
@@ -300,6 +300,14 @@
 	const compact = new Intl.NumberFormat(intl, { notation: 'compact' });
 	const day = (d: string) => new Date(d).toLocaleDateString(intl, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
+	// svelte-ignore state_referenced_locally (prerendered: data never changes)
+	const pinned = data.usedVersions;
+	/** The version a product runs when it is behind the latest on npm; a product built from source is never behind. */
+	const behind = (product: string, pkg: string) => {
+		const used = pinned[product]?.[pkg];
+		const latest = versions[pkg];
+		return used && used !== 'workspace' && latest && used !== latest ? used : undefined;
+	};
 
 	// The package demonstrating itself: the whole page as its message keys, and
 	// back. zaur.app/#keys opens it that way (the demo site links there).
@@ -380,6 +388,22 @@
 	{/if}
 {/snippet}
 
+<!-- A package under a product: the version the product runs, and the latest
+     beside it in Quiet when the product is behind. -->
+{#snippet chip(product: string, name: string, u: string)}
+	{@const used = behind(product, u)}
+	<li>
+		<a
+			class="chip"
+			href={npmOf(u)}
+			aria-label={used ? t('chip.behind', { pkg: u, name, used, latest: version(u) }) : undefined}
+		>
+			<span>{u}</span>
+			<span>{#if used}{used}<span class="latest">→ {version(u)}</span>{:else}{version(u)}{/if}</span>
+		</a>
+	</li>
+{/snippet}
+
 {#snippet card(c: Card)}
 	<li id={c.id}>
 		{#if c.live}
@@ -399,7 +423,7 @@
 			{#if c.uses?.length}
 				<ul class="chips">
 					{#each c.uses as u (u)}
-						<li><a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a></li>
+						{@render chip(c.id, c.name, u)}
 					{/each}
 				</ul>
 			{/if}
@@ -587,7 +611,7 @@
 					</dl>
 					<ul class="chips">
 						{#each w.uses as u (u)}
-							<li><a class="chip" href={npmOf(u)}><span>{u}</span><span>{version(u)}</span></a></li>
+							{@render chip(w.id, w.name, u)}
 						{/each}
 					</ul>
 					<p class="go">
@@ -989,6 +1013,11 @@
 	}
 	.chip span + span {
 		font-variant-numeric: tabular-nums;
+	}
+	/* The latest release beside the version a product runs, when it is behind. */
+	.chip .latest {
+		margin-left: 0.4em;
+		color: var(--quiet);
 	}
 	.chip:hover,
 	.chips .lit .chip {

@@ -1,8 +1,9 @@
-// Which of my packages each product is built from, read at prerender from the
-// products' own code. Each repo is downloaded once as a tarball and streamed:
-// only source files inside the product's folders are kept, and their
-// `@nomideusz/*` imports are the answer. Imports, not package.json: the asini
-// apps import svelte-i18n through the workspace without declaring it.
+// Which of my packages each product is built from, and at which version, read
+// at prerender from the products' own code. Each repo is downloaded once as a
+// tarball and streamed: only source files inside the product's folders and the
+// lockfiles are kept. A product's `@nomideusz/*` imports say which packages it
+// uses (imports, not package.json: the asini apps import svelte-i18n through
+// the workspace without declaring it); its lockfile says which version it runs.
 //
 // A product whose repo cannot be read (no token for a private repo, GitHub
 // down) is left out of the result, and the page keeps its hand-written list.
@@ -19,28 +20,41 @@ export const sources: Record<string, { repo: string; dirs: string[] }> = {
 	kino: { repo: 'nomideusz/asini', dirs: ['apps/kino'] },
 	kompi: { repo: 'nomideusz/asini', dirs: ['apps/kompi'] },
 	festivals: { repo: 'nomideusz/asini', dirs: ['apps/festivals'] },
-	radiobartek: { repo: 'nomideusz/radiobartek', dirs: [''] }
+	// The client's own repo, not mine: reading it needs a token with access to it.
+	fixtar: { repo: 'nataliya-varna/fixtar', dirs: [''] },
+	radiobartek: { repo: 'nomideusz/radiobartek', dirs: [''] },
+	kurcz: { repo: 'nomideusz/kurcz', dirs: [''] }
 };
 
+/** A version a product runs, or 'workspace' when it builds the package from source beside it. */
+export type Usage = { uses: Record<string, string[]>; versions: Record<string, Record<string, string>> };
+
 // Patches count: radiobartek ships as a patch on upstream SUB/WAVE, and its
-// zaur-world imports live in the `+` lines of that patch.
-const SOURCE = /\.(svelte|ts|tsx|mts|js|jsx|mjs|css|patch|diff)$/;
+// zaur-world imports (and the lockfile lines that pin it) live in the `+`
+// lines of that patch.
+const SOURCE = /\.(svelte|astro|ts|tsx|mts|js|jsx|mjs|css|patch|diff)$/;
+const LOCK = /(^|\/)(pnpm-lock\.yaml|package-lock\.json|yarn\.lock)$/;
 // Tests and fixtures may import a package the product itself does not ship.
 const SKIP = /(^|\/)(node_modules|\.svelte-kit|build|dist|tests?|e2e|__tests__)\/|\.(test|spec)\.[a-z]+$/;
 // `from '@nomideusz/x'`, `import '@nomideusz/x/y.css'`, `import('@nomideusz/x')`, CSS `@import '@nomideusz/x'`.
 const IMPORT = /(?:\bfrom\s*|\bimport\s*\(?\s*)['"]@nomideusz\/([a-z0-9-]+)/g;
+// A registry tarball, as package-lock.json, yarn.lock and patched lockfiles name it.
+const TARBALL = /@nomideusz\/([a-z0-9-]+)\/-\/\1-(\d+\.\d+\.\d+[\w.-]*?)\.tgz/g;
 
-/** Package ids each product imports, limited to `published` and in its order. */
-export async function loadUsage(published: string[]): Promise<Record<string, string[]>> {
+/** Package ids each product imports (limited to `published`, in its order) and the versions it runs. */
+export async function loadUsage(published: string[]): Promise<Usage> {
 	const byRepo = new Map<string, string[]>();
 	for (const [id, s] of Object.entries(sources)) byRepo.set(s.repo, [...(byRepo.get(s.repo) ?? []), id]);
 
-	const out: Record<string, string[]> = {};
+	const out: Usage = { uses: {}, versions: {} };
 	await Promise.all(
 		[...byRepo].map(async ([repo, ids]) => {
 			try {
 				const found = await scanRepo(repo, Object.fromEntries(ids.map((id) => [id, sources[id].dirs])));
-				for (const id of ids) out[id] = published.filter((p) => found[id].has(p));
+				for (const id of ids) {
+					out.uses[id] = published.filter((p) => found[id].uses.has(p));
+					out.versions[id] = Object.fromEntries(out.uses[id].flatMap((p) => (found[id].versions[p] ? [[p, found[id].versions[p]]] : [])));
+				}
 			} catch (err) {
 				console.warn(`[usage] ${repo}: ${(err as Error).message}; ${ids.join(', ')} keep their hand-written package lists`);
 			}
@@ -56,14 +70,21 @@ async function scanRepo(repo: string, products: Record<string, string[]>) {
 	// A private repo answers 404, not 403, to a request without access.
 	if (!res.ok || !res.body) throw new Error(`tarball ${res.status}${res.status === 404 && !process.env.GITHUB_TOKEN ? ' (private repo, no GITHUB_TOKEN)' : ''}`);
 
-	const found = Object.fromEntries(Object.keys(products).map((id) => [id, new Set<string>()]));
+	const found = Object.fromEntries(Object.keys(products).map((id) => [id, { uses: new Set<string>(), versions: {} as Record<string, string> }]));
 	const owners = (path: string) =>
 		Object.entries(products)
 			.filter(([, dirs]) => dirs.some((d) => d === '' || path.startsWith(`${d}/`)))
 			.map(([id]) => id);
+	/** Record a version for a product, keeping the oldest when its apps differ. */
+	const pin = (id: string, pkg: string, v: string) => {
+		const had = found[id].versions[pkg];
+		if (!had || (v !== 'workspace' && (had === 'workspace' || older(v, had)))) found[id].versions[pkg] = v;
+	};
 
 	const gz = Readable.fromWeb(res.body as import('node:stream/web').ReadableStream).pipe(createGunzip());
-	for await (const file of untar(gz, (path) => SOURCE.test(path) && !SKIP.test(path) && owners(path).length > 0)) {
+	const want = (path: string) =>
+		!SKIP.test(path) && ((SOURCE.test(path) && owners(path).length > 0) || (LOCK.test(path) && (!path.includes('/') || owners(path).length > 0)));
+	for await (const file of untar(gz, want)) {
 		// A patch's removed lines are code the product no longer has.
 		const text = /\.(patch|diff)$/.test(file.path)
 			? file.text
@@ -71,9 +92,72 @@ async function scanRepo(repo: string, products: Record<string, string[]>) {
 					.filter((l) => !l.startsWith('-'))
 					.join('\n')
 			: file.text;
-		for (const m of text.matchAll(IMPORT)) for (const id of owners(file.path)) found[id].add(m[1]);
+		// A lockfile at the root speaks for every product in the repo; one in a folder for that folder's product.
+		const ids = file.path.includes('/') ? owners(file.path) : Object.keys(products);
+		if (file.path.endsWith('pnpm-lock.yaml')) {
+			const base = file.path.replace(/pnpm-lock\.yaml$/, '');
+			for (const [importer, deps] of pnpmImporters(text)) {
+				const at = (base + (importer === '.' ? '' : importer)).replace(/\/$/, '');
+				for (const id of ids) {
+					if (!products[id].some((d) => d === at || (d === '' && at === base.replace(/\/$/, '')))) continue;
+					for (const [pkg, v] of Object.entries(deps)) pin(id, pkg, v);
+				}
+			}
+			continue;
+		}
+		for (const m of text.matchAll(TARBALL)) for (const id of ids) pin(id, m[1], m[2]);
+		if (LOCK.test(file.path)) continue;
+		for (const m of text.matchAll(IMPORT)) for (const id of owners(file.path)) found[id].uses.add(m[1]);
 	}
 	return found;
+}
+
+/**
+ * The `@nomideusz/*` versions each importer of a pnpm lockfile (v6–v9) resolves:
+ * `importers:` → `  apps/mail2:` → `      '@nomideusz/x':` → `        version: 1.2.3(peer@…)`.
+ * A workspace link (`link:…`) means the package is built from source beside it.
+ */
+function pnpmImporters(yaml: string) {
+	const out = new Map<string, Record<string, string>>();
+	let inImporters = false;
+	let importer = '';
+	let pkg = '';
+	for (const line of yaml.split('\n')) {
+		if (/^\S/.test(line)) {
+			inImporters = line.startsWith('importers:');
+			continue;
+		}
+		if (!inImporters) continue;
+		const imp = line.match(/^ {2}(\S[^:]*):\s*$/);
+		if (imp) {
+			importer = imp[1].replace(/^['"]|['"]$/g, '');
+			out.set(importer, {});
+			continue;
+		}
+		const dep = line.match(/^ {6}'?@nomideusz\/([a-z0-9-]+)'?:\s*(\S.*)?$/);
+		if (dep) {
+			pkg = dep[1];
+			// Older lockfiles put the version on the same line.
+			if (dep[2]) out.get(importer)![pkg] = version(dep[2]);
+			continue;
+		}
+		const ver = line.match(/^ {8}version:\s*(\S+)/);
+		if (ver && pkg) {
+			out.get(importer)![pkg] = version(ver[1]);
+			pkg = '';
+		} else if (/^ {6}\S/.test(line)) pkg = '';
+	}
+	return out;
+}
+
+const version = (v: string) => (v.startsWith('link:') || v.startsWith('workspace:') ? 'workspace' : v.replace(/^['"]|['"]$/g, '').replace(/\(.*$/, ''));
+
+/** Whether semver `a` is older than `b`, by major.minor.patch. */
+function older(a: string, b: string) {
+	const pa = a.split(/[.-]/).map(Number);
+	const pb = b.split(/[.-]/).map(Number);
+	for (let i = 0; i < 3; i++) if ((pa[i] || 0) !== (pb[i] || 0)) return (pa[i] || 0) < (pb[i] || 0);
+	return false;
 }
 
 /**
