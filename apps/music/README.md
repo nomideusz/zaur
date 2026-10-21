@@ -41,6 +41,10 @@ real Navidrome, a new address gets a real user there.
   seeking works. When Navidrome cannot be reached the answer is a 502, not a
   thrown 500. An answer that is not a success is sent `no-store`: covers are
   cached for a week, and a cached 404 would hide a cover for that long.
+- **An artist with no photo** gets Navidrome's stand-in, one small image at
+  every size. The cover route trades it for Deezer's photo of an artist with
+  the same name (`artistPicture` in `#lib/server/albums`); with none, the
+  stand-in is kept for a day rather than a week, in case a photo turns up.
 - `/api/*` without a session answers 401, and the client's `api()` sends a 401
   to sign-in and back to the same page. `/health` answers without a session; the
   client uses it to tell "the library is down" from "this device is offline".

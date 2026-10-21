@@ -45,7 +45,8 @@ const rand = (n) => (seed = (seed * 1103515245 + 12345) & 0x7fffffff) % n;
 const title = () => Array.from({ length: 1 + rand(4) }, () => WORDS[rand(WORDS.length)]).join(' ').replace(/^./, (c) => c.toUpperCase());
 
 ARTISTS.forEach(([name, names], a) => {
-	const artist = { id: `ar-${a}`, name, albumCount: names.length, coverArt: `ar-${a}` };
+	// Navidrome's form: "ar-", the artist's id, "_" and when its image last changed.
+	const artist = { id: `ar-${a}`, name, albumCount: names.length, coverArt: `ar-ar-${a}_0` };
 	artists.push(artist);
 	names.forEach((albumName, b) => {
 		const id = `al-${a}-${b}`;
@@ -242,6 +243,9 @@ const hue = (id) => [...id].reduce((sum, c) => (sum * 31 + c.charCodeAt(0)) % 36
 const cover = (id) =>
 	`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="hsl(${hue(id)} 55% 45%)"/><circle cx="${60 + (hue(id) % 180)}" cy="150" r="90" fill="hsl(${(hue(id) + 40) % 360} 70% 65%)"/><text x="16" y="284" font-family="monospace" font-size="20" fill="#fff">${id}</text></svg>`;
 
+const PLACEHOLDER =
+	'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 300"><rect width="300" height="300" fill="#d4d4d8"/><circle cx="150" cy="120" r="50" fill="#a1a1aa"/></svg>';
+
 function sendBytes(req, res, type, body) {
 	const range = /^bytes=(\d*)-(\d*)$/.exec(req.headers.range ?? '');
 	if (!range) return res.writeHead(200, { 'content-type': type, 'content-length': body.length, 'accept-ranges': 'bytes' }).end(body);
@@ -282,6 +286,10 @@ createServer((req, res) => {
 		if (!song) return res.writeHead(404).end();
 		return sendBytes(req, res, 'audio/wav', tone(song.duration, 220 + (hue(song.id) % 12) * 40));
 	}
+	// No artist has a photo here, as with most of the real library: Navidrome's small stand-in, the
+	// same at every size, which the app trades for Deezer's photo of that name.
+	if (rest === 'getCoverArt' && url.searchParams.get('id')?.startsWith('ar-'))
+		return sendBytes(req, res, 'image/svg+xml', Buffer.from(PLACEHOLDER));
 	if (rest === 'getCoverArt') return sendBytes(req, res, 'image/svg+xml', Buffer.from(cover(url.searchParams.get('id') ?? '')));
 	if (rest) {
 		let failure = fail(70, 'The requested data was not found.');

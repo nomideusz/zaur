@@ -205,6 +205,31 @@ interface DeezerArtist {
 	id: number;
 	name: string;
 	picture_medium?: string;
+	picture_big?: string;
+	picture_xl?: string;
+}
+
+// ponytail: in memory for a day, one answer per artist (the Artists page asks for every one it shows).
+const pictures = new Map<string, { at: number; value: Promise<DeezerArtist | null> }>();
+/**
+ * Deezer's photo of an artist, by name, for when Navidrome has none: the same name only, and
+ * not Deezer's own blank (a picture URL with no image hash in it). A failure is not remembered.
+ */
+export async function artistPicture(name: string, size: number): Promise<string | undefined> {
+	const key = norm(name);
+	const hit = pictures.get(key);
+	let value = hit && Date.now() - hit.at < 24 * 3600_000 ? hit.value : undefined;
+	if (!value) {
+		value = deezer<{ data: DeezerArtist[] }>(`/search/artist?${new URLSearchParams({ q: name, limit: '5' })}`).then(
+			({ data }) => data.find((a) => norm(a.name) === key) ?? null
+		);
+		value.catch(() => pictures.delete(key));
+		pictures.set(key, { at: Date.now(), value });
+		if (pictures.size > 5000) pictures.delete(pictures.keys().next().value!);
+	}
+	const artist = await value;
+	const url = size <= 96 ? artist?.picture_medium : size <= 300 ? artist?.picture_big : artist?.picture_xl;
+	return url && !url.includes('/artist//') ? url : undefined;
 }
 
 /** Deezer's "fans also like" for an artist, by name; none when Deezer does not know them. */
