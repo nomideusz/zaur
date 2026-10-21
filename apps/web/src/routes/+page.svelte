@@ -319,6 +319,8 @@
 	// The other package demonstrating itself: every capture held at its triangles,
 	// fewer or more of them, and back to the photos. zaur.app/#shapes opens it so.
 	let shapes = $state({ on: false, n: 60 });
+	// One capture beside the switch, so what it does shows where it is pressed.
+	const sample = platesFor('pikastro', 'pikastro.eu')?.frames[0].src;
 	const flipShapes = async () => {
 		shapes.on = !shapes.on;
 		if (location.hash === '#shapes') {
@@ -651,6 +653,7 @@
 								{/if}
 								<span class="p-hint">{t('packages.geometrize.hint')}</span>
 							</p>
+							{#if sample}<div class="p-sample" aria-hidden="true">{@render still(sample)}</div>{/if}
 						{/if}
 					</div>
 					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
@@ -1320,6 +1323,12 @@
 		color: var(--paper);
 		font: inherit;
 		cursor: pointer;
+	}
+	.p-sample {
+		max-width: 24rem;
+		margin-top: 0.75rem;
+		overflow: hidden;
+		border: var(--rule) solid var(--ink);
 	}
 	.p-hint {
 		display: block;
