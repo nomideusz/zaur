@@ -223,6 +223,7 @@
 	"packages.i18n.keys": "Show this page's keys",
 	"packages.i18n.text": "Show the text",
 	"packages.i18n.hint": "Every word on this page is a key in a flat JSON catalog.",
+	"packages.i18n.hintOn": "Everything but this line now shows its key from the flat JSON catalog.",
 	"packages.geometrize.shapes": "Show the triangles",
 	"packages.geometrize.photos": "Show the screenshots",
 	"packages.geometrize.count": "Number of triangles",

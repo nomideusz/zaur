@@ -146,3 +146,8 @@ a {
 	clip-path: inset(50%);
 	white-space: nowrap;
 }
+
+/* The page as its message keys: dotted keys break anywhere instead of overlapping. */
+.keys-on {
+	overflow-wrap: anywhere;
+}

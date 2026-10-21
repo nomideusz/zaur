@@ -17,7 +17,8 @@ export const i18n = createI18n({
 	loader: (locale) => messages[locale] ?? en
 });
 
-export const t: typeof i18n.t = (key, params) => (keys.on ? key : i18n.t(key, params));
+// A zero-width space after each dot lets a long key wrap between its segments.
+export const t: typeof i18n.t = (key, params) => (keys.on ? key.replaceAll('.', '.\u200b') : i18n.t(key, params));
 
 /** Every message under `prefix.0`, `prefix.1`… in order: lists stay flat JSON keys. */
 export function list(prefix: string): string[] {

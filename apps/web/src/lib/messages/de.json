@@ -223,6 +223,7 @@
 	"packages.i18n.keys": "Schlüssel dieser Seite zeigen",
 	"packages.i18n.text": "Text zeigen",
 	"packages.i18n.hint": "Jedes Wort auf dieser Seite ist ein Schlüssel in einem flachen JSON-Katalog.",
+	"packages.i18n.hintOn": "Alles außer dieser Zeile zeigt jetzt seinen Schlüssel aus dem flachen JSON-Katalog.",
 	"packages.geometrize.shapes": "Dreiecke zeigen",
 	"packages.geometrize.photos": "Screenshots zeigen",
 	"packages.geometrize.count": "Anzahl der Dreiecke",

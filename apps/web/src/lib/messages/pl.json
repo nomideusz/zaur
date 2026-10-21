@@ -229,6 +229,7 @@
 	"packages.i18n.keys": "Pokaż klucze tej strony",
 	"packages.i18n.text": "Pokaż tekst",
 	"packages.i18n.hint": "Każde słowo na tej stronie to klucz w płaskim katalogu JSON.",
+	"packages.i18n.hintOn": "Wszystko poza tą linijką pokazuje teraz swój klucz z płaskiego katalogu JSON.",
 	"packages.geometrize.shapes": "Pokaż trójkąty",
 	"packages.geometrize.photos": "Pokaż zrzuty ekranu",
 	"packages.geometrize.count": "Liczba trójkątów",

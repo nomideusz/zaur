@@ -229,6 +229,7 @@
 	"packages.i18n.keys": "Показати ключі цієї сторінки",
 	"packages.i18n.text": "Показати текст",
 	"packages.i18n.hint": "Кожне слово на цій сторінці — ключ у пласкому каталозі JSON.",
+	"packages.i18n.hintOn": "Усе, крім цього рядка, тепер показує свій ключ із плаского каталогу JSON.",
 	"packages.geometrize.shapes": "Показати трикутники",
 	"packages.geometrize.photos": "Показати знімки",
 	"packages.geometrize.count": "Кількість трикутників",

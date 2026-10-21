@@ -223,6 +223,7 @@
 	"packages.i18n.keys": "Afficher les clés de cette page",
 	"packages.i18n.text": "Afficher le texte",
 	"packages.i18n.hint": "Chaque mot de cette page est une clé d'un catalogue JSON plat.",
+	"packages.i18n.hintOn": "Tout sauf cette ligne affiche maintenant sa clé du catalogue JSON plat.",
 	"packages.geometrize.shapes": "Afficher les triangles",
 	"packages.geometrize.photos": "Afficher les captures",
 	"packages.geometrize.count": "Nombre de triangles",

@@ -12,6 +12,10 @@
 	// reloads the page, so the locale never changes under a mounted page.
 	// svelte-ignore state_referenced_locally
 	i18n.setLocale(data.locale);
+	// A key has no spaces to wrap at: let it break anywhere rather than run into the next column.
+	$effect(() => {
+		document.documentElement.classList.toggle('keys-on', keys.on);
+	});
 </script>
 
 <svelte:head>

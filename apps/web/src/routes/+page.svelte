@@ -303,11 +303,17 @@
 
 	// The package demonstrating itself: the whole page as its message keys, and
 	// back. zaur.app/#keys opens it that way (the demo site links there).
+	// The switch stays under the pointer while everything around it changes
+	// length; the #keys link, arriving from elsewhere, centres the row instead.
 	const flipKeys = async () => {
+		const at = () => document.querySelector('#pkg-svelte-i18n .p-keys')?.getBoundingClientRect().top;
+		const before = location.hash === '#keys' ? undefined : at();
 		keys.on = !keys.on;
 		if (location.hash === '#keys') history.replaceState(null, '', location.pathname);
 		await tick();
-		document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
+		const after = at();
+		if (before === undefined || after === undefined) document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
+		else scrollBy({ top: after - before, behavior: 'instant' });
 	};
 
 	// The other package demonstrating itself: every capture held at its triangles,
@@ -630,7 +636,7 @@
 							<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
 							<p class="p-try">
 								<button type="button" class="p-keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t(keys.on ? 'packages.i18n.text' : 'packages.i18n.keys')}</button>
-								{i18n.t('packages.i18n.hint')}
+								{i18n.t(keys.on ? 'packages.i18n.hintOn' : 'packages.i18n.hint')}
 							</p>
 						{:else if p.id === 'svelte-geometrize'}
 							<p class="p-try">
