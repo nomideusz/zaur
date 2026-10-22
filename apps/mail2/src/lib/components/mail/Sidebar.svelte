@@ -50,12 +50,13 @@
 </script>
 
 <!--
-	A checkbox row in a channel: the open folder (or the label in force) takes
-	the channel's fill and stroke, its rail lights, its box ticks in the
-	channel's hue. Anything else is plain, and the box says so. A folder row is
-	where you are (`aria-current`); a label row is a switch (`aria-pressed`).
+	A row in a channel: the open folder (or the label in force) takes the
+	channel's fill and stroke and its rail lights. Its swatch names the hue the
+	way the Move to menu does: a square for a folder, where you are
+	(`aria-current`); a dot for a label, a switch (`aria-pressed`). Checkboxes
+	are kept for picking messages.
 -->
-{#snippet checkRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false, depth = 0, dropId: string | null = null)}
+{#snippet navRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false, depth = 0, dropId: string | null = null)}
 	<button
 		type="button"
 		class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] max-md:min-h-11 max-md:text-[15px] {on
@@ -63,7 +64,7 @@
 			: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'} {dropId && dropOn === dropId
 			? '!border-[var(--z-accent-stroke)] bg-[var(--z-hover)]'
 			: ''}"
-		style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{on ? '1' : '0'}"
+		style="{channelStyle(channel)};--z-rail-inset:6px;--z-rail-strength:{on ? '1' : '0'}"
 		style:color={on ? channel.ink : undefined}
 		style:padding-left={depth ? `${18 + depth * 14}px` : undefined}
 		aria-current={!toggle && on ? 'true' : undefined}
@@ -85,7 +86,12 @@
 			onDropThread?.(dropId, threadId);
 		}}
 	>
-		<span class="hobday-checkbox" data-checked={on} aria-hidden="true"></span>
+		<span
+			class="mx-1 inline-block size-2.5 shrink-0 border {toggle ? 'rounded-full' : 'rounded-[3px]'}"
+			style:background-color={on ? channel.solid : channel.fill}
+			style:border-color={on ? channel.solid : channel.stroke}
+			aria-hidden="true"
+		></span>
 		<span class="min-w-0 flex-1 truncate">{name}</span>
 		{#if count > 0}
 			<span
@@ -156,7 +162,7 @@
 				{#each mailboxes as mailbox (mailbox.id)}
 					{@const isSelected = !activeAccount && mailbox.id === activeMailboxId}
 					<li>
-						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
+						{@render navRow(mailbox.name, mailboxChannel(mailbox.kind), isSelected, mailbox.unread, () =>
 							onSelectMailbox(mailbox.id, null), false, mailbox.depth, isSelected || !acceptsMoves(mailbox) ? null : mailbox.id
 						)}
 					</li>
@@ -178,7 +184,7 @@
 			<ul class="flex flex-col gap-[3px]" role="list">
 				{#each open ? box.mailboxes : box.mailboxes.filter((mailbox) => mailbox.kind === 'inbox') as mailbox (mailbox.id)}
 					<li>
-						{@render checkRow(mailbox.name, mailboxChannel(mailbox.kind), open && mailbox.id === activeMailboxId, mailbox.unread, () =>
+						{@render navRow(mailbox.name, mailboxChannel(mailbox.kind), open && mailbox.id === activeMailboxId, mailbox.unread, () =>
 							onSelectMailbox(mailbox.id, box.id), false, open ? mailbox.depth : 0
 						)}
 					</li>
@@ -197,7 +203,7 @@
 			{#each LABEL_FILTERS as label (label)}
 				{@const isOn = filter === label}
 				<li>
-					{@render checkRow(filterName(label), labelChannel(label), isOn, labelCounts?.[label] ?? 0, () =>
+					{@render navRow(filterName(label), labelChannel(label), isOn, labelCounts?.[label] ?? 0, () =>
 						onFilter(isOn ? 'all' : label), true
 					)}
 				</li>

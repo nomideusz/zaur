@@ -43,3 +43,6 @@ temporary-captain-to-deploy.tar
 # Temporary scratch and app files
 scratch/
 apps.json
+
+# Impeccable design records
+.impeccable/

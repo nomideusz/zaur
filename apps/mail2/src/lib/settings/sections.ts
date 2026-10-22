@@ -21,7 +21,7 @@ export const SETTINGS_GROUPS: { label: string; items: SettingsSection[] }[] = [
 	{
 		label: 'Account',
 		items: [
-			{ href: '/settings', label: 'Account', blurb: 'Who you are signed in as, and how much room your mail takes.' },
+			{ href: '/settings', label: 'Account', blurb: 'Who you are signed in as, and the other accounts on this device.' },
 			{ href: '/settings/addresses', label: 'Addresses', blurb: 'The name recipients see and the signature new messages start with, per address.' },
 			{ href: '/settings/security', label: 'Password & sign-in', blurb: 'Your password, two-factor authentication and where a reset link goes.' },
 			{ href: '/settings/app-passwords', label: 'App passwords', blurb: 'Passwords for mail apps like Thunderbird or a phone, and keys for scripts.' },

@@ -200,7 +200,8 @@
 		sent: { title: 'Nothing sent yet', hint: 'Messages you send will show up here.' },
 		archive: { title: 'Archive is empty', hint: 'Move messages here to keep the inbox quiet.' },
 		junk: { title: 'No junk', hint: 'Messages marked as junk land here.' },
-		trash: { title: 'Trash is empty', hint: 'Deleted messages stay here before final removal.' }
+		trash: { title: 'Trash is empty', hint: 'Deleted messages stay here before final removal.' },
+		scheduled: { title: 'Nothing scheduled', hint: 'Messages you schedule wait here until they go out.' }
 	};
 
 	/** The list's own width: under 430px the Flagged segment has no room and moves into the Label select. */

@@ -71,7 +71,7 @@
 	const VIEWS: { value: View; label: string; short: string; id: CalendarViewId }[] = [
 		{ value: 'day', label: 'Day', short: 'D', id: 'day-planner' },
 		{ value: 'week', label: 'Week', short: 'W', id: 'week-planner' },
-		{ value: 'roll', label: 'Roll', short: 'R', id: 'week-scroll' },
+		{ value: 'roll', label: 'Scroll', short: 'S', id: 'week-scroll' },
 		{ value: 'month', label: 'Month', short: 'M', id: 'month-grid' }
 	];
 

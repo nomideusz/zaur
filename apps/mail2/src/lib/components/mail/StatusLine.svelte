@@ -24,7 +24,7 @@
 		['↵', 'open', 'Open it (also o)'],
 		['x', 'select', 'Select it'],
 		['e', 'archive', 'Archive'],
-		['#', 'delete', 'Delete — forever, in Trash'],
+		['#', 'delete', 'Delete: move to Trash, or delete for good from Trash'],
 		['r', 'reply', 'Reply to the open conversation'],
 		['a', 'reply all', 'Reply to everyone'],
 		['f', 'forward', 'Forward'],
