@@ -33,13 +33,8 @@ export function computeStep(draft: Pick<Draft, 'to' | 'subject'>): 0 | 1 | 2 {
 	return 2;
 }
 
-/** 84 → 112 → 340: the message box grows as the draft takes shape. */
-export function bodyHeightPx(draft: Draft): 84 | 112 | 340 {
-	if (draft.stage === 'maximized' || draft.bodyOpened) return 340;
-	if (draft.to.length === 0) return 84;
-	if (draft.subject.trim().length === 0) return 112;
-	return 340;
-}
+/** The message box: as tall from the first keystroke as it will be, so a new message opens at a reply's size. */
+export const BODY_H = 340;
 
 /**
  * Panel height while `auto` is on, computed by hand so it can animate
@@ -53,7 +48,7 @@ export function computeAutoHeight(draft: Draft, stripH = 54): number {
 		45 + // header
 		(44 + chipRows(draft.to)) + // To row: 28 content + 8/8 padding
 		45 + // subject row
-		bodyHeightPx(draft) +
+		BODY_H +
 		(draft.ccShown ? 44 + chipRows(draft.cc) : 0) +
 		(draft.bccShown ? 44 + chipRows(draft.bcc) : 0) +
 		(draft.attachments.length > 0 ? stripH : 0) +
@@ -113,27 +108,6 @@ export function openingPosition(
 	return {
 		x: Math.round(clamp(x, EDGE, Math.max(EDGE, rootW - width - EDGE))),
 		y: Math.round(clamp(y, top, Math.max(top, rootH - height - EDGE)))
-	};
-}
-
-/**
- * A reply opens beside the conversation it answers, never over it: in the
- * room left of the reader (the list's and the sidebar's), as wide as that
- * room allows, and level with the Reply that opened it, so the panel is where
- * the eye already is (it used to dock low, a screen away from the button on a
- * tall desk). Null when there is no room for a usable panel there — the
- * caller falls back to the opening position. All rects in the shell's frame.
- */
-export function replyPosition(reader: AnchorRect, rootW: number, rootH: number, button?: AnchorRect | null) {
-	const room = Math.min(reader.left, rootW) - EDGE * 2;
-	if (room < PANEL_MIN_W) return null;
-	const w = Math.min(PANEL_DEFAULT_W, room);
-	const top = TOP_CHROME + MARGIN;
-	const low = rootH - BOTTOM_CHROME - MARGIN - PANEL_TYPICAL_H;
-	return {
-		x: Math.round(Math.max(EDGE, reader.left - EDGE - w)),
-		y: Math.round(clamp(button ? button.top : low, top, Math.max(top, low))),
-		w
 	};
 }
 

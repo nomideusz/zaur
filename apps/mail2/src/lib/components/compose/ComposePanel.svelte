@@ -9,7 +9,7 @@
 <script lang="ts">
 	import { ask } from '#lib/confirm.svelte.ts';
 	import { attachmentKind, formatAttachmentSize } from '#lib/compose/attachments';
-	import { EDGE, PANEL_TOP, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, fitPanel, maximizedRect } from '#lib/compose/layout';
+	import { EDGE, PANEL_TOP, BODY_H, clamp, clampPanel, computeAutoHeight, computeStep, fitPanel, maximizedRect } from '#lib/compose/layout';
 	import { hasDraftContent } from '#lib/compose/draft-save';
 	import { backLayer } from '#lib/back-layer.svelte.ts';
 	import { filterContacts, highlightedSuggestion, makeRecipient, parseRecipients } from '#lib/compose/recipients';
@@ -106,9 +106,6 @@
 	});
 	const height = $derived(rect.h);
 	const step = $derived(computeStep(draft));
-	const bodyHeight = $derived(bodyHeightPx(draft));
-	// Full-strength once the box has grown — an equality check dimmed it at 340 (maximized).
-	const bodyOpen = $derived(bodyHeight >= 340);
 	const title = $derived(draft.subject.trim() || 'New message');
 	/** What a sheet's bar says, where the subject already has a field of its own. */
 	const sheetTitle = $derived(
@@ -1170,10 +1167,8 @@
 				oninput={(event) =>
 					compose.patch(draft.id, { body: event.currentTarget.value, bodyOpened: true, sendError: null })}
 				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-				class="font-(family-name:--font-mail-mono) -mr-4 resize-none border-0 bg-transparent pt-[14px] pr-4 pb-4 text-[14px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
-					? 'opacity-100'
-					: 'opacity-68'} {filled ? `${bodyFloor} flex-1` : ''}"
-				style:height={filled ? undefined : `${bodyHeight}px`}
+				class="font-(family-name:--font-mail-mono) -mr-4 resize-none border-0 bg-transparent pt-[14px] pr-4 pb-4 text-[14px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {filled ? `${bodyFloor} flex-1` : ''}"
+				style:height={filled ? undefined : `${BODY_H}px`}
 				style:transition="height 200ms ease"
 				style:scrollbar-width="thin"
 				aria-label="Message"
@@ -1199,10 +1194,8 @@
 					if (!editorFailTold) compose.pushToast({ text: "Couldn't load the editor — writing in plain text", tone: 'warning' });
 					editorFailTold = true;
 				}}
-				class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
-					? 'opacity-100'
-					: 'opacity-68'} {filled ? `${bodyFloor} flex-1 [&>*]:max-w-[46em]` : '[&>*]:max-w-[33em]'}"
-				height={filled ? undefined : `${bodyHeight}px`}
+				class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {filled ? `${bodyFloor} flex-1 [&>*]:max-w-[46em]` : '[&>*]:max-w-[33em]'}"
+				height={filled ? undefined : `${BODY_H}px`}
 			/>
 			{/key}
 		{/if}

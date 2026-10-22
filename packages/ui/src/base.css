@@ -39,6 +39,21 @@
 		color: inherit;
 	}
 
+	/* Anything that acts on a click says so (Tailwind 4's preflight no longer does). */
+	button:not(:disabled),
+	[role='button'],
+	[role='menuitem'],
+	[role='menuitemradio'],
+	[role='menuitemcheckbox'],
+	[role='option'],
+	[role='tab'],
+	summary,
+	select,
+	input[type='checkbox'],
+	input[type='radio'] {
+		cursor: pointer;
+	}
+
 	/*
 	 * `type="search"` gets the browser's own clear button, which lands next to
 	 * the one the search field draws itself — two crosses, one of them not ours.

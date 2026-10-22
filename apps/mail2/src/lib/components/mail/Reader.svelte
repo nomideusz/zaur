@@ -32,11 +32,8 @@
 		loading: boolean;
 		error: unknown;
 		onRetry: () => void;
-		onCompose: (
-			mode: 'reply' | 'replyAll' | 'forward',
-			message: MessageDetail,
-			anchor: { left: number; top: number; right: number; bottom: number } | null
-		) => void;
+		/** Every draft opens where a new message does, so no button rect travels with it. */
+		onCompose: (mode: 'reply' | 'replyAll' | 'forward', message: MessageDetail) => void;
 		/** Phone only: the reader is a screen there, so it needs a way back. */
 		onBack?: () => void;
 		/** The same four actions a row runs, on the thread being read. */
@@ -250,23 +247,6 @@
 	/** On top of what no move may go into (`acceptsMoves`). */
 	const MOVE_EXCLUDED = new Set(['sent', 'trash', 'junk']);
 
-	let replyEl = $state<HTMLElement | null>(null);
-
-	/**
-	 * Where a draft opens from. The menu's items have no rect of their own — a
-	 * menu is portalled out of the bar — so every way into compose is anchored on
-	 * the one control that opened it.
-	 */
-	function replyAnchor(el: Element | null = replyEl) {
-		const rect = el?.getBoundingClientRect();
-		if (!rect) return null;
-		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
-	}
-
-	/** An earlier message's reply menu, anchored on its own trigger. */
-	function composeTo(mode: 'reply' | 'replyAll' | 'forward', message: MessageDetail) {
-		onCompose(mode, message, replyAnchor(document.querySelector(`[data-reply-to="${CSS.escape(message.id)}"]`)));
-	}
 </script>
 
 <section
@@ -287,13 +267,13 @@
 		40px under any coarse pointer (base.css), so the bar and the reply button
 		grow with them there (`pointer-coarse:`).
 
-		On a desk the bar ends where the reading column does (24px + 680px), so in a
-		wide pane the actions sit over the message's right edge, not out at the
-		pane's.
+		On a desk the bar spans what the reading column does: the column is centred
+		in the pane, so in a wide one Reply stands over the subject and the actions
+		over the message's right edge, not out at the pane's.
 	-->
 	{#if onBack || latest || loading || error}
 		<div
-			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 md:pr-[max(1.5rem,calc(100%_-_704px))] max-md:h-[60px] max-md:gap-2 max-md:px-2.5 pointer-coarse:h-[60px]"
+			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 md:px-[max(1.5rem,calc((100%_-_680px)/2))] max-md:h-[60px] max-md:gap-2 max-md:px-2.5 pointer-coarse:h-[60px]"
 		>
 			{#if onBack}
 				<!--
@@ -400,7 +380,6 @@
 					pane on a desk is still being pointed at, not tapped.
 				-->
 				<div
-					bind:this={replyEl}
 					class="flex shrink-0 items-stretch rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)] md:order-1"
 				>
 					<button
@@ -408,7 +387,7 @@
 						class="flex h-7 items-center gap-[7px] rounded-l-[7px] px-[11px] text-[13px] font-medium text-[var(--z-body)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0 pointer-coarse:h-11 pointer-coarse:min-w-11 pointer-coarse:justify-center"
 						title="Reply"
 						aria-label="Reply"
-						onclick={() => latest && onCompose('reply', latest, replyAnchor())}
+						onclick={() => latest && onCompose('reply', latest)}
 					>
 						<svg class="size-3.5 shrink-0 text-[var(--z-strong)] max-md:size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -433,10 +412,10 @@
 								<!-- The folder list has no upper bound, so the menu is as tall
 								     as the room under the caret and scrolls inside itself. -->
 								<Menu.Content class="z-menu z-40 max-h-[var(--available-height)] w-56 overflow-y-auto overscroll-contain max-md:[&_.z-menu-item]:min-h-11">
-									<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => latest && onCompose('replyAll', latest, replyAnchor())}>
+									<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => latest && onCompose('replyAll', latest)}>
 										Reply all
 									</Menu.Item>
-									<Menu.Item value="forward" class="z-menu-item" onSelect={() => latest && onCompose('forward', latest, replyAnchor())}>
+									<Menu.Item value="forward" class="z-menu-item" onSelect={() => latest && onCompose('forward', latest)}>
 										Forward
 									</Menu.Item>
 
@@ -500,7 +479,7 @@
 			</div>
 		</div>
 	{:else if loading && !messages}
-		<div class="z-skeleton flex flex-1 flex-col gap-5 px-6 pt-6 @max-md:px-4" aria-hidden="true">
+		<div class="z-skeleton flex flex-1 flex-col gap-5 px-6 pt-6 @md:px-[max(1.5rem,calc((100%_-_680px)/2))] @max-md:px-4" aria-hidden="true">
 			<div class="h-7 w-2/3 rounded-[6px] bg-[var(--z-sunken)]"></div>
 			<div class="flex items-center gap-[11px] rounded-[10px] border border-[var(--z-hairline)] p-3">
 				<span class="size-[34px] shrink-0 rounded-[8px] bg-[var(--z-sunken)]"></span>
@@ -520,10 +499,10 @@
 			<p class="max-w-[320px] text-center text-[13px] leading-relaxed text-[var(--z-muted)]">This conversation has no messages.</p>
 		</div>
 	{:else if latest && rendered}
-		<!-- The column is left-aligned, not centred: centring walks the message away
-		     from the list it came from and from the Reply buttons above it. -->
+		<!-- The column is centred in the pane, a page on a desk, and the toolbar
+		     above spans the same width, so Reply stays over the subject. -->
 		<div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-6 py-6 select-text @max-md:px-4 @max-md:py-4 overscroll-contain">
-			<div class="flex max-w-[680px] flex-col gap-5">
+			<div class="mx-auto flex max-w-[680px] flex-col gap-5">
 				<!-- A subject can be one long word (a URL, a ticket id): it breaks
 				     rather than widening the column it heads. -->
 				<h1 class="text-[24px] leading-[1.15] font-bold tracking-[-0.02em] [overflow-wrap:anywhere] text-[var(--z-ink)] @max-md:text-[19px]">
@@ -589,7 +568,6 @@
 										<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 											<Menu.Trigger
 												class="z-icon-btn !size-6 max-md:!size-10"
-												data-reply-to={message.id}
 												aria-label="Reply to this message"
 												title="Reply to this message"
 											>
@@ -601,9 +579,9 @@
 											<Portal>
 												<Menu.Positioner>
 													<Menu.Content class="z-menu z-40 w-44">
-														<Menu.Item value="reply" class="z-menu-item" onSelect={() => composeTo('reply', message)}>Reply</Menu.Item>
-														<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => composeTo('replyAll', message)}>Reply all</Menu.Item>
-														<Menu.Item value="forward" class="z-menu-item" onSelect={() => composeTo('forward', message)}>Forward</Menu.Item>
+														<Menu.Item value="reply" class="z-menu-item" onSelect={() => onCompose('reply', message)}>Reply</Menu.Item>
+														<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => onCompose('replyAll', message)}>Reply all</Menu.Item>
+														<Menu.Item value="forward" class="z-menu-item" onSelect={() => onCompose('forward', message)}>Forward</Menu.Item>
 													</Menu.Content>
 												</Menu.Positioner>
 											</Portal>

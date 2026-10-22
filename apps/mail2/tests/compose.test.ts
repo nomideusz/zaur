@@ -27,11 +27,9 @@ import {
 } from '../src/lib/compose/quote.ts';
 import {
 	computeStep,
-	bodyHeightPx,
 	computeAutoHeight,
 	maximizedRect,
 	openingPosition,
-	replyPosition,
 	clampPanel,
 	fitPanel,
 	PANEL_DEFAULT_W,
@@ -339,21 +337,16 @@ test('formatWhen renders medium date + short time', () => {
 
 // --- layout ---
 
-test('computeStep and bodyHeightPx follow the quiet-guidance ladder', () => {
+test('computeStep follows the quiet-guidance ladder', () => {
 	assert.equal(computeStep(draft()), 0);
-	assert.equal(bodyHeightPx(draft()), 84);
-	assert.equal(bodyHeightPx(draft({ to: [chip('a@x.com')] })), 112);
-	assert.equal(bodyHeightPx(draft({ to: [chip('a@x.com')], subject: 'Hi' })), 340);
-	assert.equal(bodyHeightPx(draft({ bodyOpened: true })), 340);
-	assert.equal(bodyHeightPx(draft({ stage: 'maximized' })), 340);
 	assert.equal(computeStep(draft({ to: [chip('a@x.com')] })), 1);
 	assert.equal(computeStep(draft({ to: [chip('a@x.com')], subject: 'Hi' })), 2);
 });
 
 test('computeAutoHeight matches the spec formula', () => {
-	// 45 header + 44 To + 45 subject + 84 body + 53 actions = 271
-	assert.equal(computeAutoHeight(draft()), 271);
-	// one chip adds one 32px row; recipient+subject grow the body to 340
+	// 45 header + 44 To + 45 subject + 340 body + 53 actions = 527: a new message opens at a reply's size
+	assert.equal(computeAutoHeight(draft()), 527);
+	// one chip adds one 32px row
 	assert.equal(
 		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi' })),
 		45 + 44 + 32 + 45 + 340 + 53
@@ -381,20 +374,6 @@ test('maximizedRect: fills the pane between the top bar and the status line', ()
 	assert.deepEqual(maximizedRect(500, 400), { x: 12, y: 12, w: 476, h: 340 });
 	// Never wider than the cap, however wide the shell gets.
 	assert.equal(maximizedRect(2400, 1200).w, PANEL_MAX_W);
-});
-
-test('replyPosition: beside the reader, never over it; null without room', () => {
-	const reader = { left: 720, top: 52, right: 1440, bottom: 900 };
-	const placed = replyPosition(reader, 1440, 900);
-	assert.ok(placed);
-	assert.equal(placed.w, 704); // the room left of the reader, under the default width
-	assert.ok(placed.x + placed.w <= reader.left, 'clear of the reader');
-	assert.equal(placed.y, 900 - 36 - 12 - PANEL_TYPICAL_H); // docked low without a button
-	const button = { left: 744, top: 62, right: 850, bottom: 90 };
-	assert.equal(replyPosition(reader, 1440, 1400, button)?.y, 64); // level with Reply, clear of the top bar
-	assert.equal(replyPosition(reader, 1440, 900, { ...button, top: 880 })?.y, 900 - 36 - 12 - PANEL_TYPICAL_H); // never off the bottom
-	assert.equal(replyPosition({ ...reader, left: 1200 }, 1440, 900)?.w, PANEL_DEFAULT_W);
-	assert.equal(replyPosition({ ...reader, left: 400 }, 1440, 900), null);
 });
 
 test('openingPosition: leans from the shell centre toward the button, cascades', () => {
