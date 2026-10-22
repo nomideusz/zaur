@@ -59,10 +59,10 @@
 {#snippet navRow(name: string, channel: Channel, on: boolean, count: number, onclick: () => void, toggle = false, depth = 0, dropId: string | null = null)}
 	<button
 		type="button"
-		class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] max-md:min-h-11 max-md:text-[15px] {on
+		class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] focus-visible:outline-offset-[-1px] max-md:min-h-11 max-md:text-[15px] {on
 			? 'z-hue-wash font-semibold'
 			: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'} {dropId && dropOn === dropId
-			? '!border-[var(--z-accent-stroke)] bg-[var(--z-hover)]'
+			? '!border-[var(--z-stroke)] bg-[var(--z-hover)]'
 			: ''}"
 		style="{channelStyle(channel)};--z-rail-inset:6px;--z-rail-strength:{on ? '1' : '0'}"
 		style:color={on ? channel.ink : undefined}
@@ -99,7 +99,7 @@
 				style:--z-stroke={on ? channel.stroke : 'var(--z-line)'}
 				style:--z-ink-on={on ? channel.ink : 'var(--z-muted)'}
 			>
-				{count}
+				{count}<span class="sr-only">&nbsp;unread</span>
 			</span>
 		{/if}
 	</button>
@@ -148,6 +148,7 @@
 			     The negative margins are the touch target, without moving the caption. -->
 			<a
 				href="/settings/folders"
+				aria-label="Edit folders"
 				class="font-medium text-[var(--z-soft)] hover:text-[var(--z-accent)] max-md:-my-3.5 max-md:-mr-3 max-md:px-3 max-md:py-3.5"
 				onclick={onClose
 					? (event) => {
@@ -169,7 +170,7 @@
 				{/each}
 			{:else}
 				{#each ['Inbox', 'Drafts', 'Sent', 'Archive', 'Trash'] as name (name)}
-					<li class="z-skeleton h-[33px] rounded-[8px] bg-[var(--z-sunken)]"></li>
+					<li class="z-skeleton h-9 rounded-[8px] bg-[var(--z-sunken)] max-md:h-11"></li>
 				{/each}
 			{/if}
 		</ul>
@@ -177,10 +178,15 @@
 		<!--
 			A mailbox shared with you is a group of its own, under its owner's
 			address: just its Inbox until you open it, then every folder you can see.
+			The address is set in mono, like every address; "Shared" sits where
+			Mailboxes has Edit, so a phone says what the group is without a tooltip.
 		-->
 		{#each shared as box (box.id)}
 			{@const open = box.id === activeAccount}
-			<h2 class="z-caption mt-5 mb-[9px] truncate px-1.5" title="Shared with you by {box.name}">{box.name}</h2>
+			<h2 class="z-caption mt-5 mb-[9px] flex items-baseline gap-2 px-1.5" title="Shared with you by {box.name}">
+				<span class="z-mono min-w-0 flex-1 truncate text-[12px]">{box.name}</span>
+				<span class="shrink-0">Shared</span>
+			</h2>
 			<ul class="flex flex-col gap-[3px]" role="list">
 				{#each open ? box.mailboxes : box.mailboxes.filter((mailbox) => mailbox.kind === 'inbox') as mailbox (mailbox.id)}
 					<li>
