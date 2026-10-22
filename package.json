@@ -11,7 +11,6 @@
     "build:web": "pnpm --filter @zaur/web build",
     "build:mail2": "pnpm --filter @zaur/mail2 build",
     "build:music": "pnpm --filter @zaur/music build",
-    "build:ui": "pnpm --filter @zaur/ui build:css",
     "check:mail2": "pnpm --filter @zaur/mail2 check",
     "test:mail2": "pnpm --filter @zaur/mail2 test",
     "test:register": "pnpm --filter @zaur/register test:e2e"

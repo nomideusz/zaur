@@ -10,7 +10,7 @@
 		<link rel="manifest" href="%sveltekit.assets%/manifest.webmanifest" />
 		<meta name="apple-mobile-web-app-title" content="%sveltekit.env.PUBLIC_APP_NAME%" />
 		<!-- `viewport-fit=cover`: the page reaches under the home indicator and the
-		     notch, and `.z-safe` (styles/base.css) keeps the app clear of both. -->
+		     notch, and `.z-safe` (@zaur/ui base.css) keeps the app clear of both. -->
 		<meta
 			name="viewport"
 			content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content"
@@ -20,7 +20,7 @@
 			The colour Android paints its toolbar, and iOS before 26 its status
 			bar: `--z-surface`, the colour of the app's own top bar. iOS 26+
 			ignores it and takes the strip from the page — see `.z-screen` in
-			styles/base.css. After the page's own head, so a screen that brings
+			@zaur/ui base.css. After the page's own head, so a screen that brings
 			its own tag wins (the first match does); the root layout then keeps
 			them all on the colour actually under the top edge.
 		-->

@@ -9,8 +9,8 @@ const issuer = new URL(process.env.OIDC_ISSUER?.trim() || 'https://webmail.zaur.
 
 // SvelteKit 3: configuration lives here, as in mail2.
 export default defineConfig({
-	// The design tokens and fonts are mail2's (layout.css imports them); the dev server has to be allowed to serve them.
-	server: { fs: { allow: ['../mail2/src/routes/styles'] } },
+	// The design system's fonts live in packages/ui (@zaur/ui); the dev server has to be allowed to serve them.
+	server: { fs: { allow: ['../../packages/ui'] } },
 	plugins: [
 		tailwindcss(),
 		sveltekit({

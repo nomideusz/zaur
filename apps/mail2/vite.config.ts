@@ -11,7 +11,9 @@ export default defineConfig({
 		// Vite rejects requests whose Host header is neither localhost nor in
 		// this list — this is the cloudflared tunnel name used for
 		// on-the-internet testing (README → "Testing over the network").
-		allowedHosts: ['mail2-dev.zaur.app']
+		allowedHosts: ['mail2-dev.zaur.app'],
+		// The design system's fonts live in packages/ui (@zaur/ui).
+		fs: { allow: ['../../packages/ui'] }
 	},
 	plugins: [
 		tailwindcss(),

@@ -5,11 +5,12 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY packages/ui/package.json ./packages/ui/
 COPY apps/music/package.json ./apps/music/
 RUN pnpm install --frozen-lockfile --filter @zaur/music...
 
-# Music wears mail2's design system: its tokens, primitives and fonts.
-COPY apps/mail2/src/routes/styles ./apps/mail2/src/routes/styles
+# The suite's design system: tokens, primitives and fonts.
+COPY packages/ui ./packages/ui
 COPY apps/music ./apps/music
 
 RUN pnpm --filter @zaur/music build

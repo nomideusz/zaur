@@ -6,5 +6,5 @@
  */
 @import 'tailwindcss';
 
-@import './styles/tokens.css';
-@import './styles/base.css';
+@import '@zaur/ui/tokens.css';
+@import '@zaur/ui/base.css';

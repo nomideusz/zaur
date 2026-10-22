@@ -145,6 +145,9 @@ importers:
       '@types/node':
         specifier: ^25.9.1
         version: 25.9.1
+      '@zaur/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       svelte:
         specifier: ^5.57.2
         version: 5.57.2
@@ -263,11 +266,7 @@ importers:
         specifier: ^6.0.2
         version: 6.0.3
 
-  packages/ui:
-    dependencies:
-      clsx:
-        specifier: ^2.1.1
-        version: 2.1.1
+  packages/ui: {}
 
 packages:
 

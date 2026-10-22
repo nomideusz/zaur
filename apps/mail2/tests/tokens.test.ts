@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 
-const css = readFileSync(new URL('../src/routes/styles/tokens.css', import.meta.url), 'utf8');
+const css = readFileSync(new URL('../../../packages/ui/src/tokens.css', import.meta.url), 'utf8');
 
 // Design system v2 ("Pastel channels, tactile controls") is contractual: one
 // light palette with a specified dark ramp, one accent, six channels, fixed
@@ -80,7 +80,7 @@ test('tokens: Tailwind theme bridge exposes the palette as utilities', () => {
 
 // --- shared primitives -----------------------------------------------------
 
-const base = readFileSync(new URL('../src/routes/styles/base.css', import.meta.url), 'utf8');
+const base = readFileSync(new URL('../../../packages/ui/src/base.css', import.meta.url), 'utf8');
 
 test('base: the primitives every surface draws from exist once', () => {
 	for (const cls of [

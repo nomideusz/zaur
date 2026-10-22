@@ -1,11 +1,11 @@
 /*
- * Zaur Music wears mail2's design system: its tokens and primitives, imported
- * as register does. Music's own shared page pieces follow.
+ * Zaur Music wears the suite's design system (@zaur/ui): its tokens and
+ * primitives, as Mail and Register do. Music's own shared page pieces follow.
  */
 @import 'tailwindcss';
 
-@import '../../../mail2/src/routes/styles/tokens.css';
-@import '../../../mail2/src/routes/styles/base.css';
+@import '@zaur/ui/tokens.css';
+@import '@zaur/ui/base.css';
 
 /*
  * An app, not a document: no grey flash on a tap, no text selected or callout

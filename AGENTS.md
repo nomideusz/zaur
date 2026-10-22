@@ -3,8 +3,9 @@
 ## Cursor Cloud specific instructions
 
 This is the **Zaur** pnpm monorepo (`pnpm@10.32.1`, Node 22). Standard setup is `pnpm install`
-(see `README.md`). CSS for `@zaur/ui` is built automatically by `predev`/`prestart` hooks, so no
-separate build step is needed before running the apps.
+(see `README.md`). The suite's design system is `@zaur/ui` (`packages/ui`, documented in
+`DESIGN.md`): plain CSS that Mail and Music import by package name and Register by path, so there
+is no build step for it.
 
 ### Apps, dev commands, and ports
 
@@ -15,7 +16,7 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
 | `@zaur/web` (landing) | `pnpm dev:web` | 5173 | Fully standalone; no backend needed |
 | `@zaur/mail2` | `pnpm dev:mail2` | 5175 | Mail 2.0 rebuild ([ADR-0005](docs/decisions/0005-mail-2.0.md)); remote functions + light tokens; own `/login` (Stalwart OAuth in prod, password fallback in dev) via `@zaur/server-auth`; 1.0 session sharing remains as a fallback |
 | `@zaur/music` | `pnpm dev:music` | 5176 | Zaur Music PWA over Navidrome (music.zaur.app); Zaur sign-in as an OIDC client of mail2, one Navidrome user per address; "Add from YouTube" runs yt-dlp + ffmpeg into `<MUSIC_DIR>/YouTube`. See `apps/music/.env.example` |
-| `@zaur/register` | `pnpm dev:register` | 3000 | Express; needs Stalwart admin creds for real signups. Styled with mail2's design system: `src/app.css` imports mail2's `tokens.css`/`base.css`, built to the committed `public/app.css` by `pnpm --filter @zaur/register build:css` (no build step in Docker, so rebuild and commit after touching either side) |
+| `@zaur/register` | `pnpm dev:register` | 3000 | Express; needs Stalwart admin creds for real signups. Styled with the suite's design system: `src/app.css` imports `@zaur/ui`'s `tokens.css`/`base.css` by path, built to the committed `public/app.css` by `pnpm --filter @zaur/register build:css` (no build step in Docker, so rebuild and commit after touching either side) |
 
 
 ### Native mobile direction

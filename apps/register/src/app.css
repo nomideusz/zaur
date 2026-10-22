@@ -1,16 +1,17 @@
 /*
- * Register's stylesheet: mail2's design system (tokens + base primitives),
- * so signing up looks like the rest of Zaur Mail. Built into public/app.css
- * by scripts/build-css.mjs — the source of truth for every token and shared
- * class is apps/mail2/src/routes/styles.
+ * Register's stylesheet: the suite's design system (@zaur/ui: tokens + base
+ * primitives), so signing up looks like the rest of Zaur Mail. Built into
+ * public/app.css by scripts/build-css.mjs — the source of truth for every
+ * token and shared class is packages/ui/src. Imported by path, not package
+ * name: the Docker image installs with npm, which has no workspaces.
  *
  * The CSP has no 'unsafe-inline', so nothing here may rely on a style=""
  * attribute: channel colours come from the .tone-* classes below.
  */
 @import 'tailwindcss' source('../public');
 
-@import '../../mail2/src/routes/styles/tokens.css';
-@import '../../mail2/src/routes/styles/base.css';
+@import '../../../packages/ui/src/tokens.css';
+@import '../../../packages/ui/src/base.css';
 
 @layer components {
 	/* mail2's AuthCard: the signed-out screens' card. */

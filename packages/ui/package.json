@@ -1,22 +1,12 @@
 {
   "name": "@zaur/ui",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
+  "description": "The Zaur suite's design system: tokens, primitives and the UI mono, shared by Mail, Register and Music.",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./circadian": "./src/circadian/index.ts",
-    "./circadian.css": "./src/circadian.css",
-    "./css/zaur.css": "./css/zaur.css",
-    "./theme.css": "./src/theme.css",
-    "./auth.css": "./src/auth.css",
-    "./label-input.css": "./src/label-input.css",
-    "./cn": "./src/cn.ts"
-  },
-  "scripts": {
-    "build:css": "node scripts/build-css.mjs"
-  },
-  "dependencies": {
-    "clsx": "^2.1.1"
+    "./tokens.css": "./src/tokens.css",
+    "./base.css": "./src/base.css",
+    "./fonts/*": "./src/fonts/*"
   }
 }

@@ -3,8 +3,8 @@
 A player for the shared music library at music.zaur.app. Navidrome holds the
 library and this app is its face: a SvelteKit PWA that signs in with a Zaur
 address, talks to Navidrome's Subsonic API from the server, and can add a song
-from a YouTube link. It wears mail2's design system (the stylesheets are
-imported from `apps/mail2/src/routes/styles`, and the Dockerfile copies them).
+from a YouTube link. It wears the suite's design system, `@zaur/ui`
+(`packages/ui`), as Mail and Register do.
 
 ## Running
 

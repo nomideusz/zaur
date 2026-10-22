@@ -769,7 +769,7 @@ The rest follows from those two:
   Calibri, 'DejaVu Sans', source-sans-pro, sans-serif`. The one downloaded face
   is [Ioskeley Mono](https://github.com/ahatem/IoskeleyMono) (OFL), for
   captions, counts, times, addresses and keys: three weights, subset to Latin
-  without code ligatures, ~18 KB each, in `src/routes/styles/fonts/`. Mail
+  without code ligatures, ~18 KB each, in `packages/ui/src/fonts/`. Mail
   itself (a plain-text body, code in a message) keeps the system mono,
   `--font-mail-mono`: `ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo,
   Consolas, 'DejaVu Sans Mono', monospace`. Eight roles from

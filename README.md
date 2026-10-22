@@ -29,7 +29,7 @@ stack on Contabo (`infra/meet/`) can be stopped.
 
 | Package | Purpose |
 |---------|---------|
-| `@zaur/ui` | Shared design tokens, components CSS, and utilities (mail2 + web) |
+| `@zaur/ui` | The suite's design system: tokens, primitives and fonts for Mail, Register and Music (see `DESIGN.md`) |
 
 ## Native mobile
 
