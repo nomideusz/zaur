@@ -1,6 +1,8 @@
 <script module lang="ts">
 	// Said once per outage: offline, every sheet opened would say it again.
 	let editorFailTold = false;
+	// The formatting row, as the last panel left it: someone who formats keeps it open.
+	let formatRemembered = false;
 	if (typeof window !== 'undefined') window.addEventListener('online', () => (editorFailTold = false));
 </script>
 
@@ -46,6 +48,14 @@
 	const subjectId = $derived(`compose-subject-${draft.id}`);
 	const bodyId = $derived(`compose-body-${draft.id}`);
 	const toolsId = $derived(`compose-tools-${draft.id}`);
+	/**
+	 * Eleven formatting buttons sat in the bar between the message and Send.
+	 * They wait behind Aa; their keys (⌘B, ⌘I, ⌘K) work with the row closed.
+	 */
+	let formatOpen = $state(formatRemembered);
+	function toggleFormat() {
+		formatOpen = formatRemembered = !formatOpen;
+	}
 
 	/**
 	 * The per-field key names. To, Cc and Bcc are one field three times over, so
@@ -66,9 +76,9 @@
 	const maximized = $derived(draft.stage === 'maximized');
 	/**
 	 * A phone has no window manager either: the panel drops its geometry and
-	 * fills the shell. Drag, resize and maximize go with it, and Send moves up
-	 * into the header, where the thumb is. The shell itself lifts with the
-	 * keyboard (`#lib/keyboard`), so this bar stays in the visible strip.
+	 * fills the shell. Drag, resize and maximize go with it. Send stays in the
+	 * action bar, bottom right, where the thumb is: the shell lifts with the
+	 * keyboard (`#lib/keyboard`), so that bar sits right on top of it.
 	 * A shell too short to float a panel in (a phone in landscape, a squat
 	 * desktop window) gets the sheet as well.
 	 */
@@ -718,7 +728,7 @@
 				autocorrect="off"
 				spellcheck="false"
 				enterkeyhint="done"
-				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent max-[359px]:min-w-[72px] max-[359px]:basis-[72px] text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none aria-invalid:text-[var(--z-danger)] max-md:text-base"
+				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent max-[359px]:min-w-[72px] max-[359px]:basis-[72px] text-sm text-[var(--z-ink)] placeholder:text-[var(--z-soft)] focus:outline-none aria-invalid:text-[var(--z-danger)] max-md:text-base"
 			/>
 
 			{#if openOf(field)}
@@ -974,8 +984,8 @@
 		{#if sheet}
 			<!--
 				A sheet is one screen, so it gets the reader's rule: the way out alone
-				at the left edge, Send at the right where the thumb is, and targets
-				sized for a thumb in between. The bar says what kind of message this is
+				at the left edge, and targets sized for a thumb. Send is in the action
+				bar over the keyboard, unless the sheet is too cramped for that bar. The bar says what kind of message this is
 				rather than repeating a truncated subject — that is a field two rows
 				down, and the only thing the window header has to tell panels apart.
 			-->
@@ -1005,7 +1015,7 @@
 					<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 			</button>
-			{@render sendButton(true)}
+			{#if noBar}{@render sendButton(true)}{/if}
 		{:else}
 			<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--z-body)]">{title}</span>
 			{#if saveLabel}
@@ -1093,7 +1103,7 @@
 						{#if index > 0}<span class="mx-1.5 text-[var(--z-faint)]">·</span>{/if}
 						<span class="text-[var(--z-faint)]">{row.label}</span> {row.names}
 					{:else}
-						<span class="text-[var(--z-faint)]">To</span>
+						<span class="text-[var(--z-soft)]">To</span>
 					{/each}
 				</span>
 				<svg class="size-4 shrink-0 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -1103,7 +1113,7 @@
 		{:else if compose.identities.length > 1}
 			<label class="flex h-[45px] items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px]">
 				{@render stepDot(true)}
-				<span class="shrink-0 text-sm text-[var(--z-faint)]">From</span>
+				<span class="shrink-0 text-sm text-[var(--z-soft)]">From</span>
 				<select
 					value={draft.from}
 					onchange={(event) => compose.setFrom(draft.id, event.currentTarget.value)}
@@ -1143,7 +1153,7 @@
 						sendError: null
 					})}
 				onkeydown={onSubjectKeydown}
-				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
+				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-soft)] focus:outline-none max-md:text-base"
 			/>
 		</div>
 
@@ -1207,6 +1217,17 @@
 			? 'h-16 gap-1 px-2'
 			: 'h-[53px] gap-2 pr-3 pl-4'}"
 	>
+		<!-- Destructive first, alone at the start: as far from Send as the bar goes. Discard has an Undo. -->
+		<button
+			type="button"
+			class="btn-tactile btn-danger shrink-0 !p-0 {viewport.phone ? '!size-11' : '!size-[30px]'}"
+			aria-label="Discard draft"
+			title="Discard draft"
+			onclick={() => compose.discard(draft.id)}
+		>
+			<ActionIcon name="trash" class="size-[18px]" />
+		</button>
+		<span class="{viewport.phone ? 'h-6' : 'h-5'} w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
 		<button
 			type="button"
 			class="btn-tactile shrink-0 !p-0 {viewport.phone ? '!size-11' : '!size-[30px]'}"
@@ -1310,8 +1331,19 @@
 					</Portal>
 				</Popover.Root>
 		<span class="{viewport.phone ? 'h-6' : 'h-5'} w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
-		<RichToolbar id={toolsId} off={draft.plain} large={viewport.phone} class="overflow-x-auto {viewport.phone ? 'pr-4' : ''}" />
-		{#if viewport.phone && !draft.plain}
+		<button
+			type="button"
+			class="z-icon-btn shrink-0 text-[13px] font-semibold {viewport.phone ? '!size-11 text-[15px]' : ''} {formatOpen ? '!bg-[var(--z-sunken)] !text-[var(--z-ink)]' : ''}"
+			aria-expanded={formatOpen}
+			aria-controls={toolsId}
+			aria-label="Formatting"
+			title={formatOpen ? 'Hide formatting' : 'Formatting'}
+			onclick={toggleFormat}
+		>
+			<span aria-hidden="true"><span class="font-serif">A</span>a</span>
+		</button>
+		<RichToolbar id={toolsId} off={draft.plain || !formatOpen} large={viewport.phone} class="overflow-x-auto {viewport.phone ? 'pr-4' : ''}" />
+		{#if viewport.phone && formatOpen && !draft.plain}
 			<!-- A phone shows three of the eleven: the fade says the row goes on. -->
 			<span class="relative -ml-1 w-0 shrink-0 self-stretch" aria-hidden="true">
 				<span
@@ -1320,31 +1352,23 @@
 				></span>
 			</span>
 		{/if}
-		<button
-			type="button"
-			class="z-icon-btn !w-auto shrink-0 font-semibold {viewport.phone ? 'h-11 px-3 text-[14px]' : 'px-1.5 text-[11.5px]'} {draft.plain
-				? '!bg-[var(--z-accent-soft)] !text-[var(--z-accent-edge)]'
-				: ''}"
-			aria-pressed={draft.plain}
-			title={draft.plain ? 'Switch to rich text' : 'Switch to plain text — formatting is dropped'}
-			onclick={togglePlain}
-		>
-			Plain
-		</button>
-		<button
-			type="button"
-			class="ml-auto btn-tactile btn-danger shrink-0 !p-0 {viewport.phone ? '!size-11' : '!size-[30px]'}"
-			aria-label="Discard draft"
-			title="Discard draft"
-			onclick={() => compose.discard(draft.id)}
-		>
-				<ActionIcon name="trash" class="size-[18px]" />
+		{#if formatOpen}
+			<button
+				type="button"
+				class="z-icon-btn !w-auto shrink-0 font-semibold {viewport.phone ? 'h-11 px-3 text-[14px]' : 'px-1.5 text-[11.5px]'} {draft.plain
+					? '!bg-[var(--z-accent-soft)] !text-[var(--z-accent-edge)]'
+					: ''}"
+				aria-pressed={draft.plain}
+				title={draft.plain ? 'Switch to rich text' : 'Switch to plain text — formatting is dropped'}
+				onclick={togglePlain}
+			>
+				Plain
 			</button>
-			<!-- Primary last, on the right: attach/schedule left, discard + Send right. -->
-			{#if !sheet}
-				{@render sendButton(false)}
-			{/if}
-		</div>
+		{/if}
+		<!-- Primary last, at the far edge from Discard: a slip between the two used to throw a message away. -->
+		<span class="min-w-0 flex-1" aria-hidden="true"></span>
+		{@render sendButton(viewport.phone)}
+	</div>
 
 	{#if !filled}
 		<!-- Resize: right edge, bottom edge, corner -->

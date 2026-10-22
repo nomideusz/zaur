@@ -3,7 +3,7 @@
 	export const fieldClass =
 		'flex h-10 items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] focus-within:border-[var(--z-accent)] focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.18)]';
 	export const inputClass =
-		'min-w-0 flex-1 border-0 bg-transparent text-[14px] text-[var(--z-ink)] outline-none placeholder:text-[var(--z-faint)] disabled:opacity-60 max-md:text-base';
+		'min-w-0 flex-1 border-0 bg-transparent text-[14px] text-[var(--z-ink)] outline-none placeholder:text-[var(--z-soft)] disabled:opacity-60 max-md:text-base';
 	export const linkClass = 'font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)]';
 </script>
 

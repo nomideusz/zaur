@@ -222,8 +222,8 @@
 		--z-hairline: #1e2836;
 		--z-line: #2c3949;
 		--z-scrim: rgba(0, 0, 0, 0.5);
-		--z-accent: #3b82f6;
-		--z-accent-edge: #2563eb;
+		--z-accent: #2563eb; /* white on #3b82f6 is 3.7:1; this is 5.2:1 */
+		--z-accent-edge: #1d4ed8;
 		--z-accent-stroke: #3b82f6;
 		--z-accent-line: color-mix(in oklab, #3b82f6 55%, var(--z-surface));
 		--z-accent-ink: #dbeafe;
@@ -288,8 +288,8 @@
 	--z-hairline: #1e2836;
 	--z-line: #2c3949;
 	--z-scrim: rgba(0, 0, 0, 0.5);
-	--z-accent: #3b82f6;
-	--z-accent-edge: #2563eb;
+	--z-accent: #2563eb;
+	--z-accent-edge: #1d4ed8;
 	--z-accent-stroke: #3b82f6;
 	--z-accent-line: color-mix(in oklab, #3b82f6 55%, var(--z-surface));
 	--z-accent-ink: #dbeafe;

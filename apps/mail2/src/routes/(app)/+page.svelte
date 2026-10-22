@@ -40,7 +40,7 @@
 		DEFAULT_PREFS
 	} from '#lib/settings.svelte.ts';
 	import { accountPrefs, identities, setAccountPrefs } from '../settings.remote';
-	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
+	import { openingPosition, replyPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { viewport } from '#lib/viewport.svelte.ts';
@@ -591,7 +591,9 @@
 		message: MessageDetail,
 		anchor: AnchorRect | null
 	) {
-		const position = panelPosition(anchor);
+		// Beside the conversation, so what is being answered stays in view.
+		const reader = viewport.phone ? null : document.querySelector('[aria-label="Message reader"]')?.getBoundingClientRect();
+		const position = (reader && replyPosition(reader, rootW, rootH)) || panelPosition(anchor);
 		// A forward is sent from your mailbox, so a shared one's files are copied into it first.
 		if (mailAccount && mode === 'forward' && message.attachments.length > 0) {
 			const copied = await copyAttachments({
@@ -1038,6 +1040,13 @@
 			case 'k':
 				event.preventDefault();
 				moveCursor(-1);
+				break;
+			// Inside the list the arrows walk it, as they do any list; elsewhere they scroll.
+			case 'ArrowDown':
+			case 'ArrowUp':
+				if (!target?.closest?.('.z-row-open')) break;
+				event.preventDefault();
+				moveCursor(event.key === 'ArrowDown' ? 1 : -1);
 				break;
 			case 'Enter':
 			case 'o':

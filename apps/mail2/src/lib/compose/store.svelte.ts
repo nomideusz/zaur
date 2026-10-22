@@ -101,6 +101,7 @@ const SHOWN = { cc: 'ccShown', bcc: 'bccShown' } as const;
 export interface NewDraftOptions {
 	x?: number;
 	y?: number;
+	w?: number;
 	kind?: DraftKind;
 	to?: Recipient[];
 	cc?: Recipient[];
@@ -265,7 +266,7 @@ class ComposeStore {
 			stage: 'default',
 			x: options.x ?? 24,
 			y: options.y ?? 76,
-			w: PANEL_DEFAULT_W,
+			w: options.w ?? PANEL_DEFAULT_W,
 			h: 460,
 			saved: null,
 			auto: true,
@@ -286,7 +287,7 @@ class ComposeStore {
 		message: MessageDetail,
 		myEmails: Set<string>,
 		mode: ReplyMode,
-		position?: { x: number; y: number }
+		position?: { x: number; y: number; w?: number }
 	): string {
 		const seed = mode === 'forward' ? forwardSeed(message) : replySeed(message);
 		// Answer from the address it was sent to, when that is one of ours.

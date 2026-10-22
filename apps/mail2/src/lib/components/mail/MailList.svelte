@@ -123,7 +123,39 @@
 		if (!cursorId || !listContainer) return;
 		const element = listContainer.querySelector(`[data-row-id="${CSS.escape(cursorId)}"]`);
 		element?.scrollIntoView({ block: 'nearest' });
+		const active = document.activeElement;
+		if (active === document.body || (active && listContainer.contains(active))) {
+			element?.querySelector<HTMLElement>('.z-row-open')?.focus({ preventScroll: true });
+		}
 	});
+
+	/**
+	 * The list is one tab stop: the cursor row, else the open one, else the
+	 * first. j / k (and the arrows, inside the list) move it, and focus goes
+	 * with it while the keyboard is in the list, so a screen reader reads the
+	 * row the cursor is on.
+	 */
+	const focusId = $derived(
+		[cursorId, openThreadId].find((id) => id && flatRows.some((row) => row.threadId === id)) ??
+			flatRows[0]?.threadId ??
+			null
+	);
+
+	/** What a row says to a screen reader: the state its colour and weight show, then who, what and when. */
+	function rowLabel(row: ListRow): string {
+		return [
+			row.unread && 'Unread',
+			row.starred && 'Flagged',
+			row.important && 'Important',
+			row.senderLabel,
+			row.subject || '(no subject)',
+			formatListTime(row.receivedAt),
+			row.messageCount > 1 && `${row.messageCount} messages`,
+			row.hasAttachment && 'has attachment'
+		]
+			.filter(Boolean)
+			.join(', ');
+	}
 
 	function selectAll() {
 		onSetSelection(new Set(flatRows.map((row) => row.threadId)));
@@ -196,6 +228,7 @@
 	class="@container flex h-full min-h-0 flex-col overflow-hidden bg-[var(--z-surface)] select-none {className}"
 	aria-label="Message list"
 >
+	<h1 class="sr-only">{searchQuery ? `Search results for ${searchQuery}` : (mailbox?.name ?? 'Mail')}</h1>
 	<!--
 		The header swaps its contents rather than growing a second bar: a list
 		that jumps under you the moment you tick a box is the worst time to move
@@ -521,17 +554,16 @@
 			{#each groups as group (group.label)}
 				<!-- Group divider: stays put while its own rows scroll under it. -->
 				<div
-					class="sticky top-0 z-[5] -mx-3.5 flex items-center gap-2.5 bg-[color-mix(in_oklab,var(--z-surface)_95%,transparent)] px-3.5 pt-3 pb-[7px] backdrop-blur max-md:-mx-3 max-md:px-3"
-					role="separator"
-					aria-label={group.label}
+					class="sticky top-0 z-[5] -mx-3.5 flex items-center gap-2.5 bg-[color-mix(in_oklab,var(--z-surface)_95%,transparent)] px-3.5 pt-3 pb-[5px] backdrop-blur max-md:-mx-3 max-md:px-3"
+					aria-hidden="true"
 				>
 					<span class="z-caption">{group.label}</span>
 					<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
 					<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)] max-md:text-[12px]">{group.rows.length}</span>
 				</div>
 
-				<!-- The pixel above is for a selected first row's ring, which the divider would otherwise cover. -->
-				<div class="flex flex-col gap-2 pt-px pb-2">
+				<!-- The 3px above are for a first row's ring (selected, or the cursor's), which the divider would otherwise cover. -->
+				<div class="flex flex-col gap-2 pt-[3px] pb-2" role="list" aria-label={group.label}>
 					{#each group.rows as row (row.threadId)}
 						{@const isCursor = row.threadId === cursorId}
 						{@const isOpen = row.threadId === openThreadId}
@@ -539,9 +571,12 @@
 						{@const channel = rowChannel(row)}
 						<!--
 							Four states, in rank: ticked wears the correspondence selection; open
-							wears its channel's wash with a ring; the keyboard cursor is a whisper
-							of blue; rest is the channel's own colour.
+							wears its channel's wash with a ring; the keyboard cursor is the focus
+							ring over whatever the row already wears; rest is the channel's own
+							colour. The row takes a click anywhere on it; the keyboard and a screen
+							reader have the button inside it, which a click on the text lands on too.
 						-->
+						<!-- svelte-ignore a11y_click_events_have_key_events, a11y_no_noninteractive_element_interactions -->
 						<div
 							data-row-id={row.threadId}
 							data-state={isSelected ? 'selected' : isOpen ? 'open' : isCursor ? 'cursor' : 'rest'}
@@ -549,21 +584,12 @@
 							class="z-row z-railed group/row grid cursor-pointer items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] max-md:gap-x-1 max-md:py-2.5 max-md:pr-2.5 max-md:pl-2 {prefs.showAvatars
 								? 'grid-cols-[18px_30px_minmax(0,1fr)] max-md:grid-cols-[44px_30px_minmax(0,1fr)]'
 								: 'grid-cols-[18px_minmax(0,1fr)] max-md:grid-cols-[44px_minmax(0,1fr)]'}"
-							class:z-hue-wash={row.unread && !isSelected && !isOpen && !isCursor}
-							aria-current={isOpen ? 'true' : undefined}
+							class:z-hue-wash={row.unread && !isSelected && !isOpen}
 							style="{channelStyle(channel)};--z-rail-inset:12px"
 							onclick={() => onOpen(row.threadId)}
 							draggable={viewport.compact ? undefined : true}
 							ondragstart={(event) => event.dataTransfer?.setData('text/x-zaur-thread', row.threadId)}
-							onkeydown={(event) => {
-								if (event.key === 'Enter' || event.key === ' ') {
-									event.preventDefault();
-									onOpen(row.threadId);
-								}
-							}}
-							role="button"
-							tabindex="-1"
-							aria-pressed={isSelected}
+							role="listitem"
 						>
 							<!--
 								Selection checkbox. On a phone the drawn box stays 18px and the
@@ -572,9 +598,11 @@
 							<button
 								type="button"
 								class="flex size-[18px] items-center justify-center self-center max-md:size-11"
-								aria-label={isSelected ? 'Deselect thread' : 'Select thread'}
-								aria-pressed={isSelected}
-								title={isSelected ? 'Deselect thread' : 'Select thread'}
+								role="checkbox"
+								aria-checked={isSelected}
+								aria-label="Select conversation from {row.senderLabel}"
+								title={isSelected ? 'Deselect (x)' : 'Select (x)'}
+								tabindex={-1}
 								onclick={(event) => {
 									event.stopPropagation();
 									onToggleSelect(row.threadId);
@@ -592,9 +620,16 @@
 								</span>
 							{/if}
 
-							<div class="min-w-0">
-								<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
-									<div class="flex min-w-0 items-baseline gap-[7px]">
+							<!-- No click handler of its own: the click goes on to the row's. -->
+							<button
+								type="button"
+								class="z-row-open block min-w-0 cursor-pointer text-left"
+								tabindex={row.threadId === focusId ? 0 : -1}
+								aria-label={rowLabel(row)}
+								aria-current={isOpen ? 'true' : undefined}
+							>
+								<span class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2" aria-hidden="true">
+									<span class="flex min-w-0 items-baseline gap-[7px]">
 										<span class="truncate text-[13px] {row.unread ? 'font-bold text-[var(--z-ink)]' : 'font-medium text-[var(--z-muted)]'}">
 											{row.senderLabel}
 										</span>
@@ -609,11 +644,11 @@
 												{row.messageCount}
 											</span>
 										{/if}
-									</div>
+									</span>
 
 									<!-- Indicators only — the buttons that act on them are in the
 									     hover strip, which takes over exactly this slot. -->
-									<div class="z-row-meta flex shrink-0 items-center gap-1.5">
+									<span class="z-row-meta flex shrink-0 items-center gap-1.5">
 										{#if row.hasAttachment}
 											<ActionIcon name="clip" class="size-3.5 shrink-0 text-[var(--z-faint)]" label="Has attachment" />
 										{/if}
@@ -623,19 +658,19 @@
 										>
 											{formatListTime(row.receivedAt)}
 										</time>
-									</div>
-								</div>
+									</span>
+								</span>
 
-								<div class="mt-[3px] truncate text-[14px] leading-snug tracking-[-0.01em] {row.unread ? 'font-semibold text-[var(--z-ink)]' : 'font-normal text-[var(--z-strong)]'}">
+								<span class="mt-[3px] block truncate text-[14px] leading-snug tracking-[-0.01em] {row.unread ? 'font-semibold text-[var(--z-ink)]' : 'font-normal text-[var(--z-strong)]'}" aria-hidden="true">
 									{row.subject}
-								</div>
+								</span>
 
 								{#if prefs.showPreview}
-									<div class="mt-0.5 truncate text-[12.5px] leading-[1.6] text-[var(--z-muted)]">
+									<span class="mt-0.5 block truncate text-[12.5px] leading-[1.6] text-[var(--z-muted)]" aria-hidden="true">
 										{row.preview}
-									</div>
+									</span>
 								{/if}
-							</div>
+							</button>
 
 							<!--
 								Hover actions: one card, quiet items. Pointer-only, and out of
@@ -740,9 +775,31 @@
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 	}
 
-	.z-row[data-state='cursor'] {
-		background: var(--z-accent-faint);
-		border-color: var(--z-accent-line);
+	/*
+	 * The keyboard cursor is the focus ring, drawn whether or not the row holds
+	 * DOM focus (j / k from the reader move it too). A ring, not a fill: the
+	 * whisper of blue it was read as the unread inbox wash's twin.
+	 */
+	.z-row[data-state='cursor'],
+	.z-row:has(.z-row-open:focus-visible) {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 1px;
+	}
+
+	.z-row-open:focus-visible {
+		outline: none;
+	}
+
+	/*
+	 * Text on a channel's wash takes the channel's ink rather than slate: grey
+	 * on amber or violet reads as dirt. Every text tone in the row reads these.
+	 */
+	.z-row.z-hue-wash,
+	.z-row[data-state='open'] {
+		--z-strong: color-mix(in oklab, var(--z-ink-on) 90%, var(--z-ink));
+		--z-muted: color-mix(in oklab, var(--z-ink-on) 85%, var(--z-fill));
+		--z-soft: color-mix(in oklab, var(--z-ink-on) 76%, var(--z-fill));
+		--z-faint: color-mix(in oklab, var(--z-ink-on) 55%, var(--z-fill));
 	}
 
 	.z-row[data-state='selected'] {

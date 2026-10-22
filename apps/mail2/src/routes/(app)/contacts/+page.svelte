@@ -321,7 +321,7 @@
 						</ul>
 					{/each}
 					{#if contactsState.truncated}
-						<p class="px-4 py-3 text-[12px] text-[var(--z-faint)]">Showing the first {all.length} — use search to find the rest.</p>
+						<p class="px-4 py-3 text-[12px] text-[var(--z-soft)]">Showing the first {all.length} — use search to find the rest.</p>
 					{/if}
 				{/if}
 			</div>

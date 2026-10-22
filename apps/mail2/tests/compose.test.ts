@@ -31,6 +31,7 @@ import {
 	computeAutoHeight,
 	maximizedRect,
 	openingPosition,
+	replyPosition,
 	clampPanel,
 	fitPanel,
 	PANEL_DEFAULT_W,
@@ -380,6 +381,17 @@ test('maximizedRect: fills the pane between the top bar and the status line', ()
 	assert.deepEqual(maximizedRect(500, 400), { x: 12, y: 12, w: 476, h: 340 });
 	// Never wider than the cap, however wide the shell gets.
 	assert.equal(maximizedRect(2400, 1200).w, PANEL_MAX_W);
+});
+
+test('replyPosition: beside the reader, never over it; null without room', () => {
+	const reader = { left: 720, top: 52, right: 1440, bottom: 900 };
+	const placed = replyPosition(reader, 1440, 900);
+	assert.ok(placed);
+	assert.equal(placed.w, 704); // the room left of the reader, under the default width
+	assert.ok(placed.x + placed.w <= reader.left, 'clear of the reader');
+	assert.equal(placed.y, 900 - 36 - 12 - PANEL_TYPICAL_H); // docked low
+	assert.equal(replyPosition({ ...reader, left: 1200 }, 1440, 900)?.w, PANEL_DEFAULT_W);
+	assert.equal(replyPosition({ ...reader, left: 400 }, 1440, 900), null);
 });
 
 test('openingPosition: leans from the shell centre toward the button, cascades', () => {

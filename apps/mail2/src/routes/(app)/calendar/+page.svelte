@@ -900,7 +900,7 @@
 								{#each [1, 2, 3] as n (n)}<li class="z-skeleton h-[52px] rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
 							</ul>
 						{:else if agenda.length === 0}
-							<p class="py-6 text-center text-[13px] text-[var(--z-faint)]">Nothing on this day.</p>
+							<p class="py-6 text-center text-[13px] text-[var(--z-soft)]">Nothing on this day.</p>
 						{:else}
 							<ul class="space-y-2" role="list">
 								{#each agenda as event (eventKey(event))}

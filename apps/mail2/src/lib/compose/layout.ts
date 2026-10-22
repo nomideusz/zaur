@@ -116,6 +116,24 @@ export function openingPosition(
 	};
 }
 
+/**
+ * A reply opens beside the conversation it answers, never over it: in the
+ * room left of the reader (the list's and the sidebar's), as wide as that
+ * room allows, and low, where a panel docks. Null when there is no room for
+ * a usable panel there — the caller falls back to the opening position.
+ */
+export function replyPosition(reader: AnchorRect, rootW: number, rootH: number) {
+	const room = Math.min(reader.left, rootW) - EDGE * 2;
+	if (room < PANEL_MIN_W) return null;
+	const w = Math.min(PANEL_DEFAULT_W, room);
+	const top = TOP_CHROME + MARGIN;
+	return {
+		x: Math.round(Math.max(EDGE, reader.left - EDGE - w)),
+		y: Math.round(Math.max(top, rootH - BOTTOM_CHROME - MARGIN - PANEL_TYPICAL_H)),
+		w
+	};
+}
+
 export function clamp(
 	value: number,
 	min: number,

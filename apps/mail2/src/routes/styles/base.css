@@ -336,7 +336,8 @@
 	}
 
 	.z-field::placeholder {
-		color: var(--z-faint);
+		/* soft, not faint: a placeholder is text someone has to read (4.5:1). */
+		color: var(--z-soft);
 	}
 
 	.z-field:focus,
@@ -382,10 +383,11 @@
 		color: var(--z-muted);
 	}
 
-	/* A keycap on a filled blue button. */
+	/* A keycap on a filled blue button: the edge draws the key, so the
+	   white glyph keeps the button's own 5:1 instead of a lighter wash's 4. */
 	.z-kbd-inverse {
-		border-color: rgba(255, 255, 255, 0.35);
-		background: rgba(255, 255, 255, 0.14);
+		border-color: rgba(255, 255, 255, 0.45);
+		background: transparent;
 		color: inherit;
 	}
 
@@ -425,9 +427,9 @@
 		border: 1px solid var(--z-stroke, var(--z-line));
 		background: var(--z-surface);
 		font-family: var(--font-mono);
-		font-size: 9.5px;
+		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.04em;
+		letter-spacing: 0.03em;
 		text-transform: uppercase;
 		line-height: 1.5;
 		color: var(--z-ink-on, var(--z-muted));
