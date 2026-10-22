@@ -968,7 +968,7 @@
 	.pitch {
 		max-width: 32ch;
 		margin-top: calc(1.5 * var(--u));
-		font-size: max(15px, calc(1.45 * var(--u)));
+		font-size: max(1rem, calc(1.45 * var(--u)));
 		line-height: 1.35;
 	}
 	.links {
@@ -1111,6 +1111,11 @@
 	}
 	.facts dt {
 		color: var(--quiet);
+	}
+	/* Inter Tight sets about 1.3 characters to the ch: 54ch holds a line near 70. */
+	.facts dd,
+	.sites dd {
+		max-width: 54ch;
 	}
 
 	.growth {
@@ -1311,6 +1316,10 @@
 		padding: 0.85rem 1.39vw;
 		scroll-margin-top: 4vw;
 	}
+	/* Inter Tight is narrow: the description column would run past 75ch on a laptop. */
+	.ptable li > div {
+		max-width: 66ch;
+	}
 	.ptable li + li {
 		border-top: var(--rule) solid var(--ink);
 	}
@@ -1348,6 +1357,7 @@
 		margin-top: 0.6rem;
 	}
 	.p-try {
+		max-width: 54ch;
 		margin-top: 0.6rem;
 		color: var(--quiet);
 		font-size: 0.875rem;
@@ -1468,6 +1478,7 @@
 		translate: 0 0.1em;
 	}
 	.strip .n {
+		word-spacing: 0.1em;
 		color: var(--orange);
 	}
 	summary:hover {

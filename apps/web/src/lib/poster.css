@@ -45,11 +45,28 @@
 	font-display: swap;
 	unicode-range: U+0100-02AF, U+0304, U+0308, U+0329, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
-/* Cyrillic for the Ukrainian page: Google's variable cut, one file for every weight. */
+/* Cyrillic for the Ukrainian page: Google's variable cut, one file for every weight.
+   Declared once per weight, never as a 500 800 range: a range face outranks the
+   static Latin faces in Chrome's matching, and since it has no Latin glyphs the
+   whole page fell through to system-ui. Same URL, so it still downloads once. */
 @font-face {
 	font-family: 'Inter Tight';
 	src: url('./fonts/inter-tight-cyrillic-var.woff2') format('woff2');
-	font-weight: 500 800;
+	font-weight: 500;
+	font-display: swap;
+	unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+	font-family: 'Inter Tight';
+	src: url('./fonts/inter-tight-cyrillic-var.woff2') format('woff2');
+	font-weight: 700;
+	font-display: swap;
+	unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
+}
+@font-face {
+	font-family: 'Inter Tight';
+	src: url('./fonts/inter-tight-cyrillic-var.woff2') format('woff2');
+	font-weight: 800;
 	font-display: swap;
 	unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116;
 }
@@ -120,6 +137,29 @@ dd {
 
 ul {
 	list-style: none;
+}
+
+/* Controls speak in the page's face; the browser's default is its own sans at 400,
+   a weight this page never loads. */
+button,
+input,
+select {
+	font: inherit;
+}
+
+/* Inter Tight's word space is narrow, and the display roles track it tighter
+   still: without a little back, "How I work" sets as one word. */
+h1,
+h2,
+h3,
+h4 {
+	text-wrap: balance;
+	word-spacing: 0.05em;
+}
+p,
+dd,
+li {
+	text-wrap: pretty;
 }
 
 a {
