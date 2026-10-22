@@ -207,6 +207,7 @@
 	"pkg.svelte-notify": "Email notification templates for booking apps.",
 
 	"folds.label": "More",
+	"wip.heading": "Work in progress",
 	"side.heading": "Side projects",
 	"side.lede": "Small things I made for myself and keep online.",
 	"templates.heading": "Railway templates",

@@ -74,8 +74,10 @@
 		parts?: [string, string][];
 		/** Live windows shown instead of a capture, when the product itself sits behind a sign-in. */
 		demos?: { id: string; href: string; name: string; label?: string; note: string }[];
+		/** Not launched yet: shown folded under Work in progress, not among the products. */
+		wip?: boolean;
 	};
-	type WorkFacts = Pick<Work, 'id' | 'name' | 'href' | 'site' | 'source' | 'uses'> & { demos?: { id: string; href: string; label?: string }[] };
+	type WorkFacts = Pick<Work, 'id' | 'name' | 'href' | 'site' | 'source' | 'uses' | 'wip'> & { demos?: { id: string; href: string; label?: string }[] };
 	const facts: WorkFacts[] = [
 		{
 			id: 'szkolyjogi',
@@ -99,6 +101,7 @@
 			id: 'thebest',
 			name: 'thebest.travel',
 			href: 'https://thebest.travel',
+			wip: true,
 			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
 		},
 		{ id: 'kino', name: 'Kino', href: 'https://kino.net.pl', uses: ['svelte-i18n', 'svelte-notify'] },
@@ -222,7 +225,9 @@
 		const id = p.name.split('/')[1];
 		return { ...p, id, desc: t(`pkg.${id}`) };
 	});
-	const flagships = work.filter((w) => w.built);
+	const products = work.filter((w) => !w.wip);
+	const wip = work.filter((w) => w.wip);
+	const flagships = products.filter((w) => w.built);
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	const usedInText = (id: string) => t('packages.usedIn', { list: and.format(usedIn(id)) });
 	// Group names come from templates.ts in English; the key is their slug.
@@ -230,7 +235,7 @@
 	// Every smaller project renders as the same ruled row: a capture, then the facts.
 	// Live windows are kept for the flagships, so the page stays short.
 	type Card = { id: string; name: string; href: string; img?: string; desc: string; specs: [string, string][]; uses?: string[] };
-	const others: Card[] = work
+	const others: Card[] = products
 		.filter((w) => !w.built)
 		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
@@ -412,6 +417,64 @@
 	</li>
 {/snippet}
 
+{#snippet study(w: Work)}
+	{@const title = w.site ?? host(w.href)}
+	{@const demos = w.demos?.filter((d) => isLive(d.href)) ?? []}
+	<article class="case" id={w.id}>
+		<div class="media">
+			{#if demos.length}
+				{#each demos as d (d.href)}
+					<figure class="demo">
+						<Live href={d.href} name={d.name} label={d.label} shot={shot(d.id)} phone={phoneFor(d.id)} />
+						<figcaption>{d.note}</figcaption>
+					</figure>
+				{/each}
+			{:else if shot(w.id) && isLive(w.href)}
+				<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
+			{:else if shot(w.id)}
+				<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
+					{@render still(shot(w.id)!, true)}
+				</a>
+			{:else if w.parts}
+				<ul class="parts">
+					{#each w.parts as [n, h], i (i)}
+						<li><b>{n}</b><span>{h}</span></li>
+					{/each}
+				</ul>
+			{/if}
+			{#if traffic?.[w.id]}{@render growth(w.id, traffic[w.id])}{/if}
+		</div>
+		<div class="case-body">
+			<h3>
+				{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
+				<a href={w.href}>{title}</a>
+			</h3>
+			{#if host(w.href) !== title}
+				<p class="meta">{host(w.href)}</p>
+			{:else if searching(w.id)}
+				<p class="meta">{perDay(w.id)}</p>
+			{/if}
+			<p class="what">{w.what}</p>
+			<h4>{t('work.built')}</h4>
+			<ul class="built">
+				{#each w.built ?? [] as b, i (i)}<li>{b}</li>{/each}
+			</ul>
+			<dl class="facts">
+				{#each w.proof ?? [] as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+			</dl>
+			<ul class="chips">
+				{#each w.uses as u (u)}
+					{@render chip(w.id, w.name, u)}
+				{/each}
+			</ul>
+			<p class="go">
+				<a href={w.href}>{t('work.open', { host: host(w.href) })}</a>
+				{#if w.source}<a href={w.source}>{t('work.source')}</a>{/if}
+			</p>
+		</div>
+	</article>
+{/snippet}
+
 {#snippet growth(id: string, s: Search)}
 	{@const top = Math.max(1, ...s.weeks.map(([, n]) => n))}
 	<figure class="growth">
@@ -468,10 +531,10 @@
 </header>
 
 <main id="main">
-	<div class="poster" class:pointing={litPkgs?.size} style:--rows={work.length}>
+	<div class="poster" class:pointing={litPkgs?.size} style:--rows={products.length}>
 		<nav class="programme" aria-label={t('nav.products')}>
 			<ul>
-				{#each work as w (w.id)}
+				{#each products as w (w.id)}
 					<li class:lit={litWork?.has(w.id)}>
 						<a
 							class="row"
@@ -527,64 +590,8 @@
 	</div>
 
 	<section class="work" id="work" aria-labelledby="work-h">
-		<div class="strip"><h2 id="work-h">{t('work.heading')} <span class="n">· {work.length}</span></h2></div>
-		{#each flagships as w (w.id)}
-			{@const title = w.site ?? host(w.href)}
-			{@const demos = w.demos?.filter((d) => isLive(d.href)) ?? []}
-			<article class="case" id={w.id}>
-				<div class="media">
-					{#if demos.length}
-						{#each demos as d (d.href)}
-							<figure class="demo">
-								<Live href={d.href} name={d.name} label={d.label} shot={shot(d.id)} phone={phoneFor(d.id)} />
-								<figcaption>{d.note}</figcaption>
-							</figure>
-						{/each}
-					{:else if shot(w.id) && isLive(w.href)}
-						<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
-					{:else if shot(w.id)}
-						<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
-							{@render still(shot(w.id)!, true)}
-						</a>
-					{:else if w.parts}
-						<ul class="parts">
-							{#each w.parts as [n, h], i (i)}
-								<li><b>{n}</b><span>{h}</span></li>
-							{/each}
-						</ul>
-					{/if}
-					{#if traffic?.[w.id]}{@render growth(w.id, traffic[w.id])}{/if}
-				</div>
-				<div class="case-body">
-					<h3>
-						{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
-						<a href={w.href}>{title}</a>
-					</h3>
-					{#if host(w.href) !== title}
-						<p class="meta">{host(w.href)}</p>
-					{:else if searching(w.id)}
-						<p class="meta">{perDay(w.id)}</p>
-					{/if}
-					<p class="what">{w.what}</p>
-					<h4>{t('work.built')}</h4>
-					<ul class="built">
-						{#each w.built ?? [] as b, i (i)}<li>{b}</li>{/each}
-					</ul>
-					<dl class="facts">
-						{#each w.proof ?? [] as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-					</dl>
-					<ul class="chips">
-						{#each w.uses as u (u)}
-							{@render chip(w.id, w.name, u)}
-						{/each}
-					</ul>
-					<p class="go">
-						<a href={w.href}>{t('work.open', { host: host(w.href) })}</a>
-						{#if w.source}<a href={w.source}>{t('work.source')}</a>{/if}
-					</p>
-				</div>
-			</article>
-		{/each}
+		<div class="strip"><h2 id="work-h">{t('work.heading')} <span class="n">· {products.length}</span></h2></div>
+		{#each flagships as w (w.id)}{@render study(w)}{/each}
 		<ul class="sites">
 			{#each others as c (c.id)}{@render card(c)}{/each}
 		</ul>
@@ -666,6 +673,14 @@
 	</section>
 
 	<section class="folds" aria-label={t('folds.label')}>
+		<details id="wip">
+			<summary>
+				<h2>{t('wip.heading')} · {wip.length}</h2>
+				{@render toggle()}
+			</summary>
+			{#each wip as w (w.id)}{@render study(w)}{/each}
+		</details>
+
 		<details class="websites" id="side">
 			<summary>
 				<h2>{t('side.heading')} · {side.length}</h2>
@@ -1385,6 +1400,9 @@
 	.folds details {
 		border-bottom: var(--rule) solid var(--ink);
 		interpolate-size: allow-keywords;
+	}
+	.folds .case:last-child {
+		border-bottom: 0;
 	}
 	.folds details:last-child {
 		border-bottom-width: var(--rule-heavy);

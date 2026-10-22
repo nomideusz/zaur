@@ -211,6 +211,7 @@
 	"pkg.svelte-notify": "Szablony powiadomień e-mail dla aplikacji rezerwacyjnych.",
 
 	"folds.label": "Więcej",
+	"wip.heading": "W budowie",
 	"side.heading": "Projekty poboczne",
 	"side.lede": "Drobne rzeczy, które zrobiłem dla siebie i trzymam w sieci.",
 	"templates.heading": "Szablony Railway",
