@@ -51,7 +51,6 @@ async function gather(fetch: typeof globalThis.fetch) {
 		templates,
 		uses: usage.uses,
 		// The version each product runs, from its lockfile ('workspace' when built from source).
-		usedVersions: usage.versions,
-		published: names
+		usedVersions: usage.versions
 	};
 }

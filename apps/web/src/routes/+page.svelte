@@ -78,6 +78,12 @@
 	type WorkFacts = Pick<Work, 'id' | 'name' | 'href' | 'site' | 'source' | 'uses'> & { demos?: { id: string; href: string; label?: string }[] };
 	const facts: WorkFacts[] = [
 		{
+			id: 'szkolyjogi',
+			name: 'Szkoły Jogi',
+			href: 'https://szkolyjogi.pl',
+			uses: ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify']
+		},
+		{
 			id: 'zaur',
 			name: 'Zaur',
 			href: 'https://webmail.zaur.app',
@@ -88,12 +94,6 @@
 				{ id: 'signup', href: 'https://register.zaur.app' }
 			],
 			uses: ['svelte-calendar']
-		},
-		{
-			id: 'szkolyjogi',
-			name: 'Szkoły Jogi',
-			href: 'https://szkolyjogi.pl',
-			uses: ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify']
 		},
 		{
 			id: 'thebest',
@@ -107,38 +107,22 @@
 	];
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
 	const detected = data.uses;
-	// svelte-ignore state_referenced_locally
-	const total = data.published.length;
 	// A product without built.* messages is a smaller one: it renders as a row.
 	const work: Work[] = facts.map((f) => {
 		const built = list(`work.${f.id}.built`);
 		const parts = pairs(`work.${f.id}.parts`);
 		const uses = detected[f.id] ?? f.uses;
-		// A flagship built on several packages says how many, counted from `uses`.
-		const builtOn: [string, string][] =
-			built.length && uses.length > 1
-				? [[t('work.builtOn.k'), t(uses.length === total ? 'work.builtOn.all' : 'work.builtOn.some', { used: uses.length, total })]]
-				: [];
 		return {
 			...f,
 			uses,
 			kind: t(`work.${f.id}.kind`),
 			what: t(`work.${f.id}.what`),
 			built: built.length ? built : undefined,
-			proof: [...pairs(`work.${f.id}.proof`), ...builtOn],
+			proof: pairs(`work.${f.id}.proof`),
 			parts: parts.length ? parts : undefined,
 			demos: f.demos?.map((d) => ({ ...d, name: t(`demo.${d.id}.name`), note: t(`demo.${d.id}.note`) }))
 		};
 	});
-
-	// How I work: what both kinds of employer ask about, each with its evidence.
-	const how: { h: string; p: string; link?: [string, string] }[] = [
-		{ id: 'whole' },
-		{ id: 'agent', link: [t('how.agent.link'), 'https://github.com/nomideusz/zaur/blob/main/AGENTS.md'] as [string, string] },
-		{ id: 'ai' },
-		{ id: 'tested', link: [t('how.tested.link'), 'https://github.com/nomideusz/zaur/tree/main/docs/decisions'] as [string, string] },
-		{ id: 'run', link: [t('how.run.link', { count: templateCount }), '#templates'] as [string, string] }
-	].map(({ id, link }) => ({ h: t(`how.${id}.h`), p: t(`how.${id}.p`), link }));
 
 	const packages = [
 		{
@@ -196,15 +180,13 @@
 		desc: t(`skill.${s.name}`)
 	}));
 
-	// Work for clients, then small things of my own. The tag says what the site
-	// is; spec rows are facts visible on the live site. Strongest first. Words
+	// Work for clients, then small things of my own. Spec rows are facts visible on the live site. Strongest first. Words
 	// in site.<id>.*.
 	type Site = {
 		id: string;
 		name: string;
 		desc: string;
 		href: string;
-		tag: string;
 		basket: 'client' | 'side';
 		specs: [string, string][];
 		uses?: string[];
@@ -225,7 +207,6 @@
 	const websites: Site[] = siteFacts.map((s) => ({
 		...s,
 		uses: detected[s.id] ?? s.uses,
-		tag: t(`site.${s.id}.tag`),
 		desc: t(`site.${s.id}.desc`),
 		specs: pairs(`site.${s.id}.specs`)
 	}));
@@ -248,10 +229,10 @@
 	const kindName = (kind: string) => t(`templates.kind.${kind.toLowerCase().replace(/[^a-z]+/g, '-')}`);
 	// Every smaller project renders as the same ruled row: a capture, then the facts.
 	// Live windows are kept for the flagships, so the page stays short.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; desc: string; specs: [string, string][]; uses?: string[] };
+	type Card = { id: string; name: string; href: string; img?: string; desc: string; specs: [string, string][]; uses?: string[] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
-		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), tag: w.kind, href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
+		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
 		websites.filter((w) => w.basket === basket && !w.live).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src }));
 	const clients = siteCards('client');
@@ -413,7 +394,7 @@
 		<div class="site">
 			<h3>
 				{#if searching(c.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
-				<a href={c.href}>{c.name}</a> <span>{c.tag}</span>
+				<a href={c.href}>{c.name}</a>
 			</h3>
 			{#if searching(c.id)}<p class="meta">{perDay(c.id)}</p>{/if}
 			<p>{c.desc}</p>
@@ -475,7 +456,6 @@
 <header class="bar">
 	<a class="mark" href="#top">Bartosz Dymet</a>
 	<nav class="tabs" aria-label={t('nav.sections')}>
-		<a href="#how">{t('nav.how')}</a>
 		<a href="#work">{t('nav.work')}</a>
 		<a href="#clients">{t('nav.clients')}</a>
 		<a href="#packages">{t('nav.packages')}</a>
@@ -520,11 +500,12 @@
 				<a class="phone" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 				<a href={github}>GitHub</a>
 				<a href={linkedin}>LinkedIn</a>
-				<span class="intro-lang"><LocaleSwitcher {i18n} {routing} labels={languages} label={t('nav.language')} /></span>
+				<span class="intro-lang">{@render langs()}</span>
 			</p>
 			<div class="kit">
 				<a class="kit-all" href="#packages">{t('intro.kitAll', { count: pkgs.length })}</a>
 				<h2>{t('intro.kit')}</h2>
+				<p class="point">{t('intro.point')}</p>
 				<ul class="chips">
 					{#each pkgs as p (p.id)}
 						<li class:lit={litPkgs?.has(p.id)}>
@@ -544,19 +525,6 @@
 			</div>
 		</section>
 	</div>
-
-	<section class="how" id="how" aria-labelledby="how-h">
-		<div class="strip"><h2 id="how-h">{t('how.heading')}</h2></div>
-		<ul class="how-grid">
-			{#each how as x, i (i)}
-				<li>
-					<h3>{x.h}</h3>
-					<p>{x.p}</p>
-					{#if x.link}<a href={x.link[1]}>{x.link[0]}</a>{/if}
-				</li>
-			{/each}
-		</ul>
-	</section>
 
 	<section class="work" id="work" aria-labelledby="work-h">
 		<div class="strip"><h2 id="work-h">{t('work.heading')} <span class="n">· {work.length}</span></h2></div>
@@ -591,7 +559,6 @@
 					<h3>
 						{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
 						<a href={w.href}>{title}</a>
-						<span class="tag">{w.kind}</span>
 					</h3>
 					{#if host(w.href) !== title}
 						<p class="meta">{host(w.href)}</p>
@@ -643,7 +610,6 @@
 				<div class="case-body">
 					<h3>
 						<a href={p.demo}>{host(p.demo!)}</a>
-						<span class="tag">{t('packages.tag')}</span>
 					</h3>
 					<p class="meta">{p.name} {version(p.id)}</p>
 					<p class="what">{p.desc}</p>
@@ -755,14 +721,22 @@
 </main>
 
 <footer class="foot">
+	<p class="hire">{t('foot.hire')}</p>
 	<a class="write" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 	<div class="small">
 		<p>{t('foot.copyright')}</p>
 		<a href={github}>GitHub</a>
 		<a href={linkedin}>LinkedIn</a>
-		<span class="foot-lang"><LocaleSwitcher {i18n} {routing} labels={languages} label={t('nav.language')} /></span>
+		<span class="foot-lang">{@render langs()}</span>
 	</div>
 </footer>
+
+<!-- Each language in its own name, as plain links: a static page needs no menu. -->
+{#snippet langs()}
+	{#each routing.supportedLocales as l (l)}
+		<a href={localizeHref('/', l, routing)} hreflang={l} lang={l} aria-current={l === locale ? 'page' : undefined}>{languages[l]}</a>
+	{/each}
+{/snippet}
 
 {#snippet toggle()}
 	<svg class="toggle" viewBox="0 0 24 24" aria-hidden="true">
@@ -783,7 +757,7 @@
 		   and about 1200 the vw tracks would otherwise overflow by the scrollbar's
 		   width and squeeze the tabs below the caption floor. */
 		grid-template-columns:
-			minmax(max-content, 28vw) minmax(max-content, 10.4vw) repeat(3, minmax(max-content, 9.4vw))
+			minmax(max-content, 28vw) repeat(3, minmax(max-content, 9.4vw))
 			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto;
 		align-items: stretch;
 		height: 3.66vw;
@@ -847,19 +821,18 @@
 	.intro-lang {
 		display: none;
 	}
+	.foot-lang {
+		display: flex;
+	}
 	.foot-lang,
 	.intro-lang {
-		--asini-font-sans: inherit;
-		--asini-surface: var(--paper);
-		--asini-text: var(--ink);
-		--asini-border: var(--ink);
-		--asini-border-strong: var(--ink);
-		--asini-accent: var(--ink);
-		--asini-radius-sm: 0;
+		flex-wrap: wrap;
+		gap: 0.4rem 1rem;
 	}
-	.foot-lang :global(select),
-	.intro-lang :global(select) {
-		font-size: 0.9375rem;
+	.foot-lang [aria-current],
+	.intro-lang [aria-current] {
+		font-weight: 700;
+		text-decoration: none;
 	}
 	.bar :focus-visible {
 		outline-color: var(--orange);
@@ -926,8 +899,10 @@
 	.lit .ver {
 		color: var(--paper);
 	}
+	/* Focus is drawn inside the row, so it reads apart from the light. */
 	.row:focus-visible {
-		outline: none;
+		outline-color: var(--paper);
+		outline-offset: -6px;
 	}
 
 	/* The intro: who, in the column beside the products. */
@@ -985,6 +960,11 @@
 	.kit h2 {
 		margin-bottom: calc(0.7 * var(--u));
 		font-weight: 700;
+		font-size: max(13px, calc(0.95 * var(--u)));
+	}
+	.kit .point {
+		margin: calc(-0.5 * var(--u)) 0 calc(0.7 * var(--u));
+		color: var(--quiet);
 		font-size: max(13px, calc(0.95 * var(--u)));
 	}
 	/* On a phone the packages are one link to their section; the sheet lists them. */
@@ -1068,14 +1048,6 @@
 	}
 	h3 a:hover {
 		text-decoration: underline;
-	}
-	.tag {
-		padding: 0.05rem 0.45rem;
-		border: var(--rule) solid var(--ink);
-		border-radius: 3px;
-		font-weight: 500;
-		font-size: 0.8125rem;
-		letter-spacing: 0;
 	}
 	.dot {
 		width: 0.75rem;
@@ -1174,8 +1146,7 @@
 
 	/* Work: three case studies, then the rest in a ruled row. */
 	.work,
-	.websites,
-	.how {
+	.websites {
 		border-bottom: var(--rule-heavy) solid var(--ink);
 	}
 	/* Open source runs on into the folds, so the heavy rule closes the last fold. */
@@ -1410,25 +1381,6 @@
 		justify-self: end;
 	}
 
-	/* How I work: five ruled cells. */
-	.how-grid {
-		display: grid;
-		grid-template-columns: repeat(5, minmax(0, 1fr));
-	}
-	.how-grid li {
-		padding: 1.2rem 1.39vw 1.5rem;
-	}
-	.how-grid li + li {
-		border-left: var(--rule) solid var(--ink);
-	}
-	.how-grid h3 {
-		font-size: max(1.25rem, 1.6vw);
-	}
-	.how-grid p {
-		max-width: 40ch;
-		margin: 0.6rem 0 0.8rem;
-	}
-
 	/* Folds: closed catalogs, opened in place. */
 	.folds details {
 		border-bottom: var(--rule) solid var(--ink);
@@ -1589,14 +1541,6 @@
 	.sites h3 a:hover {
 		text-decoration: underline;
 	}
-	.sites h3 a + span {
-		font-weight: 500;
-		font-size: 0.8125rem;
-		padding: 0.05rem 0.45rem;
-		border: var(--rule) solid var(--ink);
-		border-radius: 3px;
-		letter-spacing: 0;
-	}
 	.site > p:not(.meta) {
 		max-width: 52ch;
 		margin-top: 0.5rem;
@@ -1625,9 +1569,14 @@
 	.foot {
 		background: var(--orange);
 	}
+	.hire {
+		padding: 2.4vw 1.39vw 0;
+		font-weight: 700;
+		font-size: max(1.125rem, 1.45vw);
+	}
 	.write {
 		display: block;
-		padding: 2.4vw 1.39vw 0;
+		padding: 0.6vw 1.39vw 0;
 		border-bottom: var(--rule) solid var(--orange-rule);
 		font-weight: 700;
 		font-size: max(2.5rem, 8.4vw);
@@ -1652,15 +1601,15 @@
 	/* Below 900 the sheet stops scaling and becomes a stack. */
 	@media (max-width: 900px) {
 		.bar {
-			grid-template-columns: repeat(5, minmax(0, 1fr));
+			grid-template-columns: repeat(4, minmax(0, 1fr));
 			height: auto;
 		}
-		/* Five tabs fill a phone's bar; the language moves to the intro's links. */
+		/* Four tabs fill a phone's bar; the language moves to the intro's links. */
 		.lang {
 			display: none;
 		}
 		.intro-lang {
-			display: inline;
+			display: flex;
 		}
 		/* One row of sections; the name and the address are in the intro below. */
 		.mark,
@@ -1674,7 +1623,7 @@
 			line-height: 1.1;
 			text-align: center;
 			border-left: 0;
-			/* "Arbeitsweise" is wider than a phone's tab: let <html lang> hyphenate it. */
+			/* A label wider than a phone's tab: let <html lang> hyphenate it. */
 			white-space: normal;
 			hyphens: auto;
 			/* Where the browser has no dictionary for the page's language, a word
@@ -1733,6 +1682,7 @@
 			padding-top: 1.25rem;
 		}
 		.kit h2,
+		.kit .point,
 		.kit .chips {
 			display: none;
 		}
@@ -1751,8 +1701,7 @@
 			padding: 0 0.6rem;
 			font-size: 0.875rem;
 		}
-		.case,
-		.how-grid {
+		.case {
 			grid-template-columns: minmax(0, 1fr);
 		}
 		.case,
@@ -1776,13 +1725,27 @@
 			border-right: 0;
 			border-bottom: var(--rule) solid var(--ink);
 		}
-		.case-body,
-		.how-grid li {
-			padding: 1.25rem 1rem 1.5rem;
+		/* The title and its line come before the windows, so a window is
+		   never shown ahead of its name. */
+		.case-body {
+			display: contents;
 		}
-		.how-grid li + li {
-			border-left: 0;
-			border-top: var(--rule) solid var(--ink);
+		.case-body > * {
+			margin-inline: 1rem;
+		}
+		.case h3,
+		.case .meta,
+		.case .what {
+			order: -1;
+		}
+		.case h3 {
+			margin-top: 1.25rem;
+		}
+		.case .what {
+			margin-bottom: 1.25rem;
+		}
+		.case .go {
+			margin-bottom: 1.5rem;
 		}
 		.parts li {
 			padding: 0.5rem 0.75rem;
@@ -1839,8 +1802,11 @@
 		.t-src {
 			justify-self: start;
 		}
-		.write {
+		.hire {
 			padding: 1.5rem 1rem 0;
+		}
+		.write {
+			padding: 0.4rem 1rem 0;
 		}
 		.foot .small {
 			padding: 1.25rem 1rem 2rem;
@@ -1873,7 +1839,7 @@
 
 	/* Tablets: the stack keeps its order, but a 7.5rem capture floated in a
 	   768-wide row wastes the screen. The capture takes a column of its own, the
-	   text and facts run beside it, and How I work pairs its cells. */
+	   text and facts run beside it. */
 	@media (min-width: 601px) and (max-width: 900px) {
 		.sites > li {
 			display: grid;
@@ -1891,27 +1857,6 @@
 		}
 	}
 
-	/* How I work pairs its cells from tablet up to small laptops: five columns
-	   under about 1280 are too narrow for German compounds such as
-	   "Architekturentscheidungen". */
-	@media (min-width: 601px) and (max-width: 1279px) {
-		.how-grid {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-		.how-grid li + li {
-			border-top: 0;
-			border-left: 0;
-		}
-		.how-grid li:nth-child(n + 3) {
-			border-top: var(--rule) solid var(--ink);
-		}
-		.how-grid li:nth-child(even) {
-			border-left: var(--rule) solid var(--ink);
-		}
-		.how-grid li:last-child:nth-child(odd) {
-			grid-column: 1 / -1;
-		}
-	}
 
 	/* A finger needs 44px: the links that stand alone as actions grow to it on
 	   touch screens. Links inside running text stay as they are. */
@@ -1925,14 +1870,9 @@
 		.p-links a,
 		.t-src a,
 		a.t-src,
-		.how-grid li > a,
 		.foot .small a {
 			display: inline-flex;
 			align-items: center;
-			min-height: 2.75rem;
-		}
-		.intro-lang :global(select),
-		.foot-lang :global(select) {
 			min-height: 2.75rem;
 		}
 	}
