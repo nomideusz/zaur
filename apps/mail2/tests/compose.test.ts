@@ -389,7 +389,10 @@ test('replyPosition: beside the reader, never over it; null without room', () =>
 	assert.ok(placed);
 	assert.equal(placed.w, 704); // the room left of the reader, under the default width
 	assert.ok(placed.x + placed.w <= reader.left, 'clear of the reader');
-	assert.equal(placed.y, 900 - 36 - 12 - PANEL_TYPICAL_H); // docked low
+	assert.equal(placed.y, 900 - 36 - 12 - PANEL_TYPICAL_H); // docked low without a button
+	const button = { left: 744, top: 62, right: 850, bottom: 90 };
+	assert.equal(replyPosition(reader, 1440, 1400, button)?.y, 64); // level with Reply, clear of the top bar
+	assert.equal(replyPosition(reader, 1440, 900, { ...button, top: 880 })?.y, 900 - 36 - 12 - PANEL_TYPICAL_H); // never off the bottom
 	assert.equal(replyPosition({ ...reader, left: 1200 }, 1440, 900)?.w, PANEL_DEFAULT_W);
 	assert.equal(replyPosition({ ...reader, left: 400 }, 1440, 900), null);
 });

@@ -530,14 +530,25 @@
 			};
 		}
 		const rect = el.getBoundingClientRect();
-		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+		return inFrame({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
+	}
+
+	/**
+	 * A viewport rect in the frame panels are placed in. The frame is the app
+	 * column, centred once the window is wider than its cap, so on a big desk the
+	 * two disagree by the margin either side.
+	 */
+	function inFrame(rect: AnchorRect): AnchorRect {
+		const frame = rootEl?.getBoundingClientRect();
+		if (!frame) return rect;
+		return { left: rect.left - frame.left, top: rect.top - frame.top, right: rect.right - frame.left, bottom: rect.bottom - frame.top };
 	}
 
 	/** Phone compose is a full-screen sheet — there is no window to place. */
 	function panelPosition(anchor?: AnchorRect | null) {
 		if (viewport.phone) return undefined;
 		return openingPosition(
-			anchor ?? newMessageAnchor(),
+			anchor ? inFrame(anchor) : newMessageAnchor(),
 			rootW,
 			rootH,
 			compose.openPanels().length
@@ -594,7 +605,7 @@
 	) {
 		// Beside the conversation, so what is being answered stays in view.
 		const reader = viewport.phone ? null : document.querySelector('[aria-label="Message reader"]')?.getBoundingClientRect();
-		const position = (reader && replyPosition(reader, rootW, rootH)) || panelPosition(anchor);
+		const position = (reader && replyPosition(inFrame(reader), rootW, rootH, anchor && inFrame(anchor))) || panelPosition(anchor);
 		// A forward is sent from your mailbox, so a shared one's files are copied into it first.
 		if (mailAccount && mode === 'forward' && message.attachments.length > 0) {
 			const copied = await copyAttachments({

@@ -119,17 +119,20 @@ export function openingPosition(
 /**
  * A reply opens beside the conversation it answers, never over it: in the
  * room left of the reader (the list's and the sidebar's), as wide as that
- * room allows, and low, where a panel docks. Null when there is no room for
- * a usable panel there — the caller falls back to the opening position.
+ * room allows, and level with the Reply that opened it, so the panel is where
+ * the eye already is (it used to dock low, a screen away from the button on a
+ * tall desk). Null when there is no room for a usable panel there — the
+ * caller falls back to the opening position. All rects in the shell's frame.
  */
-export function replyPosition(reader: AnchorRect, rootW: number, rootH: number) {
+export function replyPosition(reader: AnchorRect, rootW: number, rootH: number, button?: AnchorRect | null) {
 	const room = Math.min(reader.left, rootW) - EDGE * 2;
 	if (room < PANEL_MIN_W) return null;
 	const w = Math.min(PANEL_DEFAULT_W, room);
 	const top = TOP_CHROME + MARGIN;
+	const low = rootH - BOTTOM_CHROME - MARGIN - PANEL_TYPICAL_H;
 	return {
 		x: Math.round(Math.max(EDGE, reader.left - EDGE - w)),
-		y: Math.round(Math.max(top, rootH - BOTTOM_CHROME - MARGIN - PANEL_TYPICAL_H)),
+		y: Math.round(clamp(button ? button.top : low, top, Math.max(top, low))),
 		w
 	};
 }
