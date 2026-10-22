@@ -229,6 +229,7 @@
 	"packages.geometrize.count": "Anzahl der Dreiecke",
 	"packages.geometrize.hint": "Jeder Screenshot auf dieser Seite erscheint zuerst als Dreiecke, beim Build angepasst, und öffnet sich dann zum Bild.",
 	"chip.behind": "{pkg}: {name} nutzt {used}, aktuell ist {latest}",
+	"packages.world.hint": "Dieser Himmel ist das Paket, live für Krakau gezeichnet: echte Sonne, Wetter und Sterne. Es ist der Himmel von Radio Bartek, meinem Sender rund um die Uhr, dessen KI-DJ zwischen den Titeln mit einem Klon meiner Stimme spricht.",
 	"pkg.zaur-world": "Ein lebendiger Himmel im Hintergrund: echte Sonnenzeiten, Wetter, wahre Sternpositionen, Finsternisse und ein Pixel-Dinosaurier, der darin lebt. Ohne Abhängigkeiten.",
 	"pkg.svelte-calendar": "Ein anpassbarer Kalender für Svelte 5: Tages-, Wochen-, scrollende Wochen- und Monatsansicht, Agenda-Listen, mobile Layouts für Touch, Drag-and-drop, Zeitzonen, eine Headless-API und eine einbettbare Web Component.",
 	"pkg.svelte-search": "Volltextsuche für Svelte 5: FTS5, unscharfe Suche, geografische Nähe, Autovervollständigung, polnische Sprachunterstützung.",

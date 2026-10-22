@@ -144,10 +144,9 @@
 		{
 			name: '@nomideusz/zaur-world',
 			npm: 'https://www.npmjs.com/package/@nomideusz/zaur-world',
-			demo: 'https://dino.zaur.app',
-			source: 'https://github.com/nomideusz/zaur-world',
-			// Runs the real sky in its node instead of showing screenshots.
-			live: 'sky'
+			// Its demo is Radio Bartek, played under its sky right in the row.
+			demo: 'https://radiobartek.com',
+			source: 'https://github.com/nomideusz/zaur-world'
 		},
 		{
 			name: '@nomideusz/svelte-calendar',
@@ -190,7 +189,7 @@
 		{ name: '@nomideusz/svelte-scheduler', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler' },
 		{ name: '@nomideusz/svelte-payments', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments' },
 		{ name: '@nomideusz/svelte-notify', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify' }
-	] as { name: string; npm: string; demo?: string; source?: string; live?: string; featured?: boolean }[];
+	] as { name: string; npm: string; demo?: string; source?: string; featured?: boolean }[];
 
 	const skills = [{ name: 'simple-web-design', source: 'https://github.com/nomideusz/simple-web-design' }].map((s) => ({
 		...s,
@@ -209,7 +208,7 @@
 		basket: 'client' | 'side';
 		specs: [string, string][];
 		uses?: string[];
-		/** Played and drawn live on this page instead of a screenshot. */
+		/** Played live as zaur-world's demo in the packages, not as a card. */
 		live?: boolean;
 	};
 	const siteFacts: Pick<Site, 'id' | 'name' | 'href' | 'basket' | 'uses' | 'live'>[] = [
@@ -249,12 +248,12 @@
 	const kindName = (kind: string) => t(`templates.kind.${kind.toLowerCase().replace(/[^a-z]+/g, '-')}`);
 	// Every smaller project renders as the same ruled row: a capture, then the facts.
 	// Live windows are kept for the flagships, so the page stays short.
-	type Card = { id: string; name: string; tag: string; href: string; img?: string; live?: boolean; desc: string; specs: [string, string][]; uses?: string[] };
+	type Card = { id: string; name: string; tag: string; href: string; img?: string; desc: string; specs: [string, string][]; uses?: string[] };
 	const others: Card[] = work
 		.filter((w) => !w.built)
 		.map((w) => ({ id: w.id, name: w.site ?? host(w.href), tag: w.kind, href: w.href, img: shot(w.id), desc: w.what, specs: w.proof ?? [], uses: w.uses }));
 	const siteCards = (basket: Site['basket']): Card[] =>
-		websites.filter((w) => w.basket === basket).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src }));
+		websites.filter((w) => w.basket === basket && !w.live).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	// A featured package whose demo may be framed gets a case of its own, not a row.
@@ -406,9 +405,7 @@
 
 {#snippet card(c: Card)}
 	<li id={c.id}>
-		{#if c.live}
-			<div class="shot wide"><Radio href={c.href} /></div>
-		{:else if c.img}
+		{#if c.img}
 			<a class="shot" href={c.href} tabindex="-1" aria-hidden="true">
 				{@render still(c.img)}
 			</a>
@@ -687,6 +684,9 @@
 								<span class="p-hint">{t('packages.geometrize.hint')}</span>
 							</p>
 							{#if sample}<div class="p-sample" aria-hidden="true">{@render still(sample)}</div>{/if}
+						{:else if p.id === 'zaur-world'}
+							<div class="p-sample"><Radio href={p.demo!} /></div>
+							<p class="p-try">{t('packages.world.hint')}</p>
 						{/if}
 					</div>
 					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
@@ -1378,6 +1378,9 @@
 		overflow: hidden;
 		border: var(--rule) solid var(--ink);
 	}
+	.p-sample :global(.radio) {
+		border-bottom: 0;
+	}
 	.p-hint {
 		display: block;
 		margin-top: 0.3rem;
@@ -1475,10 +1478,10 @@
 	.strip h2 {
 		font-size: max(2.5rem, 5.4vw);
 		letter-spacing: -0.04em;
+		word-spacing: 0.1em;
 		translate: 0 0.1em;
 	}
 	.strip .n {
-		word-spacing: 0.1em;
 		color: var(--orange);
 	}
 	summary:hover {
@@ -1563,9 +1566,6 @@
 		display: block;
 		overflow: hidden;
 		border: var(--rule) solid var(--ink);
-	}
-	.shot :global(.radio) {
-		border-bottom: 0;
 	}
 	.sites img {
 		display: block;
@@ -1826,11 +1826,6 @@
 			width: 7.5rem;
 			margin: 0.25rem 1rem 0.5rem 0;
 		}
-		.shot.wide {
-			float: none;
-			width: auto;
-			margin: 0 0 0.9rem;
-		}
 		.sites h3 {
 			font-size: 1.375rem;
 		}
@@ -1893,15 +1888,6 @@
 		}
 		.sites dl {
 			grid-column: 2;
-		}
-		/* The radio stays a full-width band, its words and facts side by side under it. */
-		.sites > li:has(> .shot.wide) {
-			grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-		}
-		.shot.wide {
-			grid-row: auto;
-			grid-column: 1 / -1;
-			margin-bottom: 0.9rem;
 		}
 	}
 

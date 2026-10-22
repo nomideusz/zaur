@@ -235,6 +235,7 @@
 	"packages.geometrize.count": "Liczba trójkątów",
 	"packages.geometrize.hint": "Każdy zrzut ekranu na tej stronie najpierw maluje się z trójkątów dopasowanych przy budowaniu, a potem otwiera się w obraz.",
 	"chip.behind": "{pkg}: {name} używa {used}, najnowsza to {latest}",
+	"packages.world.hint": "To niebo to ten pakiet, rysowany na żywo dla Krakowa: prawdziwe słońce, pogoda i gwiazdy. To niebo Radia Bartek, mojej stacji nadającej całą dobę, w której DJ AI mówi między utworami sklonowanym moim głosem.",
 	"pkg.zaur-world": "Żywe niebo w tle: prawdziwe wschody i zachody słońca, pogoda, rzeczywiste położenie gwiazd, zaćmienia i pikselowy dinozaur, który w nim mieszka. Bez zależności.",
 	"pkg.svelte-calendar": "Kalendarz dla Svelte 5 z motywami: widok dnia, tygodnia, przewijanego tygodnia i miesiąca, listy agendy, układy mobilne projektowane pod dotyk, przeciąganie, strefy czasowe, headless API i osadzalny web component.",
 	"pkg.svelte-search": "Wyszukiwanie pełnotekstowe dla Svelte 5: FTS5, wyszukiwanie rozmyte, bliskość geograficzna, autouzupełnianie, obsługa polskiego.",
