@@ -698,8 +698,8 @@ icons rather than above them, and only its shape says Zaur. It used to wear two
 identity inks, rose leading into teal; on a white tile that read as Gmail, so
 the colour went and the `--z-mark-*` tokens with it. The same path draws
 `static/favicon.svg` and the PNG icons (`scripts/generate-icons.py`).
-It says *Zaur* rather than *Zaur Mail* because one account spans Mail, Chat,
-Discuss and Meet.
+It says *Zaur* rather than *Zaur Mail* because one account spans Mail, Meet
+and Music.
 
 It replaced the `ZAUR` stamp pill, which replaced the pixel dinosaur. The mark
 never carries a count: unread lives in the mailbox list and the status line,

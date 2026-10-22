@@ -100,7 +100,7 @@ describe('postLogoutTarget', () => {
 describe('parseOidcClients', () => {
 	it('merges the JSON registry with the legacy triple and drops broken entries', () => {
 		const json = JSON.stringify([
-			{ clientId: 'chat', clientSecret: 's1', redirectUris: ['https://chat.zaur.app/cb'], name: 'Chat' },
+			{ clientId: 'photos', clientSecret: 's1', redirectUris: ['https://photos.zaur.app/cb'], name: 'Photos' },
 			{ clientId: 'broken', clientSecret: '', redirectUris: [] }
 		]);
 		const clients = parseOidcClients(json, {
@@ -111,7 +111,7 @@ describe('parseOidcClients', () => {
 		assert.deepEqual(
 			clients.map((c) => [c.clientId, c.name, c.redirectUris.length]),
 			[
-				['chat', 'Chat', 1],
+				['photos', 'Photos', 1],
 				['ytzero-bartube', 'Bartube', 2]
 			]
 		);

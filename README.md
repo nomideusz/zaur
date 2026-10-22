@@ -1,13 +1,12 @@
 # Zaur
 
-Monorepo for the Zaur communications suite — Mail, Chat, Discuss, Meet.
+Monorepo for the Zaur suite — Mail, Meet and Music.
 
 > The pixel-dinosaur app (`dino` / `dino-archive` / `music`) was extracted to
 > its own repo at `../dino`.
 
 The suite lives across subdomains: **Mail** (`register.zaur.app` + `webmail.zaur.app`),
-**Chat** (`chat.zaur.app`, Once Campfire), **Discuss** (`discourse.zaur.app`, Discourse),
-and **Meet** (LiveKit Cloud, joined from webmail `/meet/{group}`).
+**Meet** (LiveKit Cloud, joined from webmail `/meet/{group}`) and **Music** (`music.zaur.app`).
 The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 
 ## Apps

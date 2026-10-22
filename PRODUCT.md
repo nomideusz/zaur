@@ -43,8 +43,7 @@ Success means people use it as their real, everyday mail, not as a curiosity, an
 - **Shared identity:** Mail2 is the OIDC identity provider, with the issuer at webmail.zaur.app. Music, Bartube and Photos are its clients.
 - **Mail server:** Stalwart is the backend, reached over JMAP. Mail server features are limited to Stalwart Community; the Enterprise-only features are unavailable.
 - **Terminology:** a *folder* is a place (Inbox, Archive, Trash). A *label* is a mark: Important, Flagged, or an AI or Sieve category. Every folder and label kind carries a colour channel.
-- **The common design system** is moving into `packages/ui` (`@zaur/ui`). Mail, Register and Music should all consume it from there, instead of Register and Music importing Mail's stylesheets by relative path.
-- **Undecided:** whether Chat (Campfire) and Discuss (Discourse) are restyled to match the suite.
+- **The common design system** lives in `packages/ui` (`@zaur/ui`, documented in `DESIGN.md`). Mail, Register and Music all consume it from there.
 
 ## Brand Commitments
 
