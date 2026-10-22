@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { addressKind, appName, mailDomain } from '#lib/brand';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
-	import AuthCard, { fieldClass, inputClass, linkClass } from '#lib/components/auth/AuthCard.svelte';
+	import AuthCard from '#lib/components/auth/AuthCard.svelte';
 	import { requestReset } from '../reset.remote';
 	import type { PageProps } from './$types';
 
@@ -26,7 +26,7 @@
 				: `Your ${addressKind}, or the personal email your invitation came to. The link goes to your recovery email.`}
 		</p>
 		<form {...requestReset} class="mt-[18px] flex flex-col gap-2.5">
-			<label class={fieldClass}>
+			<label class="z-field z-field-row">
 				<svg class="size-[15px] shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<rect x="2" y="3.5" width="12" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3" />
 					<path d="M2.4 4.6L8 8.8l5.6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
@@ -42,7 +42,7 @@
 					placeholder={data.viaRecovery ? 'you@gmail.com' : `you@${mailDomain}`}
 					aria-label="Email"
 					disabled={pending}
-					class={inputClass}
+					class="z-field-row-input"
 				/>
 			</label>
 			{#if result?.error}
@@ -55,6 +55,6 @@
 	{/if}
 
 	{#snippet below()}
-		<a href="/login" class={linkClass}>Back to sign in</a>
+		<a href="/login" class="z-link">Back to sign in</a>
 	{/snippet}
 </AuthCard>

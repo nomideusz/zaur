@@ -483,14 +483,14 @@
 
 	{#if error}
 		<div class="p-6">
-			<div class="z-railed flex items-start gap-[9px] rounded-[10px] border border-[var(--z-ch-discard-stroke)] bg-[var(--z-ch-discard-fill)] py-[11px] pr-3 pl-[18px]" style:--z-rail="var(--z-ch-discard-solid)" style:--z-rail-inset="10px" role="alert">
-				<svg class="mt-px size-[15px] shrink-0 text-[var(--z-ch-discard-ink)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<div class="z-railed z-alert z-tone-discard flex items-start gap-[9px]" role="alert">
+				<svg class="mt-px size-[15px] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" />
 					<path d="M8 5v3.6M8 10.7v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
 				</svg>
 				<div class="min-w-0 flex-1">
-					<span class="block text-[13px] font-semibold text-[var(--z-ch-discard-ink)]">Couldn't load the conversation</span>
-					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">{online.current === false ? "You're offline." : "The mail server couldn't be reached."}</span>
+					<span class="z-alert-title">Couldn't load the conversation</span>
+					<span class="mt-0.5 block">{online.current === false ? "You're offline." : "The mail server couldn't be reached."}</span>
 				</div>
 				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)]" onclick={onRetry}>Retry</button>
 			</div>
@@ -713,7 +713,7 @@
 				</div>
 
 				{#if mailboxKind === 'scheduled' && onCancelSend}
-					<div class="flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+					<div class="z-note flex items-center gap-3 py-2 pr-2">
 						<span class="min-w-0 flex-1">Waiting to be sent. Cancel to take it back as a draft.</span>
 						<button type="button" class="btn-tactile !h-7 shrink-0 !px-2.5 !text-[12px]" onclick={() => onCancelSend(latest)}>
 							Cancel send
@@ -722,7 +722,7 @@
 				{/if}
 
 				{#if shared}
-					<p class="rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] px-3.5 py-2 text-[12.5px] leading-snug text-[var(--z-muted)]">
+					<p class="z-note">
 						In <span class="font-semibold text-[var(--z-strong)]">{shared.name}</span>, shared with you. Replies go from your own address.
 					</p>
 				{/if}
@@ -731,7 +731,7 @@
 					<!-- The sentence asks for a readable measure; where the pane cannot
 					     give it that beside the buttons, they wrap under it. Under a
 					     finger the two are as tall as the toolbar's buttons. -->
-					<div class="flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-2 pr-2 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+					<div class="z-note flex flex-wrap items-center justify-end gap-x-3 gap-y-1.5 py-2 pr-2">
 						<span class="min-w-0 flex-1 basis-52">Remote images are hidden, so the sender can't see that you opened this.</span>
 						<span class="flex shrink-0 items-center gap-3">
 							<button type="button" class="text-[12px] font-semibold text-[var(--z-muted)] transition-colors hover:text-[var(--z-ink)] pointer-coarse:px-2 pointer-coarse:py-3 pointer-coarse:text-[13px]" onclick={() => setPref('showRemoteImages', true)}>

@@ -155,7 +155,7 @@
 	<div class="min-h-0 flex-1 overflow-y-auto px-6 py-5 max-md:px-4">
 		<div class="mx-auto flex max-w-[560px] flex-col gap-6">
 			{#if error}
-				<p class="rounded-[8px] border border-[var(--z-ch-discard-line)] bg-[var(--z-ch-discard-hover)] px-3 py-2 text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">{error}</p>
+				<p class="z-railed z-alert z-tone-discard" role="alert">{error}</p>
 			{/if}
 			{#if !own}
 				<p class="rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-hover)] px-3 py-2 text-[12.5px] text-[var(--z-muted)]">

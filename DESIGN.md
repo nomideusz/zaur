@@ -19,6 +19,7 @@ colors:
   accent-edge: "#1d4ed8"
   accent-soft: "#dbeafe"
   accent-ink: "#1e40af"
+  link: "#2563eb"
   danger: "#b91c1c"
   correspondence-fill: "#dbeafe"
   correspondence-stroke: "#3b82f6"
@@ -265,11 +266,19 @@ Tactile and exact: a white key you can feel.
 - **Corner Style:** 10px.
 - **Background:** surface with a hairline frame and the tactile shadow.
 - **Parts:** a 44px head, a body with 16px padding under a hairline, and a foot band on canvas for the closing action.
+- **Signed-out card (`z-auth-card`):** the one card on Mail's sign-in and reset screens and Register's pages. 12px radius, window shadow, with a 3px accent bar along its top edge.
+
+### Alerts and notes
+- **Tones (`z-tone-<channel>`):** a class that sets the channel vars (`--z-fill`, `--z-stroke`, `--z-rail`, `--z-ink-on`), the same ones `channelStyle()` sets from script. It is for markup that can't take `style=""`, such as Register under its CSP.
+- **Alert (`z-railed z-alert z-tone-*`):** 10px radius, with the channel's stroke, fill and ink and its rail lit 9px in. It holds an optional `z-alert-title` (13px/600). An empty alert hides itself. Every error the app shows is the discard alert, form errors included; success is confirmed and information is correspondence.
+- **Note (`z-note`):** a sunken, hairline-framed line of muted 12.5px text for standing context with no channel meaning, e.g. "Empty Junk to delete everything in it for good."
 
 ### Inputs / Fields
 - **Style:** 34px, 8px radius, line border, inset shadow, soft placeholder.
 - **Focus:** an accent border with a 3px soft blue ring.
 - **Error:** the discard stroke, wash and ink. **Disabled:** hover surface with faint text.
+- **Field row (`z-field z-field-row`):** a 40px field holding a 15px faint icon and a bare `z-field-row-input`. The row draws the focus ring; the input inside draws none. The input is 16px on a phone so iOS doesn't zoom.
+- **Link (`z-link`):** a link in running text, semibold in `--z-link`. That is the accent in light; in dark it is a lighter #60a5fa, because the accent reads at 3.4:1 on the dark canvas.
 
 ### Navigation
 - **Folders and labels** are railed rows. The open one takes its channel's wash and stroke, and its 3px rail lights up. A square swatch marks a folder (a place, `aria-current`) and a dot marks a label (a switch, `aria-pressed`).

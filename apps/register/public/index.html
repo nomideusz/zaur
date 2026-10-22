@@ -12,11 +12,11 @@
 </head>
 <body class="bg-[var(--z-canvas)]">
   <main class="flex min-h-svh w-full flex-col items-center justify-center gap-5 px-4 py-10 text-[var(--z-ink)] sm:px-6">
-    <div class="r-card max-w-[420px]" id="auth-card">
+    <div class="z-auth-card max-w-[420px]" id="auth-card">
       <div class="px-[22px] pt-6 pb-[22px]">
         <div class="flex items-center gap-[9px]">
           <span class="text-[17px] font-bold tracking-[-0.025em]">Zaur</span>
-          <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
+          <span class="z-chip z-chip-filled z-tone-needs !tracking-[0.06em]">Beta</span>
         </div>
 
         <div class="z-hidden" id="register-content">
@@ -25,10 +25,10 @@
             One address for Zaur Mail, Calendar, Files and Meet.
           </p>
 
-          <div class="r-alert z-railed tone-confirmed z-hidden" id="invitation-banner" role="status"></div>
+          <div class="z-alert z-railed mt-2.5 z-tone-confirmed z-hidden" id="invitation-banner" role="status"></div>
 
-          <div class="r-alert z-railed tone-correspondence z-hidden" id="apply-intro">
-            <span class="r-alert-title">Invite only</span>
+          <div class="z-alert z-railed mt-2.5 z-tone-correspondence z-hidden" id="apply-intro">
+            <span class="z-alert-title">Invite only</span>
             <span class="mt-0.5 block" id="apply-intro-body">
               Registration is currently invite-only. Pick the address you want and apply for it — we'll
               review it and email you an invitation.
@@ -37,7 +37,7 @@
 
           <section aria-labelledby="register-pick-heading">
             <div class="z-rule mt-[18px]"><h2 class="z-caption" id="register-pick-heading">Address</h2></div>
-            <label class="r-field mt-3">
+            <label class="z-field z-field-row mt-3">
               <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                 <circle cx="8" cy="8" r="2.6" stroke="currentColor" stroke-width="1.3" />
                 <path d="M10.6 5.6v3.1c0 1.1.7 1.8 1.6 1.8s1.6-.9 1.6-2.5A5.8 5.8 0 1 0 11.3 12.8" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -45,7 +45,7 @@
               <input
                 type="text"
                 id="username-input"
-                class="r-input"
+                class="z-field-row-input"
                 autocomplete="off"
                 autocapitalize="none"
                 autocorrect="off"
@@ -66,7 +66,7 @@
               For <span class="font-mono text-[11.5px] text-[var(--z-strong)]" id="selected-email-label">—</span>
             </p>
 
-            <div class="r-alert z-railed tone-discard" id="form-error" role="alert"></div>
+            <div class="z-alert z-railed mt-2.5 z-tone-discard" id="form-error" role="alert"></div>
 
             <form id="register-form" class="mt-3 flex flex-col gap-2.5" method="post">
               <input type="hidden" id="selected-domain-id" name="domainId">
@@ -85,7 +85,7 @@
               >
 
               <div>
-                <label class="r-field">
+                <label class="z-field z-field-row">
                   <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                     <rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
                     <path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -94,7 +94,7 @@
                     type="password"
                     id="new-password"
                     name="password"
-                    class="r-input"
+                    class="z-field-row-input"
                     autocomplete="new-password"
                     placeholder="Password"
                     aria-label="Password"
@@ -110,7 +110,7 @@
                 <p class="mt-1 font-mono text-[10.5px] text-[var(--z-soft)] empty:hidden" id="strength-label"></p>
               </div>
 
-              <label class="r-field">
+              <label class="z-field z-field-row">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
                   <path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -119,7 +119,7 @@
                   type="password"
                   id="confirm-password"
                   name="confirmPassword"
-                  class="r-input"
+                  class="z-field-row-input"
                   autocomplete="new-password"
                   placeholder="Confirm password"
                   aria-label="Confirm password"
@@ -131,7 +131,7 @@
                 </button>
               </label>
 
-              <label class="r-field" id="captcha-section">
+              <label class="z-field z-field-row" id="captcha-section">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
                   <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -141,7 +141,7 @@
                   type="number"
                   id="captcha-answer"
                   name="captchaAnswer"
-                  class="r-input w-16 flex-none text-right font-mono"
+                  class="z-field-row-input w-16 flex-none text-right font-mono"
                   inputmode="numeric"
                   placeholder="Answer"
                   aria-labelledby="captcha-question"
@@ -162,34 +162,34 @@
               For <span class="font-mono text-[11.5px] text-[var(--z-strong)]" id="apply-selected-email">—</span>
             </p>
 
-            <div class="r-alert z-railed tone-discard" id="apply-error" role="alert"></div>
-            <div class="r-alert z-railed tone-confirmed z-hidden" id="apply-success" role="status"></div>
+            <div class="z-alert z-railed mt-2.5 z-tone-discard" id="apply-error" role="alert"></div>
+            <div class="z-alert z-railed mt-2.5 z-tone-confirmed z-hidden" id="apply-success" role="status"></div>
 
             <form id="apply-form" class="mt-3 flex flex-col gap-2.5">
-              <label class="r-field">
+              <label class="z-field z-field-row">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <circle cx="8" cy="5.5" r="2.5" stroke="currentColor" stroke-width="1.3" />
                   <path d="M3 13.5c.6-2.3 2.6-3.7 5-3.7s4.4 1.4 5 3.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
                 </svg>
-                <input type="text" id="apply-name" name="name" class="r-input" autocomplete="name" maxlength="100" placeholder="Your name" aria-label="Your name" required>
+                <input type="text" id="apply-name" name="name" class="z-field-row-input" autocomplete="name" maxlength="100" placeholder="Your name" aria-label="Your name" required>
               </label>
 
-              <label class="r-field">
+              <label class="z-field z-field-row">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <rect x="2" y="3.5" width="12" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3" />
                   <path d="M2.4 4.6L8 8.8l5.6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
                 </svg>
-                <input type="email" id="apply-contact" name="contactEmail" class="r-input" autocomplete="email" placeholder="Where we can reach you" aria-label="Contact email" required>
+                <input type="email" id="apply-contact" name="contactEmail" class="z-field-row-input" autocomplete="email" placeholder="Where we can reach you" aria-label="Contact email" required>
               </label>
 
-              <label class="r-field items-start">
+              <label class="z-field z-field-row items-start">
                 <svg class="mt-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <path d="M2.5 3.5h11v7h-6l-3 2.5v-2.5h-2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
                 </svg>
-                <textarea id="apply-message" name="message" class="r-input" rows="3" maxlength="2000" placeholder="Why this address? (optional)" aria-label="Why this address? (optional)"></textarea>
+                <textarea id="apply-message" name="message" class="z-field-row-input" rows="3" maxlength="2000" placeholder="Why this address? (optional)" aria-label="Why this address? (optional)"></textarea>
               </label>
 
-              <label class="r-field" id="apply-captcha-section">
+              <label class="z-field z-field-row" id="apply-captcha-section">
                 <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
                   <circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
                   <path d="M6.3 6.3a1.8 1.8 0 1 1 2.4 1.7c-.5.2-.7.6-.7 1.1M8 11.2v.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -199,7 +199,7 @@
                   type="number"
                   id="apply-captcha-answer"
                   name="captchaAnswer"
-                  class="r-input w-16 flex-none text-right font-mono"
+                  class="z-field-row-input w-16 flex-none text-right font-mono"
                   inputmode="numeric"
                   placeholder="Answer"
                   aria-labelledby="apply-captcha-question"
@@ -219,7 +219,7 @@
 
     <p class="text-[13px] text-[var(--z-muted)]">
       Already have an address?
-      <a href="https://webmail.zaur.app/login" data-webmail-link class="r-link">Sign in</a>
+      <a href="https://webmail.zaur.app/login" data-webmail-link class="z-link">Sign in</a>
     </p>
   </main>
 

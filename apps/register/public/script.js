@@ -648,7 +648,7 @@ async function initInvitation() {
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
-    invitationBanner.innerHTML = `<span class="r-alert-title">You're invited</span><span class="mt-0.5 block">Pick any free address. The invitation went to <span class="font-mono text-[11.5px]">${escapeHtml(inviteEmail)}</span>.</span>`;
+    invitationBanner.innerHTML = `<span class="z-alert-title">You're invited</span><span class="mt-0.5 block">Pick any free address. The invitation went to <span class="font-mono text-[11.5px]">${escapeHtml(inviteEmail)}</span>.</span>`;
     showRegisterFlow();
     applyInvitationUi();
   } catch {

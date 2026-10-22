@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { appName } from '#lib/brand';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
-	import AuthCard, { fieldClass, inputClass, linkClass } from '#lib/components/auth/AuthCard.svelte';
+	import AuthCard from '#lib/components/auth/AuthCard.svelte';
 	import { resetPassword } from '../../reset.remote';
 	import type { PageProps } from './$types';
 
@@ -43,7 +43,7 @@
 			<input {...resetPassword.fields.token.as('hidden', data.token)} />
 			<!-- For the password manager: which account this new password belongs to. -->
 			<input type="email" value={data.email} autocomplete="username" hidden readonly />
-			<label class={fieldClass}>
+			<label class="z-field z-field-row">
 				{@render lock()}
 				<input
 					{...resetPassword.fields._password.as('password')}
@@ -54,10 +54,10 @@
 					placeholder="New password"
 					aria-label="New password"
 					disabled={pending}
-					class={inputClass}
+					class="z-field-row-input"
 				/>
 			</label>
-			<label class={fieldClass}>
+			<label class="z-field z-field-row">
 				{@render lock()}
 				<input
 					{...resetPassword.fields._confirm.as('password')}
@@ -68,7 +68,7 @@
 					placeholder="The same again"
 					aria-label="Confirm new password"
 					disabled={pending}
-					class={inputClass}
+					class="z-field-row-input"
 				/>
 			</label>
 			<p class="z-mono -mt-0.5 text-[10.5px] text-[var(--z-soft)]">At least 8 characters.</p>
@@ -82,6 +82,6 @@
 	{/if}
 
 	{#snippet below()}
-		<a href="/login" class={linkClass}>Back to sign in</a>
+		<a href="/login" class="z-link">Back to sign in</a>
 	{/snippet}
 </AuthCard>

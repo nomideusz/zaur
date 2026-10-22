@@ -377,7 +377,7 @@
 			{/if}
 
 			{#if error}
-				<p class="rounded-[8px] border border-[var(--z-ch-discard-line)] bg-[var(--z-ch-discard-hover)] px-3 py-2 text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">{error}</p>
+				<p class="z-railed z-alert z-tone-discard" role="alert">{error}</p>
 			{/if}
 
 			<div class="flex flex-col gap-2.5">

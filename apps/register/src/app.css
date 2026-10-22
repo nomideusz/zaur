@@ -6,7 +6,7 @@
  * name: the Docker image installs with npm, which has no workspaces.
  *
  * The CSP has no 'unsafe-inline', so nothing here may rely on a style=""
- * attribute: channel colours come from the .tone-* classes below.
+ * attribute: channel colours come from @zaur/ui's .z-tone-* classes.
  */
 @import 'tailwindcss' source('../public');
 
@@ -14,37 +14,16 @@
 @import '../../../packages/ui/src/base.css';
 
 @layer components {
-	/* mail2's AuthCard: the signed-out screens' card. */
-	.r-card {
-		@apply relative w-full overflow-hidden rounded-[12px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-window)];
-	}
-	.r-card::before {
-		content: '';
-		@apply absolute inset-x-0 top-0 h-[3px] bg-[var(--z-accent)];
-	}
-
-	/* A field row: icon + input in one bordered box (AuthCard's fieldClass). */
-	.r-field {
-		@apply flex min-h-10 items-center gap-2.5 rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-[11px] shadow-[inset_0_1px_2px_rgba(15,23,42,0.04)] transition-[border-color,box-shadow] focus-within:border-[var(--z-accent)] focus-within:shadow-[0_0_0_3px_rgba(37,99,235,0.18)];
-	}
-	.r-field > svg {
-		@apply size-[15px] shrink-0 text-[var(--z-faint)];
-	}
-	.r-input {
-		@apply min-w-0 flex-1 border-0 bg-transparent text-[14px] text-[var(--z-ink)] outline-none placeholder:text-[var(--z-faint)] disabled:opacity-60 max-md:text-base;
-	}
-	input[type='number'].r-input {
+	/* A field row's input that is a number or a textarea (the row itself is @zaur/ui's .z-field-row). */
+	input[type='number'].z-field-row-input {
 		appearance: textfield;
 	}
-	input[type='number'].r-input::-webkit-inner-spin-button {
+	input[type='number'].z-field-row-input::-webkit-inner-spin-button {
 		appearance: none;
 		margin: 0;
 	}
-	textarea.r-input {
+	textarea.z-field-row-input {
 		@apply resize-y py-2.5;
-	}
-	.r-link {
-		@apply font-semibold text-[var(--z-accent)] hover:text-[var(--z-accent-edge)];
 	}
 
 	/* The eye on a password field. */
@@ -55,45 +34,7 @@
 		@apply size-[15px];
 	}
 
-	/* Channel colours for chips and railed notices. */
-	.tone-confirmed {
-		--z-fill: var(--z-ch-confirmed-fill);
-		--z-stroke: var(--z-ch-confirmed-solid);
-		--z-ink-on: var(--z-ch-confirmed-ink);
-		--z-rail: var(--z-ch-confirmed-solid);
-		--z-edge: var(--z-ch-confirmed-stroke);
-	}
-	.tone-discard {
-		--z-fill: var(--z-ch-discard-fill);
-		--z-stroke: var(--z-ch-discard-solid);
-		--z-ink-on: var(--z-ch-discard-ink);
-		--z-rail: var(--z-ch-discard-solid);
-		--z-edge: var(--z-ch-discard-stroke);
-	}
-	.tone-needs {
-		--z-fill: var(--z-ch-needs-fill);
-		--z-stroke: var(--z-ch-needs-solid);
-		--z-ink-on: var(--z-ch-needs-ink);
-		--z-rail: var(--z-ch-needs-solid);
-		--z-edge: var(--z-ch-needs-stroke);
-	}
-	.tone-correspondence {
-		--z-fill: var(--z-ch-correspondence-fill);
-		--z-stroke: var(--z-ch-correspondence-solid);
-		--z-ink-on: var(--z-ch-correspondence-ink);
-		--z-rail: var(--z-ch-correspondence-solid);
-		--z-edge: var(--z-ch-correspondence-stroke);
-	}
-
-	/* mail2's AuthAlert: a railed notice in its channel (with .z-railed .tone-*). */
-	.r-alert {
-		@apply mt-2.5 rounded-[8px] border border-[var(--z-edge)] bg-[var(--z-fill)] py-[9px] pr-[11px] pl-[18px] text-[12.5px] leading-normal text-[var(--z-ink-on)];
-		--z-rail-inset: 8px;
-	}
-	.r-alert-title {
-		@apply block text-[13px] font-semibold;
-	}
-	.r-alert:empty,
+	/* Error slots hold their alert until script fills them (@zaur/ui's .z-alert hides when :empty). */
 	#form-error:not(.is-visible),
 	#apply-error:not(.is-visible) {
 		display: none;

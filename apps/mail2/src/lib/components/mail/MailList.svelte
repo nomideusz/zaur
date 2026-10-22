@@ -446,19 +446,14 @@
 		class="min-h-0 flex-1 overflow-y-auto px-3.5 pb-3 [scroll-padding-top:34px] max-md:px-3 overscroll-contain"
 	>
 		{#if error}
-			<div
-				class="z-railed mt-3 flex items-start gap-[9px] rounded-[10px] border border-[var(--z-ch-discard-stroke)] bg-[var(--z-ch-discard-fill)] py-[11px] pr-3 pl-[18px]"
-				style:--z-rail="var(--z-ch-discard-solid)"
-				style:--z-rail-inset="10px"
-				role="alert"
-			>
-				<svg class="mt-px size-[15px] shrink-0 text-[var(--z-ch-discard-ink)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<div class="z-railed z-alert z-tone-discard mt-3 flex items-start gap-[9px]" role="alert">
+				<svg class="mt-px size-[15px] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" />
 					<path d="M8 5v3.6M8 10.7v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
 				</svg>
 				<div class="min-w-0 flex-1">
-					<span class="block text-[13px] font-semibold text-[var(--z-ch-discard-ink)]">Couldn't load messages</span>
-					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">{online.current === false ? "You're offline." : "The mail server couldn't be reached."}</span>
+					<span class="z-alert-title">Couldn't load messages</span>
+					<span class="mt-0.5 block">{online.current === false ? "You're offline." : "The mail server couldn't be reached."}</span>
 				</div>
 				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)] max-md:!h-11 max-md:!px-3.5 max-md:!text-[13px]" onclick={onRetry}>Retry</button>
 			</div>
@@ -528,7 +523,7 @@
 			</div>
 		{:else if groups}
 			{#if onEmpty && !searchQuery && (mailbox?.kind === 'trash' || mailbox?.kind === 'junk')}
-				<div class="mt-3 flex items-center gap-3 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-sunken)] py-1.5 pr-1.5 pl-3.5 text-[12.5px] leading-snug text-[var(--z-muted)]">
+				<div class="z-note mt-3 flex items-center gap-3 py-1.5 pr-1.5">
 					<span class="min-w-0 flex-1">Empty {mailbox.name} to delete everything in it for good.</span>
 					<button
 						type="button"
@@ -776,7 +771,7 @@
 	}
 
 	.z-row[data-unread='true'] {
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+		box-shadow: var(--z-shadow-raised);
 	}
 
 	/*
@@ -847,7 +842,7 @@
 	@media (hover: hover) {
 		.z-row[data-state='rest']:not(.z-hue-wash):hover {
 			border-color: var(--z-line);
-			box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+			box-shadow: var(--z-shadow-raised);
 		}
 
 		/* One slot, two states: the time steps out, the buttons step in. */

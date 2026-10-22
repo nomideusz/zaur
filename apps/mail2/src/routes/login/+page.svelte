@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
 	import { addressKind, appName, mailDomain } from '#lib/brand';
-	import AuthCard, { fieldClass, inputClass, linkClass } from '#lib/components/auth/AuthCard.svelte';
+	import AuthCard from '#lib/components/auth/AuthCard.svelte';
 	import { login } from '../login.remote';
 	import type { PageProps } from './$types';
 
@@ -96,7 +96,7 @@
 		{/if}
 
 		<div class="mt-3 flex flex-col gap-2.5">
-			<label class={fieldClass} aria-invalid={errorCard && !needsTotp ? 'true' : undefined}>
+			<label class="z-field z-field-row" aria-invalid={errorCard && !needsTotp ? 'true' : undefined}>
 				<svg class="size-[15px] shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<rect x="2" y="3.5" width="12" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3" />
 					<path d="M2.4 4.6L8 8.8l5.6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
@@ -116,11 +116,11 @@
 					placeholder="you@{mailDomain}"
 					aria-label="Email"
 					disabled={pending}
-					class={inputClass}
+					class="z-field-row-input"
 				/>
 			</label>
 
-			<label class={fieldClass}>
+			<label class="z-field z-field-row">
 				<svg class="size-[15px] shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
 					<path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -136,12 +136,12 @@
 					placeholder={secretLabel}
 					aria-label={secretLabel}
 					disabled={pending}
-					class={inputClass}
+					class="z-field-row-input"
 				/>
 			</label>
 
 			{#if needsTotp}
-				<label class={fieldClass}>
+				<label class="z-field z-field-row">
 					<svg class="size-[15px] shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3" />
 						<path d="M8 4.5V8l2.5 1.5" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -155,7 +155,7 @@
 						placeholder="Authentication code"
 						aria-label="Authentication code"
 						disabled={pending}
-						class="{inputClass} z-mono tracking-[0.2em]"
+						class="z-field-row-input z-mono tracking-[0.2em]"
 					/>
 				</label>
 				<p class="z-mono -mt-0.5 text-[10.5px] text-[var(--z-soft)]">Six digits from your authenticator app.</p>
@@ -187,14 +187,14 @@
 		{#if data.addingTo}
 			<a href="/" class="btn-tactile mt-2 h-[38px] w-full !text-[13.5px]">Cancel</a>
 		{:else if data.resetEnabled}
-			<a href="/forgot-password" class="mt-3 block text-center text-[12.5px] {linkClass}">Forgot your password?</a>
+			<a href="/forgot-password" class="mt-3 block text-center text-[12.5px] z-link">Forgot your password?</a>
 		{/if}
 	</form>
 
 	{#snippet below()}
 		{#if data.registerUrl}
 			Need an address?
-			<a href={data.registerUrl} class={linkClass}>Create your account</a>
+			<a href={data.registerUrl} class="z-link">Create your account</a>
 		{/if}
 	{/snippet}
 </AuthCard>

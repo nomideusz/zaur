@@ -412,6 +412,181 @@
 		box-shadow: none;
 	}
 
+	/*
+	 * A field row: an icon and a bare input in one `.z-field` box, 40px, as on
+	 * the signed-out screens (Mail's sign-in, Register's sign-up). The box takes
+	 * the field's focus ring from `:focus-within`. Markup:
+	 * `<label class="z-field z-field-row"><svg/><input class="z-field-row-input"/></label>`.
+	 */
+	.z-field-row {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		height: auto;
+		min-height: 40px;
+		padding: 0 11px;
+	}
+
+	.z-field-row > svg {
+		width: 15px;
+		height: 15px;
+		flex-shrink: 0;
+		color: var(--z-faint);
+	}
+
+	.z-field-row-input {
+		min-width: 0;
+		flex: 1;
+		border: 0;
+		background: transparent;
+		font-size: 14px;
+		color: var(--z-ink);
+		outline: none;
+	}
+
+	/* The row draws the ring (`.z-field:focus-within`), not the input inside it. */
+	.z-field-row-input:focus-visible {
+		outline: none;
+	}
+
+	.z-field-row-input::placeholder {
+		color: var(--z-soft);
+	}
+
+	.z-field-row-input:disabled {
+		opacity: 0.6;
+	}
+
+	/* 16px on a phone, so iOS does not zoom the page into the field. */
+	@media (max-width: 767px) {
+		.z-field-row-input {
+			font-size: 16px;
+		}
+	}
+
+	/* ── Notices ──────────────────────────────────────────────────────── */
+
+	/*
+	 * A channel as a class: the same vars `channelStyle()` sets inline, for
+	 * markup that cannot carry a style attribute (Register's CSP has no
+	 * 'unsafe-inline') or does not need a computed one. `.z-chip`, `.z-tile`,
+	 * `.z-hue-wash`, `.z-railed` and `.z-alert` all read them.
+	 */
+	.z-tone-correspondence {
+		--z-fill: var(--z-ch-correspondence-fill);
+		--z-stroke: var(--z-ch-correspondence-stroke);
+		--z-rail: var(--z-ch-correspondence-solid);
+		--z-ink-on: var(--z-ch-correspondence-ink);
+	}
+	.z-tone-confirmed {
+		--z-fill: var(--z-ch-confirmed-fill);
+		--z-stroke: var(--z-ch-confirmed-stroke);
+		--z-rail: var(--z-ch-confirmed-solid);
+		--z-ink-on: var(--z-ch-confirmed-ink);
+	}
+	.z-tone-needs {
+		--z-fill: var(--z-ch-needs-fill);
+		--z-stroke: var(--z-ch-needs-stroke);
+		--z-rail: var(--z-ch-needs-solid);
+		--z-ink-on: var(--z-ch-needs-ink);
+	}
+	.z-tone-flagged {
+		--z-fill: var(--z-ch-flagged-fill);
+		--z-stroke: var(--z-ch-flagged-stroke);
+		--z-rail: var(--z-ch-flagged-solid);
+		--z-ink-on: var(--z-ch-flagged-ink);
+	}
+	.z-tone-digest {
+		--z-fill: var(--z-ch-digest-fill);
+		--z-stroke: var(--z-ch-digest-stroke);
+		--z-rail: var(--z-ch-digest-solid);
+		--z-ink-on: var(--z-ch-digest-ink);
+	}
+	.z-tone-discard {
+		--z-fill: var(--z-ch-discard-fill);
+		--z-stroke: var(--z-ch-discard-stroke);
+		--z-rail: var(--z-ch-discard-solid);
+		--z-ink-on: var(--z-ch-discard-ink);
+	}
+
+	/*
+	 * An alert: what went wrong, or what happened, as a railed card in its
+	 * channel (with `.z-railed` and a `.z-tone-*`, or `channelStyle()`): a
+	 * failed load with its Retry, a form's error, a sign-in notice. Text takes
+	 * the channel's ink, never grey. `.z-alert-title` is its bold first line;
+	 * the layout inside (an icon, a Retry) is the caller's.
+	 */
+	.z-alert {
+		border-radius: 10px;
+		border: 1px solid var(--z-stroke);
+		background: var(--z-fill);
+		padding: 10px 12px 10px 18px;
+		font-size: 12.5px;
+		line-height: 1.5;
+		color: var(--z-ink-on);
+		--z-rail-inset: 9px;
+	}
+
+	.z-alert-title {
+		display: block;
+		font-size: 13px;
+		font-weight: 600;
+	}
+
+	.z-alert:empty {
+		display: none;
+	}
+
+	/*
+	 * A note: a quiet line of context set into the pane on sunken, not a card
+	 * of its own. "Empty Trash to delete everything in it", "Images are
+	 * hidden", "This message was sent to an alias". Muted text; any action in
+	 * it is a small tactile button at its end.
+	 */
+	.z-note {
+		border-radius: 10px;
+		border: 1px solid var(--z-hairline);
+		background: var(--z-sunken);
+		padding: 8px 14px;
+		font-size: 12.5px;
+		line-height: 1.375;
+		color: var(--z-muted);
+	}
+
+	/* ── Signed-out screens ───────────────────────────────────────────── */
+
+	/*
+	 * The card a signed-out screen sits on (sign-in, reset, sign-up): 12px,
+	 * the window shadow, and the accent's 3px bar along its top edge.
+	 */
+	.z-auth-card {
+		position: relative;
+		width: 100%;
+		overflow: hidden;
+		border-radius: 12px;
+		border: 1px solid var(--z-line);
+		background: var(--z-surface);
+		box-shadow: var(--z-shadow-window);
+	}
+
+	.z-auth-card::before {
+		content: '';
+		position: absolute;
+		inset: 0 0 auto;
+		height: 3px;
+		background: var(--z-accent);
+	}
+
+	/* A link inside running text: semibold, in the link blue (lighter in dark, where the accent is too dim to read). */
+	.z-link {
+		font-weight: 600;
+		color: var(--z-link);
+	}
+
+	.z-link:hover {
+		color: var(--z-link-hover);
+	}
+
 	/* ── Small things ─────────────────────────────────────────────────── */
 
 	/* A keycap: mono, a 2px bottom border so it reads as a key. */

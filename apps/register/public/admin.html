@@ -12,19 +12,19 @@
 </head>
 <body class="bg-[var(--z-canvas)] text-[var(--z-ink)]">
   <main id="login-container" class="flex min-h-svh w-full flex-col items-center justify-center gap-5 px-4 py-10 sm:px-6">
-    <div class="r-card max-w-[380px]">
+    <div class="z-auth-card max-w-[380px]">
       <div class="px-[22px] pt-6 pb-[22px]">
         <div class="flex items-center gap-[9px]">
           <span class="text-[17px] font-bold tracking-[-0.025em]">Zaur</span>
-          <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
+          <span class="z-chip z-chip-filled z-tone-needs !tracking-[0.06em]">Beta</span>
         </div>
         <h1 class="mt-3.5 text-[22px] leading-[1.15] font-bold tracking-[-0.025em]">Register admin</h1>
         <p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">Invitations, mailboxes and provisioning.</p>
 
-        <div class="r-alert z-railed tone-discard" id="login-error" role="alert"></div>
+        <div class="z-alert z-railed mt-2.5 z-tone-discard" id="login-error" role="alert"></div>
 
         <form id="login-form" class="mt-[18px] flex flex-col gap-2.5">
-          <label class="r-field">
+          <label class="z-field z-field-row">
             <svg viewBox="0 0 16 16" fill="none" aria-hidden="true">
               <rect x="3" y="7" width="10" height="6.5" rx="1.4" stroke="currentColor" stroke-width="1.3" />
               <path d="M5.5 7V5.2a2.5 2.5 0 015 0V7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
@@ -33,7 +33,7 @@
               type="password"
               id="admin-password"
               name="password"
-              class="r-input"
+              class="z-field-row-input"
               autocomplete="current-password"
               placeholder="Admin password"
               aria-label="Admin password"
@@ -53,14 +53,14 @@
       </div>
     </div>
 
-    <p class="text-[13px] text-[var(--z-muted)]"><a href="/" class="r-link">Back to register</a></p>
+    <p class="text-[13px] text-[var(--z-muted)]"><a href="/" class="z-link">Back to register</a></p>
   </main>
 
   <div id="dashboard-container" class="z-hidden">
     <header class="sticky top-0 z-10 border-b border-[var(--z-hairline)] bg-[var(--z-surface)]">
       <div class="mx-auto flex h-12 max-w-[960px] items-center gap-2.5 px-4">
         <a href="/" class="text-[15px] font-bold tracking-[-0.025em]">Zaur</a>
-        <span class="z-chip z-chip-filled tone-needs !tracking-[0.06em]">Beta</span>
+        <span class="z-chip z-chip-filled z-tone-needs !tracking-[0.06em]">Beta</span>
         <span class="h-4 w-px bg-[var(--z-hairline)]" aria-hidden="true"></span>
         <span class="text-[13px] text-[var(--z-muted)]">Admin</span>
         <nav class="ml-auto flex items-center gap-3" aria-label="Tools">
@@ -87,7 +87,7 @@
             <span class="z-caption">Domains</span>
             <span class="r-stat-value" id="stat-domains">—</span>
           </div>
-          <div class="z-card r-stat tone-correspondence">
+          <div class="z-card r-stat z-tone-correspondence">
             <span class="z-caption">Invitations pending</span>
             <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-invites-pending">—</span>
           </div>
@@ -103,8 +103,8 @@
           <h2 class="z-card-head">Send invitation</h2>
           <div class="z-card-body">
             <p class="text-[12.5px] leading-normal text-[var(--z-muted)]" id="invite-email-hint">Enter a personal email to send a registration magic link.</p>
-            <div class="r-alert z-railed tone-discard" id="generate-error" role="alert"></div>
-            <div class="r-alert z-railed tone-confirmed [&_code]:font-mono [&_code]:text-[11px] [&_code]:wrap-anywhere" id="generate-success" role="alert"></div>
+            <div class="z-alert z-railed mt-2.5 z-tone-discard" id="generate-error" role="alert"></div>
+            <div class="z-alert z-railed mt-2.5 z-tone-confirmed [&_code]:font-mono [&_code]:text-[11px] [&_code]:wrap-anywhere" id="generate-success" role="alert"></div>
             <form id="generate-form" class="mt-3 flex flex-col gap-3">
               <div>
                 <label for="invite-email" class="z-caption mb-1.5 block">Recovery email</label>
@@ -124,7 +124,7 @@
           <h2 class="z-card-head">Account lookup</h2>
           <div class="z-card-body">
             <p class="text-[12.5px] leading-normal text-[var(--z-muted)]">Find a mailbox in Stalwart, then delete it if needed.</p>
-            <div class="r-alert z-railed tone-discard" id="lookup-error" role="alert"></div>
+            <div class="z-alert z-railed mt-2.5 z-tone-discard" id="lookup-error" role="alert"></div>
             <form id="lookup-form" class="mt-3 flex flex-col gap-3">
               <div>
                 <label for="lookup-email" class="z-caption mb-1.5 block">Mailbox email</label>
@@ -144,7 +144,7 @@
         </div>
         <div class="z-card-body">
           <p class="text-[12.5px] text-[var(--z-muted)]">All Stalwart accounts on enabled registration domains.</p>
-          <div class="r-alert z-railed tone-discard" id="mailboxes-error" role="alert"></div>
+          <div class="z-alert z-railed mt-2.5 z-tone-discard" id="mailboxes-error" role="alert"></div>
           <input type="text" id="mailboxes-filter" class="z-field mt-3 w-full" placeholder="Filter by email…" aria-label="Filter mailboxes" autocomplete="off">
           <div class="mt-2 overflow-x-auto">
             <table class="r-table min-w-[480px]" id="mailboxes-table">
@@ -169,15 +169,15 @@
         <h2 class="z-card-head">Sent invitations</h2>
         <div class="z-card-body">
           <div class="grid grid-cols-3 gap-2.5">
-            <div class="z-card r-stat tone-correspondence">
+            <div class="z-card r-stat z-tone-correspondence">
               <span class="z-caption">Pending</span>
               <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-unused">0</span>
             </div>
-            <div class="z-card r-stat tone-confirmed">
+            <div class="z-card r-stat z-tone-confirmed">
               <span class="z-caption">Registered</span>
               <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-used">0</span>
             </div>
-            <div class="z-card r-stat tone-discard">
+            <div class="z-card r-stat z-tone-discard">
               <span class="z-caption">Expired / revoked</span>
               <span class="r-stat-value text-[var(--z-ink-on)]" id="stat-revoked">0</span>
             </div>
@@ -211,8 +211,8 @@
         </div>
         <div class="z-card-body">
           <p class="text-[12.5px] text-[var(--z-muted)]">Review provisioned Stalwart mailboxes.</p>
-          <div class="r-alert z-railed tone-discard" id="audit-error" role="alert"></div>
-          <div class="r-alert z-railed tone-confirmed" id="audit-success" role="alert"></div>
+          <div class="z-alert z-railed mt-2.5 z-tone-discard" id="audit-error" role="alert"></div>
+          <div class="z-alert z-railed mt-2.5 z-tone-confirmed" id="audit-success" role="alert"></div>
           <div id="audit-summary" class="mt-3 grid grid-cols-2 gap-2.5 empty:hidden"></div>
           <div id="audit-results" class="mt-3 empty:hidden"></div>
         </div>

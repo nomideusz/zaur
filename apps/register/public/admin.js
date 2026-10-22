@@ -178,7 +178,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       overviewStatus.innerHTML = pills
         .map((pill) => {
-          const tone = pill.ok ? 'tone-confirmed' : pill.warn ? 'tone-needs' : '';
+          const tone = pill.ok ? 'z-tone-confirmed' : pill.warn ? 'z-tone-needs' : '';
           // Long ones (domain list, SMTP error) wrap and keep their case.
           const wide = pill.wide ? 'max-w-full !whitespace-normal normal-case tracking-normal' : '';
           return `<span class="z-chip z-chip-filled ${tone} ${wide}">${escapeHtml(pill.label)}</span>`;
@@ -388,12 +388,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const tdStatus = document.createElement('td');
       const tone = {
-        sent: 'tone-correspondence',
-        opened: 'tone-needs',
-        registered: 'tone-confirmed',
-        expired: 'tone-discard',
-        revoked: 'tone-discard',
-      }[invite.status] || 'tone-correspondence';
+        sent: 'z-tone-correspondence',
+        opened: 'z-tone-needs',
+        registered: 'z-tone-confirmed',
+        expired: 'z-tone-discard',
+        revoked: 'z-tone-discard',
+      }[invite.status] || 'z-tone-correspondence';
       tdStatus.innerHTML = `<span class="z-chip z-chip-filled ${tone}">${escapeHtml(invite.status)}</span>`;
 
       const tdCreated = document.createElement('td');
