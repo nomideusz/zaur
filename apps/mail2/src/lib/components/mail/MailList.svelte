@@ -8,7 +8,7 @@
 	import { CATEGORIES, CATEGORY_OTHER, categoryLabel } from '@zaur/mail-core';
 	import { filterKeyword, filterName } from '#lib/mail/labels';
 	import { acceptsMoves } from '#lib/mail/folders';
-	import { formatListTime, initials } from '#lib/mail/rows';
+	import { formatListTime, formatReaderTime, initials } from '#lib/mail/rows';
 	import {
 		CHANNELS,
 		channelStyle,
@@ -149,7 +149,8 @@
 			row.important && 'Important',
 			row.senderLabel,
 			row.subject || '(no subject)',
-			formatListTime(row.receivedAt),
+			// The row shows only the time; a screen reader gets the day the divider shows.
+			formatReaderTime(row.receivedAt),
 			row.messageCount > 1 && `${row.messageCount} messages`,
 			row.hasAttachment && 'has attachment'
 		]
@@ -384,7 +385,7 @@
 						<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 							<Menu.Trigger class="btn-tactile !h-7 shrink-0 gap-1 !border-[var(--z-accent-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-accent-ink)]" disabled={busy}>
 								<!-- A narrow column (a laptop with the sidebar open) keeps the action and drops a word. -->
-								Move<span class="@max-[430px]:hidden">&nbsp;to</span>
+								Move<span class="@max-[430px]:hidden">to</span>
 								<ActionIcon name="chevron" class="size-[11px]" />
 							</Menu.Trigger>
 							<Portal>
@@ -583,8 +584,8 @@
 							data-state={isSelected ? 'selected' : isOpen ? 'open' : isCursor ? 'cursor' : 'rest'}
 							data-unread={row.unread ? 'true' : 'false'}
 							class="z-row z-railed group/row grid cursor-pointer items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] max-md:gap-x-1 max-md:py-2.5 max-md:pr-2.5 max-md:pl-2 {prefs.showAvatars
-								? 'grid-cols-[18px_30px_minmax(0,1fr)] max-md:grid-cols-[44px_30px_minmax(0,1fr)]'
-								: 'grid-cols-[18px_minmax(0,1fr)] max-md:grid-cols-[44px_minmax(0,1fr)]'}"
+								? 'grid-cols-[18px_30px_minmax(0,1fr)] max-md:grid-cols-[32px_30px_minmax(0,1fr)]'
+								: 'grid-cols-[18px_minmax(0,1fr)] max-md:grid-cols-[32px_minmax(0,1fr)]'}"
 							class:z-hue-wash={row.unread && !isSelected && !isOpen}
 							style="{channelStyle(channel)};--z-rail-inset:12px"
 							onclick={() => onOpen(row.threadId)}
@@ -594,11 +595,13 @@
 						>
 							<!--
 								Selection checkbox. On a phone the drawn box stays 18px and the
-								button grows to 44px, which is the target a thumb can actually hit.
+								button grows to 44px, which is the target a thumb can actually hit;
+								it spills 6px past its 32px column each side, so the target does not
+								cost the subject line its width.
 							-->
 							<button
 								type="button"
-								class="flex size-[18px] items-center justify-center self-center max-md:size-11"
+								class="flex size-[18px] items-center justify-center self-center max-md:-mx-1.5 max-md:size-11"
 								role="checkbox"
 								aria-checked={isSelected}
 								aria-label="Select conversation from {row.senderLabel}"

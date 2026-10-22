@@ -90,12 +90,10 @@ test('buildRowGroups: date groups in descending order with correct labels', () =
 	);
 });
 
-test('formatListTime: time today, weekday this week, date otherwise', () => {
-	const now = new Date('2026-09-12T12:00:00Z');
-	// 2026-09-12 is a Saturday; 2026-09-07 is the preceding Monday
-	assert.equal(formatListTime('2026-09-12T09:41:00Z', now), '09:41');
-	assert.equal(formatListTime('2026-09-07T09:41:00Z', now), 'Mon');
-	assert.equal(formatListTime('2026-08-30T09:41:00Z', now), '30 Aug');
+test('formatListTime: the time of day; the divider above names the day', () => {
+	assert.equal(formatListTime('2026-09-12T09:41:00Z'), '09:41');
+	assert.equal(formatListTime('2026-08-30T17:05:00Z'), '17:05');
+	assert.equal(formatListTime('not a date'), '');
 });
 
 test('formatReaderTime: "Today 09:41" style', () => {

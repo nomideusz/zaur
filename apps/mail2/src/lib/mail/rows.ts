@@ -83,16 +83,15 @@ export function buildRowGroups(
 	return [...groups].map(([label, rows]) => ({ label, rows }));
 }
 
-/** List time: HH:MM today, weekday within a week, otherwise a short date. */
-export function formatListTime(receivedAt: string, now = new Date()): string {
+/**
+ * List time: HH:MM, whatever the day. Every row sits under a divider that
+ * names its day (Today, Yesterday, 20 October), so a weekday or a date here
+ * would only repeat it; the time is what tells two rows of one day apart.
+ */
+export function formatListTime(receivedAt: string): string {
 	const time = new Date(receivedAt);
 	if (Number.isNaN(time.getTime())) return '';
-	const days = Math.round((startOfDay(now) - startOfDay(time)) / DAY_MS);
-	if (days <= 0)
-		return time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-	if (days < 7)
-		return time.toLocaleDateString('en-GB', { weekday: 'short' });
-	return time.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+	return time.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
 
 export function formatReaderTime(receivedAt: string, now = new Date()): string {
