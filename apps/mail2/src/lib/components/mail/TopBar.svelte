@@ -19,6 +19,8 @@
 		/** The committed search, owned by the page; '' means "showing a folder". */
 		searchQuery?: string;
 		onSearch?: (query: string) => void;
+		/** The list column's width, so the field can sit over the list it searches. */
+		listWidth?: number;
 	}
 
 	let {
@@ -31,7 +33,8 @@
 		onPrevMailbox,
 		onNextMailbox,
 		searchQuery = '',
-		onSearch
+		onSearch,
+		listWidth
 	}: Props = $props();
 
 	// Mail's stretch of the shell's header: it goes into the layout's bar.
@@ -211,12 +214,19 @@
 		`from:ada` means nothing half-typed — and Escape clears back to the folder.
 	-->
 	{#if onSearch}
+		<!-- From xl, with the sidebar beside the list, the field leaves the bar's
+		     flow and stands over the list column, inset like its rows: what it
+		     searches is right under it. It is placed against the app column (the
+		     header is that column's top), with the shell's own grid arithmetic. -->
 		<div
 			class="flex min-w-[150px] flex-1 items-center justify-center px-2 {phoneSearchOpen
 				? ''
-				: 'max-md:hidden'}"
+				: 'max-md:hidden'} {sidebarOpen
+				? 'xl:absolute xl:top-0 xl:left-[calc(var(--z-sidebar-width)_+_14px)] xl:h-[52px] xl:w-[calc(min(var(--z-list-w,480px),(100%_-_var(--z-sidebar-width))_/_2)_-_28px)] xl:px-0'
+				: ''}"
+			style:--z-list-w={listWidth ? `${listWidth}px` : undefined}
 		>
-			<div class="relative flex w-full max-w-[420px] items-center">
+			<div class="relative flex w-full max-w-[420px] items-center {sidebarOpen ? 'xl:max-w-none' : ''}">
 				<svg
 					class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--z-faint)]"
 					viewBox="0 0 16 16"

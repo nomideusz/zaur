@@ -286,10 +286,14 @@
 		A touch tablet keeps the desk's layout but not its sizes: icon buttons are
 		40px under any coarse pointer (base.css), so the bar and the reply button
 		grow with them there (`pointer-coarse:`).
+
+		On a desk the bar ends where the reading column does (24px + 680px), so in a
+		wide pane the actions sit over the message's right edge, not out at the
+		pane's.
 	-->
 	{#if onBack || latest || loading || error}
 		<div
-			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 max-md:h-[60px] max-md:gap-2 max-md:px-2.5 pointer-coarse:h-[60px]"
+			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 md:pr-[max(1.5rem,calc(100%_-_704px))] max-md:h-[60px] max-md:gap-2 max-md:px-2.5 pointer-coarse:h-[60px]"
 		>
 			{#if onBack}
 				<!--

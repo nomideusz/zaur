@@ -1150,6 +1150,7 @@
 	onToggleSidebar={toggleSidebar}
 	onPrevMailbox={() => stepMailbox(-1)}
 	onNextMailbox={() => stepMailbox(1)}
+	listWidth={prefs.listWidth}
 />
 
 {#if signedOut}
