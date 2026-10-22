@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
@@ -129,7 +130,7 @@
 	}
 
 	async function remove(contact: Contact) {
-		if (!confirm(`Delete ${contactDisplayName(contact)} from your contacts?`)) return;
+		if (!(await ask({ title: `Delete ${contactDisplayName(contact)}?`, body: 'They come out of your contacts, on every device.', action: 'Delete contact' }))) return;
 		saving = true;
 		try {
 			await deleteContact({ id: contact.id, accountId: contact.accountId });

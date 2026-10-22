@@ -7,6 +7,7 @@
 </script>
 
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { attachmentKind, formatAttachmentSize } from '#lib/compose/attachments';
 	import { EDGE, PANEL_TOP, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, fitPanel, maximizedRect } from '#lib/compose/layout';
 	import { hasDraftContent } from '#lib/compose/draft-save';
@@ -555,9 +556,12 @@
 	 * Going plain keeps the words and nothing else, and there is no way back:
 	 * when the message has more than words in it, ask first.
 	 */
-	function togglePlain() {
+	async function togglePlain() {
 		const more = /<(?!\/?(?:div|br|blockquote)\b)[a-z]/i.test(draft.bodyHtml);
-		if (!draft.plain && more && !confirm('Switch to plain text? The formatting and any pictures in the message will be removed.')) return;
+		if (!draft.plain && more) {
+			const sure = await ask({ title: 'Switch to plain text?', body: 'The formatting and any pictures in the message will be removed.', action: 'Switch to plain text' });
+			if (!sure) return;
+		}
 		compose.setPlain(draft.id, !draft.plain);
 	}
 

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
@@ -52,7 +53,7 @@
 	async function applyToAll() {
 		if (!open) return;
 		const { name, signature } = open;
-		if (!confirm(`Use this name and signature on all ${list.length} addresses?`)) return;
+		if (!(await ask({ title: `Use this name and signature on all ${list.length} addresses?`, body: 'What each address has now is replaced.', action: 'Use on all', tone: 'neutral' }))) return;
 		saving = true;
 		status = null;
 		try {

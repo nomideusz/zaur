@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { mailDomain } from '#lib/brand';
 	import { untrack } from 'svelte';
 	import type { Calendar, CalendarShareRole } from '@zaur/mail-core';
@@ -105,11 +106,11 @@
 
 	async function remove() {
 		const title = calendar.name;
-		if (!confirm(`Delete “${title}”?`)) return;
+		if (!(await ask({ title: `Delete “${title}”?`, action: 'Delete calendar' }))) return;
 		let deleted = false;
 		await run(async () => {
 			deleted = (await deleteCalendar({ ...where, removeEvents: false })).deleted;
-			if (deleted || !confirm(`“${title}” still has events. Delete them with it? This cannot be undone.`)) return;
+			if (deleted || !(await ask({ title: `“${title}” still has events`, body: "Delete them with it? This can't be undone.", action: 'Delete with events' }))) return;
 			deleted = (await deleteCalendar({ ...where, removeEvents: true })).deleted;
 		}, 'The calendar could not be deleted.');
 		if (deleted) onDone(`Deleted “${title}”`, true);

@@ -170,6 +170,55 @@
 	}
 
 	/*
+	 * The one destructive commit on a surface: Delete forever, Revoke, Sign out
+	 * in a confirmation. The discard channel's fill and ink, with a firmer
+	 * bottom edge, so the thing that cannot be undone is the heaviest control
+	 * without turning into a red slab.
+	 */
+	.btn-destroy {
+		border-color: var(--z-ch-discard-line);
+		border-bottom-color: var(--z-ch-discard-stroke);
+		border-bottom-width: 2px;
+		background: var(--z-ch-discard-fill);
+		color: var(--z-ch-discard-ink);
+		font-weight: 600;
+	}
+
+	.btn-destroy:hover:not(:disabled) {
+		background: color-mix(in oklab, var(--z-ch-discard-fill) 80%, var(--z-ch-discard-stroke));
+		border-color: var(--z-ch-discard-stroke);
+	}
+
+	.btn-destroy:active {
+		background: color-mix(in oklab, var(--z-ch-discard-fill) 80%, var(--z-ch-discard-stroke));
+	}
+
+	/* A confirmation rises a few pixels into place as its scrim settles; it leaves at once. */
+	.z-confirm[open],
+	.z-confirm[open]::backdrop {
+		transition:
+			opacity 180ms cubic-bezier(0.16, 1, 0.3, 1),
+			transform 180ms cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	@starting-style {
+		.z-confirm[open] {
+			opacity: 0;
+			transform: translateY(6px) scale(0.985);
+		}
+		.z-confirm[open]::backdrop {
+			opacity: 0;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.z-confirm[open],
+		.z-confirm[open]::backdrop {
+			transition: none;
+		}
+	}
+
+	/*
 	 * A square icon button inside a bordered group (the reader's four actions,
 	 * a row's hover strip): 26px, no border of its own, 6px radius.
 	 */

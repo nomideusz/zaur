@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { messageOf } from '#lib/errors';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import { whoami } from '../../../session.remote';
@@ -26,7 +27,7 @@
 	}
 
 	async function unshare(person: MailboxShareDTO) {
-		if (!confirm(`Stop sharing this mailbox with ${person.email || person.name || 'them'}?`)) return;
+		if (!(await ask({ title: `Stop sharing with ${person.email || person.name || 'them'}?`, body: 'They lose this mailbox straight away.', action: 'Stop sharing' }))) return;
 		busy = true;
 		status = null;
 		try {

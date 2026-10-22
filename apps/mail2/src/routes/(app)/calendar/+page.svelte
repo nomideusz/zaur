@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { meetName } from '#lib/brand';
 	import { untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
@@ -521,10 +522,12 @@
 	async function remove(event: CalendarEvent) {
 		// The first occurrence can come back as the series itself, rule and all.
 		const series = isRecurringInstance(event) || Boolean(event.recurrenceRule);
-		const prompt = series
-			? `Delete every occurrence of “${event.title}”? Repeating events are deleted as a series.`
-			: `Delete “${event.title}”?`;
-		if (!confirm(prompt)) return;
+		const confirmed = await ask(
+			series
+				? { title: `Delete every occurrence of “${event.title}”?`, body: 'Repeating events are deleted as a series.', action: 'Delete series' }
+				: { title: `Delete “${event.title}”?`, action: 'Delete event' }
+		);
+		if (!confirmed) return;
 		saving = true;
 		try {
 			await deleteEvent({ id: event.baseEventId ?? event.id, accountId: event.accountId });

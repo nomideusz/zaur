@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { messageOf } from '#lib/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
@@ -30,7 +31,7 @@
 	const others = $derived(sessions.filter((item) => !item.current));
 
 	async function signOutSession(item: SessionDTO) {
-		if (item.current && !confirm('Sign out of this device? You will be taken to the sign-in page.')) return;
+		if (item.current && !(await ask({ title: 'Sign out of this device?', body: "You'll be taken to the sign-in page.", action: 'Sign out' }))) return;
 		busy = item.id;
 		status = null;
 		try {
@@ -48,7 +49,7 @@
 	}
 
 	async function signOutOthers() {
-		if (!confirm('Sign out every other device? They will need the password to get back in.')) return;
+		if (!(await ask({ title: 'Sign out every other device?', body: "They'll need the password to get back in.", action: 'Sign out others' }))) return;
 		busy = 'others';
 		status = null;
 		try {

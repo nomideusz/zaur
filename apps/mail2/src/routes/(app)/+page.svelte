@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { meetName } from '#lib/brand';
 	import { onMount, untrack } from 'svelte';
 	import { browser } from '$app/env';
@@ -699,7 +700,7 @@
 		}
 		if (payload.action === 'delete') {
 			const n = emailIds.length;
-			if (!confirm(`Delete ${n === 1 ? 'this message' : `${n} messages`} forever? This can't be undone.`)) return;
+			if (!(await ask({ title: `Delete ${n === 1 ? 'this message' : `${n} messages`} forever?`, body: "This can't be undone.", action: 'Delete forever' }))) return;
 		}
 		const leavesFolder = payload.action === 'move' || payload.action === 'delete';
 		// Marking spam *is* a move to Junk — the toast should say what was meant,
@@ -801,7 +802,7 @@
 		const box = activeMailbox;
 		if (!box || bulkBusy) return;
 		const n = box.total;
-		if (!confirm(`Delete ${n === 1 ? 'the message' : `all ${n} messages`} in ${box.name} forever? This can't be undone.`)) return;
+		if (!(await ask({ title: `Empty ${box.name}?`, body: `${n === 1 ? 'The message' : `All ${n} messages`} in it will be deleted forever. This can't be undone.`, action: `Empty ${box.name}` }))) return;
 		bulkBusy = true;
 		try {
 			const { count } = await emptyFolder({ mailboxId: box.id, account });

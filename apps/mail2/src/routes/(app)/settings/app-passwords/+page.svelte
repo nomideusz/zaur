@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { messageOf } from '#lib/errors';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import OneTimeSecret from '#lib/components/settings/OneTimeSecret.svelte';
@@ -33,7 +34,7 @@
 
 	async function revoke(kind: CredentialType, item: CredentialSummary) {
 		const noun = kind === 'ApiKey' ? 'API key' : 'app password';
-		if (!confirm(`Revoke the ${noun} “${item.description || item.id}”? Anything using it stops working now.`)) return;
+		if (!(await ask({ title: `Revoke “${item.description || item.id}”?`, body: `Anything using this ${noun} stops working now.`, action: `Revoke ${noun}` }))) return;
 		busy = item.id;
 		status = null;
 		try {

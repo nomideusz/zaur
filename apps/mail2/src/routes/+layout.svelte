@@ -7,6 +7,7 @@
 	import '#lib/install.svelte.ts';
 	import { installKeyboardInset } from '#lib/keyboard';
 	import { prefs } from '#lib/settings.svelte.ts';
+	import ConfirmDialog from '#lib/components/ui/ConfirmDialog.svelte';
 
 	let { children } = $props();
 
@@ -61,3 +62,4 @@
 </script>
 
 {@render children()}
+<ConfirmDialog />

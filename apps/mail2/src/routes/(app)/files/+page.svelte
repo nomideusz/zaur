@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
 	import { fileRoleLabel, type FileNode, type FileShareRole } from '@zaur/mail-core';
@@ -163,8 +164,9 @@
 	}
 
 	async function remove(node: FileNode) {
-		const what = isFolder(node) ? `the folder “${node.name}” and everything in it` : `“${node.name}”`;
-		if (!confirm(`Delete ${what}?`)) return;
+		const folder = isFolder(node);
+		const title = folder ? `Delete the folder “${node.name}”?` : `Delete “${node.name}”?`;
+		if (!(await ask({ title, body: folder ? 'Everything in it goes too.' : undefined, action: folder ? 'Delete folder' : 'Delete file' }))) return;
 		if (await run(() => deleteFile({ id: node.id, account: node.accountId }), `Deleted “${node.name}”`, 'That could not be deleted.')) {
 			editing = null;
 		}

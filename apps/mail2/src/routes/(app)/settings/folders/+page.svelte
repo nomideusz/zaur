@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ask } from '#lib/confirm.svelte.ts';
 	import { messageOf } from '#lib/errors';
 	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import type { MailboxDTO } from '#lib/mail/types';
@@ -63,8 +64,8 @@
 	}
 
 	async function remove(folder: MailboxDTO) {
-		const inside = folder.total ? ` and its ${folder.total === 1 ? 'message' : `${folder.total} messages`}` : '';
-		if (!confirm(`Delete “${folder.name}”${inside}? This can't be undone.`)) return;
+		const inside = folder.total ? `${folder.total === 1 ? 'The message' : `All ${folder.total} messages`} in it go too. ` : '';
+		if (!(await ask({ title: `Delete “${folder.name}”?`, body: `${inside}This can't be undone.`, action: 'Delete folder' }))) return;
 		if (await act(() => deleteFolder({ id: folder.id }), `Deleted ${folder.name}`)) editing = null;
 	}
 </script>
