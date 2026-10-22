@@ -1,42 +1,15 @@
 /**
- * The calendar's arithmetic: which events touch a day, how the month pages,
- * and what a repeat rule actually does. Placing events in a time grid used to
- * live here too; `@nomideusz/svelte-calendar` does that now, and does it with
- * drag and resize on top.
+ * The calendar's arithmetic: what a repeat rule actually does. Placing events
+ * in a time grid used to live here too; `@nomideusz/svelte-calendar` does that
+ * now, and does it with drag and resize on top.
  */
 import { WEEKDAYS, WEEKDAY_OF_INDEX, type EventRecurrence, type WeekdayCode } from '@zaur/mail-core';
 import { startOfWeek } from '@zaur/mail-core/utils/dates';
 
 const DAY_MS = 86_400_000;
 
-export interface EventLike {
-	start: Date;
-	end: Date;
-	allDay: boolean;
-}
-
 export function startOfDay(day: Date): Date {
 	return new Date(day.getFullYear(), day.getMonth(), day.getDate());
-}
-
-/** Everything touching `day`, all-day first and then by start. */
-export function eventsOnDay<T extends EventLike>(events: readonly T[], day: Date): T[] {
-	const from = startOfDay(day).getTime();
-	const to = from + DAY_MS;
-	return events
-		.filter((event) => event.start.getTime() < to && event.end.getTime() > from)
-		.sort((a, b) => Number(b.allDay) - Number(a.allDay) || a.start.getTime() - b.start.getTime());
-}
-
-/**
- * The same day, `delta` months away — clamped to the end of a short month.
- * Stepping a `Date` by a month rolls over instead (the 31st of January
- * becomes the 3rd of March), which makes paging a month view skip February.
- */
-export function shiftMonth(date: Date, delta: number): Date {
-	const target = new Date(date.getFullYear(), date.getMonth() + delta, 1);
-	const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
-	return new Date(target.getFullYear(), target.getMonth(), Math.min(date.getDate(), lastDay));
 }
 
 /* ── What a repeat rule means ─────────────────────────────────────────── */

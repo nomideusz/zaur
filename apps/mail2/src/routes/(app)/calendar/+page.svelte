@@ -1,33 +1,28 @@
 <script lang="ts">
 	import { ask } from '#lib/confirm.svelte.ts';
-	import { meetName } from '#lib/brand';
 	import { untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { Calendar as CalendarGrid, fmtTime } from '@nomideusz/svelte-calendar';
+	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
 	import type { CalendarViewId, TimelineEvent } from '@nomideusz/svelte-calendar';
 	import type { Calendar, CalendarEvent } from '@zaur/mail-core';
-	import { calendarAllowsWrites, calendarKey, eventKey, isRecurringInstance } from '@zaur/mail-core';
+	import { calendarAllowsWrites, calendarKey, isRecurringInstance } from '@zaur/mail-core';
 	import {
 		addDays,
 		durationBetween,
-		formatEventTime,
 		formatJmapQueryBound,
-		formatMonthTitle,
 		formatWeekRange,
-		monthGrid,
 		toDateInputValue,
 		weekDays
 	} from '@zaur/mail-core/utils/dates';
-	import { extractMeetingGroup } from '@zaur/mail-core/utils/meet';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import EventEditor, { type EventDraft } from '#lib/components/calendar/EventEditor.svelte';
 	import CalendarList from '#lib/components/calendar/CalendarList.svelte';
 	import CalendarSettings from '#lib/components/calendar/CalendarSettings.svelte';
 	import EventView from '#lib/components/calendar/EventView.svelte';
-	import { eventsOnDay, shiftMonth, startOfDay } from '#lib/calendar/schedule';
+	import { startOfDay } from '#lib/calendar/schedule';
 	import { ZAUR_THEME, sourceOf, toTimelineEvent } from '#lib/calendar/bridge';
 	import { getShell } from '#lib/shell.svelte.ts';
 	import { backLayer } from '#lib/back-layer.svelte.ts';
@@ -67,22 +62,25 @@
 	 * sweep empty canvas to create — and we keep the chrome: the shell's own
 	 * tactile view switcher and date nav drive it through `view` and
 	 * `currentDate`, so the header is ours and the geometry is the package's.
+	 *
+	 * Two views: a day's time grid, and the week as weeks stacked in one endless
+	 * scroll (each chip at the height of its start time), where the past is up
+	 * and the next month is a flick away. On a phone the package swaps each for
+	 * its touch view: the day with swipes, the week as a list of its days.
 	 */
-	type View = 'day' | 'week' | 'roll' | 'month';
+	type View = 'day' | 'week';
 	const VIEWS: { value: View; label: string; short: string; id: CalendarViewId }[] = [
 		{ value: 'day', label: 'Day', short: 'D', id: 'day-planner' },
-		{ value: 'week', label: 'Week', short: 'W', id: 'week-planner' },
-		{ value: 'roll', label: 'Scroll', short: 'S', id: 'week-scroll' },
-		{ value: 'month', label: 'Month', short: 'M', id: 'month-grid' }
+		{ value: 'week', label: 'Week', short: 'W', id: 'week-scroll' }
 	];
 
 	const today = startOfDay(new Date());
 	let anchor = $state(today);
 	let view = $state<View>('week');
 	const viewId = $derived(VIEWS.find((option) => option.value === view)!.id);
-	// The roll view moves the grid's own focus to its centre week's Monday. A
+	// The week scroll moves the grid's own focus to its centre week's Monday. A
 	// fresh Date per view switch makes the grid take the anchor again, so the
-	// next view opens on the day we kept, not the one the roll drifted to.
+	// day opens on the day we kept, not the Monday the scroll drifted to.
 	const gridDate = $derived(view && new Date(anchor));
 
 	let phone = $state(false);
@@ -90,93 +88,36 @@
 		const narrow = window.matchMedia('(max-width: 639px)');
 		const sync = () => (phone = narrow.matches);
 		sync();
-		// Seven columns do not fit on a phone; the day does. Only on the way in —
-		// after that the switcher is the person's, whatever size the screen is.
+		// The day reads best on a phone. Only on the way in — after that the
+		// switcher is the person's, whatever size the screen is.
 		if (narrow.matches) view = 'day';
 		narrow.addEventListener('change', sync);
 		return () => narrow.removeEventListener('change', sync);
 	});
 
-	// A phone shows Day and Month only: seven columns at 50px each is not a week,
-	// and the segments it saves are what the date in the header needs.
-	const views = $derived(
-		phone ? VIEWS.filter((option) => option.value === 'day' || option.value === 'month' || option.value === view) : VIEWS
-	);
-
-	/**
-	 * The phone's day view writes "now" beside its line as 24-hour "08:03",
-	 * next to hours written "8a", and on top of the hour's own label when the
-	 * two are within ten minutes. The markup is the package's, so the page
-	 * keeps the minute: the label's text comes from here (`--z-now`, in the
-	 * grid's own format) and the hour label it would touch steps out.
-	 */
-	let now = $state(new Date());
-	$effect(() => {
-		const timer = setInterval(() => (now = new Date()), 30_000);
-		return () => clearInterval(timer);
-	});
-	const nowText = $derived(`"${fmtTime(now)}"`);
-	/** Which hour row (1-based, from midnight) the now label sits on, if any. */
-	const nowRow = $derived(
-		now.getMinutes() <= 10 ? now.getHours() + 1 : now.getMinutes() >= 50 ? now.getHours() + 2 : 0
-	);
-	/**
-	 * The week's gutter has the same trouble in its own numbers: 12px labels on
-	 * 48px hours touch "now" within a quarter of an hour. Its labels are 1a to
-	 * 11p, in order, so the hour is the label's place; midnight has none.
-	 */
-	const weekNowRow = $derived(now.getMinutes() <= 16 ? now.getHours() : now.getMinutes() >= 44 ? now.getHours() + 1 : 0);
-
 	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC';
-	const month = $derived(monthGrid(anchor.getFullYear(), anchor.getMonth(), 'monday'));
-	/** The days the current view is asking the server about. */
-	const span = $derived(
-		view === 'month' ? month : view === 'day' ? [anchor] : weekDays(anchor, 'monday')
-	);
-	const range = $derived({
-		after: formatJmapQueryBound(span[0]!),
-		before: formatJmapQueryBound(addDays(span[span.length - 1]!, 1)),
-		timeZone
-	});
+	/** The days the header names: the day, or the week the scroll is on. */
+	const span = $derived(view === 'day' ? [anchor] : weekDays(anchor, 'monday'));
 
 	function step(delta: number) {
-		anchor =
-			view === 'month'
-				? shiftMonth(anchor, delta)
-				: addDays(anchor, view === 'day' ? delta : 7 * delta);
+		anchor = addDays(anchor, view === 'day' ? delta : 7 * delta);
 	}
 
 	// Under 1024px the header has no room for "Saturday, September 19", nor
 	// for the year after a week that is plainly this one.
 	const short = (date: Date) => date.toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
 	const title = $derived(
-		view === 'month'
-			? viewport.compact
-				? anchor.toLocaleDateString(undefined, { month: 'short', year: 'numeric' })
-				: formatMonthTitle(anchor.getFullYear(), anchor.getMonth())
-			: view === 'day'
-				? anchor.toLocaleDateString(
-						undefined,
-						viewport.compact
-							? { weekday: 'short', day: 'numeric', month: 'short' }
-							: { weekday: 'long', day: 'numeric', month: 'long' }
-					)
-				: viewport.compact
-					? `${short(span[0]!)} – ${short(span[span.length - 1]!)}`
-					: formatWeekRange(anchor, 'monday')
+		view === 'day'
+			? anchor.toLocaleDateString(
+					undefined,
+					viewport.compact
+						? { weekday: 'short', day: 'numeric', month: 'short' }
+						: { weekday: 'long', day: 'numeric', month: 'long' }
+				)
+			: viewport.compact
+				? `${short(span[0]!)} – ${short(span[span.length - 1]!)}`
+				: formatWeekRange(anchor, 'monday')
 	);
-
-	/**
-	 * A day in the month grid was picked (or its "+2 more"). Left to itself the
-	 * grid swaps in its own day planner while our header still says Month; the
-	 * page owns that. Beside the month sits the day's list, so picking a day
-	 * fills it — under 1024px there is no room for the list (see `railOpen`),
-	 * and picking a day goes to the day instead.
-	 */
-	function pickDay(date: Date) {
-		anchor = startOfDay(date);
-		if (viewport.compact) view = 'day';
-	}
 
 	/* ── Data ─────────────────────────────────────────────────────────── */
 
@@ -198,7 +139,6 @@
 		);
 		return years.flatMap((list) => holidayEvents(code, list, start, end));
 	}
-	const eventsResource = $derived(session && calendarsState?.supported ? eventsRemote(range) : undefined);
 
 	// Push: a change made on the phone shows up here.
 	const shell = getShell()!;
@@ -231,31 +171,6 @@
 	const rangeKey = (bounds: { after: string; before: string }) => `${bounds.after}|${bounds.before}`;
 	/** The grid's last load failed: it shows what was `kept`, or had nothing to show. */
 	let failed = $state<'kept' | 'nothing' | null>(null);
-	$effect(() => {
-		const list = eventsResource?.current;
-		if (list) kept.set(rangeKey(range), list);
-	});
-	/** The day list's events: the server's answer, or the last one when asking again failed. */
-	const fromServer = $derived(eventsResource?.current ?? (eventsResource?.error ? kept.get(rangeKey(range)) : undefined));
-	const rangeStart = $derived(span[0]!);
-	const rangeEnd = $derived(addDays(span[span.length - 1]!, 1));
-	const holidayQueries = $derived(
-		country && holidaysCal?.isVisible
-			? yearsIn(rangeStart, rangeEnd).map((year) => holidaysRemote({ country: country!, year }))
-			: []
-	);
-	const loaded = $derived(
-		fromServer && [
-			...fromServer,
-			...holidayQueries.flatMap((query) => holidayEvents(country!, query.current ?? [], rangeStart, rangeEnd))
-		]
-	);
-	const visibleEvents = $derived(
-		(loaded ?? []).filter((event) =>
-			calendarsOf(event).some((calendar) => calendar?.isVisible !== false)
-		)
-	);
-	const agenda = $derived(eventsOnDay(visibleEvents, anchor));
 
 	function colorOf(event: CalendarEvent): string {
 		return calendarsOf(event)[0]?.color ?? 'var(--z-accent)';
@@ -268,9 +183,9 @@
 
 	/**
 	 * The grid asks for the range it is actually drawing, which is the only
-	 * honest contract: the week planner wants a week, the roll wants the ±8
-	 * weeks it buffers. Remote queries are cached per range, so the day list
-	 * beside a month and the grid behind it resolve to one request.
+	 * honest contract: the day planner wants a day, the week scroll the ±8
+	 * weeks it buffers (more as it is scrolled). Remote queries are cached per
+	 * range, so coming back to one is answered at once.
 	 *
 	 * Rebuilt whenever the calendars' visibility changes or a write lands —
 	 * the grid reloads on a new adapter, and that is the only handle it gives.
@@ -278,9 +193,8 @@
 	let gridHeight = $state(0);
 	let dataVersion = $state(0);
 	/**
-	 * The bounds the grid last asked for. A remote query caches per argument, so
-	 * refreshing the day list's copy leaves the grid's own copy stale — after a
-	 * write both have to be told, and this is which one the grid holds.
+	 * The bounds the grid last asked for: a remote query caches per argument,
+	 * and after a write this is the one to ask again.
 	 * Plain, not `$state`: the adapter writes it from inside the grid's own
 	 * load effect, and a signal there would feed back into that effect.
 	 */
@@ -326,22 +240,19 @@
 		};
 	});
 
-	/** Put the server's answer back in front of both the grid and the day list. */
+	/** Put the server's answer back in front of the grid. */
 	async function reload() {
-		// Settled, not all: a refresh that fails still has to reach the grid, which says so.
-		await Promise.allSettled([
-			eventsResource?.refresh(),
-			gridRange ? eventsRemote(gridRange).refresh() : null
-		]);
+		// Settled: a refresh that fails still has to reach the grid, which says so.
+		if (gridRange) await Promise.allSettled([eventsRemote(gridRange).refresh()]);
 		dataVersion++;
 	}
 
 	/* ── Editing ──────────────────────────────────────────────────────── */
 
 	/**
-	 * What the rail holds: the day (`view`), an event as it is, the editor, and
-	 * — the grid's calendars are a sidebar only on a wide screen — the calendar
-	 * list and one calendar's settings.
+	 * What the rail holds: nothing (`view`, the rail is shut), an event as it is,
+	 * the editor, and — the grid's calendars are a sidebar only on a wide screen —
+	 * the calendar list and one calendar's settings.
 	 */
 	let mode = $state<'view' | 'event' | 'new' | 'edit' | 'calendars' | 'calendar'>('view');
 	let editing = $state<CalendarEvent | null>(null);
@@ -601,17 +512,7 @@
 		}
 	}
 
-	const dayTitle = $derived(
-		anchor.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
-	);
-	const panelOpen = $derived(mode !== 'view');
-	/**
-	 * The month grid needs the day's list beside it; a planner is already one.
-	 * Under 1024px the list would leave seven columns half the screen (378px on
-	 * a tablet held upright), so there the month has the width and a day opens
-	 * as the Day view — the same line below which the calendars step out.
-	 */
-	const railOpen = $derived(panelOpen || (view === 'month' && !viewport.compact));
+	const railOpen = $derived(mode !== 'view');
 	/** Nothing to drag an event onto if none of your calendars take writes. */
 	const readOnly = $derived(
 		!calendarList.some((calendar) => calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn)
@@ -622,22 +523,13 @@
 
 <svelte:window onkeydown={escape} ononline={() => failed && void reload()} />
 
-{#if nowRow && anchor.getTime() === startOfDay(now).getTime()}
-	<!-- Only the hour rows are numbered, so which one hides is a rule written per minute. -->
-	{@html `<style>.z-cal .mb-hour:nth-child(${nowRow}) .mb-hour-label{visibility:hidden}</style>`}
-{/if}
-{#if weekNowRow}
-	<!-- Only in a week that has "now" in it: the grid draws its label in no other. -->
-	{@html `<style>.z-cal .tw-gutter:has(.tw-gutter-now) .tw-gutter-lb:nth-child(${weekNowRow}){visibility:hidden}</style>`}
-{/if}
-
 <SectionShell title="Calendar">
 	{#snippet controls()}
 		<!-- A phone's panel covers the grid: what would move the grid steps out with it. -->
-		<div class="contents {panelOpen ? 'max-md:hidden' : ''}">
+		<div class="contents {railOpen ? 'max-md:hidden' : ''}">
 			<!-- Under 1024px the header shares its width with the section tabs: letters, as on a phone. -->
 			<div class="z-group shrink-0" role="group" aria-label="View">
-				{#each views as option (option.value)}
+				{#each VIEWS as option (option.value)}
 					<button
 						type="button"
 						class="z-segment !px-2.5 max-sm:!px-2 pointer-coarse:min-[360px]:max-md:!min-w-10"
@@ -750,7 +642,7 @@
 		</aside>
 
 		<!-- The grid -->
-		<div class="relative flex min-w-0 flex-1 flex-col {panelOpen ? 'max-md:hidden' : ''}">
+		<div class="relative flex min-w-0 flex-1 flex-col {railOpen ? 'max-md:hidden' : ''}">
 			{#if failed === 'kept'}
 				<p class="shrink-0 border-b border-[var(--z-hairline)] px-4 py-1.5 text-[12.5px] text-[var(--z-ch-discard-ink)]" role="alert">
 					Could not refresh the calendar — showing it as last loaded.
@@ -758,13 +650,13 @@
 				</p>
 			{/if}
 			<!--
-				The grid scrolls itself — sticky day headings, and the roll view
+				The grid scrolls itself — sticky day headings, and the week scroll
 				scrolling under a drag — so it needs a real height, not `auto`.
 				`bind:clientHeight` is a ResizeObserver in two words.
 				It stays mounted under a failure, so the next week asked for is asked for
 				(`isolate`: its sticky headings stay under what covers it then).
 			-->
-			<div class="z-cal isolate min-h-0 flex-1" bind:clientHeight={gridHeight} inert={failed === 'nothing'} style:--z-now={nowText}>
+			<div class="z-cal isolate min-h-0 flex-1" bind:clientHeight={gridHeight} inert={failed === 'nothing'}>
 				<CalendarGrid
 					{adapter}
 					view={viewId}
@@ -774,26 +666,26 @@
 					mondayStart
 					height={gridHeight || 600}
 					borderRadius={0}
+					eventFill={0.2}
+					eventBar={3}
 					{readOnly}
 					showModePills={false}
 					showNavigation={false}
 					snapInterval={15}
 					minDuration={15}
-					minColumnWidth={84}
 					mobile={phone}
-					ondayclick={pickDay}
 					ondatechange={(date) => {
 						// `currentDate` is controlled, so the grid echoes back what it
 						// was handed: taking the echo as a change feeds itself forever.
 						//
-						// The roll view also reports the Monday of whichever week sits
+						// The week scroll also reports the Monday of whichever week sits
 						// at its centre — on mount too, before anyone scrolls. Inside
 						// the anchored week that is an echo, not navigation: taking it
 						// would land a later switch to Day on Monday instead of the day
 						// we were on. Another week is a real scroll.
 						const next = startOfDay(date).getTime();
 						const inSpan = next >= span[0]!.getTime() && next <= span[span.length - 1]!.getTime();
-						if (view === 'day' || view === 'month' ? next !== anchor.getTime() : !inSpan)
+						if (view === 'day' ? next !== anchor.getTime() : !inSpan)
 							anchor = new Date(next);
 					}}
 					oneventclick={(row) => {
@@ -816,13 +708,9 @@
 			{/if}
 		</div>
 
-		<!-- The day, or the editor -->
+		<!-- An event, the editor, or the calendars -->
 		{#if railOpen}
-			<div
-				class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0 {panelOpen
-					? ''
-					: 'max-md:hidden'}"
-			>
+			<div class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0">
 				{#if mode === 'event' && editing}
 					<EventView
 						event={editing}
@@ -880,70 +768,6 @@
 						onDelete={mode === 'edit' && editing ? () => remove(editing!) : undefined}
 						onCancel={() => (mode === 'edit' && editing ? (mode = 'event') : closePanel())}
 					/>
-				{:else}
-					<div class="flex items-center justify-between gap-2 border-b border-[var(--z-hairline)] px-4 py-3">
-						<h2 class="min-w-0 truncate text-[14px] font-semibold text-[var(--z-ink)]">{dayTitle}</h2>
-						<button
-							type="button"
-							class="btn-tactile !h-[28px] shrink-0 text-[12px]"
-							onclick={() => startNew()}
-							disabled={!calendarsState?.supported}
-						>
-							New event
-						</button>
-					</div>
-					<div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-						{#if !loaded && eventsResource?.error}
-							<p class="py-6 text-center text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">
-								Could not load events.
-								<button type="button" class="underline" onclick={reload}>Retry</button>
-							</p>
-						{:else if !loaded && eventsResource?.loading}
-							<ul class="space-y-2">
-								{#each [1, 2, 3] as n (n)}<li class="z-skeleton h-[52px] rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
-							</ul>
-						{:else if agenda.length === 0}
-							<p class="py-6 text-center text-[13px] text-[var(--z-soft)]">Nothing on this day.</p>
-						{:else}
-							<ul class="space-y-2" role="list">
-								{#each agenda as event (eventKey(event))}
-									{@const meeting = extractMeetingGroup(event.location)}
-									<li class="relative">
-										<button
-											type="button"
-											class="z-event w-full !flex-col !items-stretch !gap-0.5 !rounded-[8px] !px-3 !py-2 {meeting ? '!pr-[76px]' : ''}"
-											style:--z-rail={colorOf(event)}
-											onclick={() => openEvent(event)}
-										>
-											<span class="text-[13.5px] font-semibold">{event.title}</span>
-											<span class="text-[12px] opacity-80">{formatEventTime(event)}</span>
-											{#if meeting}
-												<span class="truncate text-[12px] opacity-70">{meetName}</span>
-											{:else if event.location}
-												<span class="truncate text-[12px] opacity-70">{event.location}</span>
-											{/if}
-											<span class="text-[11px] opacity-60">
-												{calendarsOf(event)[0]?.name ?? ''}{isRecurringInstance(event)
-													? ' · Repeats'
-													: ''}
-											</span>
-										</button>
-										{#if meeting}
-											<!-- A sibling, not inside the row: a link cannot sit in a button. -->
-											<a
-												class="btn-tactile btn-primary absolute top-2 right-2 !h-[26px] !px-2.5 !text-[12px]"
-												href="/meet/{meeting}"
-												target="_blank"
-												rel="noopener"
-											>
-												Join
-											</a>
-										{/if}
-									</li>
-								{/each}
-							</ul>
-						{/if}
-					</div>
 				{/if}
 			</div>
 		{/if}
@@ -952,162 +776,14 @@
 
 <style>
 	/*
-	 * The grid's geometry is the package's; what a block looks like is ours.
-	 * Every view hands its blocks the calendar's colour as `--ev-color` (the
-	 * month as `--mg-chip-color`), so one recipe dresses all of them: a pastel
-	 * fill, a stroke of the same hue, a 2px lip under it, ink mixed from the
-	 * hue. Mixed against the surface and the ink, so dark mode is the same rule.
+	 * The grid's look is the package's: each event a wash of its calendar's
+	 * colour with a rail on its leading edge (`eventFill`, `eventBar`), the
+	 * shell's tokens through `ZAUR_THEME`. What is left here is the phone.
 	 *
 	 * `:global` because the markup is not ours; the `.z-cal` in front both
 	 * fences it to this grid and outranks the package's own scoped rules.
 	 */
 	.z-cal :global {
-		.tw-ev,
-		.tw-ad,
-		.tw-ghost:not(.tw-ghost--create),
-		.wg-ev,
-		.wg-ad,
-		.mb-event,
-		.mb-allday-chip,
-		.mw-ev,
-		.mg-chip:not(.mg-chip--custom) {
-			--ev-hue: var(--ev-color, var(--mg-chip-color));
-			--ev-fill: color-mix(in oklab, var(--ev-hue) 28%, var(--z-surface));
-			--ev-ink: color-mix(in oklab, var(--ev-hue) 30%, var(--z-ink));
-			border: 1px solid color-mix(in oklab, var(--ev-hue) 80%, var(--z-surface));
-			border-bottom-width: 2px;
-			border-radius: 6px;
-			background: var(--ev-fill);
-			color: var(--ev-ink);
-			outline: none;
-		}
-
-		.tw-ev:hover,
-		.tw-ad:hover,
-		.wg-ev:hover,
-		.wg-ad:hover,
-		.mb-event:hover,
-		.mw-ev:hover,
-		.mg-chip:not(.mg-chip--custom):hover {
-			background: color-mix(in oklab, var(--ev-hue) 38%, var(--z-surface));
-		}
-
-		/* Not yet certain, so not yet solid. */
-		.tw-ev--tentative,
-		.tw-ev--limited,
-		.wg-ev--tentative,
-		.wg-ev--limited {
-			border-style: dashed;
-		}
-
-		/* A bar that runs on into the next day has no end to round off here. */
-		.tw-ad--mid,
-		.tw-ad--end:not(.tw-ad--start),
-		.wg-ad--mid,
-		.wg-ad--end:not(.wg-ad--start) {
-			border-left-style: dashed;
-			border-top-left-radius: 0;
-			border-bottom-left-radius: 0;
-		}
-
-		/* The hue is the whole block now; a stripe or a dot would say it twice. */
-		.tw-ev-stripe,
-		.mb-ev-stripe,
-		.mw-ev-stripe,
-		.mb-allday-dot,
-		.mg-chip-dot {
-			display: none;
-		}
-
-		.tw-ev-body {
-			padding: 3px 7px;
-		}
-
-		.tw-ev-title,
-		.tw-ad-title,
-		.tw-ghost-title,
-		.wg-ev-title,
-		.wg-ad-title,
-		.mb-ev-title,
-		.mw-ev-title,
-		.mb-allday-title,
-		.mg-chip-title {
-			color: inherit;
-			font-weight: 600;
-		}
-
-		.tw-ev-time,
-		.tw-ev-loc,
-		.tw-ad-span,
-		.tw-ghost-time,
-		.wg-ev-time,
-		.wg-ev-loc,
-		.mb-ev-time,
-		.mb-ev-loc,
-		.mw-ev-time,
-		.mg-chip-time {
-			color: inherit;
-			font-weight: 500;
-			opacity: 0.78;
-		}
-
-		/* What it is, then when: the title leads, and on a one-line block the
-		   time sits at the far end of it. */
-		.tw-ev-title {
-			order: -1;
-		}
-
-		.tw-ev--compact .tw-ev-time {
-			margin-left: auto;
-		}
-
-		.tw-ad {
-			min-height: 22px;
-		}
-
-		/* ── The grid around them: quiet, one face, no washes ── */
-
-		.tw-hd-wd,
-		.wg-day-wd,
-		.mg-head-cell {
-			font-family: var(--font-sans);
-			font-size: 12px;
-			font-weight: 500;
-			letter-spacing: 0;
-			text-transform: none;
-			color: var(--z-soft);
-		}
-
-		.tw-hd-num {
-			font-size: 15px;
-		}
-
-		.tw-gutter-lb,
-		.tw-ad-gutter-lb {
-			font-size: 11.5px;
-			color: var(--z-soft);
-		}
-
-		/* Yesterday is not greyer than today; its events already step back. */
-		.tw-col.tw-col--past,
-		.mg-cell.mg-cell--out {
-			background: transparent;
-		}
-
-		.mg-daynum {
-			font-size: 13px;
-			color: var(--z-body);
-		}
-
-		.mg-cell--out .mg-daynum {
-			color: var(--z-faint);
-		}
-
-		.mg-chip:not(.mg-chip--custom) {
-			padding: 1px 6px;
-			border-bottom-width: 1px;
-		}
-
 		/* Still asking the server is not an empty day. */
 		[aria-busy='true'] .mb-empty {
 			display: none;
@@ -1131,17 +807,7 @@
 			}
 		}
 
-		/* "Now" in the grid's own words (see `now` above); its box keeps the gutter's width. */
-		.mb-now-label {
-			font-size: 0;
-		}
-
-		.mb-now-label::after {
-			content: var(--z-now);
-			font-size: 10px;
-		}
-
-		/* The same in the week grid on a touch tablet, where the grips always show. */
+		/* The same in the day grid on a touch tablet, where the grips always show. */
 		@media (pointer: coarse) {
 			.tw-ev--short .tw-ev-handle {
 				display: none;
