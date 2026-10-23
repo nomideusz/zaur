@@ -112,7 +112,7 @@ The rest of what 1.0 did around sign-in, so mail2 can take over its hostname:
   as `/login` would and parks it behind a one-time `/auth/claim?token=` URL.
   The browser follows it and arrives signed in. An old or used link is a
   sign-in with a welcome (`/login?welcome=1`).
-- **OIDC provider** for our own apps (`/oidc/authorize|token|jwks|logout`,
+- **OIDC provider** for our own apps (`/oidc/authorize|token|userinfo|jwks|logout`,
   `/.well-known/openid-configuration`, clients from `OIDC_PROVIDER_CLIENTS`):
   code flow with PKCE, RS256 id_tokens whose claims pass Stalwart's userinfo
   through, plus name and roles from register. The protocol core is shared

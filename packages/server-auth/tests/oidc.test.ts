@@ -10,6 +10,7 @@ import {
 	publicJwks,
 	secretsEqual,
 	signIdToken,
+	verifyAccessToken,
 	verifyPkceS256,
 	type AuthCodeData,
 	postLogoutTarget,
@@ -52,7 +53,20 @@ describe('oidc core', () => {
 		assert.equal(verified, true);
 	});
 
-	it('auth codes are one-time and expire', () => {
+	it('access tokens verify for userinfo; id_tokens, expired and tampered ones do not', () => {
+		const keypair = getOrCreateKeypair(new DatabaseSync(':memory:'));
+		const claims = { ...CLAIMS, exp: 2_000 };
+		const token = signIdToken(keypair, claims, 'at+jwt');
+		assert.deepEqual(verifyAccessToken(keypair, token, 1_000_000), claims);
+		assert.equal(verifyAccessToken(keypair, token, 2_000_000), null);
+		assert.equal(verifyAccessToken(keypair, signIdToken(keypair, claims), 1_000_000), null);
+		const [h, , sig] = token.split('.');
+		const forged = Buffer.from(JSON.stringify({ ...claims, sub: 'admin' })).toString('base64url');
+		assert.equal(verifyAccessToken(keypair, `${h}.${forged}.${sig}`, 1_000_000), null);
+		assert.equal(verifyAccessToken(keypair, 'garbage', 1_000_000), null);
+	});
+
+		it('auth codes are one-time and expire', () => {
 		const db = new DatabaseSync(':memory:');
 		const code = createAuthCode(db, CODE_DATA, 60_000, 1_000);
 		assert.deepEqual(consumeAuthCode(db, code, 2_000), CODE_DATA);
@@ -80,6 +94,7 @@ describe('oidc core', () => {
 		assert.equal(doc.issuer, 'https://webmail.zaur.app');
 		assert.equal(doc.authorization_endpoint, 'https://webmail.zaur.app/oidc/authorize');
 		assert.equal(doc.jwks_uri, 'https://webmail.zaur.app/oidc/jwks');
+		assert.equal(doc.userinfo_endpoint, 'https://webmail.zaur.app/oidc/userinfo');
 	});
 });
 

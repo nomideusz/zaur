@@ -6,7 +6,7 @@
 //   pnpm dev:mail2
 //   node tests/smoke/oidc-rp.mjs
 //
-// Walks authorize → token → id_token (verified against the JWKS), the signup
+// Walks authorize → token → id_token (verified against the JWKS) → userinfo, the signup
 // handoff → claim → authorize, and RP-initiated logout, with the refusals on
 // each. The seeded session survives it: logout runs on the claimed one.
 import { createHash, createHmac, createPublicKey, createVerify, randomBytes } from 'node:crypto';
@@ -54,6 +54,15 @@ assert.ok(createVerify('RSA-SHA256').update(`${h}.${p}`).verify(key, Buffer.from
 const claims = JSON.parse(Buffer.from(p, 'base64url'));
 assert.equal(claims.aud, 'bartube'); assert.equal(claims.nonce, 'n0'); assert.equal(claims.iss, B);
 console.log('id_token claims', claims);
+// userinfo: the access token answers, an id_token or no token does not.
+const userinfo = (bearer) => get('/oidc/userinfo', bearer ? { authorization: `Bearer ${bearer}` } : {});
+r = await userinfo(tok.access_token);
+const info = await r.json();
+assert.equal(r.status, 200, JSON.stringify(info));
+assert.equal(info.sub, claims.sub); assert.equal(info.email, 'smoke@zaur.app'); assert.equal(claims.email, 'smoke@zaur.app'); assert.equal(info.email_verified, true);
+assert.equal((await userinfo(tok.id_token)).status, 401);
+assert.equal((await userinfo()).status, 401);
+assert.equal(disco.userinfo_endpoint, B + '/oidc/userinfo');
 // Code is one-time.
 assert.equal((await token({ grant_type: 'authorization_code', code, redirect_uri: 'http://localhost:9999/cb', code_verifier: verifier }, basic)).status, 400);
 

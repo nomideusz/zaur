@@ -79,6 +79,9 @@ export async function resolveOidcClaims(account: SessionData): Promise<AuthCodeD
 		sub: email,
 		preferred_username: email,
 		email,
+		// The address is this mail server's own mailbox: verified by definition.
+		// Vaultwarden refuses to link existing accounts without it.
+		email_verified: true,
 		name: displayName && displayName.toLowerCase() !== email ? displayName : email.split('@')[0]
 	};
 

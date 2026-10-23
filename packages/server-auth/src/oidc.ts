@@ -7,11 +7,13 @@
  * same `oidc_*` tables, so whichever serves the issuer signs with one key.
  *
  * Deliberately supports exactly what our relying parties need: authorization
- * code flow with mandatory PKCE (S256), one static client, RS256 id_tokens.
+ * code flow with mandatory PKCE (S256), static clients, RS256 id_tokens, and
+ * signed access tokens good only for userinfo (Vaultwarden requires one).
  */
 import {
 	createPublicKey,
 	createSign,
+	createVerify,
 	createHash,
 	generateKeyPairSync,
 	randomBytes,
@@ -30,7 +32,14 @@ export interface AuthCodeData {
 	redirectUri: string;
 	codeChallenge: string;
 	nonce?: string;
-	claims: { sub: string; preferred_username: string; email: string; name?: string; groups?: string[] };
+	claims: {
+		sub: string;
+		preferred_username: string;
+		email: string;
+		email_verified?: boolean;
+		name?: string;
+		groups?: string[];
+	};
 }
 
 const b64u = (input: Buffer | string): string => Buffer.from(input).toString('base64url');
@@ -79,14 +88,37 @@ export function publicJwks(keypair: OidcKeypair): { keys: Record<string, unknown
 	return { keys: [{ ...jwk, kid: keypair.kid, alg: 'RS256', use: 'sig' }] };
 }
 
-export function signIdToken(keypair: OidcKeypair, claims: Record<string, unknown>): string {
-	const header = b64u(JSON.stringify({ alg: 'RS256', typ: 'JWT', kid: keypair.kid }));
+/** `typ: 'at+jwt'` (RFC 9068) marks an access token, so an id_token is never accepted as one. */
+export function signIdToken(keypair: OidcKeypair, claims: Record<string, unknown>, typ = 'JWT'): string {
+	const header = b64u(JSON.stringify({ alg: 'RS256', typ, kid: keypair.kid }));
 	const payload = b64u(JSON.stringify(claims));
 	const signature = createSign('RSA-SHA256')
 		.update(`${header}.${payload}`)
 		.sign(keypair.privatePem)
 		.toString('base64url');
 	return `${header}.${payload}.${signature}`;
+}
+
+/** The claims of an unexpired access token we signed (for /oidc/userinfo), else null. */
+export function verifyAccessToken(
+	keypair: OidcKeypair,
+	token: string,
+	now = Date.now()
+): Record<string, unknown> | null {
+	const [header, payload, signature, extra] = token.split('.');
+	if (!header || !payload || !signature || extra !== undefined) return null;
+	try {
+		const h = JSON.parse(Buffer.from(header, 'base64url').toString()) as Record<string, unknown>;
+		if (h.alg !== 'RS256' || h.typ !== 'at+jwt' || h.kid !== keypair.kid) return null;
+		const valid = createVerify('RSA-SHA256')
+			.update(`${header}.${payload}`)
+			.verify(keypair.publicPem, Buffer.from(signature, 'base64url'));
+		if (!valid) return null;
+		const claims = JSON.parse(Buffer.from(payload, 'base64url').toString()) as Record<string, unknown>;
+		return typeof claims.exp === 'number' && claims.exp * 1000 > now ? claims : null;
+	} catch {
+		return null;
+	}
 }
 
 /** Store any JSON payload under a random one-time code (shared table with auth codes). */
@@ -139,16 +171,17 @@ export function discoveryDocument(origin: string): Record<string, unknown> {
 		issuer: origin,
 		authorization_endpoint: `${origin}/oidc/authorize`,
 		token_endpoint: `${origin}/oidc/token`,
+		userinfo_endpoint: `${origin}/oidc/userinfo`,
 		end_session_endpoint: `${origin}/oidc/logout`,
 		jwks_uri: `${origin}/oidc/jwks`,
 		response_types_supported: ['code'],
 		grant_types_supported: ['authorization_code'],
 		subject_types_supported: ['public'],
 		id_token_signing_alg_values_supported: ['RS256'],
-		scopes_supported: ['openid'],
+		scopes_supported: ['openid', 'email', 'profile'],
 		token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post'],
 		code_challenge_methods_supported: ['S256'],
-		claims_supported: ['sub', 'preferred_username', 'email', 'name', 'groups']
+		claims_supported: ['sub', 'preferred_username', 'email', 'email_verified', 'name', 'groups']
 	};
 }
 

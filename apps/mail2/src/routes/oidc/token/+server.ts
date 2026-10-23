@@ -1,5 +1,4 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { randomBytes } from 'node:crypto';
 import { getStoreDb } from '@zaur/server-auth';
 import { consumeAuthCode, secretsEqual, signIdToken, verifyPkceS256 } from '@zaur/server-auth/oidc';
 import { findOidcClient, oidcClients, oidcKeypair } from '#lib/server/oidc';
@@ -56,9 +55,15 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		...(data.nonce ? { nonce: data.nonce } : {}),
 		...claims
 	});
+	// Self-contained, so /oidc/userinfo needs no token store: the same claims, typ at+jwt.
+	const accessToken = signIdToken(
+		oidcKeypair(),
+		{ iss: url.origin, sub, aud: clientId, client_id: clientId, iat, nbf: iat, exp: iat + TOKEN_TTL_S, ...claims },
+		'at+jwt'
+	);
 	return json(
 		{
-			access_token: randomBytes(32).toString('base64url'),
+			access_token: accessToken,
 			token_type: 'bearer',
 			expires_in: TOKEN_TTL_S,
 			scope: 'openid',
