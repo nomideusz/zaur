@@ -30,7 +30,7 @@
 	"dependencies": {
 		"@nomideusz/svelte-geometrize": "^0.9.3",
 		"@nomideusz/svelte-i18n": "^1.0.0",
-		"@nomideusz/zaur-world": "^1.7.0"
+		"@nomideusz/zaur-world": "^1.8.0"
 	},
 	"imports": {
 		"#lib/*": "./src/lib/*"

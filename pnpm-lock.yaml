@@ -210,8 +210,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(svelte@5.57.2)
       '@nomideusz/zaur-world':
-        specifier: ^1.7.0
-        version: 1.7.0(react@19.2.3)
+        specifier: ^1.8.0
+        version: 1.8.0(react@19.2.3)
     devDependencies:
       '@sveltejs/adapter-static':
         specifier: ^4.0.0
@@ -1155,8 +1155,8 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
 
-  '@nomideusz/zaur-world@1.7.0':
-    resolution: {integrity: sha512-WHHBlBCtiyzDdLl0DJJe8RZkgGAr/bP0YsSSRU1Y3Zdo7qTJW+EudnwgREpfUxhiL3qEg8Pqon0Q7jwkhWuw4Q==}
+  '@nomideusz/zaur-world@1.8.0':
+    resolution: {integrity: sha512-nqFKD1x3NYd0MUJkjoFC7R+kBSalUGAe8CxCwDP5Sat5EUe3AiR1kZnv7jQwlgR5mn9hK99rCCWmMWTyYNopCg==}
     peerDependencies:
       react: '>=18'
     peerDependenciesMeta:
@@ -4845,7 +4845,7 @@ snapshots:
     dependencies:
       svelte: 5.57.2
 
-  '@nomideusz/zaur-world@1.7.0(react@19.2.3)':
+  '@nomideusz/zaur-world@1.8.0(react@19.2.3)':
     optionalDependencies:
       react: 19.2.3
 
