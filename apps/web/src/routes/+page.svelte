@@ -146,31 +146,31 @@
 		{
 			name: '@nomideusz/svelte-search',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-search',
-			demo: 'https://svelte-search-eight.vercel.app',
+			demo: 'https://svelte-search.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-search'
 		},
 		{
 			name: '@nomideusz/svelte-i18n',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-i18n',
-			demo: 'https://svelte-i18n-five.vercel.app',
+			demo: 'https://svelte-i18n.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-i18n'
 		},
 		{
 			name: '@nomideusz/svelte-geometrize',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-geometrize',
-			demo: 'https://svelte-geometrize.vercel.app',
+			demo: 'https://svelte-geometrize.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-geometrize'
 		},
 		{
 			name: '@nomideusz/svelte-qr',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
-			demo: 'https://svelte-qr.vercel.app',
+			demo: 'https://svelte-qr.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-qr'
 		},
 		{
 			name: '@nomideusz/svelte-media',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-media',
-			demo: 'https://svelte-media-gamma.vercel.app',
+			demo: 'https://svelte-media.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-media'
 		},
 		{ name: '@nomideusz/svelte-scheduler', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler' },
