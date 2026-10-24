@@ -173,9 +173,21 @@
 			demo: 'https://svelte-media.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-media'
 		},
-		{ name: '@nomideusz/svelte-scheduler', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler' },
-		{ name: '@nomideusz/svelte-payments', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments' },
-		{ name: '@nomideusz/svelte-notify', npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify' }
+		{
+			name: '@nomideusz/svelte-scheduler',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler',
+			demo: 'https://svelte-scheduler.zaur.app'
+		},
+		{
+			name: '@nomideusz/svelte-payments',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments',
+			demo: 'https://svelte-payments.zaur.app'
+		},
+		{
+			name: '@nomideusz/svelte-notify',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify',
+			demo: 'https://svelte-notify.zaur.app'
+		}
 	] as { name: string; npm: string; demo?: string; source?: string; featured?: boolean }[];
 
 	const skills = [{ name: 'simple-web-design', source: 'https://github.com/nomideusz/simple-web-design' }].map((s) => ({
