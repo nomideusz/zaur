@@ -103,11 +103,11 @@
 	"work.festivals.proof.2.v": "31 test files",
 
 	"search.reading": "Reading Google Search…",
-	"search.perDay_one": "{n} search click a day from Google",
-	"search.perDay_other": "{n} search clicks a day from Google",
-	"search.totals": "{clicks} clicks and {impressions} impressions from Google search in 28 days",
-	"growth.caption": "Clicks from Google search, a typical day each week",
-	"growth.summary": "{clicks} clicks and {impressions} impressions in the last 28 days, through {date}.",
+	"search.clicks_one": "{n} click from Google in 28 days",
+	"search.clicks_other": "{n} clicks from Google in 28 days",
+	"search.position": "average position {position}",
+	"growth.caption": "Clicks from Google search, week by week",
+	"growth.summary": "{clicks} clicks at an average position of {position} in the last 28 days, through {date}.",
 	"growth.source": "Live from Google Search Console.",
 
 	"clients.heading": "Clients",

@@ -103,11 +103,11 @@
 	"work.festivals.proof.2.v": "31 fichiers de tests",
 
 	"search.reading": "Lecture de la recherche Google…",
-	"search.perDay_one": "{n} clic par jour depuis la recherche Google",
-	"search.perDay_other": "{n} clics par jour depuis la recherche Google",
-	"search.totals": "Recherche Google sur 28 jours : {clicks} clics, {impressions} impressions",
-	"growth.caption": "Clics depuis la recherche Google, un jour type de chaque semaine",
-	"growth.summary": "Les 28 derniers jours, jusqu’au {date} : {clicks} clics, {impressions} impressions.",
+	"search.clicks_one": "{n} clic depuis Google en 28 jours",
+	"search.clicks_other": "{n} clics depuis Google en 28 jours",
+	"search.position": "position moyenne {position}",
+	"growth.caption": "Clics depuis la recherche Google, semaine après semaine",
+	"growth.summary": "Les 28 derniers jours, jusqu’au {date} : {clicks} clics, position moyenne {position}.",
 	"growth.source": "En direct depuis Google Search Console.",
 
 	"clients.heading": "Clients",

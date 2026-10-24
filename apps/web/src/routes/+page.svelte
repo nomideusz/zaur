@@ -278,22 +278,36 @@
 	// svelte-ignore state_referenced_locally
 	let versions = $state<Record<string, string>>({ ...data.versions });
 	let registryDown = $state(false);
-	// Google Search, live from the server: a day's median for each recent week.
-	// Only a site with real daily clicks gets the weekly chart; the others show
-	// their 28-day totals, and a site under 1,000 impressions shows nothing.
-	type Search = { metric: 'clicks' | 'impressions'; perDay: number; weeks: [string, number][]; clicks28: number; impressions28: number; through: string };
+	// Google Search, live from the server: clicks and average position for each
+	// recent week. Every searched site shows the same two, however they look.
+	type Search = { weeks: [string, number, number | null][]; clicks28: number; position28: number | null; through: string };
 	const searched = ['szkolyjogi', 'fixtar', 'kino', 'kompi', 'festivals'];
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
-	const charted = (t?: Search) => t?.metric === 'clicks' && t.perDay >= 20;
-	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || (traffic[id]?.impressions28 ?? 0) >= 1000);
-	const perDay = (id: string) => {
-		const s = traffic?.[id];
-		if (!s) return t('search.reading');
-		return charted(s)
-			? t('search.perDay', { count: s.perDay, n: num(s.perDay) })
-			: t('search.totals', { clicks: num(s.clicks28), impressions: num(s.impressions28) });
+	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
+	const tenths = new Intl.NumberFormat(intl, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+	const rank = (p: number | null) => (p === null ? '—' : tenths.format(p));
+	// A tiny chart's points across a 48×16 box: clicks rise from the floor,
+	// position 1 sits at the top.
+	const W = 48;
+	const H = 16;
+	const x = (i: number, n: number) => (i + 0.5) * (W / n);
+	const positionY = (ps: (number | null)[]) => {
+		const seen = ps.filter((p) => p !== null);
+		const lo = Math.min(...seen);
+		const span = Math.max(...seen) - lo;
+		return (p: number) => (span ? 2 + ((p - lo) / span) * (H - 4) : H / 2);
 	};
+	// A week without a position breaks the line; a lone week is a dot.
+	const positionPath = (ps: (number | null)[], y: (p: number) => number) =>
+		ps
+			.map((p, i) => {
+				if (p === null) return '';
+				const joined = i > 0 && ps[i - 1] !== null;
+				const lone = !joined && ps[i + 1] == null;
+				return `${joined ? 'L' : 'M'}${x(i, ps.length)} ${y(p)}${lone ? 'h0' : ''}`;
+			})
+			.join('');
 	const compact = new Intl.NumberFormat(intl, { notation: 'compact' });
 	const day = (d: string) => new Date(d).toLocaleDateString(intl, { day: 'numeric', month: 'short', timeZone: 'UTC' });
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
@@ -413,7 +427,7 @@
 				{#if searching(c.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
 				<a href={c.href}>{c.name}</a>
 			</h3>
-			{#if searching(c.id)}<p class="meta">{perDay(c.id)}</p>{/if}
+			{#if searching(c.id)}{@render search(c.id)}{/if}
 			<p>{c.desc}</p>
 			{#if c.uses?.length}
 				<ul class="chips">
@@ -464,7 +478,8 @@
 			{#if host(w.href) !== title}
 				<p class="meta">{host(w.href)}</p>
 			{:else if searching(w.id)}
-				<p class="meta">{perDay(w.id)}</p>
+				<!-- the weekly chart in .media already draws the clicks -->
+				{@render search(w.id, false)}
 			{/if}
 			<p class="what">{w.what}</p>
 			<h4>{t('work.built')}</h4>
@@ -487,6 +502,43 @@
 	</article>
 {/snippet}
 
+<!-- Google Search under a title: the 28-day clicks and average position, each
+     after a tiny chart of its twelve weeks, the newest in orange. -->
+{#snippet search(id: string, sparks = true)}
+	{@const s = traffic?.[id]}
+	{#if !s}
+		<p class="meta">{t('search.reading')}</p>
+	{:else}
+		{@const n = s.weeks.length}
+		{@const top = Math.max(1, ...s.weeks.map(([, c]) => c))}
+		{@const ps = s.weeks.map(([, , p]) => p)}
+		{@const last = ps[n - 1]}
+		<p class="meta gsc">
+			<span>
+				{#if sparks}
+					<svg class="spark" viewBox="0 0 {W} {H}" aria-hidden="true">
+						{#each s.weeks as [d, c], i (d)}
+							{@const h = Math.max(1, (c / top) * H)}
+							<rect class:now={i === n - 1} x={x(i, n) - 1.5} y={H - h} width="3" height={h} />
+						{/each}
+					</svg>
+				{/if}
+				{t('search.clicks', { count: s.clicks28, n: num(s.clicks28) })}
+			</span>
+			<span>
+				{#if sparks && ps.some((p) => p !== null)}
+					{@const y = positionY(ps)}
+					<svg class="spark" viewBox="0 0 {W} {H}" aria-hidden="true">
+						<path d={positionPath(ps, y)} />
+						{#if last !== null}<circle class="now" cx={x(n - 1, n)} cy={y(last)} r="1.75" />{/if}
+					</svg>
+				{/if}
+				{t('search.position', { position: rank(s.position28) })}
+			</span>
+		</p>
+	{/if}
+{/snippet}
+
 {#snippet growth(id: string, s: Search)}
 	{@const top = Math.max(1, ...s.weeks.map(([, n]) => n))}
 	<figure class="growth">
@@ -501,7 +553,7 @@
 			{/each}
 		</ol>
 		<p>
-			{t('growth.summary', { clicks: num(s.clicks28), impressions: num(s.impressions28), date: day(s.through) })}
+			{t('growth.summary', { clicks: num(s.clicks28), position: rank(s.position28), date: day(s.through) })}
 			{t('growth.source')}
 		</p>
 	</figure>
@@ -1091,6 +1143,36 @@
 	.meta {
 		margin-top: 0.3rem;
 		font-size: 0.875rem;
+	}
+	.gsc {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.25rem 1rem;
+	}
+	.gsc > span {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+	.spark {
+		flex: none;
+		width: 3rem;
+		height: 1rem;
+		overflow: visible;
+	}
+	.spark rect {
+		fill: var(--ink);
+	}
+	.spark path {
+		fill: none;
+		stroke: var(--ink);
+		stroke-width: 1.25;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+		vector-effect: non-scaling-stroke;
+	}
+	.spark .now {
+		fill: var(--orange);
 	}
 	.what {
 		max-width: 60ch;
