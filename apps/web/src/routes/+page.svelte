@@ -363,16 +363,16 @@
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') flipShapes();
 		// A link to a fold (the Templates tab, a shared #websites URL) opens it. The
-		// page is too short to scroll to the fold until its reveal has grown it (no
-		// event or animation reports the reveal), so the scroll is held while the
-		// fold resizes, for a moment longer than the reveal lasts.
+		// page is too short to scroll to the fold until it has grown, and nothing
+		// reports the end of its reveal, so the fold opens without one: the scroll
+		// then finds the full page in the same layout pass.
 		const unfold = (id = location.hash.slice(1)) => {
 			const el = id && document.getElementById(id);
 			if (el instanceof HTMLDetailsElement && !el.open) {
+				el.classList.add('jump');
 				el.open = true;
-				const hold = new ResizeObserver(() => el.scrollIntoView());
-				hold.observe(el);
-				setTimeout(() => hold.disconnect(), 400);
+				el.scrollIntoView();
+				el.classList.remove('jump');
 			}
 		};
 		// A click on the link of a fold closed since the hash was set changes no hash.
@@ -1537,6 +1537,9 @@
 	}
 	.folds details[open]::details-content {
 		height: auto;
+	}
+	.folds details:global(.jump)::details-content {
+		transition: none;
 	}
 	@media (prefers-reduced-motion: reduce) {
 		.folds details::details-content {
