@@ -83,6 +83,9 @@
 	--chip: #f7f7f7;
 	--live: #1f9d55;
 	--quiet: #4a4842;
+	/* The common name for the brand colour: an embed that probes its host for
+	   one (svelte-calendar's auto theme) finds Signal Orange. */
+	--accent: var(--orange);
 
 	/* The poster's unit; the poster shrinks it to fit its rows on short screens. */
 	--u: 1vw;

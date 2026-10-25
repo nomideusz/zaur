@@ -7,10 +7,9 @@ import { loadUsage } from '#lib/usage';
 // comes from the same call.
 const names = ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify'];
 
-// The sites the page can show live: the flagships, the Zaur demos and the
-// calendar's demo. Each is checked at prerender, and only one whose headers let
+// The sites the page can show live: the flagships and the Zaur demos. Each is checked at prerender, and only one whose headers let
 // zaur.app frame it gets a live window; the rest keep their capture.
-const sites = ['https://szkolyjogi.pl', 'https://thebest.travel', 'https://demo.zaur.app', 'https://register.zaur.app', 'https://svelte-calendar.xyz'];
+const sites = ['https://szkolyjogi.pl', 'https://thebest.travel', 'https://demo.zaur.app', 'https://register.zaur.app'];
 
 /** Whether these response headers let https://zaur.app put the page in a frame. */
 export function _framable(h: Headers) {

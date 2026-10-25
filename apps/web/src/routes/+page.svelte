@@ -7,6 +7,7 @@
 	import { GeometrizedImage } from '@nomideusz/svelte-geometrize';
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
+	import CalendarDemo from '#lib/CalendarDemo.svelte';
 	import { track } from '#lib/visit';
 	import { i18n, t, list, pairs } from '#lib/i18n';
 	import { routing, languages, short } from '#lib/i18n-routing';
@@ -140,7 +141,7 @@
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-calendar',
 			demo: 'https://svelte-calendar.xyz',
 			source: 'https://github.com/nomideusz/svelte-calendar',
-			// Its demo site opens the section as a live window, when it may be framed.
+			// Opens the section as a case: its own widget, live on this page.
 			featured: true
 		},
 		{
@@ -263,8 +264,8 @@
 		websites.filter((w) => w.basket === basket && !w.live).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
-	// A featured package whose demo may be framed gets a case of its own, not a row.
-	const shownLive = (p: (typeof pkgs)[number]) => !!(p.featured && p.demo && isLive(p.demo));
+	// A featured package gets a case of its own, not a row.
+	const featured = (p: (typeof pkgs)[number]) => !!p.featured;
 	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
 	// What a developer weighs before installing: license, Svelte range, dependency count.
 	const metaOf = (id: string) => {
@@ -711,10 +712,13 @@
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">{t('packages.lede')}</p>
-		{#each pkgs.filter(shownLive) as p (p.id)}
+		{#each pkgs.filter(featured) as p (p.id)}
 			<article class="case" id="pkg-{p.id}">
 				<div class="media">
-					<Live href={p.demo!} name={p.name} shot={shot(p.id)} phone={phoneFor(p.id)} />
+					<figure class="demo">
+						<CalendarDemo locale={intl} />
+						<figcaption>{t('packages.calendar.note')}</figcaption>
+					</figure>
 				</div>
 				<div class="case-body">
 					<h3>
@@ -732,7 +736,7 @@
 			</article>
 		{/each}
 		<ul class="ptable">
-			{#each pkgs.filter((p) => !shownLive(p)) as p (p.id)}
+			{#each pkgs.filter((p) => !featured(p)) as p (p.id)}
 				<li id="pkg-{p.id}">
 					<a class="p-name" href="#pkg-{p.id}">{p.id}</a>
 					<span class="p-ver">{version(p.id)}</span>

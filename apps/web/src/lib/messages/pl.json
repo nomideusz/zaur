@@ -176,6 +176,7 @@
 	"packages.npm": "Na npm",
 	"packages.demo": "Demo",
 	"packages.source": "Kod",
+	"packages.calendar.note": "Sam widżet, na przykładowym grafiku: motyw odczytany z tej strony, układ telefonu poniżej 768 px szerokości. Przeciągnij zajęcia, by je przesunąć.",
 	"packages.copy": "Kopiuj",
 	"packages.copied": "Skopiowano",
 	"packages.deps_one": "{n} zależność",

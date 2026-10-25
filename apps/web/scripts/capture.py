@@ -31,7 +31,6 @@ WINDOWS = {
     'kino': 'https://kino.net.pl',
     'kompi': 'https://kompi.pl',
     'festivals': 'https://festivals.zaur.app',
-    'svelte-calendar': 'https://svelte-calendar.xyz',
     'mail-demo': 'https://demo.zaur.app',
     'signup': 'https://register.zaur.app',
 }

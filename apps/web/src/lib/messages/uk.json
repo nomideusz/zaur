@@ -176,6 +176,7 @@
 	"packages.npm": "В npm",
 	"packages.demo": "Демо",
 	"packages.source": "Код",
+	"packages.calendar.note": "Сам віджет на прикладі розкладу: тему зчитано з цієї сторінки, мобільний вигляд за ширини до 768 px. Перетягніть заняття, щоб перенести його.",
 	"packages.copy": "Копіювати",
 	"packages.copied": "Скопійовано",
 	"packages.deps_one": "{n} залежність",

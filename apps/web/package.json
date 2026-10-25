@@ -28,6 +28,7 @@
 		"vite": "^8.3.4"
 	},
 	"dependencies": {
+		"@nomideusz/svelte-calendar": "^1.5.0",
 		"@nomideusz/svelte-geometrize": "^0.9.3",
 		"@nomideusz/svelte-i18n": "^1.0.0",
 		"@nomideusz/zaur-world": "^1.8.0"
