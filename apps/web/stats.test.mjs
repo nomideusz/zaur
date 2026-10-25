@@ -53,10 +53,32 @@ test("sources", () => {
 
 test("ipapi.is answers, keyless and keyed", () => {
   assert.deepEqual(network({ ip: "8.8.8.8", company: "Google LLC", city: "Mountain View", country: "United States" }), {
-    org: "Google LLC", orgType: undefined, city: "Mountain View", country: "United States", hosting: undefined,
+    org: "Google LLC", orgType: undefined, city: "Mountain View", region: undefined, country: "United States", hosting: undefined, vpn: undefined, mobile: undefined,
   });
   const keyed = network({ is_datacenter: true, company: { name: "Hetzner Online GmbH", type: "hosting" }, location: { city: "Falkenstein", country: "Germany" } });
   assert.equal(keyed.org, "Hetzner Online GmbH");
   assert.equal(keyed.city, "Falkenstein");
   assert.equal(keyed.hosting, 1);
+});
+
+test("the home network is always mine, and so is its device elsewhere", () => {
+  const all = visits(
+    [
+      line({ t: "2026-10-22T08:00:00Z", id: "home-tagged", me: 0, tag: "acme", org: "Jakub Skorek trading as MCG", screen: "2560x1440", dpr: 1, os: "Linux" }),
+      line({ t: "2026-10-22T09:00:00Z", id: "laptop-away", me: 0, org: "Orange Polska", screen: "2560x1440", dpr: 1, os: "Linux" }),
+      line({ t: "2026-10-22T10:00:00Z", id: "stranger", me: 0, org: "Orange Polska", screen: "1920x1080", dpr: 1, os: "Windows" }),
+      JSON.stringify({ k: "end", id: "stranger", secs: 50, seen: { top: 4, work: 30, packages: 2 } }),
+    ].join("\n"),
+  );
+  assert.deepEqual(all.map((v) => [v.id, v.mine]), [["stranger", false], ["laptop-away", true], ["home-tagged", true]]);
+  const r = report(all, { days: 7, now: Date.parse("2026-10-22T12:00:00Z") });
+  assert.deepEqual(r.read, [["top", 1], ["work", 1]]);
+});
+
+test("ipapi.is region and flags", () => {
+  const n = network({ is_vpn: true, is_mobile: true, company: { name: "Play", type: "isp" }, location: { city: "Kraków", state: "Lesser Poland", country: "Poland" } });
+  assert.equal(n.region, "Lesser Poland");
+  assert.equal(n.vpn, 1);
+  assert.equal(n.mobile, 1);
+  assert.equal(network({ company: "Google LLC", region: "California" }).region, "California");
 });

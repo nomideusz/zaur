@@ -11,6 +11,8 @@ import { dirname } from "node:path";
 const STATS_FILE = process.env.STATS_FILE ?? "/data/visits.jsonl";
 const BOT = /bot|crawl|spider|slurp|headless|lighthouse|preview|inspect|fetch|curl|wget|python|java\/|monitor/i;
 const OWNER = "zaur_owner=1";
+// Networks that are always the owner's, whatever the device: home.
+const OWN_NETWORKS = new Set(["Jakub Skorek trading as MCG"]);
 const str = (v, max) => (typeof v === "string" && v ? v.slice(0, max) : undefined);
 const num = (v) => (Number.isFinite(v) ? Math.round(v) : undefined);
 // The user agent is read for these two words and never stored. An app's
@@ -22,7 +24,7 @@ const os = (ua) => [[/iPhone|iPad|iPod/, "iOS"], [/Android/, "Android"], [/Windo
 // What an address says, from ipapi.is: the network's owner (a company on an
 // office network, else the ISP) and the place. Without IPAPI_KEY the free
 // tier answers flat strings; with one (free, 1,000 a day) it nests them and
-// adds the owner's kind and a data-centre flag.
+// adds the owner's kind and the data-centre, VPN and mobile-network flags.
 export function network(d) {
   const company = typeof d.company === "object" ? d.company : { name: d.company };
   const loc = typeof d.location === "object" ? d.location : d;
@@ -30,8 +32,11 @@ export function network(d) {
     org: str(company?.name, 80),
     orgType: str(company?.type, 20), // business, isp, hosting, education, government
     city: str(loc.city, 60),
+    region: str(loc.region ?? loc.state, 60),
     country: str(loc.country, 60),
     hosting: d.is_datacenter || company?.type === "hosting" ? 1 : undefined,
+    vpn: d.is_vpn || d.is_proxy || d.is_tor ? 1 : undefined,
+    mobile: d.is_mobile ? 1 : undefined,
   };
 }
 
@@ -108,6 +113,11 @@ export async function recordHit(req, res) {
           secs: num(h.secs),
           depth: num(h.depth),
           clicks: Array.isArray(h.clicks) ? h.clicks.slice(0, 40).map((c) => str(c, 80)).filter(Boolean) : undefined,
+          // Seconds on each part of the page, in the order reached.
+          seen:
+            h.seen && typeof h.seen === "object"
+              ? Object.fromEntries(Object.entries(h.seen).filter(([k, s]) => /^[a-z][\w-]{0,30}$/.test(k) && num(s) > 0).slice(0, 16).map(([k, s]) => [k, num(s)]))
+              : undefined,
         }),
   };
   // The reply is already sent, so a failed write is only logged.
@@ -150,8 +160,8 @@ const detail = (v) => (v.screen ? [v.screen, v.dpr, v.os].join("|") : "");
 const full = (v) => [v.tz, v.lang, v.device, detail(v)].join("|");
 
 // Views newest first, each joined with its last end. A view without the
-// cookie is still the owner's when it looks like a marked view or a device
-// /stats was opened on: the cookie came later, or the visit was in another
+// cookie is still the owner's when it came from the home network, or looks
+// like a marked view, a home one or a device /stats was opened on: the cookie came later, or the visit was in another
 // browser on the same phone (an app's in-app view). Time zone, language,
 // width and device must match; screen, density and system too once both
 // sides carry them.
@@ -180,13 +190,15 @@ export function visits(text) {
     }
     if (h.k === "owner") claim(h);
     else if (h.k === "view") byId.set(h.id, h);
-    else if (byId.has(h.id)) Object.assign(byId.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks });
+    else if (byId.has(h.id)) Object.assign(byId.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks, seen: h.seen });
   }
   const all = [...byId.values()];
-  for (const v of all) if (v.me === 1) claim(v);
+  const home = (v) => OWN_NETWORKS.has(v.org);
+  for (const v of all) if (v.me === 1 || home(v)) claim(v);
   for (const v of all) {
-    // A ?r= link was handed to someone else, so only the cookie claims it.
-    v.mine = v.me === 1 || (!v.tag && claimed(v));
+    // A ?r= link was handed to someone else, so only the cookie or the home
+    // network claims it.
+    v.mine = v.me === 1 || home(v) || (!v.tag && claimed(v));
     v.src = source(v);
   }
   return all.reverse();
@@ -257,6 +269,8 @@ export function report(all, { days = 30, who = "others", tag = null, now = Date.
     dark: shown.some((v) => v.dark != null) ? pct(shown.filter((v) => v.dark === 1).length) : null,
     // What was opened, each target once per visit.
     opened: count(shown, (v) => [...new Set(v.clicks ?? [])]).slice(0, 15),
+    // Parts of the page read for at least 3 seconds, once per visit.
+    read: count(shown, (v) => Object.keys(v.seen ?? {}).filter((k) => v.seen[k] >= 3)),
     tags: count(all.filter(whose), (v) => v.tag).map(([t, n]) => [t, n, all.find((v) => v.tag === t).t]),
     recent: shown.slice(0, 300),
   };
@@ -342,6 +356,7 @@ ${
 ${barList("Came from", r.sources, r.visits, (k) => SOURCES[k])}
 ${barList("Referrers", r.refs, r.visits)}
 ${barList("Opened", r.opened, r.visits)}
+${barList("Read · 3s or more", r.read, r.visits)}
 ${barList("Places", r.places, r.visits)}
 ${barList(`Networks${r.business ? ` · ${r.business} from a company` : ""}`, r.networks, r.visits)}
 ${barList("Languages", r.langs, r.visits)}
@@ -354,15 +369,15 @@ ${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.scr
   }</section>
 </div>
 <h2>Latest visits${r.visits > r.recent.length ? ` · ${r.recent.length} of ${r.visits}` : ""}</h2>
-<div class="scroll"><table><tr><th>When</th><th>From</th><th>Where</th><th>Network</th><th>Device</th><th class="n">Time</th><th class="n">Read</th><th>Opened</th></tr>${
+<div class="scroll"><table><tr><th>When</th><th>From</th><th>Where</th><th>Network</th><th>Device</th><th class="n">Time</th><th class="n">Read</th><th>Looked at</th><th>Opened</th></tr>${
     r.recent
       .map(
         (v) =>
-          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.page && v.page !== "/" ? ` <small>${esc(v.page)}</small>` : ""}${v.city ? `<br><small>${esc(v.tz)}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting ? `<br><small>${esc(v.hosting ? "data centre" : v.orgType)}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
+          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.page && v.page !== "/" ? ` <small>${esc(v.page)}</small>` : ""}${v.city ? `<br><small>${esc([v.region, v.tz].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting || v.vpn || v.mobile ? `<br><small>${esc([v.hosting ? "data centre" : v.orgType, v.vpn && "VPN or proxy", v.mobile && "mobile network"].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(Object.entries(v.seen ?? {}).map(([k, s]) => `${k} ${secs(s)}`).join(" · "))}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
       )
-      .join("") || '<tr><td colspan="8" class="hint">No visits in this period.</td></tr>'
+      .join("") || '<tr><td colspan="9" class="hint">No visits in this period.</td></tr>'
   }</table></div>
-<p class="hint">This device is now marked as yours. A visit counts under Mine when it came from a marked device, or looks like one: the same time zone, language, width and device type, and the same screen, density and system where both visits recorded them.</p>
+<p class="hint">This device is now marked as yours. A visit counts under Mine when it came from a marked device or the home network (${esc([...OWN_NETWORKS].join(", "))}), or looks like one of those: the same time zone, language, width and device type, and the same screen, density and system where both visits recorded them.</p>
 <script>try{sessionStorage.zaurOwner||navigator.sendBeacon("/api/hit",JSON.stringify({k:"owner",id:crypto.randomUUID().slice(0,12),tz:Intl.DateTimeFormat().resolvedOptions().timeZone,lang:navigator.language,w:innerWidth,screen:screen.width+"x"+screen.height,dpr:devicePixelRatio}));sessionStorage.zaurOwner=1}catch{}
 setInterval(()=>document.visibilityState==="visible"&&location.reload(),15000)</script>`;
   res.writeHead(200, {

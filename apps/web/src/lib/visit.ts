@@ -33,22 +33,49 @@ export function track() {
 	// What was opened: links by where they go, live windows by their label.
 	const clicks: string[] = [];
 	const click = (e: MouseEvent) => {
-		const el = (e.target as Element).closest('a, button');
+		const el = (e.target as Element).closest('a, button, summary');
 		if (!el || clicks.length >= 40) return;
-		if (el instanceof HTMLAnchorElement) {
+		// A fold's summary: which fold, opened or closed.
+		if (el.localName === 'summary') clicks.push(`${(el.parentElement as HTMLDetailsElement).open ? '−' : '+'}${el.parentElement!.id}`);
+		else if (el instanceof HTMLAnchorElement) {
 			const u = new URL(el.href);
 			clicks.push(u.protocol === 'mailto:' ? 'mail' : u.host === location.host ? u.hash || u.pathname : u.host + u.pathname.replace(/\/$/, ''));
 		} else clicks.push(el.getAttribute('aria-label') ?? el.textContent!.trim());
 	};
 	let depth = 0;
 	const scroll = () => (depth = Math.max(depth, (scrollY + innerHeight) / document.documentElement.scrollHeight));
+	// Which part of the page is read: the one crossing a line 40% down the
+	// screen, timed while the tab is in view, in the order first reached.
+	// ponytail: the keys switch remounts the page and this keeps watching the
+	// old nodes; re-observe on remount if those visits ever matter.
+	const seen: Record<string, number> = {};
+	let at: string | undefined;
+	let last = performance.now();
+	let inView = document.visibilityState === 'visible';
+	// Called before the state changes, so the stretch just ended is counted.
+	const tally = () => {
+		const now = performance.now();
+		if (at && inView) seen[at] = (seen[at] ?? 0) + (now - last);
+		last = now;
+	};
+	const io = new IntersectionObserver(
+		(entries) => {
+			tally();
+			for (const e of entries) if (e.isIntersecting) at = e.target.id || 'top';
+		},
+		{ rootMargin: '-40% 0px -60% 0px' }
+	);
+	for (const el of document.querySelectorAll('.poster, main > section[id], main details[id]')) io.observe(el);
 	// Time counts only while the tab is in view; each hide reports the total so far.
 	let shown = 0;
 	let since = performance.now();
 	const hide = () => {
+		tally();
+		inView = document.visibilityState === 'visible';
 		if (document.visibilityState === 'visible') return void (since = performance.now());
 		shown += performance.now() - since;
-		send({ k: 'end', secs: Math.round(shown / 1000), depth: Math.round(depth * 100), clicks });
+		const secs = Object.fromEntries(Object.entries(seen).map(([k, ms]) => [k, Math.round(ms / 1000)]).filter(([, s]) => s));
+		send({ k: 'end', secs: Math.round(shown / 1000), depth: Math.round(depth * 100), clicks, seen: secs });
 	};
 	addEventListener('click', click, true);
 	addEventListener('scroll', scroll, { passive: true });
