@@ -10,6 +10,7 @@
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import CalendarDemo from '#lib/CalendarDemo.svelte';
+	import { fold, gramsOf, indexed, search as match, tokensOf, type Entry } from '#lib/find';
 	import { booking, canRefund, discountFrom, email, perPerson, policies, quote, rebook, sendRefund, thursday } from '#lib/booking.svelte';
 	import { track } from '#lib/visit';
 	import { i18n, t, list, pairs } from '#lib/i18n';
@@ -250,13 +251,23 @@
 	const kindSlug = (kind: string) => kind.toLowerCase().replace(/[^a-z]+/g, '-');
 	const kindName = (kind: string) => t(`templates.kind.${kindSlug(kind)}`);
 	// The templates narrowed to what is typed: name, blurb or repo; a group with no match goes.
+	// svelte-search's matching ranks them (lib/find), so a typo still finds its
+	// template; under three letters, a plain substring is all a query can carry.
 	let find = $state('');
 	const needle = $derived(find.trim().toLocaleLowerCase(intl));
-	const groups = $derived(
-		data.templates
-			.map((g) => ({ ...g, items: g.items.filter((tp) => `${tp.name} ${tp.desc} ${tp.slug}`.toLocaleLowerCase(intl).includes(needle)) }))
-			.filter((g) => g.items.length)
-	);
+	// svelte-ignore state_referenced_locally (prerendered: data never changes)
+	const tplEntries = indexed(data.templates.flatMap((g) => g.items.map((tp): Entry => ({ kind: 'template', name: tp.name, text: `${tp.desc} ${tp.slug}`, href: tp.slug }))));
+	const groups = $derived.by(() => {
+		if (!tokensOf(find).length) {
+			return data.templates
+				.map((g) => ({ ...g, items: g.items.filter((tp) => `${tp.name} ${tp.desc} ${tp.slug}`.toLocaleLowerCase(intl).includes(needle)) }))
+				.filter((g) => g.items.length);
+		}
+		const rank = new Map(match(tplEntries, find).map((r) => [r.href, r.score]));
+		return data.templates
+			.map((g) => ({ ...g, items: g.items.filter((tp) => rank.has(tp.slug)).sort((a, b) => rank.get(b.slug)! - rank.get(a.slug)!) }))
+			.filter((g) => g.items.length);
+	});
 	// Every smaller project renders as the same ruled row: a capture, then the facts.
 	// Live windows are kept for the flagships, so the page stays short.
 	type Card = { id: string; name: string; href: string; img?: string; desc: string; specs: [string, string][]; uses?: string[] };
@@ -414,6 +425,24 @@
 	// JSON widens the placeholder's literal version field; the script wrote it from the real type.
 	const placeholder = media.derived as GeometrizePlaceholder;
 	const kb = new Intl.NumberFormat(intl, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 1 });
+
+	// svelte-search demonstrating itself: everything this page lists, searchable
+	// with the package's own matching, each step of it on show (lib/find).
+	const pageEntries = indexed([
+		...work.map((w): Entry => ({ kind: 'product', name: w.name, text: w.what, href: `#${w.id}` })),
+		...pkgs.map((p): Entry => ({ kind: 'package', name: p.id, text: p.desc, href: `#pkg-${p.id}` })),
+		...tplEntries.map((e): Entry => ({ ...e, href: `#tpl-${e.href}` })),
+		...websites.filter((w) => !w.live).map((w): Entry => ({ kind: 'site', name: w.name, text: w.desc, href: `#${w.id}` }))
+	]);
+	// A folded Polish name, a Polish word for an English one, two typos.
+	const tries = ['szkoly', 'kalendarz', 'metabse', 'chromiun'];
+	let probe = $state('');
+	const found = $derived(match(pageEntries, probe));
+	const probeGrams = $derived([...new Set(gramsOf(probe))]);
+	const shared = $derived(new Set(found[0] ? gramsOf(found[0].folded) : []));
+	const score = new Intl.NumberFormat(intl, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+	const why = (r: (typeof found)[number]) =>
+		r.matches.map((m) => (m.how === 'exact' ? t('packages.search.exact') : t(`packages.search.${m.how}`, { token: m.token, word: m.word! }))).join(' · ');
 
 	// svelte-scheduler, -payments and -notify on one sample booking (lib/booking).
 	const pln = new Intl.NumberFormat(intl, { style: 'currency', currency: 'PLN' });
@@ -846,6 +875,35 @@
 								<li><code>derived</code><span>{t('packages.media.shapes', { n: shapeCount(placeholder) })}</span><span></span><span>{kb.format(JSON.stringify(media.derived).length / 1000)}</span></li>
 							</ul>
 							<p class="p-try">{t('packages.media.hint')}</p>
+						{:else if p.id === 'svelte-search'}
+							<div class="p-stack">
+								<label class="p-field">{t('packages.search.label')} <input type="search" bind:value={probe} autocomplete="off" spellcheck="false" /></label>
+								<div class="p-seg" role="group" aria-label={t('packages.search.try')}>
+									<span aria-hidden="true">{t('packages.search.try')}</span>
+									{#each tries as q (q)}<button type="button" aria-pressed={probe === q} onclick={() => (probe = q)}>{q}</button>{/each}
+								</div>
+								{#if tokensOf(probe).length}
+									<p class="p-meta" aria-live="polite">normalize → <code>{fold(probe)}</code> · {t('packages.search.meta', { count: found.length, total: pageEntries.length })}</p>
+									<p class="p-grams">
+										<span>{t('packages.search.trigrams')}</span>
+										{#each probeGrams as g (g)}<code class:on={shared.has(g)}>{g}</code>{/each}
+									</p>
+									{#if found.length}
+										<ol class="p-files p-found">
+											{#each found.slice(0, 6) as r (r.href)}
+												<li>
+													<span>{t(`packages.search.kind.${r.kind}`)}</span>
+													<span><a href={r.href}>{r.name}</a><small>{why(r)}</small></span>
+													<span>{score.format(r.score)}</span>
+												</li>
+											{/each}
+										</ol>
+									{:else}
+										<p class="p-meta">{t('packages.search.none', { q: probe.trim() })}</p>
+									{/if}
+								{/if}
+							</div>
+							<p class="p-try">{t('packages.search.hint')}</p>
 						{:else if p.id === 'svelte-scheduler'}
 							<div class="p-stack">
 								<p class="p-book">{t('packages.booking.class', { when: classAt, price: pln.format(perPerson) })}</p>
@@ -1851,6 +1909,48 @@
 	.p-sum li {
 		grid-template-columns: minmax(0, 1fr) auto;
 	}
+	/* svelte-search's row: the query's trigrams, filled where the top result has them too. */
+	.p-grams {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.875rem;
+	}
+	.p-grams span {
+		margin-right: 0.35rem;
+		font-weight: 700;
+	}
+	.p-grams code {
+		padding: 0 0.35rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		font: inherit;
+		font-variant-numeric: tabular-nums;
+	}
+	.p-grams code.on {
+		background: var(--ink);
+		color: var(--paper);
+	}
+	.p-found {
+		padding: 0;
+		list-style: none;
+	}
+	.p-found li {
+		grid-template-columns: 5.5rem minmax(0, 1fr) 2.5rem;
+		align-items: baseline;
+	}
+	.p-found li > span:first-child {
+		color: var(--quiet);
+	}
+	.p-found a {
+		font-weight: 700;
+	}
+	.p-found small {
+		display: block;
+		color: var(--quiet);
+		font-size: 0.8125rem;
+	}
 	.p-ledger li {
 		grid-template-columns: minmax(0, 1fr) 3.5rem 4.5rem;
 	}
@@ -2045,7 +2145,8 @@
 		font-weight: 500;
 	}
 	/* The browser's clear button is tinted blue; ink, like everything else. */
-	.t-find input::-webkit-search-cancel-button {
+	.t-find input::-webkit-search-cancel-button,
+	.p-field input::-webkit-search-cancel-button {
 		filter: grayscale(1) brightness(0);
 	}
 	.t-none {

@@ -224,6 +224,9 @@ importers:
       '@nomideusz/svelte-scheduler':
         specifier: ^0.4.3
         version: 0.4.3(@nomideusz/svelte-calendar@1.6.0(svelte@5.57.2))(svelte@5.57.2)
+      '@nomideusz/svelte-search':
+        specifier: ^0.4.2
+        version: 0.4.2(svelte@5.57.2)
       '@nomideusz/zaur-world':
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.3)
@@ -1300,6 +1303,11 @@ packages:
     resolution: {integrity: sha512-OlWnPOzNvUieFsIYvRWug4E8eb9O0ySX2yIFCh+tAGoCJ3EgwrujyhPI7uGnJDnehPNLfVvVNurbqo5TyKa0Nw==}
     peerDependencies:
       '@nomideusz/svelte-calendar': '>=0.15.1 <2.0.0'
+      svelte: ^5.0.0
+
+  '@nomideusz/svelte-search@0.4.2':
+    resolution: {integrity: sha512-ipTNhMcQ8ybdR8HgF+LptibPTlBOPgPyj4CgU0kfCysR6jENseN6pFcJiPU1SohqIMFHIMz1eE84SwIQHZ5kyA==}
+    peerDependencies:
       svelte: ^5.0.0
 
   '@nomideusz/zaur-world@1.8.0':
@@ -5238,6 +5246,10 @@ snapshots:
   '@nomideusz/svelte-scheduler@0.4.3(@nomideusz/svelte-calendar@1.6.0(svelte@5.57.2))(svelte@5.57.2)':
     dependencies:
       '@nomideusz/svelte-calendar': 1.6.0(svelte@5.57.2)
+      svelte: 5.57.2
+
+  '@nomideusz/svelte-search@0.4.2(svelte@5.57.2)':
+    dependencies:
       svelte: 5.57.2
 
   '@nomideusz/zaur-world@1.8.0(react@19.2.3)':
