@@ -947,15 +947,17 @@
 	}
 
 	/* The rows share the screen under the bar, so the sheet fills the first view
-	   whatever its shape. --u is 1vw until a row is shorter than the comp's 7.5vw;
-	   then the names and the intro shrink with it to fit the screen. Rows are at
-	   least --row and grow to fill the column, so a tall window gets taller bands
-	   (names stay on their rules) and a short one, where the intro sets the
-	   height, gets no orange gap under the last row. */
+	   whatever its shape. --u is 1vw until a row is shorter than the comp's 7.5vw,
+	   or the intro (about 51u tall, French wrapping most) taller than the screen
+	   under the bar, as in a window wider than 16:10; then the names and the
+	   intro shrink with it to fit. Rows are at least --row and grow to fill the
+	   column, so a tall window gets taller bands (names stay on their rules) and
+	   a short one, where the intro sets the height, gets no orange gap under the
+	   last row. */
 	.poster {
 		--bar: 3.66vw;
 		--row: max(5vw, (100svh - var(--bar) - var(--rule-heavy)) / var(--rows));
-		--u: min(1vw, var(--row) / 7.5);
+		--u: min(1vw, var(--row) / 7.5, (100svh - var(--bar) - var(--rule-heavy)) / 52);
 		display: grid;
 		grid-template-columns: 63.42vw 1fr;
 		border-bottom: var(--rule-heavy) solid var(--ink);

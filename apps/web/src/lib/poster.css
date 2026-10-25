@@ -104,13 +104,15 @@ html {
 	/* Above 1600 the poster keeps growing in vw, so the reading text grows with
 	   it: 16px up to 1600, about 21px at 2560, never past 24px. */
 	font-size: clamp(100%, 0.5vw + 0.5rem, 150%);
-	/* Anchors land under the bar, which is 3.66vw tall. */
-	scroll-padding-top: max(4rem, calc(3.66vw + 0.75rem));
+	/* Anchors land flush under the bar, which is 3.66vw tall, so a section's
+	   dark strip meets it without a gap: a pixel under it, as scrolling rounds
+	   and half a pixel of paper would show as a line. */
+	scroll-padding-top: calc(3.66vw - 1px);
 }
 /* Under 900 the bar is one row of section tabs. */
 @media (max-width: 900px) {
 	html {
-		scroll-padding-top: 3.25rem;
+		scroll-padding-top: calc(2.75rem - 1px);
 	}
 }
 
