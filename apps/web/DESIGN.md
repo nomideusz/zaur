@@ -269,6 +269,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 
 ### Package Table
 - **Style:** one 2px-ruled row per package: name (a link to the row itself, to share), version, description, a Quiet meta line read from npm at build (license · svelte range · dependency count), the install line, "Used in" in Quiet, then Demo, On npm and Source flush right. A row reached by its anchor fills Chip White.
+- **Packages as themselves:** where a package can show itself in a row, it does, under the install line. svelte-qr encodes its own row's address (scan to open the row on a phone) in Ink on Paper inside a 10rem 2px frame, beside a text field, an L/M/Q/H segmented switch (2px outlined 3px-corner buttons, the chosen one filled Ink) and its version · modules · bytes line, plus Save PNG. svelte-media shows what one `processAndStore` call made of the Szkoły Jogi capture at build (`scripts/media.mjs`, output committed in `src/lib/media/` like the captures): medium and thumbnail side by side at one scale, the medium revealing its derive-hook triangle placeholder, then a ruled file list (key · size · fit · kB).
 
 ### Install Line
 - **Style:** the command and a bold "Copy" button in one 2px ink outline with a 3px corner, split by a 2px rule; 0.875rem. The command still selects in one click where the clipboard is refused. The button reads "Copied" for two seconds, announced politely. Used for `npm i …` and the skill's `npx skills add …`.

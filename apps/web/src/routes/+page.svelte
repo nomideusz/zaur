@@ -4,7 +4,9 @@
 	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
 	import { shapesOf } from '#lib/shapes';
-	import { GeometrizedImage } from '@nomideusz/svelte-geometrize';
+	import { GeometrizedImage, shapeCount, type GeometrizePlaceholder } from '@nomideusz/svelte-geometrize';
+	import { downloadQrPng, getQrCapacity, getQrMatrix, matrixToSvg, type ErrorCorrection } from '@nomideusz/svelte-qr';
+	import media from '#lib/media/manifest.json';
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import CalendarDemo from '#lib/CalendarDemo.svelte';
@@ -383,6 +385,34 @@
 			document.querySelector('.sites .geometrize')?.scrollIntoView({ block: 'center' });
 		}
 	};
+
+	// svelte-qr demonstrating itself: the code for this row's own address, so a
+	// phone can pick the page up right here; typing encodes anything else.
+	const qrHome = `${site}#pkg-svelte-qr`;
+	const levels: ErrorCorrection[] = ['L', 'M', 'Q', 'H'];
+	let qr = $state({ text: qrHome, level: 'M' as ErrorCorrection });
+	const qrCode = $derived.by(() => {
+		const data = qr.text || qrHome;
+		const used = new TextEncoder().encode(data).length;
+		try {
+			const m = getQrMatrix(data, { errorCorrection: qr.level });
+			const v = (m.length - 17) / 4;
+			// The poster's ink on paper; the SVG holds only path data, never the text.
+			const svg = matrixToSvg(m, { foreground: '#0b0a09', background: '#f8f6f1' });
+			return { data, used, n: m.length, v, cap: getQrCapacity(qr.level, v), svg };
+		} catch {
+			return { data, used, cap: getQrCapacity(qr.level) };
+		}
+	});
+
+	// svelte-media demonstrating itself: what one processAndStore call made of a
+	// capture at build (scripts/media.mjs), files and manifest committed.
+	const stored = import.meta.glob<string>('../lib/media/**/*.webp', { eager: true, import: 'default' });
+	const storedUrl = (key: string) => stored[`../lib/media/${key}`];
+	const sizes = ['thumbnail', 'medium', 'large', 'original'] as const;
+	// JSON widens the placeholder's literal version field; the script wrote it from the real type.
+	const placeholder = media.derived as GeometrizePlaceholder;
+	const kb = new Intl.NumberFormat(intl, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 1 });
 
 	onMount(() => {
 		track();
@@ -764,6 +794,48 @@
 								<span class="p-hint">{t('packages.geometrize.hint')}</span>
 							</p>
 							{#if sample}<div class="p-sample" aria-hidden="true">{@render still(sample)}</div>{/if}
+						{:else if p.id === 'svelte-qr'}
+							<div class="p-qr">
+								{#if qrCode.svg}<div class="p-qr-code">{@html qrCode.svg}</div>{/if}
+								<div class="p-qr-controls">
+									<label class="p-field">{t('packages.qr.label')} <input type="text" bind:value={qr.text} autocomplete="off" spellcheck="false" /></label>
+									<div class="p-seg" role="group" aria-label={t('packages.qr.level')}>
+										<span aria-hidden="true">{t('packages.qr.level')}</span>
+										{#each levels as l (l)}<button type="button" aria-pressed={qr.level === l} onclick={() => (qr.level = l)}>{l}</button>{/each}
+									</div>
+									<p class="p-meta" aria-live="polite">
+										{#if qrCode.svg}{t('packages.qr.meta', { v: qrCode.v, n: qrCode.n, used: qrCode.used, cap: qrCode.cap })}{:else}{t('packages.qr.tooLong', { level: qr.level, cap: qrCode.cap })}{/if}
+									</p>
+									{#if qrCode.svg}
+										<button type="button" class="p-keys" onclick={() => downloadQrPng(qrCode.data, 'qr.png', { errorCorrection: qr.level })}>{t('packages.qr.save')}</button>
+									{/if}
+								</div>
+							</div>
+							<p class="p-try">{t('packages.qr.hint')}</p>
+						{:else if p.id === 'svelte-media'}
+							{@const f = media.files}
+							<!-- medium and thumbnail side by side at one scale: flex shares are their widths -->
+							<div class="p-scale">
+								{#each [f.medium, f.thumbnail] as x, i (x.key)}
+									<span style:flex="{x.width} 1 0" style:aspect-ratio="{x.width} / {x.height}">
+										{#if i === 0}
+											{#key shapes.on}
+												<GeometrizedImage {placeholder} src={shapes.on ? undefined : storedUrl(x.key)} alt="" loading="lazy" revealMs={900} />
+											{/key}
+										{:else}
+											<img src={storedUrl(x.key)} alt="" width={x.width} height={x.height} loading="lazy" decoding="async" />
+										{/if}
+									</span>
+								{/each}
+							</div>
+							<ul class="p-files">
+								{#each sizes as size (size)}
+									{@const x = f[size]}
+									<li><code>{x.key.split('/').pop()}</code><span>{x.width}×{x.height}</span><span>{x.fit ?? ''}</span><span>{kb.format(x.bytes / 1000)}</span></li>
+								{/each}
+								<li><code>derived</code><span>{t('packages.media.shapes', { n: shapeCount(placeholder) })}</span><span></span><span>{kb.format(JSON.stringify(media.derived).length / 1000)}</span></li>
+							</ul>
+							<p class="p-try">{t('packages.media.hint')}</p>
 						{:else if p.id === 'zaur-world'}
 							<div class="p-sample"><Radio href={p.demo!} /></div>
 							<p class="p-try">{t('packages.world.hint')}</p>
@@ -1469,7 +1541,7 @@
 		padding: 1.25rem 1.39vw;
 		border-bottom: var(--rule) solid var(--ink);
 	}
-	.ptable li {
+	.ptable > li {
 		display: grid;
 		grid-template-columns: minmax(13rem, 21vw) 4.5rem minmax(0, 1fr) minmax(9rem, 17vw) max-content;
 		gap: 0.5rem 2rem;
@@ -1477,13 +1549,13 @@
 		padding: 0.85rem 1.39vw;
 	}
 	/* Inter Tight is narrow: the description column would run past 75ch on a laptop. */
-	.ptable li > div {
+	.ptable > li > div {
 		max-width: 66ch;
 	}
-	.ptable li + li {
+	.ptable > li + li {
 		border-top: var(--rule) solid var(--ink);
 	}
-	.ptable li:target {
+	.ptable > li:target {
 		background: var(--chip);
 	}
 	.p-name {
@@ -1591,6 +1663,115 @@
 	.p-keys[aria-pressed='true'] {
 		background: none;
 		color: var(--ink);
+	}
+	/* svelte-qr's row: the code, and what drives it beside. */
+	.p-qr {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: start;
+		gap: 1rem 1.5rem;
+		margin-top: 0.75rem;
+	}
+	.p-qr-code {
+		flex: none;
+		width: 10rem;
+		border: var(--rule) solid var(--ink);
+		line-height: 0;
+	}
+	.p-qr-code :global(svg) {
+		width: 100%;
+		height: auto;
+	}
+	.p-qr-controls {
+		flex: 1 1 14rem;
+		display: grid;
+		justify-items: start;
+		gap: 0.6rem;
+	}
+	.p-qr-controls .p-meta {
+		margin: 0;
+	}
+	.p-field {
+		display: grid;
+		gap: 0.3rem;
+		width: 100%;
+		font-weight: 700;
+		font-size: 0.875rem;
+	}
+	.p-field input {
+		width: 100%;
+	}
+	/* One of four, the chosen one filled. */
+	.p-seg {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem;
+		font-weight: 700;
+		font-size: 0.875rem;
+	}
+	.p-seg span {
+		margin-right: 0.35rem;
+	}
+	.p-seg button {
+		min-width: 2rem;
+		height: 1.75rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		background: none;
+		color: var(--ink);
+		font: inherit;
+		cursor: pointer;
+	}
+	.p-seg button:hover {
+		background: var(--chip);
+	}
+	.p-seg button[aria-pressed='true'] {
+		background: var(--ink);
+		color: var(--paper);
+	}
+	/* svelte-media's row: two of its files at one scale, then all it returned. */
+	.p-scale {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.5rem;
+		max-width: 32rem;
+		margin-top: 0.75rem;
+	}
+	.p-scale span {
+		display: block;
+		overflow: hidden;
+		border: var(--rule) solid var(--ink);
+	}
+	.p-scale img,
+	.p-scale :global(.geometrize) {
+		display: block;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+	.p-files {
+		max-width: 32rem;
+		margin-top: 0.6rem;
+		font-size: 0.875rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.p-files li {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) 5.5rem 3.25rem 4rem;
+		gap: 0 0.75rem;
+		padding: 0.2rem 0;
+		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
+	}
+	/* The keys share one long id: keep their size prefix, clip the rest. */
+	.p-files code {
+		overflow: hidden;
+		font: inherit;
+		white-space: nowrap;
+		text-overflow: ellipsis;
+	}
+	.p-files span:last-child {
+		text-align: right;
 	}
 	.p-links {
 		display: flex;
@@ -1737,7 +1918,8 @@
 		gap: 0.75rem;
 		font-weight: 700;
 	}
-	.t-find input {
+	.t-find input,
+	.p-field input {
 		width: 18rem;
 		height: 2.25rem;
 		padding: 0 0.6rem;
@@ -2023,13 +2205,13 @@
 		.websites .lede {
 			padding: 1rem;
 		}
-		.ptable li {
+		.ptable > li {
 			grid-template-columns: 1fr auto;
 			gap: 0.25rem 1rem;
 			padding: 1rem;
 		}
-		.ptable li > p,
-		.ptable li > div {
+		.ptable > li > p,
+		.ptable > li > div {
 			grid-column: 1 / -1;
 		}
 		.p-links {
@@ -2162,8 +2344,12 @@
 			align-items: center;
 			min-height: 2.75rem;
 		}
-		.p-install {
+		.p-install,
+		.p-seg button {
 			min-height: 2.75rem;
+		}
+		.p-seg button {
+			min-width: 2.75rem;
 		}
 	}
 </style>

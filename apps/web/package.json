@@ -17,6 +17,7 @@
 		"node": ">=22.17"
 	},
 	"devDependencies": {
+		"@nomideusz/svelte-media": "^1.0.0",
 		"@sveltejs/adapter-static": "^4.0.0",
 		"@sveltejs/kit": "^3.1.0",
 		"@sveltejs/vite-plugin-svelte": "^7.3.1",
@@ -31,6 +32,7 @@
 		"@nomideusz/svelte-calendar": "^1.5.0",
 		"@nomideusz/svelte-geometrize": "^0.9.3",
 		"@nomideusz/svelte-i18n": "^1.0.0",
+		"@nomideusz/svelte-qr": "^1.0.0",
 		"@nomideusz/zaur-world": "^1.8.0"
 	},
 	"imports": {
