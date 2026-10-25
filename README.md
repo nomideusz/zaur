@@ -13,7 +13,7 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 
 | App | Package | URL | Deploy |
 |-----|---------|-----|--------|
-| **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app) | CapRover |
+| **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app/?r=readme-zaur) | CapRover |
 | **Webmail** | `@zaur/mail2` | [webmail.zaur.app](https://webmail.zaur.app) (also mail2.zaur.app) | Dokploy |
 | **Music** | `@zaur/music` | [music.zaur.app](https://music.zaur.app) | Dokploy |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | Dokploy |
