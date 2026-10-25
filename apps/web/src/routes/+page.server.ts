@@ -2,7 +2,9 @@ import { loadTemplates } from '#lib/templates';
 import { loadUsage } from '#lib/usage';
 
 // Package versions baked in at prerender, so the poster ships with real
-// numbers; the page refreshes them from npm on load.
+// numbers; the page refreshes them from npm on load. The rest of what a
+// developer weighs before installing (license, Svelte range, dependencies)
+// comes from the same call.
 const names = ['zaur-world', 'svelte-calendar', 'svelte-search', 'svelte-i18n', 'svelte-geometrize', 'svelte-qr', 'svelte-media', 'svelte-scheduler', 'svelte-payments', 'svelte-notify'];
 
 // The sites the page can show live: the flagships, the Zaur demos and the
@@ -29,8 +31,8 @@ async function gather(fetch: typeof globalThis.fetch) {
 			names.map((id) =>
 				fetch(`https://registry.npmjs.org/@nomideusz/${id}/latest`)
 					.then((r) => (r.ok ? r.json() : null))
-					.then((j) => [id, j?.version] as const)
-					.catch(() => [id, undefined] as const)
+					.then((j) => [id, j?.version, j && { license: j.license as string | undefined, svelte: j.peerDependencies?.svelte as string | undefined, deps: Object.keys(j.dependencies ?? {}).length }] as const)
+					.catch(() => [id, undefined, undefined] as const)
 			)
 		),
 		Promise.all(
@@ -47,6 +49,7 @@ async function gather(fetch: typeof globalThis.fetch) {
 	]);
 	return {
 		versions: Object.fromEntries(pairs.filter(([, v]) => v)) as Record<string, string>,
+		meta: Object.fromEntries(pairs.filter(([, , m]) => m).map(([id, , m]) => [id, m!])),
 		live: live.filter((h) => h !== null),
 		templates,
 		uses: usage.uses,

@@ -187,7 +187,7 @@ A signal-orange and lilac poster on warm grey, held together by near-black ink.
 - **Display** (700, 4.87 poster units, line-height 1, -0.03em): product names in the programme. Nudged down 0.1em so descenders cross the row rule below. 8.4vw on mobile.
 - **Band** (800, max(2.5rem, 5.4vw), -0.04em): section names on their ink band, nudged down 0.1em, the count after a middle dot in Signal Orange.
 - **Case title** (800, max(2rem, 3.6vw), -0.035em): the host or name heading a case study.
-- **Headline** (800, max(1.75rem, 3.07vw), line-height 1, -0.03em): fold summaries ("Railway templates · 119").
+- **Headline** (800, max(1.75rem, 3.07vw), line-height 1, -0.03em): fold summaries ("Railway templates · 128").
 - **Title** (800, max(1.5rem, 2.2vw), -0.035em; 1.375rem on mobile): site row names; package names in the table run 700 at max(1.25rem, 1.8vw).
 - **Wordmark** (800, 2.24vw, -0.01em): the name in the bar, above 900px only.
 - **Body** (500, 1rem / 1.45): descriptions, capped at 52–66ch; a case's lead line runs at max(1rem, 1.1vw), section ledes at max(1.125rem, 1.45vw).
@@ -203,17 +203,18 @@ A signal-orange and lilac poster on warm grey, held together by near-black ink.
 
 ## Layout
 
-Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black bar (3.66vw tall) runs across the top: the name in the first 28vw, four tabs in page order (Products, Clients, Packages, Templates) in fixed tracks, the address at the right. The poster below is a two-column grid: the programme at 63.42vw, the intro column filling the rest. The programme's rows share the screen under the bar (between 5vw and 11.25vw each), and the poster unit `--u` (1vw, defined page-wide) shrinks with them on short screens so the names and the intro still fit. The intro stacks name, role, pitch and links (GitHub, LinkedIn; no CV, no availability banner), then the package kit fills the rest of the column as a ruled list.
+Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black bar (3.66vw tall) runs across the top: the name in the first 28vw, four tabs in page order (Products, Packages, Templates, Clients) in fixed tracks, the address at the right. The poster below is a two-column grid: the programme at 63.42vw, the intro column filling the rest. The programme's rows share the screen under the bar (between 5vw and 11.25vw each), and the poster unit `--u` (1vw, defined page-wide) shrinks with them on short screens so the names and the intro still fit. The intro stacks name, role, pitch and links (GitHub, LinkedIn; no CV, no availability banner), then the package kit fills the rest of the column as a ruled list.
 
-Below the poster every section is full width. A case study is a two-track grid (media 1.35fr on lilac, body 1fr on ground) with a 1.39vw gutter. Products come straight after the poster. Smaller work runs as ruled rows: capture (18vw), name and description, facts. Side projects sit in a fold with the catalogs. Tables (packages, catalogs) are multi-track grids with flush-right actions. On desktop a case body rides sticky beside a taller window. Section gutters are 1.39vw; content inside uses rem.
+Below the poster every section is full width. A case study is a two-track grid (media 1.35fr on lilac, body 1fr on ground) with a 1.39vw gutter. Products come straight after the poster, then the developer's path (Packages, then the Railway templates and Skills folds), then Clients, then the remaining folds (Work in progress, Side projects): an employer and a developer each reach their part by the second section. Smaller work runs as ruled rows: capture (18vw), name and description, facts. Side projects sit in a fold with the catalogs. Tables (packages, catalogs) are multi-track grids with flush-right actions. On desktop a case body rides sticky beside a taller window. Section gutters are 1.39vw; content inside uses rem.
 
-At 900px and below the sheet becomes a stack: the bar is one row of five equal tabs (the name and address live in the intro, the languages join the intro's links), the intro moves above the programme, the kit becomes one link to Packages, the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. A skip link leads to the content.
+At 900px and below the sheet becomes a stack: the bar is one row of four equal tabs (the name and address live in the intro, the languages join the intro's links), the intro moves above the programme, the kit stays as wrapping chips under its heading (the pointing hint goes: there is nothing to point with), the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. A skip link leads to the content.
 
 The stack adapts by width class, not by scaling:
 - **Phones (600px and below):** a programme row sets its kind at the top right and gives the name the full width beneath it, still on the rule, so a long name never meets its kind (rows max(3.75rem, 16vw)). Site rows float a 7.5rem capture with the text running round it. A tab label too wide for its tab hyphenates or breaks rather than overlapping its neighbour.
 - **Tablets (601–900px):** site rows run as two columns, the capture in the first and text and facts in the second (the radio stays a full-width band above its words and facts).
 - **The bar above 900px** keeps the comp's vw tracks but never lets one shrink below its content, and its text never drops below 13px, so it neither overflows by the scrollbar's width nor squeezes the tabs on small laptops.
-- **Touch (`pointer: coarse`):** links that stand alone as actions (intro links, Open and Source, Demo, Deploy on Railway, footer and language links) grow to 44px. Links inside running text stay as they are.
+- **Standalone actions** (Open and Source, Demo, On npm, Deploy on Railway) are at least 24px tall for a mouse.
+- **Touch (`pointer: coarse`):** links that stand alone as actions (intro links, Open and Source, Demo, On npm, Deploy on Railway, footer and language links) and the install line grow to 44px. Links inside running text stay as they are.
 - **Large screens:** the root size grows above 1600px (`clamp(100%, 0.5vw + 0.5rem, 150%)`: 16px up to 1600, about 21px at 2560, 24px at most), so the rem-set reading text keeps pace with the vw-scaled poster.
 
 Anchors land just under the bar: 3.25rem scroll padding at 900px and below, max(4rem, 3.66vw + 0.75rem) above.
@@ -234,7 +235,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 ### Navigation (top bar)
 - **Style:** sticky black bar, Paper text, tabs separated by 2px Bar Rule dividers. Tabs name the sections they jump to; a fold reached by its tab opens.
 - **States:** links turn Signal Orange on hover; focus ring turns orange and sits inside the link (-3px offset).
-- **Mobile:** one row of five equal tabs; the name, address and language links live in the intro. Above 900px the bar ends on the language menu (LocaleSwitcher, square, ink on ink).
+- **Mobile:** one row of four equal tabs; the name, address and language links live in the intro. Above 900px the bar ends on the language menu (LocaleSwitcher, square, ink on ink).
 
 ### Programme Row (signature)
 - **Style:** full-width orange row, product name at display scale left, what it is flush right, 2px Ember Rule between rows.
@@ -248,7 +249,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 
 ### Chips
 - **Style:** 2px ink outline, 3px corner, transparent, package name and version separated by 1em; sized in poster units (2.2 high, 0.55 padding), 2.25rem high on mobile.
-- **Use:** under a case study or site row, naming the packages it is built from, each linking to npm.
+- **Use:** under a case study or site row, naming the packages it is built from, each linking to npm. In the templates fold, one chip per group (name and count, narrowed with the search) links to the group's heading.
 - **Version:** the version that product runs, read from its lockfile at build time. When it is behind the latest on npm, the latest follows in Quiet ("0.20.1 → 1.5.0") and the link's accessible name says both. A product that builds the package from source beside it shows the latest alone.
 - **Lit / hover:** fill turns Chip White.
 
@@ -267,15 +268,21 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 - **Style:** a 2px-framed capture (or the radio), then title, an optional search line, a short description and chips, then the spec list in its own column. One ruled row each.
 
 ### Package Table
-- **Style:** one 2px-ruled row per package: name, version, description with its install line (an outlined `npm i …` that selects in one click), "Used in" in Quiet, Demo and Source flush right. A row reached by its anchor fills Chip White.
+- **Style:** one 2px-ruled row per package: name (a link to the row itself, to share), version, description, a Quiet meta line read from npm at build (license · svelte range · dependency count), the install line, "Used in" in Quiet, then Demo, On npm and Source flush right. A row reached by its anchor fills Chip White.
+
+### Install Line
+- **Style:** the command and a bold "Copy" button in one 2px ink outline with a 3px corner, split by a 2px rule; 0.875rem. The command still selects in one click where the clipboard is refused. The button reads "Copied" for two seconds, announced politely. Used for `npm i …` and the skill's `npx skills add …`.
 
 ### Fold (catalog disclosure)
 - **Style:** native `<details>` on Warm Ground, headline-size summary with count, square plus/minus toggle at the right, 2px ink rule below; when open, a 2px rule also closes the summary.
 - **Hover:** ground with 6% ink.
-- **Motion:** height reveal of 220ms cubic-bezier(0.2, 0, 0, 1) via `::details-content` where supported; instant elsewhere and under reduced motion. A URL hash naming a fold opens it.
+- **Motion:** height reveal of 220ms cubic-bezier(0.2, 0, 0, 1) via `::details-content` where supported; instant elsewhere and under reduced motion. A URL hash naming a fold, or anything inside one (a template row, a group), opens it and lands on the target.
 
 ### Catalog Row
-- **Style:** 2px ink top rule, name in 800 at 1.125rem, description up to 62ch, actions flush right. A template row names its actions: "Deploy on Railway" and "Source".
+- **Style:** 2px ink top rule, name in 800 at 1.125rem (a template's name links to its own row, `#tpl-<repo>`), description up to 62ch, actions flush right. A template row names its actions: "Deploy on Railway" and "Source". A row reached by its anchor fills Chip White.
+
+### Template Finder
+- **Style:** under the templates lede (the guarantees, then the referral disclosed in one Quiet line): a bold label and a native search box (2px ink outline, 3px corner, Paper fill, 2.25rem), then the group chips. Typing narrows the rows by name, blurb and repo; a group with no match goes, and with nothing left one ruled line says what matched nothing.
 
 ### Closing Row
 - **Style:** the page ends on one more Signal Orange row: one short first-person line in 700 ("I'm open to frontend work. Write to me."), then the address at max(2.5rem, 8.4vw), 700, Ember Rule below, Burnt Orange with Paper text on hover; the small footer links sit under it on the same orange, the five languages among them as plain links in their own names (the current one bold, not underlined).

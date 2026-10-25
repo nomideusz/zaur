@@ -243,7 +243,16 @@
 	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
 	const usedInText = (id: string) => t('packages.usedIn', { list: and.format(usedIn(id)) });
 	// Group names come from templates.ts in English; the key is their slug.
-	const kindName = (kind: string) => t(`templates.kind.${kind.toLowerCase().replace(/[^a-z]+/g, '-')}`);
+	const kindSlug = (kind: string) => kind.toLowerCase().replace(/[^a-z]+/g, '-');
+	const kindName = (kind: string) => t(`templates.kind.${kindSlug(kind)}`);
+	// The templates narrowed to what is typed: name, blurb or repo; a group with no match goes.
+	let find = $state('');
+	const needle = $derived(find.trim().toLocaleLowerCase(intl));
+	const groups = $derived(
+		data.templates
+			.map((g) => ({ ...g, items: g.items.filter((tp) => `${tp.name} ${tp.desc} ${tp.slug}`.toLocaleLowerCase(intl).includes(needle)) }))
+			.filter((g) => g.items.length)
+	);
 	// Every smaller project renders as the same ruled row: a capture, then the facts.
 	// Live windows are kept for the flagships, so the page stays short.
 	type Card = { id: string; name: string; href: string; img?: string; desc: string; specs: [string, string][]; uses?: string[] };
@@ -257,6 +266,22 @@
 	// A featured package whose demo may be framed gets a case of its own, not a row.
 	const shownLive = (p: (typeof pkgs)[number]) => !!(p.featured && p.demo && isLive(p.demo));
 	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
+	// What a developer weighs before installing: license, Svelte range, dependency count.
+	const metaOf = (id: string) => {
+		const m = data.meta[id];
+		if (!m) return '';
+		return [m.license, m.svelte && `svelte ${m.svelte}`, t('packages.deps', { count: m.deps, n: m.deps })].filter(Boolean).join(' · ');
+	};
+	// The install line copies itself; the line stays selectable where the clipboard is refused.
+	let copied = $state('');
+	const copy = (cmd: string) =>
+		navigator.clipboard
+			.writeText(cmd)
+			.then(() => {
+				copied = cmd;
+				setTimeout(() => copied === cmd && (copied = ''), 2000);
+			})
+			.catch(() => {});
 
 	// The signature: pointing at a product lights the packages it is built from,
 	// pointing at a package lights the products that use it. No lines, only light.
@@ -362,17 +387,19 @@
 		track();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') flipShapes();
-		// A link to a fold (the Templates tab, a shared #websites URL) opens it. The
+		// A link to a fold or into one (the Templates tab, a shared #tpl-n8n-queue) opens it. The
 		// page is too short to scroll to the fold until it has grown, and nothing
 		// reports the end of its reveal, so the fold opens without one: the scroll
 		// then finds the full page in the same layout pass.
 		const unfold = (id = location.hash.slice(1)) => {
+			// Chrome may open the fold for the hash itself, mid-reveal, before this runs: scroll even then.
 			const el = id && document.getElementById(id);
-			if (el instanceof HTMLDetailsElement && !el.open) {
-				el.classList.add('jump');
-				el.open = true;
+			const fold = el && el.closest('details');
+			if (el && fold) {
+				fold.classList.add('jump');
+				fold.open = true;
 				el.scrollIntoView();
-				el.classList.remove('jump');
+				fold.classList.remove('jump');
 			}
 		};
 		// A click on the link of a fold closed since the hash was set changes no hash.
@@ -428,6 +455,14 @@
 			<span>{#if used}{used}<span class="latest">→ {version(u)}</span>{:else}{version(u)}{/if}</span>
 		</a>
 	</li>
+{/snippet}
+
+<!-- An install line and the button that copies it. -->
+{#snippet install(cmd: string)}
+	<span class="p-install">
+		<code>{cmd}</code>
+		<button type="button" onclick={() => copy(cmd)}><span aria-live="polite">{t(copied === cmd ? 'packages.copied' : 'packages.copy')}</span></button>
+	</span>
 {/snippet}
 
 {#snippet card(c: Card)}
@@ -597,9 +632,9 @@
 	<a class="mark" href="#top">Bartosz Dymet</a>
 	<nav class="tabs" aria-label={t('nav.sections')}>
 		<a href="#work">{t('nav.work')}</a>
-		<a href="#clients">{t('nav.clients')}</a>
 		<a href="#packages">{t('nav.packages')}</a>
 		<a href="#templates">{t('nav.templates')}</a>
+		<a href="#clients">{t('nav.clients')}</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 	<!-- The language switch is @nomideusz/svelte-i18n's own component: it writes
@@ -643,7 +678,6 @@
 				<span class="intro-lang">{@render langs()}</span>
 			</p>
 			<div class="kit">
-				<a class="kit-all" href="#packages">{t('intro.kitAll', { count: pkgs.length })}</a>
 				<h2>{t('intro.kit')}</h2>
 				<p class="point">{t('intro.point')}</p>
 				<ul class="chips">
@@ -674,15 +708,6 @@
 		</ul>
 	</section>
 
-	<section class="websites" id="clients" aria-labelledby="clients-h">
-		<div class="strip"><h2 id="clients-h">{t('clients.heading')} <span class="n">· {clients.length}</span></h2></div>
-		<p class="lede">{t('clients.lede')}</p>
-		<ul class="sites">
-			{#each clients as c (c.id)}{@render card(c)}{/each}
-		</ul>
-	</section>
-
-
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">{t('packages.lede')}</p>
@@ -695,9 +720,9 @@
 					<h3>
 						<a href={p.demo}>{host(p.demo!)}</a>
 					</h3>
-					<p class="meta">{p.name} {version(p.id)}</p>
+					<p class="meta">{p.name} {version(p.id)}{#if metaOf(p.id)} · {metaOf(p.id)}{/if}</p>
 					<p class="what">{p.desc}</p>
-					<code class="p-install">npm i {p.name}</code>
+					{@render install(`npm i ${p.name}`)}
 					{#if usedIn(p.id).length}<p class="p-used">{usedInText(p.id)}</p>{/if}
 					<p class="go">
 						<a href={p.npm}>{t('packages.npm')}</a>
@@ -709,11 +734,12 @@
 		<ul class="ptable">
 			{#each pkgs.filter((p) => !shownLive(p)) as p (p.id)}
 				<li id="pkg-{p.id}">
-					<a class="p-name" href={p.npm}>{p.id}</a>
+					<a class="p-name" href="#pkg-{p.id}">{p.id}</a>
 					<span class="p-ver">{version(p.id)}</span>
 					<div>
 						<p>{p.desc}</p>
-						<code class="p-install">npm i {p.name}</code>
+						{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
+						{@render install(`npm i ${p.name}`)}
 						{#if p.id === 'svelte-i18n'}
 							<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
 							<p class="p-try">
@@ -742,10 +768,75 @@
 					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
 					<p class="p-links">
 						{#if p.demo}<a href={p.demo}>{t('packages.demo')}</a>{/if}
+						<a href={p.npm}>{t('packages.npm')}</a>
 						{#if p.source}<a href={p.source}>{t('packages.source')}</a>{/if}
 					</p>
 				</li>
 			{/each}
+		</ul>
+	</section>
+
+	<div class="folds">
+		<details id="templates">
+			<summary>
+				<h2>{t('templates.heading')} · {templateCount}</h2>
+				{@render toggle()}
+			</summary>
+			<div class="fold">
+				<p class="lede">{t('templates.lede')}</p>
+				<p class="t-note">{t('templates.referral')}</p>
+				<div class="t-find">
+					<label>{t('templates.search')} <input type="search" bind:value={find} autocomplete="off" spellcheck="false" /></label>
+					<ul class="chips">
+						{#each groups as g (g.kind)}
+							<li><a class="chip" href="#tpl-{kindSlug(g.kind)}"><span>{kindName(g.kind)}</span><span>{g.items.length}</span></a></li>
+						{/each}
+					</ul>
+				</div>
+				{#each groups as g (g.kind)}
+					<h3 id="tpl-{kindSlug(g.kind)}">{kindName(g.kind)}</h3>
+					<ul class="table">
+						{#each g.items as tp (tp.slug)}
+							<li id="tpl-{tp.slug}">
+								<a class="t-name" href="#tpl-{tp.slug}">{tp.name}</a>
+								<p>{tp.desc}</p>
+								<span class="t-src"><a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="t-none">{t('templates.none', { q: find.trim() })}</p>
+				{/each}
+			</div>
+		</details>
+
+		<details id="skills">
+			<summary>
+				<h2>{t('skills.heading')} · {skills.length}</h2>
+				{@render toggle()}
+			</summary>
+			<div class="fold">
+				<ul class="table">
+					{#each skills as s (s.name)}
+						<li>
+							<a class="t-name" href={s.source}>{s.name}</a>
+							<div>
+								<p>{s.desc}</p>
+								{@render install(`npx skills add nomideusz/${s.name}`)}
+							</div>
+							<a class="t-src" href={s.source}>{t('skills.source')}</a>
+						</li>
+					{/each}
+				</ul>
+			</div>
+		</details>
+	</div>
+
+	<section class="websites" id="clients" aria-labelledby="clients-h">
+		<div class="strip"><h2 id="clients-h">{t('clients.heading')} <span class="n">· {clients.length}</span></h2></div>
+		<p class="lede">{t('clients.lede')}</p>
+		<ul class="sites">
+			{#each clients as c (c.id)}{@render card(c)}{/each}
 		</ul>
 	</section>
 
@@ -767,46 +858,6 @@
 			<ul class="sites">
 				{#each side as c (c.id)}{@render card(c)}{/each}
 			</ul>
-		</details>
-
-		<details id="templates">
-			<summary>
-				<h2>{t('templates.heading')} · {templateCount}</h2>
-				{@render toggle()}
-			</summary>
-			<div class="fold">
-				<p class="lede">{t('templates.lede')}</p>
-				{#each data.templates as g (g.kind)}
-					<h3>{kindName(g.kind)}</h3>
-					<ul class="table">
-						{#each g.items as tp (tp.slug)}
-							<li>
-								<b class="t-name">{tp.name}</b>
-								<p>{tp.desc}</p>
-								<span class="t-src"><a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
-							</li>
-						{/each}
-					</ul>
-				{/each}
-			</div>
-		</details>
-
-		<details id="skills">
-			<summary>
-				<h2>{t('skills.heading')} · {skills.length}</h2>
-				{@render toggle()}
-			</summary>
-			<div class="fold">
-				<ul class="table">
-					{#each skills as s (s.name)}
-						<li>
-							<a class="t-name" href={s.source}>{s.name}</a>
-							<p>{s.desc}</p>
-							<a class="t-src" href={s.source}>{t('skills.source')}</a>
-						</li>
-					{/each}
-				</ul>
-			</div>
 		</details>
 	</section>
 
@@ -1074,8 +1125,6 @@
 		color: var(--quiet);
 		font-size: max(13px, calc(0.95 * var(--u)));
 	}
-	/* On a phone the packages are one link to their section; the sheet lists them. */
-	.kit-all,
 	.links .phone {
 		display: none;
 	}
@@ -1387,7 +1436,8 @@
 		letter-spacing: -0.035em;
 	}
 	.case h4 {
-		margin: 1.25rem 0 0.4rem;
+		/* block only: on a phone the case body's children keep their 1rem gutter */
+		margin-block: 1.25rem 0.4rem;
 		font-weight: 700;
 		font-size: 0.875rem;
 	}
@@ -1417,7 +1467,7 @@
 	}
 	.ptable li {
 		display: grid;
-		grid-template-columns: minmax(13rem, 21vw) 4.5rem minmax(0, 1fr) minmax(9rem, 17vw) 7.5rem;
+		grid-template-columns: minmax(13rem, 21vw) 4.5rem minmax(0, 1fr) minmax(9rem, 17vw) max-content;
 		gap: 0.5rem 2rem;
 		align-items: baseline;
 		padding: 0.85rem 1.39vw;
@@ -1444,16 +1494,44 @@
 	.p-ver {
 		font-variant-numeric: tabular-nums;
 	}
+	.p-meta {
+		margin-top: 0.3rem;
+		color: var(--quiet);
+		font-size: 0.875rem;
+	}
+	/* The command and its copy button in one outline, split by a rule. */
 	.p-install {
-		display: inline-block;
+		display: inline-flex;
+		max-width: 100%;
+		min-height: 1.75rem;
 		margin-top: 0.4rem;
-		padding: 0.1rem 0.45rem;
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
-		font: inherit;
 		font-size: 0.875rem;
+	}
+	.p-install code {
+		align-self: center;
+		padding: 0.1rem 0.45rem;
+		font: inherit;
 		user-select: all;
 		overflow-wrap: anywhere;
+	}
+	.p-install button {
+		flex: none;
+		padding: 0 0.6rem;
+		border: 0;
+		border-left: var(--rule) solid var(--ink);
+		background: none;
+		color: inherit;
+		font: inherit;
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.p-install button:hover {
+		background: var(--chip);
+	}
+	.p-install button:focus-visible {
+		outline-offset: -4px;
 	}
 	.p-used {
 		color: var(--quiet);
@@ -1626,6 +1704,53 @@
 	.t-name {
 		font-weight: 800;
 		font-size: 1.125rem;
+	}
+	a.t-name {
+		text-decoration: none;
+	}
+	a.t-name:hover {
+		text-decoration: underline;
+	}
+	.table li:target {
+		background: var(--chip);
+	}
+	.t-note {
+		margin: -0.75rem 0 1.5rem;
+		color: var(--quiet);
+		font-size: 0.875rem;
+	}
+	/* Find: a native search box that narrows the rows, and a chip per group. */
+	.t-find {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.75rem 1.5rem;
+		margin-bottom: 2.5rem;
+	}
+	.t-find label {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		font-weight: 700;
+	}
+	.t-find input {
+		width: 18rem;
+		height: 2.25rem;
+		padding: 0 0.6rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		background: var(--paper);
+		color: var(--ink);
+		font: inherit;
+		font-weight: 500;
+	}
+	/* The browser's clear button is tinted blue; ink, like everything else. */
+	.t-find input::-webkit-search-cancel-button {
+		filter: grayscale(1) brightness(0);
+	}
+	.t-none {
+		padding: 0.75rem 0;
+		border-top: var(--rule) solid var(--ink);
 	}
 	.t-src {
 		display: flex;
@@ -1808,7 +1933,7 @@
 			border-bottom: var(--rule-heavy) solid var(--ink);
 		}
 		.intro h1 {
-			font-size: 2.75rem;
+			font-size: 2.5rem;
 		}
 		.me {
 			width: 6.5rem;
@@ -1827,17 +1952,15 @@
 		.kit {
 			padding-top: 1.25rem;
 		}
-		.kit h2,
-		.kit .point,
-		.kit .chips {
+		/* No pointer to light anything with: the kit is chips under its heading. */
+		.kit .point {
 			display: none;
 		}
-		.kit-all,
+		.kit h2 {
+			margin-bottom: 0.6rem;
+		}
 		.links .phone {
 			display: inline;
-		}
-		.kit-all {
-			font-weight: 700;
 		}
 		.chips {
 			gap: 0.5rem;
@@ -1944,6 +2067,14 @@
 		.t-src {
 			justify-self: start;
 		}
+		.t-find label {
+			flex: 1 1 100%;
+		}
+		.t-find input {
+			flex: 1;
+			width: auto;
+			min-width: 0;
+		}
 		.hire {
 			padding: 1.5rem 1rem 0;
 		}
@@ -2002,14 +2133,22 @@
 	}
 
 
-	/* A finger needs 44px: the links that stand alone as actions grow to it on
+	/* A standalone action is at least 24px tall for a mouse, */
+	.go a,
+	.p-links a,
+	.t-src a,
+	a.t-src {
+		display: inline-flex;
+		align-items: center;
+		min-height: 1.5rem;
+	}
+	/* and a finger needs 44px: the links that stand alone as actions grow to it on
 	   touch screens. Links inside running text stay as they are. */
 	@media (pointer: coarse) {
 		.intro .links {
 			align-items: center;
 		}
 		.intro .links a,
-		.intro .kit-all,
 		.go a,
 		.p-links a,
 		.t-src a,
@@ -2017,6 +2156,9 @@
 		.foot .small a {
 			display: inline-flex;
 			align-items: center;
+			min-height: 2.75rem;
+		}
+		.p-install {
 			min-height: 2.75rem;
 		}
 	}

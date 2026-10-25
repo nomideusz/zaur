@@ -29,7 +29,7 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	[
 		'Business',
 		['odoo', 'erpnext', 'twenty', 'espocrm', 'evo-crm', 'chatwoot', 'zammad', 'invoiceninja', 'lago', 'medusa', 'mautic', 'postiz', 'dittofeed',
-		'formbricks', 'calcom', 'documenso', 'datalens', 'openemr']
+		'formbricks', 'typebot', 'calcom', 'documenso', 'datalens', 'metabase', 'openemr']
 	],
 	[
 		'Work and chat',
@@ -43,7 +43,7 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	['Browsers in the cloud', ['chrome', 'chromium', 'ungoogled-chromium', 'brave', 'firefox', 'librewolf', 'mullvad', 'edge', 'vivaldi', 'opera']],
 	['Desktop apps in the cloud', ['vscodium', 'obsidian', 'libreoffice', 'genoffice', 'thunderbird', 'gimp', 'blender', 'filezilla']],
 	['Linux machines', ['terminal', 'webtop', 'webtop-kde', 'webtop-mate', 'webtop-i3', 'webtop-lxqt', 'webtop-debian', 'webtop-arch', 'webtop-alpine']],
-	['Sites, games and more', ['wordpress', 'cockpit', 'minecraft-crafty', 'mcsmanager', 'lnbits', 'babybuddy']]
+	['Sites, games and more', ['wordpress', 'cockpit', 'directus', 'minecraft-crafty', 'horizon', 'mcsmanager', 'lnbits', 'babybuddy']]
 ];
 const byCategory: Record<string, string> = { 'AI/ML': 'AI and agents', Observability: 'Observability', Automation: 'Developer and automation', Queues: 'Developer and automation' };
 
