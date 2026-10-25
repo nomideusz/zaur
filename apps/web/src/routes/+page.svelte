@@ -567,10 +567,8 @@
 				</li>
 			{/each}
 		</ol>
-		<p>
-			{t('growth.summary', { clicks: num(s.clicks28), position: rank(s.position28), date: day(s.through) })}
-			{t('growth.source')}
-		</p>
+		<!-- the 28-day clicks and position already sit under the title -->
+		<p>{t('growth.source', { date: day(s.through) })}</p>
 	</figure>
 {/snippet}
 
