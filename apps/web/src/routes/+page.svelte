@@ -1294,7 +1294,6 @@
 		display: grid;
 		grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 		border-bottom: var(--rule) solid var(--ink);
-		scroll-margin-top: 4vw;
 	}
 	/* The window runs edge to edge and grows to the case's height, so the site
 	   fills the column instead of floating in it. */
@@ -1422,7 +1421,6 @@
 		gap: 0.5rem 2rem;
 		align-items: baseline;
 		padding: 0.85rem 1.39vw;
-		scroll-margin-top: 4vw;
 	}
 	/* Inter Tight is narrow: the description column would run past 75ch on a laptop. */
 	.ptable li > div {
@@ -1848,10 +1846,6 @@
 		}
 		.case {
 			grid-template-columns: minmax(0, 1fr);
-		}
-		.case,
-		.ptable li {
-			scroll-margin-top: 0;
 		}
 		/* Twelve weeks on a phone: the bars stay, the latest number and the
 		   month starts label them. */

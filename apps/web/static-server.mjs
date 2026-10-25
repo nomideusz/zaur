@@ -1,6 +1,6 @@
 // Serves the built `dist/` directory for production hosts (CapRover, etc.).
-// Single-page app routing: any path that doesn't resolve to a real file
-// falls back to index.html. Cache headers keep hashed assets forever
+// Every route is prerendered, so a path that doesn't resolve to a file gets the
+// site's 404 page with a 404 status. Cache headers keep hashed assets forever
 // and revalidate everything else, so deploys take effect immediately.
 
 import { createServer } from "node:http";
@@ -32,7 +32,12 @@ const TYPES = {
 };
 
 function safeJoin(root, pathname) {
-  const decoded = decodeURIComponent(pathname);
+  let decoded;
+  try {
+    decoded = decodeURIComponent(pathname);
+  } catch {
+    return null;
+  }
   const target = resolve(join(root, normalize(decoded)));
   if (!target.startsWith(root)) return null;
   return target;
@@ -81,9 +86,10 @@ const server = createServer(async (req, res) => {
     }
     // Prerendered pages without a trailing slash are files: /pl is dist/pl.html.
     let resolved = (await tryFile(target)) ?? (await tryFile(`${target}.html`));
+    let status = 200;
     if (!resolved) {
-      // SPA fallback — let the client handle unknown routes.
-      resolved = await tryFile(join(ROOT, "index.html"));
+      status = 404;
+      resolved = await tryFile(join(ROOT, "404.html"));
     }
     if (!resolved) {
       res.writeHead(404);
@@ -98,7 +104,7 @@ const server = createServer(async (req, res) => {
       ? "public, max-age=31536000, immutable"
       : "no-cache";
     const body = await readFile(resolved);
-    res.writeHead(200, { "content-type": type, "cache-control": cache });
+    res.writeHead(status, { "content-type": type, "cache-control": cache });
     res.end(body);
   } catch (err) {
     console.error("[static] handler error:", err);
