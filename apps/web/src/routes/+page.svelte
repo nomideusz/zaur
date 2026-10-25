@@ -362,16 +362,28 @@
 		track();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') flipShapes();
-		// A link to a fold (the Templates tab, a shared #websites URL) opens it.
-		const unfold = () => {
-			const el = location.hash && document.getElementById(location.hash.slice(1));
-			if (el instanceof HTMLDetailsElement) {
+		// A link to a fold (the Templates tab, a shared #websites URL) opens it. The
+		// page is too short to scroll to the fold until its reveal has grown it (no
+		// event or animation reports the reveal), so the scroll is held while the
+		// fold resizes, for a moment longer than the reveal lasts.
+		const unfold = (id = location.hash.slice(1)) => {
+			const el = id && document.getElementById(id);
+			if (el instanceof HTMLDetailsElement && !el.open) {
 				el.open = true;
-				el.scrollIntoView();
+				const hold = new ResizeObserver(() => el.scrollIntoView());
+				hold.observe(el);
+				setTimeout(() => hold.disconnect(), 400);
 			}
 		};
+		// A click on the link of a fold closed since the hash was set changes no hash.
+		const onclick = (e: MouseEvent) => {
+			const id = (e.target as Element).closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
+			if (id) unfold(id);
+		};
+		const onhash = () => unfold();
 		unfold();
-		addEventListener('hashchange', unfold);
+		addEventListener('hashchange', onhash);
+		addEventListener('click', onclick);
 		fetch('/api/traffic')
 			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
 			.then((t) => (traffic = t))
@@ -382,7 +394,10 @@
 				.then((j) => (versions[p.id] = j.version))
 				.catch(() => (registryDown = true));
 		}
-		return () => removeEventListener('hashchange', unfold);
+		return () => {
+			removeEventListener('hashchange', onhash);
+			removeEventListener('click', onclick);
+		};
 	});
 </script>
 
@@ -932,11 +947,14 @@
 	}
 
 	/* The rows share the screen under the bar, so the sheet fills the first view
-	   whatever its shape (up to 1.5 times the comp's 7.5vw rows, past which a tall
-	   window would only get empty bands). --u is 1vw until a row is shorter than
-	   the comp's; then the names and the intro shrink with it to fit the screen. */
+	   whatever its shape. --u is 1vw until a row is shorter than the comp's 7.5vw;
+	   then the names and the intro shrink with it to fit the screen. Rows are at
+	   least --row and grow to fill the column, so a tall window gets taller bands
+	   (names stay on their rules) and a short one, where the intro sets the
+	   height, gets no orange gap under the last row. */
 	.poster {
-		--row: clamp(5vw, (100svh - 3.66vw - var(--rule-heavy)) / var(--rows), 11.25vw);
+		--bar: 3.66vw;
+		--row: max(5vw, (100svh - var(--bar) - var(--rule-heavy)) / var(--rows));
 		--u: min(1vw, var(--row) / 7.5);
 		display: grid;
 		grid-template-columns: 63.42vw 1fr;
@@ -945,17 +963,27 @@
 
 	/* The programme: product names as the poster. */
 	.programme {
+		display: flex;
 		background: var(--orange);
 		border-right: var(--rule-heavy) solid var(--ink);
+	}
+	.programme ul {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+	}
+	.programme li {
+		flex: 1 0 var(--row);
+		display: flex;
 	}
 	.programme li + li .row {
 		border-top: var(--rule) solid var(--orange-rule);
 	}
 	.row {
+		flex: 1;
 		display: flex;
 		align-items: flex-end;
 		justify-content: space-between;
-		height: var(--row);
 		padding: 0 1.64vw 0.35vw 1.39vw;
 		text-decoration: none;
 	}
@@ -1750,15 +1778,20 @@
 			border-right: 0;
 		}
 		.poster {
+			--bar: 2.75rem;
 			--u: 1vw;
 			grid-template-columns: 1fr;
+			grid-template-rows: auto 1fr;
+			min-height: calc(100svh - var(--bar));
 		}
 		.programme {
 			border-right: 0;
 			border-bottom: var(--rule-heavy) solid var(--ink);
 		}
+		.programme li {
+			flex-basis: 13vw;
+		}
 		.row {
-			height: 13vw;
 			padding: 0 1rem 0.2rem;
 		}
 		.name {
@@ -1929,11 +1962,13 @@
 	   steps up to the row's top right and the name takes the full width under it,
 	   still sitting on the rule. */
 	@media (max-width: 600px) {
+		.programme li {
+			flex-basis: max(3.75rem, 16vw);
+		}
 		.row {
 			display: grid;
 			grid-template-columns: minmax(0, 1fr);
 			grid-template-rows: 1fr auto;
-			height: max(3.75rem, 16vw);
 			padding: 0.45rem 1rem 0.2rem;
 		}
 		.ver {
