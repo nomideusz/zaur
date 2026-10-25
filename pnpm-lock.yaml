@@ -204,8 +204,8 @@ importers:
   apps/web:
     dependencies:
       '@nomideusz/svelte-calendar':
-        specifier: ^1.5.0
-        version: 1.5.0(svelte@5.57.2)
+        specifier: ^1.6.0
+        version: 1.6.0(svelte@5.57.2)
       '@nomideusz/svelte-geometrize':
         specifier: ^0.9.3
         version: 0.9.3(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
@@ -1220,6 +1220,11 @@ packages:
 
   '@nomideusz/svelte-calendar@1.5.0':
     resolution: {integrity: sha512-4hNGXjlk4kyK24hPRvF1BnFCET3VJxU5PpxfS8RKbkRKD6vXIu9wHfaQfJsG81DwPlvJYxwCRN9jgOiQg2plNQ==}
+    peerDependencies:
+      svelte: ^5.29.0
+
+  '@nomideusz/svelte-calendar@1.6.0':
+    resolution: {integrity: sha512-R58gMw0lHS1iIEXWhFD276GMflSIB8uIAFcFFJKxb5Uktd89AorrKPdHwhgb+7iv8TNuqZ8YmpRB1WZ63ATgXQ==}
     peerDependencies:
       svelte: ^5.29.0
 
@@ -5142,6 +5147,13 @@ snapshots:
   '@noble/hashes@1.8.0': {}
 
   '@nomideusz/svelte-calendar@1.5.0(svelte@5.57.2)':
+    dependencies:
+      '@chenglou/pretext': 0.0.9
+      date-fns: 4.4.0
+      date-fns-tz: 3.2.0(date-fns@4.4.0)
+      svelte: 5.57.2
+
+  '@nomideusz/svelte-calendar@1.6.0(svelte@5.57.2)':
     dependencies:
       '@chenglou/pretext': 0.0.9
       date-fns: 4.4.0

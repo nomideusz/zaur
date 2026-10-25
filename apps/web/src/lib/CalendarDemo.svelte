@@ -54,7 +54,7 @@
 </script>
 
 <div class="cal" bind:this={box}>
-	{#if events}<day-calendar {events} {locale} view="week-planner" height="600" readonly="false"></day-calendar>{/if}
+	{#if events}<day-calendar {events} {locale} view="week-planner" height="600" readonly="false" mincolumnwidth="100"></day-calendar>{/if}
 </div>
 
 <style>
