@@ -10,6 +10,7 @@
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import CalendarDemo from '#lib/CalendarDemo.svelte';
+	import { booking, canRefund, discountFrom, email, perPerson, policies, quote, rebook, sendRefund, thursday } from '#lib/booking.svelte';
 	import { track } from '#lib/visit';
 	import { i18n, t, list, pairs } from '#lib/i18n';
 	import { routing, languages, short } from '#lib/i18n-routing';
@@ -414,7 +415,16 @@
 	const placeholder = media.derived as GeometrizePlaceholder;
 	const kb = new Intl.NumberFormat(intl, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 1 });
 
+	// svelte-scheduler, -payments and -notify on one sample booking (lib/booking).
+	const pln = new Intl.NumberFormat(intl, { style: 'currency', currency: 'PLN' });
+	const classAt = new Intl.DateTimeFormat(intl, { weekday: 'long', hour: '2-digit', minute: '2-digit' }).format(thursday);
+	const bk = $derived(quote());
+	// The email dates the class's next Thursday, so it renders in the browser only.
+	let inBrowser = $state(false);
+	const mail = $derived(inBrowser ? email(locale, `${site}#pkg-svelte-scheduler`) : null);
+
 	onMount(() => {
+		inBrowser = true;
 		track();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') flipShapes();
@@ -836,6 +846,55 @@
 								<li><code>derived</code><span>{t('packages.media.shapes', { n: shapeCount(placeholder) })}</span><span></span><span>{kb.format(JSON.stringify(media.derived).length / 1000)}</span></li>
 							</ul>
 							<p class="p-try">{t('packages.media.hint')}</p>
+						{:else if p.id === 'svelte-scheduler'}
+							<div class="p-stack">
+								<p class="p-book">{t('packages.booking.class', { when: classAt, price: pln.format(perPerson) })}</p>
+								<div class="p-seg" role="group" aria-label={t('packages.booking.guests')}>
+									<span aria-hidden="true">{t('packages.booking.guests')}</span>
+									{#each [1, 2, 3, 4, 5, 6] as n (n)}<button type="button" aria-pressed={booking.people === n} onclick={() => rebook(n)}>{n}</button>{/each}
+								</div>
+								<ul class="p-files p-sum">
+									<li><span>{t('packages.booking.base', { n: booking.people, price: pln.format(perPerson) })}</span><span>{pln.format(bk.price.basePrice)}</span></li>
+									{#if bk.price.groupDiscount}<li><span>{t('packages.booking.discount', { n: discountFrom })}</span><span>−{pln.format(bk.price.groupDiscount)}</span></li>{/if}
+									<li><span>{t('packages.booking.fee')}</span><span>{pln.format(bk.price.processingFee)}</span></li>
+									<li><b>{t('packages.booking.total')}</b><b>{pln.format(bk.price.totalAmount)}</b></li>
+								</ul>
+								<div class="p-seg" role="group" aria-label={t('packages.booking.policy')}>
+									<span aria-hidden="true">{t('packages.booking.policy')}</span>
+									{#each policies as x (x)}<button type="button" aria-pressed={booking.policy === x} onclick={() => (booking.policy = x)}>{t(`packages.booking.${x}`)}</button>{/each}
+								</div>
+								<label class="p-n">
+									<input type="range" min="0" max="192" bind:value={booking.hours} />
+									<span>{t('packages.booking.cancel', { h: booking.hours })}</span>
+								</label>
+								<p class="p-meta" aria-live="polite">{t('packages.booking.refund', { pct: bk.refund.refundPercentage, amount: pln.format(bk.refund.refundAmount) })}</p>
+							</div>
+							<p class="p-try">{t('packages.booking.hint')}</p>
+						{:else if p.id === 'svelte-payments'}
+							<div class="p-stack">
+								<ul class="p-files p-ledger">
+									<li><code>{bk.charge}</code><span>charge</span><span>{bk.totalMinor}</span></li>
+									{#each booking.refunds as r (r.key)}<li><code>{r.key}</code><span>refund</span><span>{r.amount}</span></li>{/each}
+								</ul>
+								<p class="p-meta">derivePaymentStatus → <code>{bk.status}</code></p>
+								<button type="button" class="p-keys" disabled={!canRefund(bk)} onclick={sendRefund}>{t('packages.booking.send')} {pln.format(bk.refund.refundAmount)}</button>
+								{#if booking.log.length}
+									<ul class="p-log" aria-live="polite">
+										{#each booking.log as l, i (i)}<li class:dup={l.status === 'duplicate'}>{t(`packages.booking.${l.status}`, { key: l.key })}</li>{/each}
+									</ul>
+								{/if}
+							</div>
+							<p class="p-try">{t('packages.booking.ledgerHint')}</p>
+						{:else if p.id === 'svelte-notify'}
+							<div class="p-stack">
+								<div class="p-seg" role="group" aria-label={t('packages.booking.mail')}>
+									<span aria-hidden="true">{t('packages.booking.mail')}</span>
+									{#each ['confirmation', 'cancellation'] as const as m (m)}<button type="button" aria-pressed={booking.mail === m} onclick={() => (booking.mail = m)}>{t(`packages.booking.${m}`)}</button>{/each}
+								</div>
+								<!-- no scripts and no same origin: the email is markup and nothing else -->
+								<div class="p-mail">{#if mail}<iframe title={mail.subject} srcdoc={mail.html} sandbox=""></iframe>{/if}</div>
+							</div>
+							<p class="p-try">{t('packages.booking.mailHint')}</p>
 						{:else if p.id === 'zaur-world'}
 							<div class="p-sample"><Radio href={p.demo!} /></div>
 							<p class="p-try">{t('packages.world.hint')}</p>
@@ -1772,6 +1831,61 @@
 	}
 	.p-files span:last-child {
 		text-align: right;
+	}
+	/* The booking rows: controls stacked, one booking through three packages. */
+	.p-stack {
+		display: grid;
+		justify-items: start;
+		gap: 0.6rem;
+		max-width: 32rem;
+		margin-top: 0.75rem;
+	}
+	.p-stack > .p-files,
+	.p-stack > .p-meta {
+		width: 100%;
+		margin: 0;
+	}
+	.p-book {
+		font-weight: 700;
+	}
+	.p-sum li {
+		grid-template-columns: minmax(0, 1fr) auto;
+	}
+	.p-ledger li {
+		grid-template-columns: minmax(0, 1fr) 3.5rem 4.5rem;
+	}
+	.p-sum li > :last-child {
+		text-align: right;
+	}
+	.p-keys:disabled {
+		border-color: color-mix(in srgb, var(--ink) 35%, transparent);
+		background: none;
+		color: var(--quiet);
+		cursor: default;
+	}
+	.p-log {
+		font-size: 0.875rem;
+		overflow-wrap: anywhere;
+	}
+	/* A replay the ledger stopped, the package's whole point: marked in orange. */
+	.p-log li {
+		padding-left: 0.5rem;
+		border-left: 4px solid transparent;
+	}
+	.p-log .dup {
+		border-left-color: var(--orange);
+		font-weight: 700;
+	}
+	.p-mail {
+		width: 100%;
+		border: var(--rule) solid var(--ink);
+		background: var(--paper);
+	}
+	.p-mail iframe {
+		display: block;
+		width: 100%;
+		height: 34rem;
+		border: 0;
 	}
 	.p-links {
 		display: flex;

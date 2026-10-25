@@ -212,9 +212,18 @@ importers:
       '@nomideusz/svelte-i18n':
         specifier: ^1.0.0
         version: 1.0.0(svelte@5.57.2)
+      '@nomideusz/svelte-notify':
+        specifier: ^1.1.0
+        version: 1.1.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
+      '@nomideusz/svelte-payments':
+        specifier: ^0.5.0
+        version: 0.5.0(svelte@5.57.2)
       '@nomideusz/svelte-qr':
         specifier: ^1.0.0
         version: 1.0.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
+      '@nomideusz/svelte-scheduler':
+        specifier: ^0.4.3
+        version: 0.4.3(@nomideusz/svelte-calendar@1.6.0(svelte@5.57.2))(svelte@5.57.2)
       '@nomideusz/zaur-world':
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.3)
@@ -1258,6 +1267,23 @@ packages:
       '@types/node':
         optional: true
 
+  '@nomideusz/svelte-notify@1.1.0':
+    resolution: {integrity: sha512-XQLqSPRPhwpRm0oSb85k99nPP2tPNBDOfGiFFOF6MvXMi493SCkQ8PBunbjReq1NAsvBFUFbQ0Z/jsOLUeex2A==}
+    peerDependencies:
+      '@types/nodemailer': '>=6'
+      nodemailer: ^9.0.0
+      svelte: ^5.0.0
+    peerDependenciesMeta:
+      '@types/nodemailer':
+        optional: true
+      nodemailer:
+        optional: true
+
+  '@nomideusz/svelte-payments@0.5.0':
+    resolution: {integrity: sha512-Ma4AiM+V0B3TG3WZIWdithiQjg3w/KFvk/jnO6UOJoPTKDzYn4QA3kg6OKJkxj78UQ0LSjQ5zoI8wMJlN7z/MA==}
+    peerDependencies:
+      svelte: ^5.0.0
+
   '@nomideusz/svelte-qr@1.0.0':
     resolution: {integrity: sha512-Bvq4GIiFdLxL24kK84CZZNUNhFKnUlsFD087jfeJHB025GR85FfpH2Eymda1eh2cUliClSqan3yDmgjSgtQZ2Q==}
     peerDependencies:
@@ -1269,6 +1295,12 @@ packages:
         optional: true
       sharp:
         optional: true
+
+  '@nomideusz/svelte-scheduler@0.4.3':
+    resolution: {integrity: sha512-OlWnPOzNvUieFsIYvRWug4E8eb9O0ySX2yIFCh+tAGoCJ3EgwrujyhPI7uGnJDnehPNLfVvVNurbqo5TyKa0Nw==}
+    peerDependencies:
+      '@nomideusz/svelte-calendar': '>=0.15.1 <2.0.0'
+      svelte: ^5.0.0
 
   '@nomideusz/zaur-world@1.8.0':
     resolution: {integrity: sha512-nqFKD1x3NYd0MUJkjoFC7R+kBSalUGAe8CxCwDP5Sat5EUe3AiR1kZnv7jQwlgR5mn9hK99rCCWmMWTyYNopCg==}
@@ -5183,12 +5215,30 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.9.1
 
+  '@nomideusz/svelte-notify@1.1.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)':
+    dependencies:
+      '@nomideusz/svelte-i18n': 1.0.0(svelte@5.57.2)
+      '@nomideusz/svelte-qr': 1.0.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
+      svelte: 5.57.2
+    transitivePeerDependencies:
+      - '@types/node'
+      - sharp
+
+  '@nomideusz/svelte-payments@0.5.0(svelte@5.57.2)':
+    dependencies:
+      svelte: 5.57.2
+
   '@nomideusz/svelte-qr@1.0.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)':
     dependencies:
       svelte: 5.57.2
     optionalDependencies:
       '@types/node': 25.9.1
       sharp: 0.35.5(@types/node@25.9.1)
+
+  '@nomideusz/svelte-scheduler@0.4.3(@nomideusz/svelte-calendar@1.6.0(svelte@5.57.2))(svelte@5.57.2)':
+    dependencies:
+      '@nomideusz/svelte-calendar': 1.6.0(svelte@5.57.2)
+      svelte: 5.57.2
 
   '@nomideusz/zaur-world@1.8.0(react@19.2.3)':
     optionalDependencies:

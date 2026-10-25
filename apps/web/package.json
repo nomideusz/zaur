@@ -32,7 +32,10 @@
 		"@nomideusz/svelte-calendar": "^1.6.0",
 		"@nomideusz/svelte-geometrize": "^0.9.3",
 		"@nomideusz/svelte-i18n": "^1.0.0",
+		"@nomideusz/svelte-notify": "^1.1.0",
+		"@nomideusz/svelte-payments": "^0.5.0",
 		"@nomideusz/svelte-qr": "^1.0.0",
+		"@nomideusz/svelte-scheduler": "^0.4.3",
 		"@nomideusz/zaur-world": "^1.8.0"
 	},
 	"imports": {
