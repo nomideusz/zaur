@@ -213,8 +213,8 @@ importers:
         specifier: ^1.0.0
         version: 1.0.0(svelte@5.57.2)
       '@nomideusz/svelte-notify':
-        specifier: ^1.1.0
-        version: 1.1.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
+        specifier: ^1.1.1
+        version: 1.1.1(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
       '@nomideusz/svelte-payments':
         specifier: ^0.5.0
         version: 0.5.0(svelte@5.57.2)
@@ -1270,8 +1270,8 @@ packages:
       '@types/node':
         optional: true
 
-  '@nomideusz/svelte-notify@1.1.0':
-    resolution: {integrity: sha512-XQLqSPRPhwpRm0oSb85k99nPP2tPNBDOfGiFFOF6MvXMi493SCkQ8PBunbjReq1NAsvBFUFbQ0Z/jsOLUeex2A==}
+  '@nomideusz/svelte-notify@1.1.1':
+    resolution: {integrity: sha512-3CCi1gcatPnpIgd/n8TpmKxJEN9gaAat0oyqYN34URE/ip0K9OV7/S38PDR4+4+ums3/+pziEJb2c9XuLezTjA==}
     peerDependencies:
       '@types/nodemailer': '>=6'
       nodemailer: ^9.0.0
@@ -5223,7 +5223,7 @@ snapshots:
     optionalDependencies:
       '@types/node': 25.9.1
 
-  '@nomideusz/svelte-notify@1.1.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)':
+  '@nomideusz/svelte-notify@1.1.1(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)':
     dependencies:
       '@nomideusz/svelte-i18n': 1.0.0(svelte@5.57.2)
       '@nomideusz/svelte-qr': 1.0.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
