@@ -189,9 +189,7 @@ export function visits(text) {
       continue;
     }
     if (h.k === "owner") claim(h);
-    // A desktop window exactly the size of its screen has no toolbar or
-    // taskbar: a headless browser in a data centre (Azure's Boydton, Hetzner).
-    else if (h.k === "view" && !(h.device === "desktop" && h.screen && h.screen === `${h.w}x${h.h}`)) byId.set(h.id, h);
+    else if (h.k === "view") byId.set(h.id, h);
     else if (byId.has(h.id)) Object.assign(byId.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks, seen: h.seen });
   }
   const all = [...byId.values()];
@@ -202,6 +200,10 @@ export function visits(text) {
     // network claims it.
     v.mine = v.me === 1 || home(v) || (!v.tag && claimed(v));
     v.src = source(v);
+    // A desktop window exactly the size of its screen has no toolbar or
+    // taskbar: an AI agent's or a cloud browser. Still a visit — on
+    // 2026-10-27 one read the poster from a CV link and opened three products.
+    v.agent = v.device === "desktop" && !!v.screen && v.screen === `${v.w}x${v.h}`;
   }
   return all.reverse();
 }
@@ -375,7 +377,7 @@ ${barList(`Screens${r.dark == null ? "" : ` · ${r.dark}% in dark mode`}`, r.scr
     r.recent
       .map(
         (v) =>
-          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.page && v.page !== "/" ? ` <small>${esc(v.page)}</small>` : ""}${v.city ? `<br><small>${esc([v.region, v.tz].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting || v.vpn || v.mobile ? `<br><small>${esc([v.hosting ? "data centre" : v.orgType, v.vpn && "VPN or proxy", v.mobile && "mobile network"].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(Object.entries(v.seen ?? {}).map(([k, s]) => `${k} ${secs(s)}`).join(" · "))}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
+          `<tr class="${[v.tag && "tag", r.who === "all" && v.mine && "mine"].filter(Boolean).join(" ")}"><td>${when(v.t)}</td><td>${v.tag ? `<a href="${link({ tag: v.tag })}">${esc(v.tag)}</a>` : esc(v.ref || (v.src === "social" ? v.browser : SOURCES[v.src]))}${v.hash ? ` <small>${esc(v.hash)}</small>` : ""}</td><td>${esc(place(v))} · ${esc(v.lang)}${v.page && v.page !== "/" ? ` <small>${esc(v.page)}</small>` : ""}${v.city ? `<br><small>${esc([v.region, v.tz].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${v.orgType === "business" ? `<b>${esc(v.org)}</b>` : esc(v.org)}${v.orgType || v.hosting || v.vpn || v.mobile ? `<br><small>${esc([v.hosting ? "data centre" : v.orgType, v.vpn && "VPN or proxy", v.mobile && "mobile network"].filter(Boolean).join(" · "))}</small>` : ""}</td><td>${device(v)} <small>${v.w ?? ""}${v.h ? `×${v.h}` : ""}${v.screen ? ` of ${v.screen.replace("x", "×")} @${v.dpr}` : ""}${v.os ? `<br>${esc(v.os)} · ${esc(v.browser)}${v.dark ? " · dark" : ""}` : ""}${v.agent ? "<br><b>AI agent or cloud browser</b>" : ""}</small></td><td class="n">${secs(v.secs)}</td><td class="n">${v.depth == null ? "—" : v.depth + "%"}</td><td>${esc(Object.entries(v.seen ?? {}).map(([k, s]) => `${k} ${secs(s)}`).join(" · "))}</td><td>${esc(v.clicks?.join(" · "))}</td></tr>`,
       )
       .join("") || '<tr><td colspan="9" class="hint">No visits in this period.</td></tr>'
   }</table></div>
