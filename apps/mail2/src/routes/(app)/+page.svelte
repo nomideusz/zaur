@@ -582,10 +582,12 @@
 		if (to !== null) {
 			// mailto: may name several, comma-separated.
 			const recipients = parseRecipients(to, 'Contact');
+			const subject = link.searchParams.get('subject') ?? '';
 			compose.newDraft({
 				...panelPosition(),
 				to: recipients,
-				focusTarget: recipients.length ? 'subject' : 'to'
+				subject,
+				focusTarget: !recipients.length ? 'to' : subject ? 'body' : 'subject'
 			});
 		} else if (invite && isMeetGroupId(invite)) {
 			compose.newDraft({
@@ -595,7 +597,7 @@
 				focusTarget: 'to'
 			});
 		}
-		patchQuery({ to: null, invite: null });
+		patchQuery({ to: null, subject: null, invite: null });
 	});
 
 	async function openReply(

@@ -7,7 +7,8 @@
 	import { isHolidays } from '#lib/calendar/holidays';
 	import { isFeed } from '#lib/calendar/feeds';
 	import MeetIcon from '../meet/MeetIcon.svelte';
-	import { eventParticipants, type EventParticipant } from '../../../routes/calendar.remote';
+	import { eventParticipants, replyToEvent, type EventParticipant } from '../../../routes/calendar.remote';
+	import { messageOf } from '#lib/errors';
 
 	/**
 	 * An event as it is, before anyone edits it — what a click on the grid or
@@ -63,6 +64,30 @@
 		'needs-action': 'No reply yet'
 	};
 	const label = 'z-caption mb-1';
+
+	/** You, on the guest list: the one answer this panel can change. */
+	const mine = $derived(guests?.current?.find((guest) => guest.me && !guest.organizer) ?? null);
+	const others = $derived(guests?.current?.filter((guest) => !guest.me && guest.email) ?? []);
+	let answering = $state<EventParticipant['status'] | null>(null);
+	let answerError = $state<string | null>(null);
+	async function answer(status: 'accepted' | 'tentative' | 'declined') {
+		if (!guests || mine?.status === status) return;
+		answering = status;
+		answerError = null;
+		try {
+			await replyToEvent({ id: event.baseEventId ?? event.id, accountId: event.accountId, status });
+			await guests.refresh();
+		} catch (cause) {
+			answerError = messageOf(cause, 'Your answer could not be sent.');
+		} finally {
+			answering = null;
+		}
+	}
+	const ANSWERS = [
+		['accepted', 'Going'],
+		['tentative', 'Maybe'],
+		['declined', 'Not going']
+	] as const;
 </script>
 
 <div class="flex h-full flex-col">
@@ -87,6 +112,27 @@
 				<p class="mt-1 text-[13.5px] text-[var(--z-body)]">{when}</p>
 				{#if repeats}<p class="mt-0.5 text-[12.5px] text-[var(--z-soft)]">{repeats}</p>{/if}
 			</div>
+
+			{#if mine}
+				<!-- An invitation is answered where it is read, not in a mail client's buttons. -->
+				<div>
+					<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+						<span class="text-[13.5px] font-medium text-[var(--z-strong)]">{mine.status === 'needs-action' ? 'Are you going?' : 'Your answer'}</span>
+						<div class="z-group" role="group" aria-label="Your answer">
+							{#each ANSWERS as [status, text] (status)}
+								<button type="button" class="z-segment" aria-pressed={mine.status === status} disabled={answering !== null} onclick={() => answer(status)}>
+									{answering === status ? 'Sending…' : text}
+								</button>
+							{/each}
+						</div>
+					</div>
+					{#if answerError}
+						<p class="mt-1.5 text-[12.5px] text-[var(--z-ch-discard-ink)]" role="alert">{answerError}</p>
+					{:else}
+						<p class="mt-1.5 text-[12px] text-[var(--z-soft)]">The organiser is told by mail{isRecurringInstance(event) ? ', for every occurrence' : ''}.</p>
+					{/if}
+				</div>
+			{/if}
 
 			{#if meeting}
 				<div class="flex items-center gap-2.5 rounded-[10px] border border-[var(--z-accent-stroke)] bg-[var(--z-accent-tint)] p-3 text-[var(--z-accent-ink)]">
@@ -125,7 +171,17 @@
 
 			{#if guests?.current?.length}
 				<div>
-					<h3 class={label}>Guests</h3>
+					<div class="flex items-baseline justify-between gap-3">
+						<h3 class={label}>Guests</h3>
+						{#if others.length}
+							<a
+								class="text-[12.5px] font-medium text-[var(--z-accent)] hover:underline"
+								href="/?to={encodeURIComponent(others.map((guest) => guest.email).join(','))}&subject={encodeURIComponent(event.title)}"
+							>
+								Email guests
+							</a>
+						{/if}
+					</div>
 					<ul class="flex flex-col gap-1.5" role="list">
 						<!-- By position: an invitation can list one address twice, and a key must not. -->
 						{#each guests.current as guest, index (index)}

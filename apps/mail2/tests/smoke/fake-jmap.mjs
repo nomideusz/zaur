@@ -880,6 +880,14 @@ function handle([name, args, callId]) {
 				const ev = events.get(id);
 				for (const [k, v] of Object.entries(patch)) {
 					if (k === 'calendarIds') { ev.calendarIds = Object.fromEntries(Object.entries(v).filter(([, on]) => on)); continue; }
+					if (k.includes('/')) {
+						// A patch path ("participants/p2/participationStatus"), as an RSVP sends.
+						const path = k.split('/');
+						const last = path.pop();
+						const parent = path.reduce((at, part) => (at[part] ??= {}), ev);
+						if (v === null) delete parent[last]; else parent[last] = v;
+						continue;
+					}
 					if (v === null) delete ev[k]; else ev[k] = v;
 				}
 				updated[id] = null;

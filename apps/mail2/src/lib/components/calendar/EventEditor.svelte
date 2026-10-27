@@ -42,6 +42,7 @@
 		saving = false,
 		error = null,
 		meetEnabled = false,
+		preset = null,
 		onSave,
 		onDelete,
 		onCancel
@@ -56,6 +57,8 @@
 		error?: string | null;
 		/** The server can host calls; without it the Video call switch is not offered. */
 		meetEnabled?: boolean;
+		/** What a quick-add line already said, when "More options" brings it here. */
+		preset?: { title: string; location: string; allDay: boolean; recurrence: EventRecurrence | null; calendar: Calendar } | null;
 		onSave: (draft: EventDraft) => void;
 		onDelete?: () => void;
 		onCancel: () => void;
@@ -120,17 +123,19 @@
 				recurrence = recurrenceFrom(source.recurrenceRule, source.start);
 			} else {
 				const times = until ? { start: day, end: until } : defaultEventTimes(day);
-				title = '';
-				const fallback = writable.find((calendar) => calendar.isDefault) ?? writable[0];
+				title = preset?.title ?? '';
+				const fallback = preset?.calendar ?? writable.find((calendar) => calendar.isDefault) ?? writable[0];
 				calendarRef = fallback ? calendarKey(fallback) : '';
-				allDay = false;
-				startValue = toDatetimeLocalValue(times.start);
-				endValue = toDatetimeLocalValue(times.end);
-				location = '';
+				allDay = preset?.allDay ?? false;
+				// All-day ends are exclusive midnight here too; the field shows the last day included.
+				startValue = allDay ? toDateInputValue(times.start) : toDatetimeLocalValue(times.start);
+				endValue = allDay ? toDateInputValue(new Date(times.end.getTime() - 1)) : toDatetimeLocalValue(times.end);
+				location = preset?.location ?? '';
 				description = '';
-				recurrence = null;
+				recurrence = preset?.recurrence ?? null;
 			}
-			opened = form();
+			// A line typed into quick add is something to lose.
+			opened = preset && !source ? '' : form();
 		});
 	});
 

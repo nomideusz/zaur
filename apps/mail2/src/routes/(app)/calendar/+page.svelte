@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ask } from '#lib/confirm.svelte.ts';
-	import { untrack } from 'svelte';
+	import { tick, untrack, type ComponentProps } from 'svelte';
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
 	import { goto } from '$app/navigation';
@@ -51,6 +51,10 @@
 	import FeedSettings from '#lib/components/calendar/FeedSettings.svelte';
 	import { feedCalendar, feedEvents, isFeed } from '#lib/calendar/feeds';
 	import { calendarFeed } from '../../feeds.remote';
+	import CalendarStatusLine from '#lib/components/calendar/CalendarStatusLine.svelte';
+	import QuickAddLine, { type Reading } from '#lib/components/calendar/QuickAdd.svelte';
+	import EventSearch from '#lib/components/calendar/EventSearch.svelte';
+	import { dayGaps, dayVoice, span as spanOf } from '#lib/calendar/day-shape';
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
@@ -100,6 +104,8 @@
 	});
 
 	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC';
+	/** The grid's clock and dates in the person's own language, not the package's en-US "10:00a". */
+	const locale = typeof navigator === 'undefined' ? undefined : navigator.language;
 	/** The days the header names: the day, or the week the scroll is on. */
 	const span = $derived(view === 'day' ? [anchor] : weekDays(anchor, 'monday'));
 
@@ -220,6 +226,8 @@
 	let gridRange: { after: string; before: string; timeZone: string } | null = null;
 	const adapter = $derived.by(() => {
 		const by = calendarByKey;
+		const shown = ghost;
+		const daily = view === 'day';
 		dataVersion;
 		return {
 			async fetchEvents(range: { start: Date; end: Date }) {
@@ -248,14 +256,17 @@
 					list = before ?? [];
 				}
 				const [holidayList, feedList] = await Promise.all([holidaysIn(range.start, range.end), feedsIn(range.start, range.end)]);
-				list = [...list, ...holidayList, ...feedList];
-				return list
-					.filter((event) =>
-						event.calendarIds.some(
-							(id) => by.get(calendarKey({ id, accountId: event.accountId }))?.isVisible !== false
-						)
-					)
-					.map((event) => toTimelineEvent(event, colorOf(event)));
+				list = [...list, ...holidayList, ...feedList].filter((event) =>
+					event.calendarIds.some((id) => by.get(calendarKey({ id, accountId: event.accountId }))?.isVisible !== false)
+				);
+				const rows = list.map((event) => toTimelineEvent(event, colorOf(event)));
+				// The day draws its free time too: the stretches between events, there to be taken.
+				if (daily)
+					for (let day = startOfDay(range.start); day < range.end; day = addDays(day, 1))
+						for (const gap of dayGaps(list, day))
+							rows.push({ id: `gap:${+gap.start}`, title: `${spanOf(gap.minutes)} free`, start: gap.start, end: gap.end, color: 'transparent', data: { readOnly: true, gap: true } });
+				if (shown && shown.end > range.start && shown.start < range.end) rows.push(shown);
+				return rows;
 			}
 		};
 	});
@@ -263,7 +274,7 @@
 	/** Put the server's answer back in front of the grid. */
 	async function reload() {
 		// Settled: a refresh that fails still has to reach the grid, which says so.
-		if (gridRange) await Promise.allSettled([eventsRemote(gridRange).refresh()]);
+		if (gridRange) await Promise.allSettled([eventsRemote(gridRange).refresh(), ahead?.refresh()]);
 		dataVersion++;
 	}
 
@@ -274,7 +285,7 @@
 	 * the editor, and — the grid's calendars are a sidebar only on a wide screen —
 	 * the calendar list and one calendar's settings.
 	 */
-	let mode = $state<'view' | 'event' | 'new' | 'edit' | 'calendars' | 'calendar' | 'import'>('view');
+	let mode = $state<'view' | 'event' | 'new' | 'edit' | 'calendars' | 'calendar' | 'import' | 'search'>('view');
 	let editing = $state<CalendarEvent | null>(null);
 	/** What a new event opens on — a day, or the exact slot that was drawn. */
 	let draftAt = $state(today);
@@ -331,8 +342,9 @@
 		});
 	});
 
-	function startNew(at: Date = anchor, until: Date | null = null) {
+	function startNew(at: Date = anchor, until: Date | null = null, preset: typeof draftPreset = null) {
 		if (!openPanel('new')) return;
+		draftPreset = preset;
 		// No time picked (midnight, which the editor reads as 09:00) and the day is
 		// today: the next full hour, rather than a nine o'clock already gone.
 		const hour = new Date().getHours();
@@ -520,6 +532,7 @@
 		// A select's open list takes its own Escape.
 		if (event.key !== 'Escape' || event.defaultPrevented || event.target instanceof HTMLSelectElement) return;
 		if (event.target !== document.body && !panes?.contains(event.target as Node)) return;
+		if (quick && mode === 'view') return void (event.preventDefault(), closeQuick());
 		if (mode === 'view') return;
 		event.preventDefault();
 		if (!mayLeave()) return;
@@ -541,6 +554,257 @@
 		}
 	}
 
+	/* ── The day's voice ──────────────────────────────────────────────── */
+
+	/** The coming week, for what the status line says: in something, free until what, or done for today. */
+	const ahead = $derived(
+		session && calendarsState?.supported
+			? eventsRemote({ after: formatJmapQueryBound(today), before: formatJmapQueryBound(addDays(today, 8)), timeZone })
+			: undefined
+	);
+	let aheadFeeds = $state<CalendarEvent[]>([]);
+	$effect(() => {
+		prefs.calendarFeeds;
+		void feedsIn(today, addDays(today, 8)).then((list) => (aheadFeeds = list));
+	});
+	let now = $state(new Date());
+	$effect(() => {
+		const timer = setInterval(() => (now = new Date()), 30_000);
+		return () => clearInterval(timer);
+	});
+	const voice = $derived.by(() => {
+		const list = ahead?.current;
+		if (!list) return null;
+		return dayVoice(
+			[...list, ...aheadFeeds].filter((event) => calendarsOf(event).some((calendar) => calendar?.isVisible !== false)),
+			now
+		);
+	});
+	let statusLine = $state<CalendarStatusLine | null>(null);
+
+	/* ── Quick add ───────────────────────────────────────────────────── */
+
+	/** The one-line add is open, on a drawn slot or a free gap, or on nothing yet. */
+	let quick = $state<{ slot: { start: Date; end: Date } | null } | null>(null);
+	/** The event the line would make, drawn on the grid as a ghost while it is typed. */
+	let ghost = $state<TimelineEvent | null>(null);
+	let quickSaving = $state(false);
+	let quickError = $state<string | null>(null);
+	let draftPreset = $state<ComponentProps<typeof EventEditor>['preset']>(null);
+
+	function openQuick(slot: { start: Date; end: Date } | null = null) {
+		if (!calendarsState?.supported || readOnly) return;
+		// The grid it draws on has to be in sight: a phone's panel covers it, and an open form is another way in.
+		if (railOpen && (phone || mode === 'new' || mode === 'edit' || mode === 'event')) {
+			if (!mayLeave()) return;
+			closePanel();
+		}
+		quickError = null;
+		quick = { slot };
+	}
+
+	function closeQuick() {
+		quick = null;
+		quickError = null;
+		if (ghost) {
+			ghost = null;
+			dataVersion++;
+		}
+	}
+
+	function preview(reading: Reading | null) {
+		if (!quick) return;
+		ghost = reading && {
+			id: 'ghost',
+			title: reading.event.title || 'New event',
+			start: reading.event.start,
+			end: reading.event.end,
+			allDay: reading.event.allDay,
+			color: reading.calendar.color ?? 'var(--z-accent)',
+			status: 'tentative',
+			data: { readOnly: true, ghost: true }
+		};
+		// Go to where it lands, then show it there.
+		if (reading) {
+			const day = startOfDay(reading.event.start).getTime();
+			if (day < span[0]!.getTime() || day > span[span.length - 1]!.getTime()) anchor = new Date(day);
+			setTimeout(() => {
+				document.querySelector('.z-cal [data-event-id="ghost"]')?.scrollIntoView({ block: 'nearest', behavior: motion() });
+			}, 250);
+		}
+		dataVersion++;
+	}
+
+	async function addQuick({ event, calendar }: Reading) {
+		quickSaving = true;
+		quickError = null;
+		const title = event.title || 'New event';
+		try {
+			await createEvent({
+				calendarId: calendar.id,
+				accountId: calendar.accountId ?? null,
+				title,
+				start: event.allDay ? `${toDateInputValue(event.start)}T00:00:00` : formatJmapQueryBound(event.start),
+				duration: durationBetween(event.start, event.end, event.allDay),
+				timeZone,
+				allDay: event.allDay,
+				description: '',
+				location: event.location,
+				recurrence: event.recurrence
+			});
+			closeQuick();
+			await reload();
+			flash(`Added “${title}”`);
+		} catch (cause) {
+			quickError = messageOf(cause, 'The event could not be added.');
+		} finally {
+			quickSaving = false;
+		}
+	}
+
+	/** "More options": the line so far, in the whole form. */
+	function moreQuick(reading: Reading | null) {
+		const slot = quick?.slot ?? null;
+		closeQuick();
+		if (!reading) return startNew(slot?.start, slot?.end ?? null);
+		const { event, calendar } = reading;
+		startNew(event.start, event.end, {
+			title: event.title,
+			location: event.location,
+			allDay: event.allDay,
+			recurrence: event.recurrence,
+			calendar
+		});
+	}
+
+	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+	const motion = (): ScrollBehavior => (reduced() ? 'auto' : 'smooth');
+
+	/* ── Out of sight, up and down ──────────────────────────────────── */
+
+	/**
+	 * A day opens an hour before now, so the morning's events are above the
+	 * fold with nothing to say they are there. Counted off the drawn blocks:
+	 * the grid's geometry is the package's, and this is the only honest read.
+	 */
+	let calEl = $state<HTMLElement>();
+	let edges = $state({ above: 0, below: 0, top: 0 });
+	const blocks = (scroller: Element) =>
+		[...scroller.querySelectorAll<HTMLElement>('.tw-ev, .mb-event')].filter(
+			(block) =>
+				!block.matches('[data-event-id^="gap:"], [data-event-id="ghost"]') &&
+				!block.style.getPropertyValue('--ev-color').includes('transparent')
+		);
+	function countEdges() {
+		const scroller = calEl?.querySelector('.tw-scroll, .mb-grid');
+		if (!calEl || !scroller || view !== 'day') return void (edges = { above: 0, below: 0, top: 0 });
+		const box = scroller.getBoundingClientRect();
+		let above = 0;
+		let below = 0;
+		for (const block of blocks(scroller)) {
+			const rect = block.getBoundingClientRect();
+			if (rect.bottom <= box.top + 6) above++;
+			else if (rect.top >= box.bottom - 6) below++;
+		}
+		edges = { above, below, top: box.top - calEl.getBoundingClientRect().top };
+	}
+	function toEdge(up: boolean) {
+		const scroller = calEl?.querySelector('.tw-scroll, .mb-grid');
+		if (!scroller) return;
+		const box = scroller.getBoundingClientRect();
+		const rects = blocks(scroller).map((block) => block.getBoundingClientRect());
+		const target = up
+			? rects.filter((rect) => rect.bottom <= box.top + 6).sort((a, b) => b.top - a.top)[0]
+			: rects.filter((rect) => rect.top >= box.bottom - 6).sort((a, b) => a.top - b.top)[0];
+		if (target) scroller.scrollBy({ top: target.top - box.top - box.height / 3, behavior: motion() });
+	}
+	$effect(() => {
+		const root = calEl;
+		view;
+		if (!root) return;
+		let frame = 0;
+		const schedule = () => {
+			cancelAnimationFrame(frame);
+			frame = requestAnimationFrame(countEdges);
+		};
+		const observer = new MutationObserver(schedule);
+		observer.observe(root, { childList: true, subtree: true });
+		root.addEventListener('scroll', schedule, true);
+		schedule();
+		return () => {
+			cancelAnimationFrame(frame);
+			observer.disconnect();
+			root.removeEventListener('scroll', schedule, true);
+		};
+	});
+
+	/* ── Opening an event: the block becomes the panel ──────────────── */
+
+	let railEl = $state<HTMLElement>();
+	/** A tinted card flies from the block that was clicked to the rail, so the eye follows it there. */
+	async function morph(from: DOMRect | undefined, color: string) {
+		if (!from || phone || reduced()) return;
+		await tick();
+		const to = railEl?.getBoundingClientRect();
+		if (!to || !from.width || !from.height) return;
+		const card = document.createElement('div');
+		Object.assign(card.style, {
+			position: 'fixed',
+			left: `${from.left}px`,
+			top: `${from.top}px`,
+			width: `${from.width}px`,
+			height: `${from.height}px`,
+			transformOrigin: '0 0',
+			background: `color-mix(in srgb, ${color} 22%, var(--z-surface))`,
+			boxShadow: 'var(--z-shadow-panel)',
+			pointerEvents: 'none',
+			zIndex: '50'
+		});
+		document.body.append(card);
+		const animation = card.animate(
+			[
+				{ transform: 'none', opacity: 0.95 },
+				{
+					transform: `translate(${to.left - from.left}px, ${to.top - from.top}px) scale(${to.width / from.width}, ${Math.min(to.height, 240) / from.height})`,
+					opacity: 0
+				}
+			],
+			{ duration: 220, easing: 'cubic-bezier(0.2, 0, 0, 1)' }
+		);
+		animation.onfinish = animation.oncancel = () => card.remove();
+	}
+
+	/* ── Keys ────────────────────────────────────────────────────────── */
+
+	function keys(event: KeyboardEvent) {
+		if (event.key === 'Escape') return escape(event);
+		if (event.defaultPrevented || event.ctrlKey || event.metaKey || event.altKey) return;
+		const target = event.target as HTMLElement;
+		if (target.closest('input, textarea, select, [contenteditable="true"]') || document.querySelector('dialog[open]')) return;
+		// Arrows belong to whatever has focus in the grid; letters work from anywhere on the page.
+		const bare = target === document.body;
+		const open = mode === 'event' && editing && mayChange(editing) ? editing : null;
+		const act: Record<string, (() => unknown) | undefined> = {
+			n: () => openQuick(),
+			c: () => startNew(),
+			t: () => (anchor = today),
+			j: () => step(1),
+			k: () => step(-1),
+			ArrowRight: bare ? () => step(1) : undefined,
+			ArrowLeft: bare ? () => step(-1) : undefined,
+			d: () => (view = 'day'),
+			w: () => (view = 'week'),
+			'/': () => calendarsState?.supported && openPanel('search'),
+			e: open ? () => startEdit(open) : undefined,
+			'#': open ? () => remove(open) : undefined,
+			'?': () => statusLine?.showKeys()
+		};
+		const run = act[event.key];
+		if (!run) return;
+		event.preventDefault();
+		run();
+	}
+
 	const railOpen = $derived(mode !== 'view');
 	/** Nothing to drag an event onto if none of your calendars take writes. */
 	const readOnly = $derived(
@@ -550,7 +814,7 @@
 
 <svelte:head><title>{shell.title('Calendar')}</title></svelte:head>
 
-<svelte:window onkeydown={escape} ononline={() => failed && void reload()} />
+<svelte:window onkeydown={keys} ononline={() => failed && void reload()} />
 
 <SectionShell title="Calendar">
 	{#snippet controls()}
@@ -621,8 +885,10 @@
 		<button
 			type="button"
 			class="btn-tactile shrink-0 gap-1.5 max-xl:!px-2"
-			onclick={() => mode === 'new' || startNew()}
-			disabled={!calendarsState?.supported}
+			onclick={() => (quick ? closeQuick() : openQuick())}
+			aria-pressed={quick !== null}
+			title="New event (n)"
+			disabled={!calendarsState?.supported || readOnly}
 		>
 			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 			<span class="max-xl:sr-only">New event</span>
@@ -673,6 +939,21 @@
 
 		<!-- The grid -->
 		<div class="relative flex min-w-0 flex-1 flex-col {railOpen ? 'max-md:hidden' : ''}">
+			{#if phone && !quick && calendarsState?.supported}
+				<CalendarStatusLine phone {voice} {colorOf} onOpen={openEvent} />
+			{/if}
+			{#if quick && calendarsState}
+				<QuickAddLine
+					calendars={calendarList}
+					slot={quick.slot}
+					saving={quickSaving}
+					error={quickError}
+					onPreview={preview}
+					onSave={addQuick}
+					onMore={moreQuick}
+					onClose={closeQuick}
+				/>
+			{/if}
 			{#if failed === 'kept'}
 				<p class="shrink-0 border-b border-[var(--z-hairline)] px-4 py-1.5 text-[12.5px] text-[var(--z-ch-discard-ink)]" role="alert">
 					Could not refresh the calendar — showing it as last loaded.
@@ -686,7 +967,7 @@
 				It stays mounted under a failure, so the next week asked for is asked for
 				(`isolate`: its sticky headings stay under what covers it then).
 			-->
-			<div class="z-cal isolate min-h-0 flex-1" bind:clientHeight={gridHeight} inert={failed === 'nothing'}>
+			<div class="z-cal relative isolate min-h-0 flex-1" bind:this={calEl} bind:clientHeight={gridHeight} inert={failed === 'nothing'}>
 				<CalendarGrid
 					{adapter}
 					view={viewId}
@@ -699,6 +980,7 @@
 					eventFill={0.2}
 					eventBar={3}
 					{readOnly}
+					{locale}
 					showModePills={false}
 					showNavigation={false}
 					snapInterval={15}
@@ -718,16 +1000,26 @@
 						if (view === 'day' ? next !== anchor.getTime() : !inSpan)
 							anchor = new Date(next);
 					}}
-					oneventclick={(row) => {
+					oneventclick={(row, rect) => {
+						if (row.data?.gap) return openQuick({ start: row.start, end: row.end });
 						const event = sourceOf(row);
-						if (event) openEvent(event);
+						if (!event) return;
+						const opening = mode !== 'event' || editing?.id !== event.id;
+						openEvent(event);
+						if (opening && mode === 'event') void morph(rect, row.color ?? 'var(--z-accent)');
 					}}
-					oneventcreate={({ start, end }) => performance.now() - openedAt > 400 && startNew(start, end)}
+					oneventcreate={({ start, end }) => performance.now() - openedAt > 400 && openQuick({ start, end })}
 					oneventmove={(row, start, end) => void moveEvent(row, start, end)}
 				>
 					<!-- The shell's header already carries the date and the views. -->
 					{#snippet header()}{/snippet}
 				</CalendarGrid>
+				{#if edges.above}
+					<button type="button" class="z-cal-edge" style:top="{edges.top + 8}px" onclick={() => toEdge(true)}>↑ {edges.above} earlier</button>
+				{/if}
+				{#if edges.below}
+					<button type="button" class="z-cal-edge" style:bottom="12px" onclick={() => toEdge(false)}>↓ {edges.below} later</button>
+				{/if}
 			</div>
 			{#if failed === 'nothing'}
 				<!-- Over the grid, not beside it: an empty week under this line would still read as a free one. -->
@@ -740,8 +1032,10 @@
 
 		<!-- An event, the editor, or the calendars -->
 		{#if railOpen}
-			<div class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0">
-				{#if mode === 'event' && editing}
+			<div class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0" bind:this={railEl}>
+				{#if mode === 'search' && calendarsState}
+					<EventSearch visible={(event) => calendarsOf(event).some((calendar) => calendar?.isVisible !== false)} {colorOf} onOpen={openEvent} onClose={closePanel} />
+				{:else if mode === 'event' && editing}
 					<EventView
 						event={editing}
 						calendars={calendarsOf(editing).filter((calendar) => calendar !== undefined)}
@@ -817,6 +1111,7 @@
 						{saving}
 						error={editorError}
 						meetEnabled={page.data.meetEnabled === true}
+						preset={mode === 'new' ? draftPreset : null}
 						onSave={save}
 						onDelete={mode === 'edit' && editing ? () => remove(editing!) : undefined}
 						onCancel={() => (mode === 'edit' && editing ? (mode = 'event') : closePanel())}
@@ -825,6 +1120,9 @@
 			</div>
 		{/if}
 	</div>
+	{#if calendarsState?.supported}
+		<CalendarStatusLine bind:this={statusLine} {voice} {colorOf} onOpen={openEvent} />
+	{/if}
 </SectionShell>
 
 <style>
@@ -866,5 +1164,96 @@
 				display: none;
 			}
 		}
+
+		/* All-day events are a wash with a rail, like the timed ones, not solid
+		   bars of saturated colour shouting over the hours under them. */
+		.wg-ad,
+		.tw-ad,
+		.mb-allday-chip {
+			background: color-mix(in srgb, var(--ev-color) 20%, var(--z-surface));
+			color: var(--z-ink);
+			box-shadow: inset 3px 0 0 var(--ev-color);
+		}
+		.wg-ad:hover,
+		.tw-ad:hover,
+		.mb-allday-chip:hover {
+			filter: none;
+			background: color-mix(in srgb, var(--ev-color) 30%, var(--z-surface));
+		}
+
+		/* Free time: a quiet dashed outline with its length, there to be taken. */
+		.tw-ev[data-event-id^='gap:'],
+		.mb-event[style*='--ev-color: transparent'] {
+			background: none;
+			box-shadow: none;
+			outline: 1px dashed var(--z-line);
+			outline-offset: -1px;
+			cursor: pointer;
+			z-index: 1;
+		}
+		.tw-ev[data-event-id^='gap:']:hover,
+		.mb-event[style*='--ev-color: transparent']:hover {
+			background: var(--z-hover);
+		}
+		:is(.tw-ev[data-event-id^='gap:'], .mb-event[style*='--ev-color: transparent'])
+			:is(.tw-ev-stripe, .tw-ev-time, .tw-ev-loc, .mb-ev-time, .mb-ev-next-badge) {
+			display: none;
+		}
+		:is(.tw-ev[data-event-id^='gap:'], .mb-event[style*='--ev-color: transparent']) :is(.tw-ev-title, .mb-ev-title) {
+			color: var(--z-soft);
+			font-weight: 500;
+			font-size: 12px;
+		}
+		:is(.tw-ev[data-event-id^='gap:'], .mb-event[style*='--ev-color: transparent']):hover :is(.tw-ev-title, .mb-ev-title)::after {
+			content: ' · add';
+			color: var(--z-accent);
+		}
+		/* Gaps would take the phone's "up next" tag from the event after them; the line above the grid says it instead. */
+		.mb-ev-next-badge {
+			display: none;
+		}
+
+		/* The event quick add would make, before it is made. */
+		.tw-ev[data-event-id='ghost'] {
+			outline: 1px dashed var(--ev-color);
+			outline-offset: -1px;
+			animation: z-ghost 1.6s ease-in-out infinite alternate;
+		}
+	}
+
+	@keyframes z-ghost {
+		from {
+			opacity: 1;
+		}
+		to {
+			opacity: 0.6;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.z-cal :global(.tw-ev[data-event-id='ghost']) {
+			animation: none;
+		}
+	}
+
+	/* "↑ 2 earlier": what the scroll has out of sight. */
+	.z-cal-edge {
+		position: absolute;
+		left: 50%;
+		z-index: 20;
+		translate: -50% 0;
+		height: 24px;
+		padding: 0 10px;
+		border: 1px solid var(--z-line);
+		border-radius: 999px;
+		background: var(--z-surface);
+		box-shadow: var(--z-shadow-tactile);
+		color: var(--z-strong);
+		font-size: 12px;
+		font-weight: 500;
+		white-space: nowrap;
+		transition: background 150ms;
+	}
+	.z-cal-edge:hover {
+		background: var(--z-hover);
 	}
 </style>

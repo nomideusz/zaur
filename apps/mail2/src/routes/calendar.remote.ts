@@ -23,9 +23,10 @@ import {
 	type Calendar,
 	type CalendarEvent,
 	type EventRecurrence,
+	type JMAPClient,
 	type JMAPPrincipal
 } from '@zaur/mail-core';
-import { connect } from '#lib/server/account';
+import { connect, requireAccount } from '#lib/server/account';
 import { pickPrincipal } from '#lib/share';
 
 const LOCAL_DATETIME = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/;
@@ -99,6 +100,8 @@ export interface EventParticipant {
 	/** What they answered; `needs-action` until they do. */
 	status: 'accepted' | 'declined' | 'tentative' | 'needs-action';
 	organizer: boolean;
+	/** The signed-in person: the one whose answer can be changed here. */
+	me: boolean;
 }
 
 interface RawParticipant {
@@ -110,6 +113,18 @@ interface RawParticipant {
 	participationStatus?: string;
 }
 
+/** JSCalendar has moved the address around: `email`, then `calendarAddress`, with `sendTo.imip` throughout. */
+const addressOf = (person: RawParticipant) =>
+	(person.email ?? person.calendarAddress ?? person.sendTo?.imip ?? '').replace(/^mailto:/i, '');
+
+const CALENDARS = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:calendars'];
+
+async function participantsOf(client: JMAPClient, accountId: string, id: string): Promise<Record<string, RawParticipant>> {
+	const response = await client.request([['CalendarEvent/get', { accountId, ids: [id], properties: ['participants'] }, 'p']], CALENDARS);
+	const [found] = (response.methodResponses?.[0]?.[1]?.list as { participants?: Record<string, RawParticipant> | null }[] | undefined) ?? [];
+	return found?.participants ?? {};
+}
+
 /**
  * Who an event was sent to and what each answered — read-only, asked for when
  * an event is opened. mail-core's event list does not carry participants, and
@@ -119,27 +134,49 @@ interface RawParticipant {
 export const eventParticipants = query(
 	v.object({ id: ID, accountId: ACCOUNT }),
 	async ({ id, accountId }): Promise<EventParticipant[]> => {
+		const me = requireAccount().username.toLowerCase();
 		const client = await connect();
 		if (!client.hasCalendars()) return [];
-		const response = await client.request(
-			[['CalendarEvent/get', { accountId: accountId ?? client.getCalendarAccountId(), ids: [id], properties: ['participants'] }, 'p']],
-			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:calendars']
-		);
-		const [found] = (response.methodResponses?.[0]?.[1]?.list as { participants?: Record<string, RawParticipant> | null }[] | undefined) ?? [];
-		return Object.values(found?.participants ?? {})
+		const participants = await participantsOf(client, accountId ?? client.getCalendarAccountId(), id);
+		return Object.values(participants)
 			.map((person): EventParticipant => {
-				// JSCalendar has moved the address around: `email`, then `calendarAddress`, with `sendTo.imip` throughout.
-				const email = (person.email ?? person.calendarAddress ?? person.sendTo?.imip ?? '').replace(/^mailto:/i, '');
+				const email = addressOf(person);
 				const status = person.participationStatus;
 				return {
 					name: person.name?.trim() || email,
 					email,
 					status: status === 'accepted' || status === 'declined' || status === 'tentative' ? status : 'needs-action',
-					organizer: Boolean(person.roles?.owner || person.roles?.chair)
+					organizer: Boolean(person.roles?.owner || person.roles?.chair),
+					me: email.toLowerCase() === me
 				};
 			})
 			.filter((person) => person.name)
 			.sort((a, b) => Number(b.organizer) - Number(a.organizer) || a.name.localeCompare(b.name));
+	}
+);
+
+/**
+ * Your answer to an invitation: your own participant's status, and the
+ * server tells the organiser (`sendSchedulingMessages`, an iTIP REPLY by mail).
+ * For an occurrence, pass the series' id: the answer is to the series.
+ */
+export const replyToEvent = command(
+	v.object({ id: ID, accountId: ACCOUNT, status: v.picklist(['accepted', 'tentative', 'declined']) }),
+	async ({ id, accountId, status }): Promise<void> => {
+		const me = requireAccount().username.toLowerCase();
+		const client = await connect();
+		if (!client.hasCalendars()) error(501, 'This mail server does not offer calendars over JMAP.');
+		const account = accountId ?? client.getCalendarAccountId();
+		const participants = await participantsOf(client, account, id);
+		const key = Object.keys(participants).find((key) => addressOf(participants[key]!).toLowerCase() === me);
+		if (!key) error(400, 'You are not on this event’s guest list.');
+		const response = await client.request(
+			[['CalendarEvent/set', { accountId: account, sendSchedulingMessages: true, update: { [id]: { [`participants/${key}/participationStatus`]: status } } }, 's']],
+			CALENDARS
+		);
+		const [method, set] = response.methodResponses?.[0] ?? [];
+		const refused = method === 'error' ? set : (set as { notUpdated?: Record<string, unknown> })?.notUpdated?.[id];
+		if (refused) error(400, (refused as { description?: string }).description ?? 'Your answer could not be saved.');
 	}
 );
 
