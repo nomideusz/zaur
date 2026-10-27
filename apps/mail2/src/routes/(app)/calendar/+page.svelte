@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ask } from '#lib/confirm.svelte.ts';
-	import { tick, untrack, type ComponentProps } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import { messageOf } from '#lib/errors';
 	import { leaveGuard } from '#lib/leave-guard';
 	import { goto } from '$app/navigation';
@@ -344,9 +344,8 @@
 		});
 	});
 
-	function startNew(at: Date = anchor, until: Date | null = null, preset: typeof draftPreset = null) {
+	function startNew(at: Date = anchor, until: Date | null = null) {
 		if (!openPanel('new')) return;
-		draftPreset = preset;
 		// No time picked (midnight, which the editor reads as 09:00) and the day is
 		// today: the next full hour, rather than a nine o'clock already gone.
 		const hour = new Date().getHours();
@@ -592,7 +591,6 @@
 	let ghost = $state<TimelineEvent | null>(null);
 	let quickSaving = $state(false);
 	let quickError = $state<string | null>(null);
-	let draftPreset = $state<ComponentProps<typeof EventEditor>['preset']>(null);
 
 	function openQuick(slot: { start: Date; end: Date } | null = null) {
 		if (!calendarsState?.supported || readOnly) return;
@@ -637,7 +635,7 @@
 		dataVersion++;
 	}
 
-	async function addQuick({ event, calendar }: Reading) {
+	async function addQuick({ event, calendar, notes }: Reading) {
 		quickSaving = true;
 		quickError = null;
 		const title = event.title || 'New event';
@@ -650,7 +648,7 @@
 				duration: durationBetween(event.start, event.end, event.allDay),
 				timeZone,
 				allDay: event.allDay,
-				description: '',
+				description: notes.trim(),
 				location: event.location,
 				recurrence: event.recurrence
 			});
@@ -662,21 +660,6 @@
 		} finally {
 			quickSaving = false;
 		}
-	}
-
-	/** "More options": the line so far, in the whole form. */
-	function moreQuick(reading: Reading | null) {
-		const slot = quick?.slot ?? null;
-		closeQuick();
-		if (!reading) return startNew(slot?.start, slot?.end ?? null);
-		const { event, calendar } = reading;
-		startNew(event.start, event.end, {
-			title: event.title,
-			location: event.location,
-			allDay: event.allDay,
-			recurrence: event.recurrence,
-			calendar
-		});
 	}
 
 	const reduced = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -739,6 +722,40 @@
 			root.removeEventListener('scroll', schedule, true);
 		};
 	});
+
+	/* ── The week's cells say what a click does ─────────────────────── */
+
+	/**
+	 * A day's name opens that day; anywhere else in its box adds an event at the
+	 * hour under the pointer. The package's cell takes every click as an add, so
+	 * the name is caught first, on the way down. The hint reads the hour the way
+	 * the package does: the cell's event area spans `WEEK_HOURS`, top to bottom,
+	 * less a chip's height, in half hours.
+	 */
+	const WEEK_HOURS: [number, number] = [7, 22];
+	let hint = $state<{ x: number; y: number; text: string } | null>(null);
+	function openDay(event: MouseEvent) {
+		const cell = (event.target as Element).closest('.wg-cell-hd')?.closest<HTMLElement>('.wg-cell');
+		if (view !== 'week' || !cell?.dataset.day) return;
+		event.stopPropagation();
+		hint = null;
+		anchor = new Date(+cell.dataset.day);
+		view = 'day';
+	}
+	function hover(event: PointerEvent) {
+		const target = event.target as Element;
+		const cell = target.closest<HTMLElement>('.wg-cell');
+		const area = cell?.querySelector('.wg-cell-events');
+		if (view !== 'week' || event.pointerType !== 'mouse' || !calEl || !cell || !area || target.closest('.wg-ev, .wg-ad, .wg-ev-more')) return void (hint = null);
+		const box = calEl.getBoundingClientRect();
+		const at = { x: event.clientX - box.left, y: event.clientY - box.top };
+		if (target.closest('.wg-cell-hd')) return void (hint = { ...at, text: 'Open this day' });
+		if (readOnly || cell.matches('.wg-cell--disabled')) return void (hint = null);
+		const [from, to] = WEEK_HOURS;
+		const share = Math.min(Math.max((event.clientY - area.getBoundingClientRect().top - 11) / (120 - 22), 0), 1);
+		const halves = Math.round((from + share * (to - from)) * 2);
+		hint = { ...at, text: `Add at ${String(Math.floor(halves / 2)).padStart(2, '0')}:${halves % 2 ? '30' : '00'}` };
+	}
 
 	/* ── Opening an event: the block becomes the panel ──────────────── */
 
@@ -842,11 +859,11 @@
 			<!-- On touch as tall as the bar's other buttons (base.css makes those 40px), and as wide where that
 			     leaves the date its room: not at 320px, nor beside a tablet's section tabs. -->
 			<div
-				class="flex min-w-0 items-center rounded-[6px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]"
+				class="flex min-w-0 items-center overflow-hidden rounded-[6px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]"
 			>
 				<button
 					type="button"
-					class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 pointer-coarse:h-10 pointer-coarse:min-[360px]:max-md:!w-10 pointer-coarse:lg:!w-10 rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
+					class="{view === 'week' ? 'sm:hidden' : ''} flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 pointer-coarse:h-10 pointer-coarse:min-[360px]:max-md:!w-10 pointer-coarse:lg:!w-10 rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
 					onclick={() => step(-1)}
 					aria-label="Previous"
 				>
@@ -863,7 +880,7 @@
 				</button>
 				<button
 					type="button"
-					class="flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 pointer-coarse:h-10 pointer-coarse:min-[360px]:max-md:!w-10 pointer-coarse:lg:!w-10 rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
+					class="{view === 'week' ? 'sm:hidden' : ''} flex h-[30px] w-7 shrink-0 items-center justify-center max-sm:w-6 pointer-coarse:h-10 pointer-coarse:min-[360px]:max-md:!w-10 pointer-coarse:lg:!w-10 rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]"
 					onclick={() => step(1)}
 					aria-label="Next"
 				>
@@ -953,7 +970,7 @@
 		</div>
 
 		<!-- The grid -->
-		<div class="relative flex min-w-0 flex-1 flex-col {railOpen ? 'max-md:hidden' : ''}">
+		<div class="@container relative flex min-w-0 flex-1 flex-col {railOpen ? 'max-md:hidden' : ''}">
 			{#if phone && !quick && calendarsState?.supported}
 				<CalendarStatusLine phone {voice} {colorOf} onOpen={openEvent} />
 			{/if}
@@ -965,7 +982,7 @@
 					error={quickError}
 					onPreview={preview}
 					onSave={addQuick}
-					onMore={moreQuick}
+					meetEnabled={page.data.meetEnabled === true}
 					onClose={closeQuick}
 				/>
 			{/if}
@@ -982,7 +999,17 @@
 				It stays mounted under a failure, so the next week asked for is asked for
 				(`isolate`: its sticky headings stay under what covers it then).
 			-->
-			<div class="z-cal relative isolate min-h-0 flex-1" bind:this={calEl} bind:clientHeight={gridHeight} inert={failed === 'nothing'}>
+			<!-- svelte-ignore a11y_no_static_element_interactions, a11y_click_events_have_key_events -->
+			<div
+				class="z-cal relative isolate min-h-0 flex-1 {view === 'day' && !phone ? '@min-[960px]:mx-auto @min-[960px]:w-full @min-[960px]:max-w-[880px] @min-[960px]:border-x @min-[960px]:border-[var(--z-hairline)]' : ''}"
+				bind:this={calEl}
+				bind:clientHeight={gridHeight}
+				inert={failed === 'nothing'}
+				onclickcapture={openDay}
+				onpointermove={hover}
+				onpointerleave={() => (hint = null)}
+				onpointerdown={() => (hint = null)}
+			>
 				<CalendarGrid
 					{adapter}
 					view={viewId}
@@ -996,6 +1023,7 @@
 					eventBar={3}
 					{readOnly}
 					{locale}
+					visibleHours={view === 'week' ? WEEK_HOURS : undefined}
 					showModePills={false}
 					showNavigation={false}
 					snapInterval={15}
@@ -1029,6 +1057,9 @@
 					<!-- The shell's header already carries the date and the views. -->
 					{#snippet header()}{/snippet}
 				</CalendarGrid>
+				{#if hint}
+					<span class="z-cal-hint" style:left="{hint.x + 12}px" style:top="{hint.y + 14}px" aria-hidden="true">{hint.text}</span>
+				{/if}
 				{#if edges.above}
 					<button type="button" class="z-cal-edge" style:top="{edges.top + 8}px" onclick={() => toEdge(true)}>↑ {edges.above} earlier</button>
 				{/if}
@@ -1126,7 +1157,6 @@
 						{saving}
 						error={editorError}
 						meetEnabled={page.data.meetEnabled === true}
-						preset={mode === 'new' ? draftPreset : null}
 						onSave={save}
 						onDelete={mode === 'edit' && editing ? () => remove(editing!) : undefined}
 						onCancel={() => (mode === 'edit' && editing ? (mode = 'event') : closePanel())}
@@ -1270,5 +1300,31 @@
 	}
 	.z-cal-edge:hover {
 		background: var(--z-hover);
+	}
+
+	/* What a click in a week's box does: the day's name opens it, the rest adds at that hour. */
+	.z-cal :global(.wg-cell-hd) {
+		cursor: pointer;
+	}
+	.z-cal :global(.wg-cell-hd:hover .wg-day-num) {
+		color: var(--z-accent);
+		text-decoration: underline;
+		text-underline-offset: 3px;
+	}
+	.z-cal-hint {
+		position: absolute;
+		z-index: 30;
+		padding: 2px 7px;
+		border: 1px solid var(--z-line);
+		border-radius: 5px;
+		background: var(--z-surface);
+		box-shadow: var(--z-shadow-tactile);
+		color: var(--z-strong);
+		font-size: 11px;
+		font-weight: 500;
+		line-height: 1.5;
+		font-variant-numeric: tabular-nums;
+		white-space: nowrap;
+		pointer-events: none;
 	}
 </style>
