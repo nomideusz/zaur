@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 
 import { setTimeout as sleep } from 'node:timers/promises';
 
-import { pickUpload, sameSong, type AlbumTrack } from '../src/lib/server/albums.ts';
+import { pickUpload, sameArtist, sameSong, type AlbumTrack } from '../src/lib/server/albums.ts';
 import { addJob, jobsFor, retryJob } from '../src/lib/server/youtube.ts';
 
 const track = (title: string, seconds: number): AlbumTrack => ({
@@ -68,4 +68,13 @@ test("an album's track is looked for on YouTube, and a retry looks again", async
 	assert.equal(jobsFor(me).length, 1);
 	assert.equal(asked.length, 2);
 	delete process.env.YATTEE_URL;
+});
+
+test('sameArtist: the artist or one of those credited, not a band named after them', () => {
+	assert.ok(sameArtist('deadmau5 feat. Rob Swire', 'Deadmau5'));
+	assert.ok(sameArtist('Wankelmut & Emma Louise', 'Wankelmut & Emma Louise'));
+	assert.ok(sameArtist('The Mountain Goats', 'Mountain Goats'));
+	assert.ok(sameArtist('Tiësto', 'Tiesto'));
+	assert.ok(!sameArtist('Avicii Cover Band', 'Avicii'));
+	assert.ok(!sameArtist('Spice Girls', ''));
 });

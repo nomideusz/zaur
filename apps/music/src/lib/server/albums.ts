@@ -201,8 +201,9 @@ export async function lookOutside(q: string): Promise<{ albums: OutsideAlbum[]; 
 	};
 }
 
-/** One name is the other, give or take a "The" or a "feat.": "Spice Girls" and "Spicegirls". */
-const sameArtist = (a: string, b: string) => !!norm(a) && !!norm(b) && (norm(a).includes(norm(b)) || norm(b).includes(norm(a)));
+/** The artist, or one of those credited: deadmau5 in "deadmau5 feat. Rob Swire", not Avicii in "Avicii Cover Band". */
+export const sameArtist = (credit: string, artist: string) =>
+	!!norm(artist) && [credit, ...credit.split(/\s*(?:,|&|\bx\b|\bfeat\.?|\bft\.?|\bwith\b)\s*/i)].some((name) => norm(name) === norm(artist));
 
 /**
  * The song a radio listener asked for, as Deezer has it, filed as on its album; by the artist
