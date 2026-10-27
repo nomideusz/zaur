@@ -7,6 +7,7 @@ import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { sendFeed } from "./feed.mjs";
 import { sendTraffic } from "./search.mjs";
 import { recordHit, sendStats } from "./stats.mjs";
 
@@ -73,6 +74,10 @@ const server = createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === "GET" && url.pathname === "/api/ics") {
+      await sendFeed(url, res);
+      return;
+    }
     if (req.method === "GET" && url.pathname === "/api/traffic") {
       await sendTraffic(res);
       return;

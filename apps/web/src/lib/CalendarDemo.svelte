@@ -3,9 +3,12 @@
 	// timetable. Its auto theme probes this page for colours and font, and it
 	// takes its phone layout in a column under 768px. It ships its own Svelte,
 	// so it loads only when the case comes within half a screen of view.
-	// Import reads any calendar app's .ics export into it; Download writes what
-	// it shows as an .ics that Google, Apple and Outlook import.
-	import { parseIcs, toIcs, type TimelineEvent } from '@nomideusz/svelte-calendar';
+	// Import reads any calendar app's .ics export into it, Subscribe a feed's
+	// address (fetched by static-server.mjs, as Google, Outlook and iCloud send
+	// no CORS headers; so not under `vite dev`). A clicked event offers Google's
+	// and Outlook's "add" pages, a drag is kept, and Download writes what it
+	// shows as an .ics.
+	import { googleCalendarUrl, outlookCalendarUrl, parseIcs, toIcs, type TimelineEvent } from '@nomideusz/svelte-calendar';
 	import { t } from '#lib/i18n';
 
 	let { locale }: { locale: string } = $props();
@@ -13,6 +16,9 @@
 	let shown = $state<TimelineEvent[]>([]);
 	let name = $state('');
 	let note = $state('');
+	let feed = $state('');
+	let busy = $state(false);
+	let picked = $state<TimelineEvent>();
 	let events = $derived(shown.length ? JSON.stringify(shown) : '');
 
 	// A yoga studio's week (the names read the same in every language), repeated
@@ -47,11 +53,8 @@
 	};
 
 	// The widget takes a fixed list, so recurrences are expanded a year either side.
-	async function load(e: Event & { currentTarget: HTMLInputElement }) {
-		const file = e.currentTarget.files?.[0];
-		e.currentTarget.value = '';
-		if (!file) return;
-		const cal = parseIcs(await file.text());
+	function show(text: string, fallback: string) {
+		const cal = parseIcs(text);
 		const year = 365 * 864e5;
 		const found = cal.events({ start: new Date(Date.now() - year), end: new Date(Date.now() + year) });
 		if (!found.length) {
@@ -59,9 +62,41 @@
 			return;
 		}
 		shown = found;
-		name = cal.name || file.name.replace(/\.[^.]+$/, '');
+		picked = undefined;
+		name = cal.name || fallback;
 		note = t('packages.calendar.imported', { name });
 	}
+
+	async function load(e: Event & { currentTarget: HTMLInputElement }) {
+		const file = e.currentTarget.files?.[0];
+		e.currentTarget.value = '';
+		if (file) show(await file.text(), file.name.replace(/\.[^.]+$/, ''));
+	}
+
+	async function subscribe(e: SubmitEvent) {
+		e.preventDefault();
+		busy = true;
+		try {
+			const res = await fetch(`/api/ics?url=${encodeURIComponent(feed)}`);
+			if (!res.ok) throw new Error(String(res.status));
+			show(await res.text(), new URL(feed.replace(/^webcals?:/i, 'https:')).hostname);
+		} catch {
+			note = t('packages.calendar.failed');
+		} finally {
+			busy = false;
+		}
+	}
+
+	// The widget hands back its own copy of the event; ours keeps description and URL.
+	const ours = (ev: TimelineEvent) => shown.find((x) => x.id === ev.id) ?? ev;
+	const pick = (e: CustomEvent<{ event: TimelineEvent }>) => (picked = ours(e.detail.event));
+	function move(e: CustomEvent<{ event: TimelineEvent; start: Date; end: Date }>) {
+		const { event, start, end } = e.detail;
+		shown = shown.map((x) => (x.id === event.id ? { ...x, start, end } : x));
+		if (picked?.id === event.id) picked = { ...picked, start, end };
+	}
+	const when = (ev: TimelineEvent) =>
+		new Intl.DateTimeFormat(locale, ev.allDay ? { dateStyle: 'medium' } : { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(ev.start);
 
 	function save() {
 		const a = document.createElement('a');
@@ -87,13 +122,24 @@
 </script>
 
 <div class="cal" bind:this={box}>
-	{#if events}<day-calendar {events} {locale} view="week-planner" height="600" readonly="false" mincolumnwidth="100"></day-calendar>{/if}
+	{#if events}<day-calendar {events} {locale} view="week-planner" height="600" readonly="false" mincolumnwidth="100" oneventclick={pick} oneventmove={move}></day-calendar>{/if}
 </div>
-<p class="ics">
+{#if picked}
+	<p class="ics">
+		<span>{t('packages.calendar.add', { title: picked.title, when: when(picked) })}</span>
+		<a class="btn" href={googleCalendarUrl(picked)} target="_blank" rel="noopener">Google Calendar</a>
+		<a class="btn" href={outlookCalendarUrl(picked)} target="_blank" rel="noopener">Outlook</a>
+	</p>
+{/if}
+<div class="ics">
 	<label class="btn">{t('packages.calendar.import')}<input type="file" accept=".ics,.ical,.ifb,text/calendar" onchange={load} /></label>
+	<form onsubmit={subscribe}>
+		<input type="url" bind:value={feed} required pattern="(https|webcals?)://.+" placeholder="webcal://…" aria-label={t('packages.calendar.feed')} autocomplete="off" spellcheck="false" />
+		<button type="submit" class="btn" disabled={busy}>{t('packages.calendar.subscribe')}</button>
+	</form>
 	<button type="button" class="btn" disabled={!events} onclick={save}>{t('packages.calendar.export')}</button>
 	<span aria-live="polite">{note}</span>
-</p>
+</div>
 
 <style>
 	/* Holds the widget's height before it loads, so nothing below it moves. */
@@ -114,8 +160,23 @@
 		font-size: 0.875rem;
 	}
 	/* The page's .p-keys, which is scoped there. */
+	.ics form {
+		display: flex;
+		gap: 0.4rem;
+	}
+	input[type='url'] {
+		width: 14rem;
+		min-width: 0;
+		padding: 0.1rem 0.4rem;
+		border: var(--rule) solid var(--ink);
+		border-radius: 3px;
+		background: var(--paper);
+		color: var(--ink);
+		font: inherit;
+	}
 	.btn {
 		position: relative;
+		text-decoration: none;
 		padding: 0.1rem 0.5rem;
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
