@@ -1,8 +1,8 @@
 {
-	"meta.title": "Bartosz Dymet · Frontend engineer, Svelte i TypeScript",
+	"meta.title": "Bartosz Dymet · Product engineer, Svelte i TypeScript",
 	"meta.description": "Projektuję, buduję i utrzymuję produkty: pakiet pocztowy Zaur, Szkoły Jogi i inne, na otwartych pakietach Svelte, które publikuję.",
 	"meta.ogAlt": "Bartosz Dymet, frontend engineer, obok nazw produktów Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi i Friendly Festivals.",
-	"meta.jobTitle": "Frontend engineer",
+	"meta.jobTitle": "Product engineer",
 
 	"nav.skip": "Przejdź do treści",
 	"nav.sections": "Sekcje",
@@ -14,8 +14,8 @@
 	"nav.language": "Język",
 
 	"intro.portrait": "Portret Bartosza Dymeta",
-	"intro.role": "Frontend engineer · Svelte i TypeScript · Kraków",
-	"intro.pitch": "Projektuję, buduję i utrzymuję kompletne produkty. Strony od 1999 roku, Svelte od ponad pięciu lat.",
+	"intro.role": "Product engineer · Svelte i TypeScript · Kraków",
+	"intro.pitch": "Strony buduję od 1999 roku. Dziś dyryguję AI i tworzę czyste, szybkie produkty, w których wciąż bije ludzkie serce.",
 	"intro.kit": "Zbudowane z moich otwartych pakietów",
 	"intro.point": "Wskaż produkt, a podświetlą się jego pakiety.",
 
@@ -177,6 +177,10 @@
 	"packages.demo": "Demo",
 	"packages.source": "Kod",
 	"packages.calendar.note": "Sam widżet, na przykładowym grafiku: motyw odczytany z tej strony, układ telefonu poniżej 768 px szerokości. Przeciągnij zajęcia, by je przesunąć.",
+	"packages.calendar.import": "Importuj .ics",
+	"packages.calendar.export": "Pobierz .ics",
+	"packages.calendar.imported": "{name}, z twojego pliku. Odśwież, by wrócić do grafiku.",
+	"packages.calendar.empty": "W tym pliku nie ma wydarzeń w promieniu roku od dziś.",
 	"packages.copy": "Kopiuj",
 	"packages.copied": "Skopiowano",
 	"packages.deps_one": "{n} zależność",
@@ -273,7 +277,7 @@
 	"skill.simple-web-design": "Skill dla agenta do audytu i budowy stron według 15 zasad prostego projektowania Anthony'ego Hobdaya.",
 
 	"foot.copyright": "© 2026 Bartosz Dymet",
-	"foot.hire": "Jestem otwarty na pracę przy frontendzie. Napisz do mnie.",
+	"foot.hire": "Jestem otwarty na pracę przy produktach i frontendzie. Napisz do mnie.",
 
 	"live.width": "{name}: szerokość ekranu",
 	"live.desktop": "Komputer",

@@ -1,8 +1,8 @@
 {
-	"meta.title": "Bartosz Dymet · Фронтенд-розробник, Svelte і TypeScript",
+	"meta.title": "Bartosz Dymet · Продуктовий інженер, Svelte і TypeScript",
 	"meta.description": "Я проєктую, створюю й підтримую продукти: поштовий пакет Zaur, Szkoły Jogi та інші, на відкритих пакетах для Svelte, які я публікую.",
 	"meta.ogAlt": "Bartosz Dymet, фронтенд-розробник, поруч із назвами продуктів Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi і Friendly Festivals.",
-	"meta.jobTitle": "Фронтенд-розробник",
+	"meta.jobTitle": "Продуктовий інженер",
 
 	"nav.skip": "Перейти до змісту",
 	"nav.sections": "Розділи",
@@ -14,8 +14,8 @@
 	"nav.language": "Мова",
 
 	"intro.portrait": "Портрет: Bartosz Dymet",
-	"intro.role": "Фронтенд-розробник · Svelte і TypeScript · Краків",
-	"intro.pitch": "Я проєктую, створюю й підтримую повноцінні продукти. Сайти з 1999 року, Svelte понад п’ять років.",
+	"intro.role": "Продуктовий інженер · Svelte і TypeScript · Краків",
+	"intro.pitch": "Сайти роблю з 1999 року. Тепер я диригую AI і створюю чисті, швидкі продукти, у яких і далі б’ється людське серце.",
 	"intro.kit": "Зібрано з моїх відкритих пакетів",
 	"intro.point": "Наведіть на продукт, щоб побачити його пакети.",
 
@@ -177,6 +177,10 @@
 	"packages.demo": "Демо",
 	"packages.source": "Код",
 	"packages.calendar.note": "Сам віджет на прикладі розкладу: тему зчитано з цієї сторінки, мобільний вигляд за ширини до 768 px. Перетягніть заняття, щоб перенести його.",
+	"packages.calendar.import": "Імпортувати .ics",
+	"packages.calendar.export": "Завантажити .ics",
+	"packages.calendar.imported": "{name}, з вашого файлу. Оновіть сторінку, щоб повернути розклад.",
+	"packages.calendar.empty": "У цьому файлі немає подій у межах року від сьогодні.",
 	"packages.copy": "Копіювати",
 	"packages.copied": "Скопійовано",
 	"packages.deps_one": "{n} залежність",
@@ -273,7 +277,7 @@
 	"skill.simple-web-design": "Скіл для агента, щоб перевіряти й створювати сайти за 15 принципами простого вебдизайну Ентоні Гобдея.",
 
 	"foot.copyright": "© 2026 Bartosz Dymet",
-	"foot.hire": "Я відкритий до роботи з фронтендом. Напишіть мені.",
+	"foot.hire": "Я відкритий до роботи над продуктами й фронтендом. Напишіть мені.",
 
 	"live.width": "{name}: ширина екрана",
 	"live.desktop": "Комп’ютер",

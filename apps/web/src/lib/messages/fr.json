@@ -1,8 +1,8 @@
 {
-	"meta.title": "Bartosz Dymet · Développeur frontend, Svelte et TypeScript",
+	"meta.title": "Bartosz Dymet · Ingénieur produit, Svelte et TypeScript",
 	"meta.description": "Je conçois, développe et fais tourner des produits : la suite de messagerie Zaur, Szkoły Jogi et d’autres, sur des paquets Svelte open source que je publie.",
 	"meta.ogAlt": "Bartosz Dymet, développeur frontend, à côté des noms de produits Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi et Friendly Festivals.",
-	"meta.jobTitle": "Développeur frontend",
+	"meta.jobTitle": "Ingénieur produit",
 
 	"nav.skip": "Aller au contenu",
 	"nav.sections": "Sections",
@@ -14,8 +14,8 @@
 	"nav.language": "Langue",
 
 	"intro.portrait": "Portrait de Bartosz Dymet",
-	"intro.role": "Développeur frontend · Svelte et TypeScript · Cracovie",
-	"intro.pitch": "Je conçois, développe et fais tourner des produits complets. Des sites web depuis 1999, Svelte depuis plus de cinq ans.",
+	"intro.role": "Ingénieur produit · Svelte et TypeScript · Cracovie",
+	"intro.pitch": "Je crée des sites web depuis 1999. Aujourd’hui, j’orchestre l’IA pour faire des produits propres et rapides, qui gardent un cœur humain.",
 	"intro.kit": "Construit avec mes paquets open source",
 	"intro.point": "Survolez un produit pour voir ses paquets.",
 
@@ -175,6 +175,10 @@
 	"packages.demo": "Démo",
 	"packages.source": "Code",
 	"packages.calendar.note": "Le widget lui-même, sur un planning d’exemple : thème lu sur cette page, mise en page mobile sous 768 px de large. Glissez un cours pour le déplacer.",
+	"packages.calendar.import": "Importer un .ics",
+	"packages.calendar.export": "Télécharger le .ics",
+	"packages.calendar.imported": "{name}, depuis votre fichier. Rechargez pour le planning.",
+	"packages.calendar.empty": "Aucun événement dans ce fichier à moins d’un an d’aujourd’hui.",
 	"packages.copy": "Copier",
 	"packages.copied": "Copié",
 	"packages.deps_one": "{n} dépendance",
@@ -269,7 +273,7 @@
 	"skill.simple-web-design": "Skill pour agent qui audite et construit des sites selon les 15 principes du web design simple d’Anthony Hobday.",
 
 	"foot.copyright": "© 2026 Bartosz Dymet",
-	"foot.hire": "Je suis disponible pour du travail frontend. Écrivez-moi.",
+	"foot.hire": "Je suis disponible pour du travail produit et frontend. Écrivez-moi.",
 
 	"live.width": "{name} : largeur d’écran",
 	"live.desktop": "Ordinateur",

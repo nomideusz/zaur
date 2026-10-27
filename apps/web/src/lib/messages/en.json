@@ -1,8 +1,8 @@
 {
-	"meta.title": "Bartosz Dymet · Frontend engineer, Svelte and TypeScript",
+	"meta.title": "Bartosz Dymet · Product engineer, Svelte and TypeScript",
 	"meta.description": "I design, build and run products: the Zaur mail suite, Szkoły Jogi and more, on open-source Svelte packages I publish.",
 	"meta.ogAlt": "Bartosz Dymet, frontend engineer, beside the product names Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi and Friendly Festivals.",
-	"meta.jobTitle": "Frontend engineer",
+	"meta.jobTitle": "Product engineer",
 
 	"nav.skip": "Skip to content",
 	"nav.sections": "Sections",
@@ -14,8 +14,8 @@
 	"nav.language": "Language",
 
 	"intro.portrait": "Portrait of Bartosz Dymet",
-	"intro.role": "Frontend engineer · Svelte and TypeScript · Kraków",
-	"intro.pitch": "I design, build and run complete products. Websites since 1999, Svelte for over five years.",
+	"intro.role": "Product engineer · Svelte and TypeScript · Kraków",
+	"intro.pitch": "I've built websites since 1999. Now I orchestrate AI to make clean, fast products that still have a human heart inside.",
 	"intro.kit": "Built from my open-source packages",
 	"intro.point": "Point at a product to light its packages.",
 
@@ -175,6 +175,10 @@
 	"packages.demo": "Demo",
 	"packages.source": "Source",
 	"packages.calendar.note": "The widget itself, on a sample timetable: its theme read from this page, the phone layout below 768px wide. Drag a class to move it.",
+	"packages.calendar.import": "Import .ics",
+	"packages.calendar.export": "Download .ics",
+	"packages.calendar.imported": "{name}, from your file. Reload for the timetable.",
+	"packages.calendar.empty": "No events in that file within a year of today.",
 	"packages.copy": "Copy",
 	"packages.copied": "Copied",
 	"packages.deps_one": "{n} dependency",
@@ -269,7 +273,7 @@
 	"skill.simple-web-design": "Agent skill to audit and build websites on Anthony Hobday's 15 principles of simple web design.",
 
 	"foot.copyright": "© 2026 Bartosz Dymet",
-	"foot.hire": "I'm open to frontend work. Write to me.",
+	"foot.hire": "I'm open to product and frontend work. Write to me.",
 
 	"live.width": "{name}: screen width",
 	"live.desktop": "Desktop",

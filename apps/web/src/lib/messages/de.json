@@ -1,8 +1,8 @@
 {
-	"meta.title": "Bartosz Dymet · Frontend-Entwickler, Svelte und TypeScript",
+	"meta.title": "Bartosz Dymet · Produktentwickler, Svelte und TypeScript",
 	"meta.description": "Ich entwerfe, baue und betreibe Produkte: die Mail-Suite Zaur, Szkoły Jogi und mehr, auf Open-Source-Paketen für Svelte, die ich veröffentliche.",
 	"meta.ogAlt": "Bartosz Dymet, Frontend-Entwickler, neben den Produktnamen Zaur, Szkoły Jogi, thebest.travel, Kino, Kompi und Friendly Festivals.",
-	"meta.jobTitle": "Frontend-Entwickler",
+	"meta.jobTitle": "Produktentwickler",
 
 	"nav.skip": "Zum Inhalt springen",
 	"nav.sections": "Bereiche",
@@ -14,8 +14,8 @@
 	"nav.language": "Sprache",
 
 	"intro.portrait": "Porträt von Bartosz Dymet",
-	"intro.role": "Frontend-Entwickler · Svelte und TypeScript · Krakau",
-	"intro.pitch": "Ich entwerfe, baue und betreibe vollständige Produkte. Websites seit 1999, Svelte seit über fünf Jahren.",
+	"intro.role": "Produktentwickler · Svelte und TypeScript · Krakau",
+	"intro.pitch": "Ich baue Websites seit 1999. Heute dirigiere ich KI und mache saubere, schnelle Produkte, in denen noch ein menschliches Herz schlägt.",
 	"intro.kit": "Gebaut aus meinen Open-Source-Paketen",
 	"intro.point": "Zeigen Sie auf ein Produkt, um seine Pakete zu sehen.",
 
@@ -175,6 +175,10 @@
 	"packages.demo": "Demo",
 	"packages.source": "Quellcode",
 	"packages.calendar.note": "Das Widget selbst, mit einem Beispiel-Stundenplan: Theme aus dieser Seite gelesen, Handy-Layout unter 768 px Breite. Zieh einen Kurs, um ihn zu verschieben.",
+	"packages.calendar.import": ".ics importieren",
+	"packages.calendar.export": ".ics herunterladen",
+	"packages.calendar.imported": "{name}, aus deiner Datei. Neu laden für den Stundenplan.",
+	"packages.calendar.empty": "Keine Termine in dieser Datei im Umkreis eines Jahres.",
 	"packages.copy": "Kopieren",
 	"packages.copied": "Kopiert",
 	"packages.deps_one": "{n} Abhängigkeit",
@@ -269,7 +273,7 @@
 	"skill.simple-web-design": "Agent-Skill zum Prüfen und Bauen von Websites nach Anthony Hobdays 15 Prinzipien einfachen Webdesigns.",
 
 	"foot.copyright": "© 2026 Bartosz Dymet",
-	"foot.hire": "Ich bin offen für Frontend-Arbeit. Schreiben Sie mir.",
+	"foot.hire": "Ich bin offen für Produkt- und Frontend-Arbeit. Schreiben Sie mir.",
 
 	"live.width": "{name}: Bildschirmbreite",
 	"live.desktop": "Desktop",
