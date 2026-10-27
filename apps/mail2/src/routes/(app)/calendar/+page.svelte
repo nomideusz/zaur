@@ -18,6 +18,8 @@
 		weekDays
 	} from '@zaur/mail-core/utils/dates';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
+	import Splitter from '#lib/components/mail/Splitter.svelte';
+	import { CALENDAR_SIDEBAR_MAX, CALENDAR_SIDEBAR_MIN, DEFAULT_PREFS } from '#lib/settings';
 	import EventEditor, { type EventDraft } from '#lib/components/calendar/EventEditor.svelte';
 	import CalendarList from '#lib/components/calendar/CalendarList.svelte';
 	import CalendarSettings from '#lib/components/calendar/CalendarSettings.svelte';
@@ -911,7 +913,8 @@
 		     day columns, so while the rail is open the sidebar steps out and the
 		     header's Calendars button stands in for it. -->
 		<aside
-			class="flex w-[240px] shrink-0 flex-col border-r border-[var(--z-line)] bg-[var(--z-surface)] {railOpen ? 'max-xl:hidden' : 'max-lg:hidden'}"
+			class="flex shrink-0 flex-col bg-[var(--z-surface)] {railOpen ? 'max-xl:hidden' : 'max-lg:hidden'}"
+			style:width="{prefs.calendarSidebarWidth}px"
 			aria-label="Calendars"
 		>
 			{#if calendarsResource?.error}
@@ -936,6 +939,18 @@
 				/>
 			{/if}
 		</aside>
+
+		<!-- Dragged like Mail's list; a double-click puts it back. It goes wherever the sidebar goes. -->
+		<div class="contents {railOpen ? 'max-xl:hidden' : 'max-lg:hidden'}">
+			<Splitter
+				width={prefs.calendarSidebarWidth}
+				min={CALENDAR_SIDEBAR_MIN}
+				max={CALENDAR_SIDEBAR_MAX}
+				label="Resize calendars"
+				onResize={(width) => setPref('calendarSidebarWidth', width)}
+				onReset={() => setPref('calendarSidebarWidth', DEFAULT_PREFS.calendarSidebarWidth)}
+			/>
+		</div>
 
 		<!-- The grid -->
 		<div class="relative flex min-w-0 flex-1 flex-col {railOpen ? 'max-md:hidden' : ''}">

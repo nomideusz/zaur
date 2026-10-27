@@ -3,11 +3,13 @@
 		width: number;
 		min?: number;
 		max?: number;
+		/** What the handle resizes, for a screen reader. */
+		label?: string;
 		onResize: (width: number) => void;
 		onReset: () => void;
 	}
 
-	let { width, min = 380, max = 760, onResize, onReset }: Props = $props();
+	let { width, min = 380, max = 760, label = 'Resize message list', onResize, onReset }: Props = $props();
 
 	/** Where the gesture began: the pointer, and the width the list had on screen. */
 	let drag = $state<{ x: number; width: number } | null>(null);
@@ -64,7 +66,7 @@
 <div
 	role="separator"
 	aria-orientation="vertical"
-	aria-label="Resize message list"
+	aria-label={label}
 	aria-valuenow={Math.round(width)}
 	aria-valuemin={min}
 	aria-valuemax={max}

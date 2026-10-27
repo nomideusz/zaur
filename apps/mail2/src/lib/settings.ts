@@ -6,6 +6,8 @@
 export type Prefs = {
 	sidebarOpen: boolean;
 	listWidth: number;
+	/** The calendar page's list of calendars, as wide as it was dragged. On the device, like `listWidth`. */
+	calendarSidebarWidth: number;
 	/** Messages fetched per folder view. */
 	pageSize: number;
 	/** Mark a thread seen when it is opened in the reader. */
@@ -96,6 +98,7 @@ export const AI_CONFIDENCE_FLOOR: Record<AiConfidence, number> = { cautious: 0.7
 export const DEFAULT_PREFS: Prefs = {
 	sidebarOpen: true,
 	listWidth: 480,
+	calendarSidebarWidth: 240,
 	pageSize: 50,
 	markReadOnOpen: true,
 	showPreview: true,
@@ -192,6 +195,8 @@ export function mergeAccountPrefs(local: Prefs, remote: Partial<AccountPrefs> | 
 
 export const LIST_MIN = 380;
 export const LIST_MAX = 760;
+export const CALENDAR_SIDEBAR_MIN = 200;
+export const CALENDAR_SIDEBAR_MAX = 440;
 export const PAGE_SIZES = [25, 50, 100, 200];
 /** The undo windows on offer, as webmail 1.0 had them. */
 export const UNDO_SEND_SECONDS = [0, 5, 10, 20];
@@ -213,6 +218,7 @@ export function parsePrefs(raw: string | null): Prefs {
 		(next as Record<string, unknown>)[key] = value;
 	}
 	next.listWidth = Math.min(LIST_MAX, Math.max(LIST_MIN, next.listWidth));
+	next.calendarSidebarWidth = Math.min(CALENDAR_SIDEBAR_MAX, Math.max(CALENDAR_SIDEBAR_MIN, next.calendarSidebarWidth));
 	if (!PAGE_SIZES.includes(next.pageSize)) next.pageSize = DEFAULT_PREFS.pageSize;
 	if (!UNDO_SEND_SECONDS.includes(next.undoSendSeconds)) next.undoSendSeconds = DEFAULT_PREFS.undoSendSeconds;
 	if (!THEMES.includes(next.theme)) next.theme = DEFAULT_PREFS.theme;

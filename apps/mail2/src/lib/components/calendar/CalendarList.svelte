@@ -76,7 +76,8 @@
 							checked={calendar.isVisible}
 							onchange={(changed) => onToggle(calendar, changed.currentTarget.checked)}
 						/>
-						<span class="truncate">{calendar.name}</span>
+						<!-- Two lines before it gives up: "Holidays in United States" is read, not guessed. -->
+						<span class="min-w-0 line-clamp-2 break-words leading-snug" title={calendar.name}>{calendar.name}</span>
 					</label>
 					{#if calendar.isDefault}<span class="z-chip shrink-0">Default</span>{/if}
 					<!-- Shown on hover where there is one; a finger has no hover, so it stays. -->
