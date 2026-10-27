@@ -6,7 +6,9 @@ import { readUser } from '#lib/server/session';
 export const handle: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname === '/health') return Response.json({ ok: true }, { headers: { 'cache-control': 'no-store' } });
 	event.locals.user = readUser(event.cookies);
-	if (!event.locals.user && event.url.pathname.startsWith('/api/')) return new Response('Sign in first', { status: 401 });
+	// /api/fetch is the radio's, and checks its own token.
+	if (!event.locals.user && event.url.pathname.startsWith('/api/') && event.url.pathname !== '/api/fetch')
+		return new Response('Sign in first', { status: 401 });
 	const response = await resolve(event);
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('X-Content-Type-Options', 'nosniff');

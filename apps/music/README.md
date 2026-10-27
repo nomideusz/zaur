@@ -233,6 +233,14 @@ its turn comes (`pickUpload`: the same take, about as long, the artist's own
 upload first) and filed under `YouTube/<album artist>/<album>/` with Deezer's
 tags and cover, so it joins the album already there.
 
+**For Radio Bartek.** `/api/fetch` takes no session but a bearer token, the one
+in `/data/fetch-token` (`FETCH_TOKEN_FILE`; no file, no endpoint). POST
+`{ artist, title? }` finds the song on Deezer (by the artist alone, their most
+played), turns away anything over ten minutes, and adds it like an album's
+track; GET `?id=` is that job. The radio's request fetcher (radiobartek repo,
+`subwave/request-fetcher`) calls it for songs listeners ask for that the
+library lacks.
+
 The manifest's share target points at `/search` (`/add` redirects there), so a
 link shared to the installed app is added. An app that is already open is
 handed the link and is not reloaded, which would stop the music (Chromium only).

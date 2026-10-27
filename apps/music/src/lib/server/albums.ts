@@ -201,6 +201,46 @@ export async function lookOutside(q: string): Promise<{ albums: OutsideAlbum[]; 
 	};
 }
 
+/** One name is the other, give or take a "The" or a "feat.": "Spice Girls" and "Spicegirls". */
+const sameArtist = (a: string, b: string) => !!norm(a) && !!norm(b) && (norm(a).includes(norm(b)) || norm(b).includes(norm(a)));
+
+/**
+ * The song a radio listener asked for, as Deezer has it, filed as on its album; by the artist
+ * alone, their most played. Nothing rather than someone else's song of the same name.
+ */
+export async function requestedTrack(artist: string, title?: string): Promise<AlbumTrack | null> {
+	type Hit = { id: number; title: string; rank?: number; artist: { name: string } };
+	let id: number | undefined;
+	if (title) {
+		// Deezer answers `track:"…"` alone, not with `artist:"…"` beside it, and plain words miss some originals.
+		const searches = [`track:"${title}"`, `${artist} ${title}`].map((q) =>
+			deezer<{ data: Hit[] }>(`/search/track?${new URLSearchParams({ q, limit: '25' })}`)
+		);
+		const theirs = (await Promise.all(searches)).flatMap(({ data }) => data).filter((hit) => sameArtist(hit.artist.name, artist));
+		// The song by its own name, then a remaster of it, the most played release first; not a remix.
+		const exact = (hit: Hit) => Number(norm(hit.title) === norm(title));
+		const song = theirs.filter((hit) => sameSong(hit.title, title)).sort((a, b) => exact(b) - exact(a) || (b.rank ?? 0) - (a.rank ?? 0))[0];
+		id = (song ?? theirs[0])?.id;
+	} else {
+		const { data } = await deezer<{ data: { id: number; name: string }[] }>(`/search/artist?${new URLSearchParams({ q: artist, limit: '5' })}`);
+		const found = data.find((hit) => norm(hit.name) === norm(artist)) ?? data.find((hit) => sameArtist(hit.name, artist));
+		if (found) id = (await deezer<{ data: Hit[] }>(`/artist/${found.id}/top?limit=1`)).data[0]?.id;
+	}
+	if (!id) return null;
+	const track = await deezer<DeezerTrack & { release_date?: string; album: { title: string; cover_xl?: string } }>(`/track/${id}`);
+	return {
+		title: track.title,
+		artist: track.artist.name,
+		album: albumName(track.album.title),
+		albumArtist: track.artist.name,
+		year: track.release_date?.slice(0, 4),
+		track: track.track_position,
+		disc: track.disk_number && track.disk_number > 1 ? track.disk_number : undefined,
+		cover: track.album.cover_xl,
+		seconds: track.duration
+	};
+}
+
 interface DeezerArtist {
 	id: number;
 	name: string;
