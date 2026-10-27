@@ -82,3 +82,15 @@ test("ipapi.is region and flags", () => {
   assert.equal(n.mobile, 1);
   assert.equal(network({ company: "Google LLC", region: "California" }).region, "California");
 });
+
+test("a desktop window the size of its screen is a headless browser, not a visit", () => {
+  const all = visits(
+    [
+      line({ t: "2026-10-27T05:43:00Z", id: "headless", w: 1920, h: 1080, screen: "1920x1080" }),
+      JSON.stringify({ k: "end", id: "headless", secs: 28 }),
+      line({ t: "2026-10-27T05:44:00Z", id: "person", w: 1920, h: 945, screen: "1920x1080" }),
+      line({ t: "2026-10-27T05:45:00Z", id: "phone", w: 390, h: 844, screen: "390x844", device: "phone" }),
+    ].join("\n"),
+  );
+  assert.deepEqual(all.map((v) => v.id), ["phone", "person"]);
+});

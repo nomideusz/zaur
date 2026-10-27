@@ -189,7 +189,9 @@ export function visits(text) {
       continue;
     }
     if (h.k === "owner") claim(h);
-    else if (h.k === "view") byId.set(h.id, h);
+    // A desktop window exactly the size of its screen has no toolbar or
+    // taskbar: a headless browser in a data centre (Azure's Boydton, Hetzner).
+    else if (h.k === "view" && !(h.device === "desktop" && h.screen && h.screen === `${h.w}x${h.h}`)) byId.set(h.id, h);
     else if (byId.has(h.id)) Object.assign(byId.get(h.id), { secs: h.secs, depth: h.depth, clicks: h.clicks, seen: h.seen });
   }
   const all = [...byId.values()];
