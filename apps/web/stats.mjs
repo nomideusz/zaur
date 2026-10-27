@@ -25,8 +25,12 @@ const os = (ua) => [[/iPhone|iPad|iPod/, "iOS"], [/Android/, "Android"], [/Windo
 // office network, else the ISP) and the place. Without IPAPI_KEY the free
 // tier answers flat strings; with one (free, 1,000 a day) it nests them and
 // adds the owner's kind and the data-centre, VPN and mobile-network flags.
+// A flat company is sometimes a kind ("cloud") or a netblock's name
+// ("PV-SL-HOSTED-Los-Angeles"), never a spaced company name; then the
+// network's owner comes from "AS8075 Microsoft Corporation".
 export function network(d) {
-  const company = typeof d.company === "object" ? d.company : { name: d.company };
+  const flat = typeof d.company === "string" && !/\s/.test(d.company) && typeof d.asn === "string" ? d.asn.replace(/^AS\d+\s+/, "") : d.company;
+  const company = typeof d.company === "object" ? d.company : { name: flat };
   const loc = typeof d.location === "object" ? d.location : d;
   return {
     org: str(company?.name, 80),

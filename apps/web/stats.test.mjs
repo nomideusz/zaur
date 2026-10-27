@@ -83,6 +83,12 @@ test("ipapi.is region and flags", () => {
   assert.equal(network({ company: "Google LLC", region: "California" }).region, "California");
 });
 
+test("a keyless company that is a kind or a netblock gives way to the ASN's owner", () => {
+  assert.equal(network({ company: "cloud", asn: "AS8075 Microsoft Corporation" }).org, "Microsoft Corporation");
+  assert.equal(network({ company: "PV-SL-HOSTED-Los-Angeles", asn: "AS208172 Proton AG" }).org, "Proton AG");
+  assert.equal(network({ company: "Comcast IP Services, L.L.C.", asn: "AS7922 Comcast Cable Communications, LLC" }).org, "Comcast IP Services, L.L.C.");
+});
+
 test("a desktop window the size of its screen is marked as an agent's, and still counted", () => {
   const all = visits(
     [
