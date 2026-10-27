@@ -253,6 +253,78 @@ export const deleteEvent = command(
 	}
 );
 
+export interface ImportResult {
+	imported: number;
+	/** Already in the account: a file imported twice adds nothing. */
+	existing: number;
+	failed: number;
+	/** The first reason one was refused, to show with the count. */
+	reason?: string;
+}
+
+const IMPORT_BATCH = 50;
+
+/**
+ * An .ics file into a calendar. The server reads it (`CalendarEvent/parse`),
+ * so a repeating event arrives as one series with its rule, time zone and
+ * exceptions rather than as copies; each is then created in the calendar.
+ * Nobody is sent an invitation: `sendSchedulingMessages` stays off.
+ */
+export const importEvents = command(
+	v.object({
+		calendarId: ID,
+		accountId: ACCOUNT,
+		ics: v.pipe(v.string(), v.minLength(1), v.maxLength(20_000_000))
+	}),
+	async ({ calendarId, accountId, ics }): Promise<ImportResult> => {
+		const client = await connect();
+		if (!client.hasCalendars()) error(501, 'This mail server does not offer calendars over JMAP.');
+		if (!/^\s*BEGIN:VCALENDAR/i.test(ics.replace(/^﻿/, ''))) error(400, 'That file is not an iCalendar (.ics) file.');
+		const using = ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:calendars', 'urn:ietf:params:jmap:calendars:parse'];
+		try {
+			const { blobId } = await client.uploadBlob(new Blob([ics], { type: 'text/calendar' }), 'text/calendar');
+			const parsedResponse = await client.request(
+				[['CalendarEvent/parse', { accountId: client.getCalendarAccountId(), blobIds: [blobId] }, 'p']],
+				using
+			);
+			const [name, answer] = parsedResponse.methodResponses?.[0] ?? [];
+			if (name === 'error') error(400, (answer as { description?: string })?.description ?? 'The server could not read that file.');
+			const parsed = ((answer as { parsed?: Record<string, Record<string, unknown>[]> })?.parsed?.[blobId] ?? []).filter(
+				(event) => event['@type'] === 'Event'
+			);
+			if (!parsed.length) error(400, 'There are no events in that file.');
+
+			const result: ImportResult = { imported: 0, existing: 0, failed: 0 };
+			for (let at = 0; at < parsed.length; at += IMPORT_BATCH) {
+				const batch = parsed.slice(at, at + IMPORT_BATCH);
+				const create = Object.fromEntries(batch.map((event, i) => [`i${at + i}`, { ...event, calendarIds: { [calendarId]: true } }]));
+				const response = await client.request(
+					[['CalendarEvent/set', { accountId: accountId ?? client.getCalendarAccountId(), sendSchedulingMessages: false, create }, 's']],
+					using
+				);
+				const [method, set] = response.methodResponses?.[0] ?? [];
+				if (method === 'error') error(400, (set as { description?: string })?.description ?? 'The events could not be saved.');
+				const { created, notCreated } = set as {
+					created?: Record<string, unknown>;
+					notCreated?: Record<string, { type?: string; description?: string; properties?: string[] }>;
+				};
+				result.imported += Object.keys(created ?? {}).length;
+				for (const refused of Object.values(notCreated ?? {})) {
+					// Stalwart: "An event with UID … already exists."
+					if (refused.properties?.includes('uid') && /exist/i.test(refused.description ?? '')) result.existing++;
+					else {
+						result.failed++;
+						result.reason ??= refused.description ?? refused.type;
+					}
+				}
+			}
+			return result;
+		} catch (cause) {
+			rethrow(cause);
+		}
+	}
+);
+
 export const setCalendarVisible = command(
 	v.object({
 		id: ID,

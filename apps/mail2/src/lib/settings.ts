@@ -46,7 +46,44 @@ export type Prefs = {
 	holidayCountry: string;
 	/** The holidays calendar's checkbox. */
 	showHolidays: boolean;
+	/** Calendars subscribed to by their iCalendar link (Google, iCloud, Outlook): read-only. */
+	calendarFeeds: CalendarFeed[];
 };
+
+/** A calendar read from its iCalendar link through the server; `visible` is its checkbox. */
+export interface CalendarFeed {
+	id: string;
+	name: string;
+	url: string;
+	color: string;
+	visible: boolean;
+}
+
+export const MAX_FEEDS = 20;
+const FEED_URL = /^(https|webcal):\/\/[^\s]{1,2000}$/i;
+const HEX = /^#[0-9a-fA-F]{6}$/;
+
+/** Whatever came in — local storage, the account's copy, a client — as a list of well-formed feeds. */
+export function cleanFeeds(value: unknown): CalendarFeed[] {
+	if (!Array.isArray(value)) return [];
+	return value
+		.filter(
+			(feed): feed is CalendarFeed =>
+				!!feed &&
+				typeof feed.id === 'string' &&
+				/^[\w-]{1,40}$/.test(feed.id) &&
+				typeof feed.url === 'string' &&
+				FEED_URL.test(feed.url)
+		)
+		.slice(0, MAX_FEEDS)
+		.map((feed) => ({
+			id: feed.id,
+			name: typeof feed.name === 'string' && feed.name.trim() ? feed.name.trim().slice(0, 200) : 'Calendar',
+			url: feed.url,
+			color: typeof feed.color === 'string' && HEX.test(feed.color) ? feed.color : '#0891b2',
+			visible: feed.visible !== false
+		}));
+}
 
 export type Theme = 'system' | 'light' | 'dark';
 export const THEMES: Theme[] = ['system', 'light', 'dark'];
@@ -74,7 +111,8 @@ export const DEFAULT_PREFS: Prefs = {
 	undoSendSeconds: 5,
 	appBadge: true,
 	holidayCountry: '',
-	showHolidays: true
+	showHolidays: true,
+	calendarFeeds: []
 };
 
 /**
@@ -104,7 +142,8 @@ export const ACCOUNT_PREF_KEYS = [
 	'undoSendSeconds',
 	'appBadge',
 	'holidayCountry',
-	'showHolidays'
+	'showHolidays',
+	'calendarFeeds'
 ] as const satisfies readonly (keyof Prefs)[];
 
 export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
@@ -125,7 +164,8 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		undoSendSeconds: prefs.undoSendSeconds,
 		appBadge: prefs.appBadge,
 		holidayCountry: prefs.holidayCountry,
-		showHolidays: prefs.showHolidays
+		showHolidays: prefs.showHolidays,
+		calendarFeeds: prefs.calendarFeeds
 	};
 }
 
@@ -146,6 +186,7 @@ export function mergeAccountPrefs(local: Prefs, remote: Partial<AccountPrefs> | 
 	if (!PAGE_SIZES.includes(merged.pageSize)) merged.pageSize = DEFAULT_PREFS.pageSize;
 	if (!UNDO_SEND_SECONDS.includes(merged.undoSendSeconds)) merged.undoSendSeconds = DEFAULT_PREFS.undoSendSeconds;
 	if (!AI_CONFIDENCES.includes(merged.aiConfidence)) merged.aiConfidence = DEFAULT_PREFS.aiConfidence;
+	merged.calendarFeeds = cleanFeeds(merged.calendarFeeds);
 	return merged;
 }
 
@@ -176,5 +217,6 @@ export function parsePrefs(raw: string | null): Prefs {
 	if (!UNDO_SEND_SECONDS.includes(next.undoSendSeconds)) next.undoSendSeconds = DEFAULT_PREFS.undoSendSeconds;
 	if (!THEMES.includes(next.theme)) next.theme = DEFAULT_PREFS.theme;
 	if (!AI_CONFIDENCES.includes(next.aiConfidence)) next.aiConfidence = DEFAULT_PREFS.aiConfidence;
+	next.calendarFeeds = cleanFeeds(next.calendarFeeds);
 	return next;
 }

@@ -18,8 +18,8 @@ importers:
         specifier: ^5.24.3
         version: 5.24.3(svelte@5.57.2)
       '@nomideusz/svelte-calendar':
-        specifier: ^1.5.0
-        version: 1.5.0(svelte@5.57.2)
+        specifier: ^1.9.0
+        version: 1.9.0(svelte@5.57.2)
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -1229,11 +1229,6 @@ packages:
   '@noble/hashes@1.8.0':
     resolution: {integrity: sha512-jCs9ldd7NwzpgXDIf6P3+NrHh9/sD6CQdxHyjQI+h/6rDNo88ypBxxz45UDuZHz9r3tNz7N/VInSVoVdtXEI4A==}
     engines: {node: ^14.21.3 || >=16}
-
-  '@nomideusz/svelte-calendar@1.5.0':
-    resolution: {integrity: sha512-4hNGXjlk4kyK24hPRvF1BnFCET3VJxU5PpxfS8RKbkRKD6vXIu9wHfaQfJsG81DwPlvJYxwCRN9jgOiQg2plNQ==}
-    peerDependencies:
-      svelte: ^5.29.0
 
   '@nomideusz/svelte-calendar@1.9.0':
     resolution: {integrity: sha512-jj0zn+2vcS4GPocYTWYVu1QcYJXEl+B2EekweMLf9f3Qks7MfQTWMFBmX+gogfyCoWEFDODHYf5RzKAwwX0ROg==}
@@ -5185,13 +5180,6 @@ snapshots:
     optional: true
 
   '@noble/hashes@1.8.0': {}
-
-  '@nomideusz/svelte-calendar@1.5.0(svelte@5.57.2)':
-    dependencies:
-      '@chenglou/pretext': 0.0.9
-      date-fns: 4.4.0
-      date-fns-tz: 3.2.0(date-fns@4.4.0)
-      svelte: 5.57.2
 
   '@nomideusz/svelte-calendar@1.9.0(svelte@5.57.2)':
     dependencies:

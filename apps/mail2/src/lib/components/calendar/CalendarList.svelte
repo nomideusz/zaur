@@ -14,6 +14,7 @@
 		onToggle,
 		onEdit,
 		onAdd,
+		onImport,
 		adding = false
 	}: {
 		calendars: Calendar[];
@@ -21,6 +22,8 @@
 		onToggle: (calendar: Calendar, visible: boolean) => void;
 		onEdit: (calendar: Calendar) => void;
 		onAdd: (name: string) => void;
+		/** Opens importing a file or subscribing by link. */
+		onImport?: () => void;
 		adding?: boolean;
 	} = $props();
 
@@ -89,6 +92,11 @@
 			{/each}
 		</ul>
 	{/each}
+	{#if onImport}
+		<button type="button" class="mt-4 px-2 text-[12.5px] text-[var(--z-muted)] underline-offset-2 hover:text-[var(--z-ink)] hover:underline" onclick={onImport}>
+			Import or subscribe…
+		</button>
+	{/if}
 </div>
 
 <form

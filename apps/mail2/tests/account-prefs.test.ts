@@ -22,6 +22,7 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 		'aiConfidence',
 		'aiHeadersOnly',
 		'appBadge',
+		'calendarFeeds',
 		'composePlain',
 		'holidayCountry',
 		'markReadOnOpen',
@@ -52,7 +53,8 @@ test('accountPrefsOf: carries only the account keys, whatever else is set', () =
 		undoSendSeconds: DEFAULT_PREFS.undoSendSeconds,
 		appBadge: DEFAULT_PREFS.appBadge,
 		holidayCountry: DEFAULT_PREFS.holidayCountry,
-		showHolidays: DEFAULT_PREFS.showHolidays
+		showHolidays: DEFAULT_PREFS.showHolidays,
+		calendarFeeds: []
 	});
 });
 
@@ -113,4 +115,16 @@ test('undoSendSeconds: only the windows on offer, from the account or the device
 	assert.equal(mergeAccountPrefs({ ...DEFAULT_PREFS }, { undoSendSeconds: 7 }).undoSendSeconds, DEFAULT_PREFS.undoSendSeconds);
 	assert.equal(parsePrefs('{"undoSendSeconds":3600}').undoSendSeconds, DEFAULT_PREFS.undoSendSeconds);
 	assert.equal(parsePrefs('{"undoSendSeconds":0}').undoSendSeconds, 0);
+});
+
+test('calendarFeeds: travel, and anything malformed is dropped on the way in', () => {
+	const good = { id: 'f1', name: ' Work ', url: 'webcal://p01-caldav.icloud.com/published/2/abc', color: '#123456', visible: false };
+	const merged = mergeAccountPrefs({ ...DEFAULT_PREFS }, {
+		calendarFeeds: [good, { id: 'f2', url: 'file:///etc/passwd' }, { id: 'f3', url: 'https://x.test/a.ics', color: 'red' }, null] as never
+	});
+	assert.deepEqual(merged.calendarFeeds, [
+		{ ...good, name: 'Work' },
+		{ id: 'f3', name: 'Calendar', url: 'https://x.test/a.ics', color: '#0891b2', visible: true }
+	]);
+	assert.deepEqual(parsePrefs(JSON.stringify({ calendarFeeds: { id: 'x' } })).calendarFeeds, []);
 });

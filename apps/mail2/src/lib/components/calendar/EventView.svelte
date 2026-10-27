@@ -5,6 +5,7 @@
 	import { extractMeetingGroup } from '@zaur/mail-core/utils/meet';
 	import { describeRepeat } from '#lib/calendar/schedule';
 	import { isHolidays } from '#lib/calendar/holidays';
+	import { isFeed } from '#lib/calendar/feeds';
 	import MeetIcon from '../meet/MeetIcon.svelte';
 	import { eventParticipants, type EventParticipant } from '../../../routes/calendar.remote';
 
@@ -53,7 +54,7 @@
 	// Guests, read-only: the series' list for an occurrence. A failed load shows nothing.
 	// A holiday has none, and no JMAP account to ask.
 	const guests = $derived(
-		isHolidays(event) ? null : eventParticipants({ id: event.baseEventId ?? event.id, accountId: event.accountId })
+		isHolidays(event) || isFeed(event) ? null : eventParticipants({ id: event.baseEventId ?? event.id, accountId: event.accountId })
 	);
 	const answered: Record<EventParticipant['status'], string> = {
 		accepted: 'Going',

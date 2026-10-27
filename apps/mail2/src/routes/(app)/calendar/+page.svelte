@@ -47,6 +47,10 @@
 		yearsIn
 	} from '#lib/calendar/holidays';
 	import HolidaySettings from '#lib/components/calendar/HolidaySettings.svelte';
+	import CalendarImport from '#lib/components/calendar/CalendarImport.svelte';
+	import FeedSettings from '#lib/components/calendar/FeedSettings.svelte';
+	import { feedCalendar, feedEvents, isFeed } from '#lib/calendar/feeds';
+	import { calendarFeed } from '../../feeds.remote';
 
 	const who = whoami();
 	const session = $derived(who.current ?? null);
@@ -129,7 +133,8 @@
 	const holidaysCal = $derived(
 		calendarsState?.supported && country ? holidaysCalendar(country, prefs.showHolidays) : null
 	);
-	const calendarList = $derived([...(calendarsState?.calendars ?? []), ...(holidaysCal ? [holidaysCal] : [])]);
+	const feedCals = $derived(calendarsState?.supported ? prefs.calendarFeeds.map(feedCalendar) : []);
+	const calendarList = $derived([...(calendarsState?.calendars ?? []), ...feedCals, ...(holidaysCal ? [holidaysCal] : [])]);
 	/** A range's holidays, each year asked for once and cached by the query. */
 	async function holidaysIn(start: Date, end: Date): Promise<CalendarEvent[]> {
 		if (!country || !holidaysCal?.isVisible) return [];
@@ -138,6 +143,20 @@
 			yearsIn(start, end).map((year) => holidaysRemote({ country: code, year }).catch(() => []))
 		);
 		return years.flatMap((list) => holidayEvents(code, list, start, end));
+	}
+	/** The subscribed calendars' events in a range; one that does not answer just stays empty. */
+	async function feedsIn(start: Date, end: Date): Promise<CalendarEvent[]> {
+		if (!calendarsState?.supported) return [];
+		const lists = await Promise.all(
+			prefs.calendarFeeds
+				.filter((feed) => feed.visible)
+				.map((feed) =>
+					calendarFeed(feed.url)
+						.then((text) => feedEvents(feed, text, start, end))
+						.catch(() => [])
+				)
+		);
+		return lists.flat();
 	}
 
 	// Push: a change made on the phone shows up here.
@@ -228,7 +247,8 @@
 					if (gridRange === bounds) failed = before ? 'kept' : 'nothing';
 					list = before ?? [];
 				}
-				list = [...list, ...(await holidaysIn(range.start, range.end))];
+				const [holidayList, feedList] = await Promise.all([holidaysIn(range.start, range.end), feedsIn(range.start, range.end)]);
+				list = [...list, ...holidayList, ...feedList];
 				return list
 					.filter((event) =>
 						event.calendarIds.some(
@@ -254,7 +274,7 @@
 	 * the editor, and — the grid's calendars are a sidebar only on a wide screen —
 	 * the calendar list and one calendar's settings.
 	 */
-	let mode = $state<'view' | 'event' | 'new' | 'edit' | 'calendars' | 'calendar'>('view');
+	let mode = $state<'view' | 'event' | 'new' | 'edit' | 'calendars' | 'calendar' | 'import'>('view');
 	let editing = $state<CalendarEvent | null>(null);
 	/** What a new event opens on — a day, or the exact slot that was drawn. */
 	let draftAt = $state(today);
@@ -279,7 +299,7 @@
 
 	/** An event form with something typed in it asks before it is dropped; so does a calendar's name. */
 	let editor = $state<ReturnType<typeof EventEditor> | null>(null);
-	let settings = $state<ReturnType<typeof CalendarSettings> | null>(null);
+	let settings = $state<{ isDirty(): boolean } | null>(null);
 	const mayLeave = leaveGuard(
 		() =>
 			mode === 'calendar'
@@ -302,7 +322,7 @@
 			// Back on a phone has already left the entry: staying means putting it back.
 			if (!mayLeave()) return void panel.show();
 			// Out of a calendar's settings Back goes where its Done does: to the list they were opened from.
-			if (mode === 'calendar' && settingsFrom === 'calendars') {
+			if ((mode === 'calendar' || mode === 'import') && settingsFrom === 'calendars') {
 				mode = 'calendars';
 				return void panel.show();
 			}
@@ -454,6 +474,8 @@
 
 	async function toggleCalendar(calendar: Calendar, visible: boolean) {
 		if (isHolidays(calendar)) return setPref('showHolidays', visible);
+		if (isFeed(calendar))
+			return setPref('calendarFeeds', prefs.calendarFeeds.map((feed) => (feed.id === calendar.id ? { ...feed, visible } : feed)));
 		try {
 			await setCalendarVisible({ id: calendar.id, accountId: calendar.accountId, visible });
 		} catch (cause) {
@@ -480,6 +502,13 @@
 		else closePanel();
 	}
 
+	/** Import and subscribe open from the calendar list, and go back to it the same way. */
+	function openImport() {
+		const from = mode === 'calendars' ? 'calendars' : 'view';
+		if (!openPanel('import')) return;
+		settingsFrom = from;
+	}
+
 	let panes = $state<HTMLElement>();
 	/**
 	 * Escape closes what the rail holds — an editor steps back the way Cancel
@@ -495,7 +524,7 @@
 		event.preventDefault();
 		if (!mayLeave()) return;
 		if (mode === 'edit' && editing) mode = 'event';
-		else if (mode === 'calendar') leaveSettings();
+		else if (mode === 'calendar' || mode === 'import') leaveSettings();
 		else closePanel();
 	}
 
@@ -636,6 +665,7 @@
 					onToggle={toggleCalendar}
 					onEdit={openSettings}
 					onAdd={addCalendar}
+					onImport={openImport}
 					adding={addingCalendar}
 				/>
 			{/if}
@@ -733,8 +763,31 @@
 						onToggle={toggleCalendar}
 						onEdit={openSettings}
 						onAdd={addCalendar}
+						onImport={openImport}
 						adding={addingCalendar}
 					/>
+				{:else if mode === 'import' && calendarsState}
+					<CalendarImport
+						calendars={calendarList}
+						onDone={(message) => {
+							flash(message);
+							void reload();
+						}}
+						onClose={leaveSettings}
+					/>
+				{:else if mode === 'calendar' && settingsCalendar && isFeed(settingsCalendar)}
+					{@const feed = prefs.calendarFeeds.find((f) => f.id === settingsCalendar.id)}
+					{#if feed}
+						<FeedSettings
+							bind:this={settings}
+							{feed}
+							onDone={(message, closed) => {
+								flash(message);
+								if (closed) leaveSettings();
+							}}
+							onClose={() => mayLeave() && leaveSettings()}
+						/>
+					{/if}
 				{:else if mode === 'calendar' && settingsCalendar && isHolidays(settingsCalendar)}
 					<HolidaySettings detected={detectedCountry} onClose={leaveSettings} />
 				{:else if mode === 'calendar' && settingsCalendar && calendarsState}

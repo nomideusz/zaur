@@ -2,7 +2,7 @@ import { error } from '@sveltejs/kit';
 import { query, command } from '$app/server';
 import { getAccountPrefs, getStoreDb, putAccountPrefs } from '@zaur/server-auth';
 import { connect, refuse, requireAccountKey } from '#lib/server/account';
-import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
+import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, cleanFeeds, type AccountPrefs } from '#lib/settings';
 import { aiCategoriesAvailable, aiSettings, recheckOther } from '#lib/server/categorize';
 import { importWebmailSignature } from '#lib/server/webmail-import';
 
@@ -31,6 +31,7 @@ function sanitize(input: unknown): Partial<AccountPrefs> {
 		const value = source[key];
 		if (typeof value === typeof DEFAULT_PREFS[key]) clean[key] = value;
 	}
+	if ('calendarFeeds' in clean) clean.calendarFeeds = cleanFeeds(clean.calendarFeeds);
 	return clean as Partial<AccountPrefs>;
 }
 
