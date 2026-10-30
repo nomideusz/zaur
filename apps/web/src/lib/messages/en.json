@@ -201,7 +201,7 @@
 	"packages.geometrize.count": "Number of triangles",
 	"packages.geometrize.hint": "Every screenshot here paints first as triangles fitted at build time.",
 	"chip.behind": "{pkg}: {name} runs {used}, the latest is {latest}",
-	"packages.world.hint": "This sky is the package, live for Kraków: real sun, weather and stars. It backs Radio Bartek, my 24/7 station whose AI DJ speaks in a clone of my voice.",
+	"packages.world.hint": "This sky is the package, live for Kraków: real sun, weather and stars. It backs Radio Bartek, my 24/7 station on SubWave, whose AI DJ speaks in a clone of my voice.",
 	"packages.qr.label": "Encode",
 	"packages.qr.level": "Error correction",
 	"packages.qr.meta": "Version {v} · {n}×{n} modules · {used} of {cap} bytes",

@@ -203,7 +203,7 @@
 	"packages.geometrize.count": "Liczba trójkątów",
 	"packages.geometrize.hint": "Każdy zrzut ekranu najpierw maluje się z trójkątów dopasowanych przy budowaniu.",
 	"chip.behind": "{pkg}: {name} używa {used}, najnowsza to {latest}",
-	"packages.world.hint": "To niebo to ten pakiet, na żywo dla Krakowa: prawdziwe słońce, pogoda i gwiazdy. Jest tłem Radia Bartek, mojej całodobowej stacji, w której DJ AI mówi sklonowanym moim głosem.",
+	"packages.world.hint": "To niebo to ten pakiet, na żywo dla Krakowa: prawdziwe słońce, pogoda i gwiazdy. Jest tłem Radia Bartek, mojej całodobowej stacji na SubWave, w której DJ AI mówi sklonowanym moim głosem.",
 	"packages.qr.label": "Zakoduj",
 	"packages.qr.level": "Korekcja błędów",
 	"packages.qr.meta": "Wersja {v} · {n}×{n} modułów · {used} z {cap} bajtów",

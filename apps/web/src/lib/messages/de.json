@@ -201,7 +201,7 @@
 	"packages.geometrize.count": "Anzahl der Dreiecke",
 	"packages.geometrize.hint": "Jeder Screenshot hier erscheint zuerst als Dreiecke, beim Build angepasst.",
 	"chip.behind": "{pkg}: {name} nutzt {used}, aktuell ist {latest}",
-	"packages.world.hint": "Dieser Himmel ist das Paket, live für Krakau: echte Sonne, Wetter und Sterne. Er trägt Radio Bartek, meinen Sender rund um die Uhr, dessen KI-DJ mit einem Klon meiner Stimme spricht.",
+	"packages.world.hint": "Dieser Himmel ist das Paket, live für Krakau: echte Sonne, Wetter und Sterne. Er trägt Radio Bartek, meinen Sender rund um die Uhr auf SubWave, dessen KI-DJ mit einem Klon meiner Stimme spricht.",
 	"packages.qr.label": "Kodieren",
 	"packages.qr.level": "Fehlerkorrektur",
 	"packages.qr.meta": "Version {v} · {n}×{n} Module · {used} von {cap} Bytes",

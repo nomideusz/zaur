@@ -201,7 +201,7 @@
 	"packages.geometrize.count": "Nombre de triangles",
 	"packages.geometrize.hint": "Chaque capture ici s'affiche d'abord en triangles calculés au build.",
 	"chip.behind": "{pkg} : {name} utilise la {used}, la dernière est la {latest}",
-	"packages.world.hint": "Ce ciel, c’est le paquet, en direct pour Cracovie : vrai soleil, météo et étoiles. Il habille Radio Bartek, ma station 24 h/24 dont le DJ IA parle avec un clone de ma voix.",
+	"packages.world.hint": "Ce ciel, c’est le paquet, en direct pour Cracovie : vrai soleil, météo et étoiles. Il habille Radio Bartek, ma station 24 h/24 sur SubWave, dont le DJ IA parle avec un clone de ma voix.",
 	"packages.qr.label": "Encoder",
 	"packages.qr.level": "Correction d’erreur",
 	"packages.qr.meta": "Version {v} · {n}×{n} modules · {used} octets sur {cap}",
