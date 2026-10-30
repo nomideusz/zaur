@@ -10,6 +10,7 @@
 	import Live from '#lib/Live.svelte';
 	import Radio from '#lib/Radio.svelte';
 	import CalendarDemo from '#lib/CalendarDemo.svelte';
+	import Daily, { linked } from '#lib/Daily.svelte';
 	import { fold, gramsOf, indexed, search as match, tokensOf, type Entry } from '#lib/find';
 	import { booking, canRefund, discountFrom, email, perPerson, policies, quote, rebook, sendRefund, thursday } from '#lib/booking.svelte';
 	import { track } from '#lib/visit';
@@ -318,38 +319,40 @@
 	// svelte-ignore state_referenced_locally
 	let versions = $state<Record<string, string>>({ ...data.versions });
 	let registryDown = $state(false);
-	// Google Search, live from the server: clicks and average position for each
-	// recent week. Every searched site shows the same two, however they look.
-	type Search = { weeks: [string, number, number | null][]; clicks28: number; position28: number | null; through: string };
-	const searched = ['szkolyjogi', 'fixtar', 'kino', 'kompi', 'festivals'];
+	// Google Search, live from the server (search.mjs, /api/traffic): clicks, impressions and
+	// average position for each of the last ninety days. Every site Search
+	// Console has shows the same three, however they look.
+	type Sum = { clicks: number; impressions: number; position: number | null };
+	type Search = { through: string; days: [string, number, number, number | null][]; now: Sum; before: Sum };
+	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'svelte-calendar'];
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
 	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
+	// A package's demo gets no search traffic to speak of; npm counts its
+	// downloads, day by day for the same ninety days, from the same endpoint.
+	let downloads = $state<Record<string, { through: string; days: string[]; values: number[] }>>({});
 	const tenths = new Intl.NumberFormat(intl, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 	const rank = (p: number | null) => (p === null ? '—' : tenths.format(p));
-	// A tiny chart's points across a 48×16 box: clicks rise from the floor,
-	// position 1 sits at the top.
-	const W = 48;
-	const H = 16;
-	const x = (i: number, n: number) => (i + 0.5) * (W / n);
-	const positionY = (ps: (number | null)[]) => {
-		const seen = ps.filter((p) => p !== null);
-		const lo = Math.min(...seen);
-		const span = Math.max(...seen) - lo;
-		return (p: number) => (span ? 2 + ((p - lo) / span) * (H - 4) : H / 2);
-	};
-	// A week without a position breaks the line; a lone week is a dot.
-	const positionPath = (ps: (number | null)[], y: (p: number) => number) =>
-		ps
-			.map((p, i) => {
-				if (p === null) return '';
-				const joined = i > 0 && ps[i - 1] !== null;
-				const lone = !joined && ps[i + 1] == null;
-				return `${joined ? 'L' : 'M'}${x(i, ps.length)} ${y(p)}${lone ? 'h0' : ''}`;
-			})
-			.join('');
 	const compact = new Intl.NumberFormat(intl, { notation: 'compact' });
+	const pct = new Intl.NumberFormat(intl, { style: 'percent', signDisplay: 'exceptZero', maximumFractionDigits: 0 });
 	const day = (d: string) => new Date(d).toLocaleDateString(intl, { day: 'numeric', month: 'short', timeZone: 'UTC' });
+	// The last 28 days against the 28 before, down as plainly as up.
+	const change = (now: number, before: number) => (before ? pct.format(now / before - 1) : now ? t('daily.new') : '—');
+	type Row = { label: string; days: string[]; values: (number | null)[]; now: number | null; change: string; fmt: (v: number) => string; line?: boolean };
+	const searchRows = (s: Search): Row[] => {
+		const days = s.days.map(([d]) => d);
+		const { now, before } = s;
+		return [
+			{ label: t('daily.clicks'), days, values: s.days.map((d) => d[1]), now: now.clicks, change: change(now.clicks, before.clicks), fmt: num },
+			{ label: t('daily.impressions'), days, values: s.days.map((d) => d[2]), now: now.impressions, change: change(now.impressions, before.impressions), fmt: compact.format },
+			{ label: t('daily.position'), days, values: s.days.map((d) => d[3]), now: now.position, change: before.position === null ? '—' : t('daily.was', { position: rank(before.position) }), fmt: rank, line: true }
+		];
+	};
+	const downloadRow = (id: string): Row => {
+		const { days, values } = downloads[id];
+		const total = (from: number, to?: number) => values.slice(from, to).reduce((a, v) => a + v, 0);
+		return { label: t('daily.downloads'), days, values, now: total(-28), change: change(total(-28), total(-56, -28)), fmt: num };
+	};
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
 	const pinned = data.usedVersions;
@@ -483,7 +486,10 @@
 		addEventListener('click', onclick);
 		fetch('/api/traffic')
 			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
-			.then((t) => (traffic = t))
+			.then((t) => {
+				traffic = t.search;
+				downloads = t.npm;
+			})
 			.catch(() => (trafficDown = true));
 		for (const p of pkgs) {
 			fetch(`https://registry.npmjs.org/${p.name}/latest`)
@@ -547,8 +553,8 @@
 				{#if searching(c.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
 				<a href={c.href}>{c.name}</a>
 			</h3>
-			{#if searching(c.id)}{@render search(c.id)}{/if}
 			<p>{c.desc}</p>
+			{@render search(c.id)}
 			{#if c.uses?.length}
 				<ul class="chips">
 					{#each c.uses as u (u)}
@@ -588,19 +594,19 @@
 					{/each}
 				</ul>
 			{/if}
-			{#if traffic?.[w.id]}{@render growth(w.id, traffic[w.id])}{/if}
+			{#if traffic?.[w.id]}
+				<figure class="growth">
+					<figcaption>{t('daily.caption')}</figcaption>
+					{@render search(w.id)}
+				</figure>
+			{/if}
 		</div>
 		<div class="case-body">
 			<h3>
 				{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
 				<a href={w.href}>{title}</a>
 			</h3>
-			{#if host(w.href) !== title}
-				<p class="meta">{host(w.href)}</p>
-			{:else if searching(w.id)}
-				<!-- the weekly chart in .media already draws the clicks -->
-				{@render search(w.id, false)}
-			{/if}
+			{#if host(w.href) !== title}<p class="meta">{host(w.href)}</p>{/if}
 			<p class="what">{w.what}</p>
 			<h4>{t('work.built')}</h4>
 			<ul class="built">
@@ -622,59 +628,35 @@
 	</article>
 {/snippet}
 
-<!-- Google Search under a title: the 28-day clicks and average position, each
-     after a tiny chart of its twelve weeks, the newest in orange. -->
-{#snippet search(id: string, sparks = true)}
-	{@const s = traffic?.[id]}
-	{#if !s}
+<!-- Linked daily charts, a row a number: the last 28 days and how they
+     compare with the 28 before, or the day pointed at in any chart. -->
+{#snippet daily(rows: Row[], source: string, through: string, note = true)}
+	<dl class="daily">
+		{#each rows as r (r.label)}
+			{@const i = linked.day ? r.days.indexOf(linked.day) : -1}
+			{@const v = linked.day ? (i < 0 ? null : r.values[i]) : r.now}
+			<div>
+				<dt>{r.label}</dt>
+				<dd><Daily days={r.days} values={r.values} line={r.line} /></dd>
+				<dd class="v">{v === null ? '—' : r.fmt(v)}</dd>
+				<dd>{linked.day ? day(linked.day) : r.change}</dd>
+			</div>
+		{/each}
+	</dl>
+	{#if note}<p class="daily-note">{t('daily.note', { source, date: day(through) })}</p>{/if}
+{/snippet}
+
+{#snippet search(id: string)}
+	{#if traffic?.[id]}
+		{@render daily(searchRows(traffic[id]), 'Google Search Console', traffic[id].through)}
+	{:else if searching(id)}
 		<p class="meta">{t('search.reading')}</p>
-	{:else}
-		{@const n = s.weeks.length}
-		{@const top = Math.max(1, ...s.weeks.map(([, c]) => c))}
-		{@const ps = s.weeks.map(([, , p]) => p)}
-		{@const last = ps[n - 1]}
-		<p class="meta gsc">
-			<span>
-				{#if sparks}
-					<svg class="spark" viewBox="0 0 {W} {H}" aria-hidden="true">
-						{#each s.weeks as [d, c], i (d)}
-							{@const h = Math.max(1, (c / top) * H)}
-							<rect class:now={i === n - 1} x={x(i, n) - 1.5} y={H - h} width="3" height={h} />
-						{/each}
-					</svg>
-				{/if}
-				{t('search.clicks', { count: s.clicks28, n: num(s.clicks28) })}
-			</span>
-			<span>
-				{#if sparks && ps.some((p) => p !== null)}
-					{@const y = positionY(ps)}
-					<svg class="spark" viewBox="0 0 {W} {H}" aria-hidden="true">
-						<path d={positionPath(ps, y)} />
-						{#if last !== null}<circle class="now" cx={x(n - 1, n)} cy={y(last)} r="1.75" />{/if}
-					</svg>
-				{/if}
-				{t('search.position', { position: rank(s.position28) })}
-			</span>
-		</p>
 	{/if}
 {/snippet}
 
-{#snippet growth(id: string, s: Search)}
-	{@const top = Math.max(1, ...s.weeks.map(([, n]) => n))}
-	<figure class="growth">
-		<figcaption>{t('growth.caption')}</figcaption>
-		<ol>
-			{#each s.weeks as [d, n], i (d)}
-				{@const month = i === 0 || d.slice(5, 7) !== s.weeks[i - 1][0].slice(5, 7)}
-				<li>
-					<span class="col"><b>{compact.format(n)}</b><i style:height="{(n / top) * 100}%"></i></span>
-					<span class="mo" class:day={!month}>{month ? day(d) : Number(d.slice(8))}</span>
-				</li>
-			{/each}
-		</ol>
-		<!-- the 28-day clicks and position already sit under the title -->
-		<p>{t('growth.source', { date: day(s.through) })}</p>
-	</figure>
+<!-- A package row leaves the note to the featured case that opens the section. -->
+{#snippet npm(id: string, note = true)}
+	{#if downloads[id]}{@render daily([downloadRow(id)], 'npm', downloads[id].through, note)}{/if}
 {/snippet}
 
 <svelte:head>
@@ -795,6 +777,8 @@
 					</h3>
 					<p class="meta">{p.name} {version(p.id)}{#if metaOf(p.id)} · {metaOf(p.id)}{/if}</p>
 					<p class="what">{p.desc}</p>
+					{@render npm(p.id)}
+					{@render search(p.id)}
 					{@render install(`npm i ${p.name}`)}
 					{#if usedIn(p.id).length}<p class="p-used">{usedInText(p.id)}</p>{/if}
 					<p class="go">
@@ -812,6 +796,7 @@
 					<div>
 						<p>{p.desc}</p>
 						{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
+						{@render npm(p.id, false)}
 						{@render install(`npm i ${p.name}`)}
 						{#if p.id === 'svelte-i18n'}
 							<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
@@ -1414,36 +1399,6 @@
 		margin-top: 0.3rem;
 		font-size: 0.875rem;
 	}
-	.gsc {
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.25rem 1rem;
-	}
-	.gsc > span {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-	}
-	.spark {
-		flex: none;
-		width: 3rem;
-		height: 1rem;
-		overflow: visible;
-	}
-	.spark rect {
-		fill: var(--ink);
-	}
-	.spark path {
-		fill: none;
-		stroke: var(--ink);
-		stroke-width: 1.25;
-		stroke-linecap: round;
-		stroke-linejoin: round;
-		vector-effect: non-scaling-stroke;
-	}
-	.spark .now {
-		fill: var(--orange);
-	}
 	.what {
 		max-width: 60ch;
 		margin-top: 0.75rem;
@@ -1465,7 +1420,7 @@
 	}
 	/* Inter Tight sets about 1.3 characters to the ch: 54ch holds a line near 70. */
 	.facts dd,
-	.sites dd {
+	.sites > li > dl dd {
 		max-width: 54ch;
 	}
 
@@ -1481,46 +1436,30 @@
 	.growth figcaption {
 		font-weight: 700;
 	}
-	.growth ol {
-		display: flex;
-		gap: 0.5rem;
-		height: 10rem;
-		margin-top: 0.75rem;
-	}
-	.growth li {
-		flex: 1;
-		min-width: 0;
-		display: grid;
-		grid-template-rows: 1fr auto;
-	}
-	.growth .col {
-		display: flex;
-		flex-direction: column;
-		justify-content: flex-end;
-		padding-top: 1.25rem;
-		border-bottom: var(--rule) solid var(--ink);
-	}
-	.growth b {
-		font-size: 0.8125rem;
-		font-variant-numeric: tabular-nums;
-	}
-	.growth i {
-		display: block;
-		min-height: 2px;
-		background: var(--ink);
-	}
-	.growth li:last-child i {
-		background: var(--orange);
-	}
-	.growth .mo {
-		padding-top: 0.25rem;
-		white-space: nowrap;
-		font-size: 0.8125rem;
-		color: var(--quiet);
-	}
-	.growth p {
+	/* Linked daily charts: label, ninety days, the number, how it moved. */
+	.daily {
 		margin-top: 0.75rem;
 		font-size: 0.875rem;
+		font-variant-numeric: tabular-nums;
+	}
+	.daily div {
+		display: grid;
+		grid-template-columns: 7.5rem minmax(0, 1fr) 4rem 5.5rem;
+		gap: 0.75rem;
+		align-items: end;
+		padding: 0.3rem 0;
+	}
+	.daily dt {
+		color: var(--quiet);
+	}
+	.daily .v {
+		text-align: right;
+		font-weight: 700;
+	}
+	.daily-note {
+		margin-top: 0.4rem;
+		font-size: 0.8125rem;
+		color: var(--quiet);
 	}
 
 	/* Work: three case studies, then the rest in a ruled row. */
@@ -2212,20 +2151,20 @@
 		max-width: 52ch;
 		margin-top: 0.5rem;
 	}
-	.sites dl {
+	.sites > li > dl {
 		font-size: 0.9375rem;
 	}
-	.sites dl div {
+	.sites > li > dl div {
 		display: grid;
 		grid-template-columns: 6.5rem 1fr;
 		gap: 0.75rem;
 		padding: 0.2rem 0;
 		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
 	}
-	.sites dl div:first-child {
+	.sites > li > dl div:first-child {
 		border-top: 0;
 	}
-	.sites dt {
+	.sites > li > dl dt {
 		color: var(--quiet);
 	}
 	.site .chips {
@@ -2374,18 +2313,13 @@
 		.case {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		/* Twelve weeks on a phone: the bars stay, the latest number and the
-		   month starts label them. */
-		.growth ol {
-			gap: 0.3rem;
+		/* On a phone the label takes a line of its own over the chart. */
+		.daily div {
+			grid-template-columns: minmax(0, 1fr) 3.5rem 5rem;
+			gap: 0.1rem 0.6rem;
 		}
-		.growth li:not(:last-child) b,
-		.growth .mo.day,
-		.growth li:first-child:has(+ li .mo:not(.day)) .mo {
-			visibility: hidden;
-		}
-		.growth li:last-child .mo {
-			text-align: right;
+		.daily dt {
+			grid-column: 1 / -1;
 		}
 		.media {
 			border-right: 0;
@@ -2459,10 +2393,10 @@
 			font-size: 1.375rem;
 		}
 		.site .chips,
-		.sites dl {
+		.sites > li > dl {
 			clear: both;
 		}
-		.sites dl {
+		.sites > li > dl {
 			margin-top: 0.9rem;
 		}
 		.t-src {
@@ -2528,7 +2462,7 @@
 			width: auto;
 			margin: 0;
 		}
-		.sites dl {
+		.sites > li > dl {
 			grid-column: 2;
 		}
 	}

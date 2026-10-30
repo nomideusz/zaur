@@ -1,18 +1,29 @@
-// Google Search numbers for the sites the page charts, read with the yoga
-// panel's Search Console service account (GSC_SERVICE_ACCOUNT_JSON, readonly
-// scope). Every site gets the same two, good or bad: clicks and average
-// position, week by week. Cached for six hours, so Google sees at most four
-// rounds a day.
+// The page's live numbers, served at /api/traffic. Google Search for
+// everything on the page that Search Console has, read with the yoga panel's
+// service account (GSC_SERVICE_ACCOUNT_JSON, readonly scope): every site gets
+// the same three, good or bad, clicks, impressions and average position, day
+// by day. npm downloads for every package. Cached for six hours, so Google and
+// npm see at most four rounds a day.
 import { createSign } from "node:crypto";
 
+// The whole property unless `pages` narrows it or `skip` cuts a part out; the
+// Zaur suite and Friendly Festivals share zaur.app.
 const GSC_SITES = {
   szkolyjogi: { property: "sc-domain:szkolyjogi.pl" },
-  fixtar: { property: "https://fixtar.pl/", pages: "/(products|blog)" },
+  zaur: { property: "sc-domain:zaur.app", skip: "^https://festivals\\.zaur\\.app/" },
+  thebest: { property: "sc-domain:thebest.travel" },
   kino: { property: "sc-domain:kino.net.pl" },
   kompi: { property: "sc-domain:kompi.pl" },
   festivals: { property: "sc-domain:zaur.app", pages: "^https://festivals\\.zaur\\.app/" },
+  fixtar: { property: "https://fixtar.pl/" },
+  pikastro: { property: "sc-domain:pikastro.eu" },
+  wibroakustyka: { property: "sc-domain:wibroakustyka.ai" },
+  intertech: { property: "https://intertechpoland.pl/" },
+  polaczenie: { property: "sc-domain:gabinet-polaczenie.pl" },
+  kurcz: { property: "sc-domain:kurcz.pl" },
+  "svelte-calendar": { property: "sc-domain:svelte-calendar.xyz" },
 };
-const WEEKS = 12;
+const DAYS = 90;
 const TRAFFIC_TTL = 6 * 3600_000;
 let traffic = { at: 0, value: null };
 async function gscToken(key) {
@@ -40,33 +51,36 @@ async function gscToken(key) {
 }
 
 const addDays = (d, n) => new Date(Date.parse(d) + n * 86_400_000).toISOString().slice(0, 10);
-const ago = (d, through) => Math.round((Date.parse(through) - Date.parse(d)) / 86_400_000);
-const total = (rows, k) => rows.reduce((a, r) => a + r[k], 0);
+const total = (days, i) => days.reduce((a, d) => a + d[i], 0);
 // A day's position is already the mean over its impressions, so a longer
 // span weighs each day by them. A span nobody saw has none.
-const position = (rows) => {
-  const seen = total(rows, "impressions");
-  return seen ? Math.round((10 * rows.reduce((a, r) => a + r.position * r.impressions, 0)) / seen) / 10 : null;
+const position = (days) => {
+  const seen = total(days, 2);
+  return seen ? Math.round((10 * days.reduce((a, d) => a + (d[3] ?? 0) * d[2], 0)) / seen) / 10 : null;
 };
+const sum = (days) => ({ clicks: total(days, 1), impressions: total(days, 2), position: position(days) });
 
-// Weeks are counted back from `through`, the newest final day. Google leaves
-// out a day nobody saw the site (it is not a zero row), so a missing day is
-// simply nothing. Each week: its first day, clicks, average position.
+// Ninety days through `through`, the newest final day. Google leaves out a day
+// nobody saw the site (it is not a zero row), so a missing day is zero clicks,
+// zero impressions and no position. `now` is the last 28 days, `before` the 28
+// ahead of them.
 export function summarize(rows, through) {
-  const span = (from, to) => rows.filter((r) => ago(r.keys[0], through) >= from && ago(r.keys[0], through) < to);
-  const weeks = Array.from({ length: WEEKS }, (_, i) => {
-    const back = WEEKS - i;
-    const week = span(7 * (back - 1), 7 * back);
-    return [addDays(through, 1 - 7 * back), Math.round(total(week, "clicks")), position(week)];
+  const byDate = new Map(rows.map((r) => [r.keys[0], r]));
+  const days = Array.from({ length: DAYS }, (_, i) => {
+    const d = addDays(through, i + 1 - DAYS);
+    const r = byDate.get(d);
+    return r ? [d, Math.round(r.clicks), r.impressions, Math.round(r.position * 10) / 10] : [d, 0, 0, null];
   });
-  const last = span(0, 28);
-  return { weeks, clicks28: Math.round(total(last, "clicks")), position28: position(last), through };
+  return { through, days, now: sum(days.slice(-28)), before: sum(days.slice(-56, -28)) };
 }
 
-async function fetchSite(token, { property, pages }) {
+async function fetchSite(token, { property, pages, skip }) {
   const day = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
-  const body = { startDate: day(7 * WEEKS + 6), endDate: day(1), dimensions: ["date"] };
-  if (pages) body.dimensionFilterGroups = [{ filters: [{ dimension: "page", operator: "includingRegex", expression: pages }] }];
+  const body = { startDate: day(DAYS + 10), endDate: day(1), dimensions: ["date"] };
+  const filters = [];
+  if (pages) filters.push({ dimension: "page", operator: "includingRegex", expression: pages });
+  if (skip) filters.push({ dimension: "page", operator: "excludingRegex", expression: skip });
+  if (filters.length) body.dimensionFilterGroups = [{ filters }];
   const res = await fetch(
     `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(property)}/searchAnalytics/query`,
     {
@@ -78,31 +92,64 @@ async function fetchSite(token, { property, pages }) {
   if (!res.ok) throw new Error(`${property} ${res.status}`);
   const rows = (await res.json()).rows ?? [];
   // Google returns only final days, usually through two or three days ago; a
-  // quiet site's newest row can be older, and its weeks still end there.
+  // quiet site's newest row can be older, and its days still end there.
   const newest = rows.reduce((d, r) => (r.keys[0] > d ? r.keys[0] : d), day(3));
   return summarize(rows, newest);
 }
 
-// One site failing leaves the others standing.
-async function fetchTraffic() {
+// npm's downloads for each package, day by day over the same ninety days. A
+// package's demo gets next to no search traffic, so this is its number. One at
+// a time: npm turns a burst away.
+const PACKAGES = [
+  "zaur-world",
+  "svelte-calendar",
+  "svelte-search",
+  "svelte-i18n",
+  "svelte-geometrize",
+  "svelte-qr",
+  "svelte-media",
+  "svelte-scheduler",
+  "svelte-payments",
+  "svelte-notify",
+];
+async function fetchDownloads() {
+  const day = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+  const out = {};
+  for (const id of PACKAGES) {
+    try {
+      const res = await fetch(`https://api.npmjs.org/downloads/range/${day(DAYS)}:${day(1)}/@nomideusz/${id}`);
+      if (!res.ok) throw new Error(`${id} ${res.status}`);
+      const { end, downloads } = await res.json();
+      out[id] = { through: end, days: downloads.map((d) => d.day), values: downloads.map((d) => d.downloads) };
+    } catch (err) {
+      console.error("[traffic]", err.message);
+    }
+  }
+  return out;
+}
+
+// One site failing leaves the others standing; without the Search Console key
+// the packages still get their downloads.
+async function fetchSearch() {
+  if (!process.env.GSC_SERVICE_ACCOUNT_JSON) return {};
   const token = await gscToken(JSON.parse(process.env.GSC_SERVICE_ACCOUNT_JSON));
   const ids = Object.keys(GSC_SITES);
   const got = await Promise.allSettled(ids.map((id) => fetchSite(token, GSC_SITES[id])));
   const out = {};
   got.forEach((r, i) => (r.status === "fulfilled" ? (out[ids[i]] = r.value) : console.error("[traffic]", r.reason.message)));
-  if (!Object.keys(out).length) throw new Error("no site answered");
   return out;
 }
 
+async function fetchTraffic() {
+  const [search, npm] = await Promise.all([fetchSearch().catch((err) => (console.error("[traffic]", err.message), {})), fetchDownloads()]);
+  if (!Object.keys(search).length && !Object.keys(npm).length) throw new Error("nothing answered");
+  return { search, npm };
+}
+
 export async function sendTraffic(res) {
-  if (!process.env.GSC_SERVICE_ACCOUNT_JSON) {
-    res.writeHead(503, { "cache-control": "no-store" });
-    res.end();
-    return;
-  }
   if (Date.now() - traffic.at > TRAFFIC_TTL) {
-    // Store the promise so concurrent visitors share one Google round trip;
-    // a failure is cached for ten minutes instead of the full TTL.
+    // Store the promise so concurrent visitors share one round trip; a
+    // failure is cached for ten minutes instead of the full TTL.
     const value = fetchTraffic().catch((err) => {
       console.error("[traffic]", err.message);
       traffic.at = Date.now() - TRAFFIC_TTL + 600_000;
