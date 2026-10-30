@@ -7,7 +7,8 @@
 import { createSign } from "node:crypto";
 
 // The whole property unless `pages` narrows it or `skip` cuts a part out; the
-// Zaur suite, Friendly Festivals and the package hub share zaur.app.
+// Zaur suite and Friendly Festivals share zaur.app; the package hub there is
+// counted with neither.
 const GSC_SITES = {
   szkolyjogi: { property: "sc-domain:szkolyjogi.pl" },
   zaur: { property: "sc-domain:zaur.app", skip: "^https://(festivals|svelte)\\.zaur\\.app/" },
@@ -21,11 +22,10 @@ const GSC_SITES = {
   intertech: { property: "https://intertechpoland.pl/" },
   polaczenie: { property: "sc-domain:gabinet-polaczenie.pl" },
   kurcz: { property: "sc-domain:kurcz.pl" },
+  // The one package searched for by its own domain; the rest show npm downloads.
+  "svelte-calendar": { property: "sc-domain:svelte-calendar.xyz" },
 };
-// Each svelte-* package's page on the hub, svelte.zaur.app/<name> and its docs.
-// svelte-calendar.xyz redirects there since 2026-10-30.
-const HUB = ["calendar", "search", "i18n", "geometrize", "qr", "media", "scheduler", "payments", "notify"];
-for (const n of HUB) GSC_SITES[`svelte-${n}`] = { property: "sc-domain:zaur.app", pages: `^https://svelte\\.zaur\\.app/${n}(/|$)` };
+
 const DAYS = 90;
 const TRAFFIC_TTL = 6 * 3600_000;
 let traffic = { at: 0, value: null };

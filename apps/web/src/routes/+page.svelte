@@ -144,6 +144,7 @@
 		{
 			name: '@nomideusz/svelte-calendar',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-calendar',
+			demo: 'https://svelte-calendar.xyz',
 			source: 'https://github.com/nomideusz/svelte-calendar',
 			// Opens the section as a case: its own widget, live on this page.
 			featured: true
@@ -235,6 +236,7 @@
 	const pkgs = packages.map((p) => {
 		const id = p.name.split('/')[1];
 		const home = id.startsWith('svelte-') ? `${hub}/${id.slice(7)}` : undefined;
+		// svelte-calendar keeps its own domain (it forwards to the hub) and its Google numbers.
 		return { ...p, id, demo: p.demo ?? home, docs: home && `${home}/docs`, desc: t(`pkg.${id}`) };
 	});
 	const products = work.filter((w) => !w.wip);
@@ -319,8 +321,6 @@
 	type Sum = { clicks: number; impressions: number; position: number | null };
 	type Search = { through: string; days: [string, number, number, number | null][]; now: Sum; before: Sum };
 	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'svelte-calendar'];
-	// A package row draws its hub page's clicks under its downloads; the featured
-	// case that opens the section carries the notes for both.
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
 	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
@@ -590,12 +590,6 @@
 					{/each}
 				</ul>
 			{/if}
-			{#if traffic?.[w.id]}
-				<figure class="growth">
-					<figcaption>{t('daily.caption')}</figcaption>
-					{@render search(w.id)}
-				</figure>
-			{/if}
 		</div>
 		<div class="case-body">
 			<h3>
@@ -604,6 +598,10 @@
 			</h3>
 			{#if host(w.href) !== title}<p class="meta">{host(w.href)}</p>{/if}
 			<p class="what">{w.what}</p>
+			{#if searching(w.id)}
+				<h4>{t('daily.caption')}</h4>
+				{@render search(w.id)}
+			{/if}
 			<h4>{t('work.built')}</h4>
 			<ul class="built">
 				{#each w.built ?? [] as b, i (i)}<li>{b}</li>{/each}
@@ -768,7 +766,7 @@
 				</div>
 				<div class="case-body">
 					<h3>
-						<a href={p.demo}>{p.demo!.replace('https://', '')}</a>
+						<a href={p.demo}>{host(p.demo!)}</a>
 					</h3>
 					<p class="meta">{p.name} {version(p.id)}{#if metaOf(p.id)} · {metaOf(p.id)}{/if}</p>
 					<p class="what">{p.desc}</p>
@@ -793,7 +791,7 @@
 						<p>{p.desc}</p>
 						{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
 						{#if downloads[p.id]}
-							{@render daily([downloadRow(p.id), ...(traffic?.[p.id] ? [{ ...searchRows(traffic[p.id])[0], label: t('daily.googleClicks') }] : [])], 'npm', downloads[p.id].through, false)}
+							{@render daily([downloadRow(p.id)], 'npm', downloads[p.id].through, false)}
 						{/if}
 						{@render install(`npm i ${p.name}`)}
 						{#if p.id === 'svelte-i18n'}
@@ -1423,20 +1421,10 @@
 		max-width: 54ch;
 	}
 
-	.growth {
-		margin: 0;
-		padding: 1rem 1.2rem 1.1rem;
-		border: var(--rule) solid var(--ink);
-		background: var(--paper);
-	}
-	.media .growth {
-		border-width: var(--rule) 0 0;
-	}
-	.growth figcaption {
-		font-weight: 700;
-	}
 	/* Linked daily charts: label, ninety days, the number, how it moved. */
+	/* Capped: on a wide screen ninety bars would stretch past reading. */
 	.daily {
+		max-width: 40rem;
 		margin-top: 0.75rem;
 		font-size: 0.875rem;
 		font-variant-numeric: tabular-nums;
