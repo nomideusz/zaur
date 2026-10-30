@@ -7,10 +7,10 @@
 import { createSign } from "node:crypto";
 
 // The whole property unless `pages` narrows it or `skip` cuts a part out; the
-// Zaur suite and Friendly Festivals share zaur.app.
+// Zaur suite, Friendly Festivals and the package hub share zaur.app.
 const GSC_SITES = {
   szkolyjogi: { property: "sc-domain:szkolyjogi.pl" },
-  zaur: { property: "sc-domain:zaur.app", skip: "^https://festivals\\.zaur\\.app/" },
+  zaur: { property: "sc-domain:zaur.app", skip: "^https://(festivals|svelte)\\.zaur\\.app/" },
   thebest: { property: "sc-domain:thebest.travel" },
   kino: { property: "sc-domain:kino.net.pl" },
   kompi: { property: "sc-domain:kompi.pl" },
@@ -21,8 +21,11 @@ const GSC_SITES = {
   intertech: { property: "https://intertechpoland.pl/" },
   polaczenie: { property: "sc-domain:gabinet-polaczenie.pl" },
   kurcz: { property: "sc-domain:kurcz.pl" },
-  "svelte-calendar": { property: "sc-domain:svelte-calendar.xyz" },
 };
+// Each svelte-* package's page on the hub, svelte.zaur.app/<name> and its docs.
+// svelte-calendar.xyz redirects there since 2026-10-30.
+const HUB = ["calendar", "search", "i18n", "geometrize", "qr", "media", "scheduler", "payments", "notify"];
+for (const n of HUB) GSC_SITES[`svelte-${n}`] = { property: "sc-domain:zaur.app", pages: `^https://svelte\\.zaur\\.app/${n}(/|$)` };
 const DAYS = 90;
 const TRAFFIC_TTL = 6 * 3600_000;
 let traffic = { at: 0, value: null };
@@ -99,7 +102,7 @@ async function fetchSite(token, { property, pages, skip }) {
 
 // npm's downloads for each package, day by day over the same ninety days. A
 // package's demo gets next to no search traffic, so this is its number. One at
-// a time: npm turns a burst away.
+// a time, and a 429 waits and asks again: npm turns a burst away.
 const PACKAGES = [
   "zaur-world",
   "svelte-calendar",
@@ -117,7 +120,12 @@ async function fetchDownloads() {
   const out = {};
   for (const id of PACKAGES) {
     try {
-      const res = await fetch(`https://api.npmjs.org/downloads/range/${day(DAYS)}:${day(1)}/@nomideusz/${id}`);
+      const url = `https://api.npmjs.org/downloads/range/${day(DAYS)}:${day(1)}/@nomideusz/${id}`;
+      let res = await fetch(url);
+      for (let wait = 1000; res.status === 429 && wait <= 4000; wait *= 2) {
+        await new Promise((r) => setTimeout(r, wait));
+        res = await fetch(url);
+      }
       if (!res.ok) throw new Error(`${id} ${res.status}`);
       const { end, downloads } = await res.json();
       out[id] = { through: end, days: downloads.map((d) => d.day), values: downloads.map((d) => d.downloads) };
@@ -143,6 +151,8 @@ async function fetchSearch() {
 async function fetchTraffic() {
   const [search, npm] = await Promise.all([fetchSearch().catch((err) => (console.error("[traffic]", err.message), {})), fetchDownloads()]);
   if (!Object.keys(search).length && !Object.keys(npm).length) throw new Error("nothing answered");
+  // A round missing a package is served, but asked again in ten minutes.
+  if (Object.keys(npm).length < PACKAGES.length) traffic.at = Date.now() - TRAFFIC_TTL + 600_000;
   return { search, npm };
 }
 

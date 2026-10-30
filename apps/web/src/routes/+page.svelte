@@ -144,7 +144,6 @@
 		{
 			name: '@nomideusz/svelte-calendar',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-calendar',
-			demo: 'https://svelte-calendar.xyz',
 			source: 'https://github.com/nomideusz/svelte-calendar',
 			// Opens the section as a case: its own widget, live on this page.
 			featured: true
@@ -152,49 +151,43 @@
 		{
 			name: '@nomideusz/svelte-search',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-search',
-			demo: 'https://svelte-search.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-search'
 		},
 		{
 			name: '@nomideusz/svelte-i18n',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-i18n',
-			demo: 'https://svelte-i18n.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-i18n'
 		},
 		{
 			name: '@nomideusz/svelte-geometrize',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-geometrize',
-			demo: 'https://svelte-geometrize.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-geometrize'
 		},
 		{
 			name: '@nomideusz/svelte-qr',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
-			demo: 'https://svelte-qr.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-qr'
 		},
 		{
 			name: '@nomideusz/svelte-media',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-media',
-			demo: 'https://svelte-media.zaur.app',
 			source: 'https://github.com/nomideusz/svelte-media'
 		},
 		{
 			name: '@nomideusz/svelte-scheduler',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler',
-			demo: 'https://svelte-scheduler.zaur.app'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
 		},
 		{
 			name: '@nomideusz/svelte-payments',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments',
-			demo: 'https://svelte-payments.zaur.app'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments'
 		},
 		{
 			name: '@nomideusz/svelte-notify',
-			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify',
-			demo: 'https://svelte-notify.zaur.app'
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
 		}
 	] as { name: string; npm: string; demo?: string; source?: string; featured?: boolean }[];
+	// Every svelte-* package has its demo and docs on one hub: svelte.zaur.app/<name>.
+	const hub = 'https://svelte.zaur.app';
 
 	const skills = [{ name: 'simple-web-design', source: 'https://github.com/nomideusz/simple-web-design' }].map((s) => ({
 		...s,
@@ -241,7 +234,8 @@
 
 	const pkgs = packages.map((p) => {
 		const id = p.name.split('/')[1];
-		return { ...p, id, desc: t(`pkg.${id}`) };
+		const home = id.startsWith('svelte-') ? `${hub}/${id.slice(7)}` : undefined;
+		return { ...p, id, demo: p.demo ?? home, docs: home && `${home}/docs`, desc: t(`pkg.${id}`) };
 	});
 	const products = work.filter((w) => !w.wip);
 	const wip = work.filter((w) => w.wip);
@@ -325,6 +319,8 @@
 	type Sum = { clicks: number; impressions: number; position: number | null };
 	type Search = { through: string; days: [string, number, number, number | null][]; now: Sum; before: Sum };
 	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'svelte-calendar'];
+	// A package row draws its hub page's clicks under its downloads; the featured
+	// case that opens the section carries the notes for both.
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
 	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
@@ -654,9 +650,8 @@
 	{/if}
 {/snippet}
 
-<!-- A package row leaves the note to the featured case that opens the section. -->
-{#snippet npm(id: string, note = true)}
-	{#if downloads[id]}{@render daily([downloadRow(id)], 'npm', downloads[id].through, note)}{/if}
+{#snippet npm(id: string)}
+	{#if downloads[id]}{@render daily([downloadRow(id)], 'npm', downloads[id].through)}{/if}
 {/snippet}
 
 <svelte:head>
@@ -762,7 +757,7 @@
 
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
-		<p class="lede">{t('packages.lede')}</p>
+		<p class="lede">{t('packages.lede')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
 		{#each pkgs.filter(featured) as p (p.id)}
 			<article class="case" id="pkg-{p.id}">
 				<div class="media">
@@ -773,7 +768,7 @@
 				</div>
 				<div class="case-body">
 					<h3>
-						<a href={p.demo}>{host(p.demo!)}</a>
+						<a href={p.demo}>{p.demo!.replace('https://', '')}</a>
 					</h3>
 					<p class="meta">{p.name} {version(p.id)}{#if metaOf(p.id)} · {metaOf(p.id)}{/if}</p>
 					<p class="what">{p.desc}</p>
@@ -782,6 +777,7 @@
 					{@render install(`npm i ${p.name}`)}
 					{#if usedIn(p.id).length}<p class="p-used">{usedInText(p.id)}</p>{/if}
 					<p class="go">
+						{#if p.docs}<a href={p.docs}>{t('packages.docs')}</a>{/if}
 						<a href={p.npm}>{t('packages.npm')}</a>
 						{#if p.source}<a href={p.source}>{t('work.source')}</a>{/if}
 					</p>
@@ -796,7 +792,9 @@
 					<div>
 						<p>{p.desc}</p>
 						{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
-						{@render npm(p.id, false)}
+						{#if downloads[p.id]}
+							{@render daily([downloadRow(p.id), ...(traffic?.[p.id] ? [{ ...searchRows(traffic[p.id])[0], label: t('daily.googleClicks') }] : [])], 'npm', downloads[p.id].through, false)}
+						{/if}
 						{@render install(`npm i ${p.name}`)}
 						{#if p.id === 'svelte-i18n'}
 							<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
@@ -946,6 +944,7 @@
 					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
 					<p class="p-links">
 						{#if p.demo}<a href={p.demo}>{t('packages.demo')}</a>{/if}
+						{#if p.docs}<a href={p.docs}>{t('packages.docs')}</a>{/if}
 						<a href={p.npm}>{t('packages.npm')}</a>
 						{#if p.source}<a href={p.source}>{t('packages.source')}</a>{/if}
 					</p>
