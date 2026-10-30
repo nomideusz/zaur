@@ -207,8 +207,8 @@ importers:
         specifier: ^1.9.0
         version: 1.9.0(svelte@5.57.2)
       '@nomideusz/svelte-geometrize':
-        specifier: ^0.9.3
-        version: 0.9.3(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
+        specifier: ^0.9.4
+        version: 0.9.4(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
       '@nomideusz/svelte-i18n':
         specifier: ^1.0.0
         version: 1.0.0(svelte@5.57.2)
@@ -216,8 +216,8 @@ importers:
         specifier: ^1.1.1
         version: 1.1.1(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
       '@nomideusz/svelte-payments':
-        specifier: ^0.5.0
-        version: 0.5.0(svelte@5.57.2)
+        specifier: ^0.9.0
+        version: 0.9.0(svelte@5.57.2)
       '@nomideusz/svelte-qr':
         specifier: ^1.0.0
         version: 1.0.0(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)
@@ -225,8 +225,8 @@ importers:
         specifier: ^0.4.3
         version: 0.4.3(@nomideusz/svelte-calendar@1.9.0(svelte@5.57.2))(svelte@5.57.2)
       '@nomideusz/svelte-search':
-        specifier: ^0.4.2
-        version: 0.4.2(svelte@5.57.2)
+        specifier: ^1.0.0
+        version: 1.0.0(svelte@5.57.2)
       '@nomideusz/zaur-world':
         specifier: ^1.8.0
         version: 1.8.0(react@19.2.3)
@@ -1235,8 +1235,8 @@ packages:
     peerDependencies:
       svelte: ^5.29.0
 
-  '@nomideusz/svelte-geometrize@0.9.3':
-    resolution: {integrity: sha512-+Lny9kDhI4k90QLZwLjXLc5DwRngvuKOC43ADdWRkGFd/8jNtMoMTlxQQt9hAhLgjaw+ShQE0THnaEDbcFnuCQ==}
+  '@nomideusz/svelte-geometrize@0.9.4':
+    resolution: {integrity: sha512-bsAzmLJnC9qcT+0BVT+Nu2dZ2a27/L9uh1ZpIYAhX0CuIU2cWKXLx6of7vc283SCEmz935qxL8dMIzYWdrJvzg==}
     hasBin: true
     peerDependencies:
       '@types/node': '>=20'
@@ -1277,8 +1277,8 @@ packages:
       nodemailer:
         optional: true
 
-  '@nomideusz/svelte-payments@0.5.0':
-    resolution: {integrity: sha512-Ma4AiM+V0B3TG3WZIWdithiQjg3w/KFvk/jnO6UOJoPTKDzYn4QA3kg6OKJkxj78UQ0LSjQ5zoI8wMJlN7z/MA==}
+  '@nomideusz/svelte-payments@0.9.0':
+    resolution: {integrity: sha512-iItohzBOoo/O/uv0uSOC5I3/PaM1WkZ6vMFibCvXn7j23JeTypN3SwDx1oAnrIqUA5bw2zyK9r82P2Zlvd+HLw==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -1300,10 +1300,13 @@ packages:
       '@nomideusz/svelte-calendar': '>=0.15.1 <2.0.0'
       svelte: ^5.0.0
 
-  '@nomideusz/svelte-search@0.4.2':
-    resolution: {integrity: sha512-ipTNhMcQ8ybdR8HgF+LptibPTlBOPgPyj4CgU0kfCysR6jENseN6pFcJiPU1SohqIMFHIMz1eE84SwIQHZ5kyA==}
+  '@nomideusz/svelte-search@1.0.0':
+    resolution: {integrity: sha512-KsoB32HwQXIXmxEAiitm77U/7j/Q/vIa4aJObTl/E5cedHYq8ExORKNfmqgknY+pXqEB+JBKh8g+p2Yd+gEAkw==}
     peerDependencies:
       svelte: ^5.0.0
+    peerDependenciesMeta:
+      svelte:
+        optional: true
 
   '@nomideusz/zaur-world@1.8.0':
     resolution: {integrity: sha512-nqFKD1x3NYd0MUJkjoFC7R+kBSalUGAe8CxCwDP5Sat5EUe3AiR1kZnv7jQwlgR5mn9hK99rCCWmMWTyYNopCg==}
@@ -5188,7 +5191,7 @@ snapshots:
       date-fns-tz: 3.2.0(date-fns@4.4.0)
       svelte: 5.57.2
 
-  '@nomideusz/svelte-geometrize@0.9.3(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))':
+  '@nomideusz/svelte-geometrize@0.9.4(@types/node@25.9.1)(sharp@0.35.5(@types/node@25.9.1))(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))':
     dependencies:
       geometrizejs: 0.0.19
       svelte: 5.57.2
@@ -5220,7 +5223,7 @@ snapshots:
       - '@types/node'
       - sharp
 
-  '@nomideusz/svelte-payments@0.5.0(svelte@5.57.2)':
+  '@nomideusz/svelte-payments@0.9.0(svelte@5.57.2)':
     dependencies:
       svelte: 5.57.2
 
@@ -5236,8 +5239,8 @@ snapshots:
       '@nomideusz/svelte-calendar': 1.9.0(svelte@5.57.2)
       svelte: 5.57.2
 
-  '@nomideusz/svelte-search@0.4.2(svelte@5.57.2)':
-    dependencies:
+  '@nomideusz/svelte-search@1.0.0(svelte@5.57.2)':
+    optionalDependencies:
       svelte: 5.57.2
 
   '@nomideusz/zaur-world@1.8.0(react@19.2.3)':
