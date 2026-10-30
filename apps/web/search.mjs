@@ -22,6 +22,7 @@ const GSC_SITES = {
   intertech: { property: "https://intertechpoland.pl/" },
   polaczenie: { property: "sc-domain:gabinet-polaczenie.pl" },
   kurcz: { property: "sc-domain:kurcz.pl" },
+  tutitutu: { property: "https://tutitutu.pl/" },
   // The one package searched for by its own domain; the rest show npm downloads.
   "svelte-calendar": { property: "sc-domain:svelte-calendar.xyz" },
 };

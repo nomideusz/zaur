@@ -263,6 +263,8 @@
 	"templates.heading": "Modèles Railway",
 	"templates.lede": "Logiciels open source déployés sur Railway en un clic, avec les images d’origine non modifiées. Quand l’application le permet : admin créé au premier démarrage, inscriptions fermées, sauvegardes chaque nuit.",
 	"templates.referral": "Les liens de déploiement portent mon code de parrainage Railway.",
+	"templates.stats": "Railway en compte {deploys} projets, dont {running} encore actifs.",
+	"templates.running": "en service : {n}",
 	"templates.search": "Chercher un modèle",
 	"templates.none": "Rien ne correspond à « {q} ».",
 	"templates.deploy": "Déployer sur Railway",

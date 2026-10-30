@@ -263,6 +263,8 @@
 	"templates.heading": "Railway templates",
 	"templates.lede": "One-click Railway deploys of open-source software, on unmodified upstream images. Where the app allows: admin created on first boot, sign-ups closed, nightly backups.",
 	"templates.referral": "Deploy links carry my Railway referral code.",
+	"templates.stats": "From them Railway counts {deploys} projects, {running} still running.",
+	"templates.running": "{n} running",
 	"templates.search": "Find a template",
 	"templates.none": "Nothing matches “{q}”.",
 	"templates.deploy": "Deploy on Railway",

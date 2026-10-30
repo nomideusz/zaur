@@ -1,6 +1,7 @@
 // The Railway templates table, built at prerender. The list is every GitHub repo
 // with the railway-template topic: the README's deploy button gives the template
-// code, and Railway's public API gives the blurb and whether it is still published.
+// code, and Railway's public API gives the blurb, whether it is still published,
+// and how many projects were started from it and still run.
 // So a new template repo needs no change here; it only needs a group below.
 
 // The first owner wins when a template still has a repo under both.
@@ -47,7 +48,7 @@ export const kinds: [kind: string, slugs: string[]][] = [
 ];
 const byCategory: Record<string, string> = { 'AI/ML': 'AI and agents', Observability: 'Observability', Automation: 'Developer and automation', Queues: 'Developer and automation' };
 
-export type Template = { slug: string; name: string; desc: string; deploy: string; source: string };
+export type Template = { slug: string; name: string; desc: string; deploy: string; source: string; deploys: number; running: number };
 type Fetch = typeof fetch;
 type Repo = { name: string; full_name: string; html_url: string; default_branch: string; owner: { login: string } };
 
@@ -97,10 +98,10 @@ export async function loadTemplates(f: Fetch) {
 	}
 
 	// One aliased query per 50 codes keeps under Railway's query-breadth limit.
-	const meta: Record<string, { name: string; description: string; category: string; status: string } | null> = {};
+	const meta: Record<string, { name: string; description: string; category: string; status: string; projects: number; activeProjects: number } | null> = {};
 	for (let i = 0; i < picked.length; i += 50) {
 		const chunk = picked.slice(i, i + 50);
-		const query = `{${chunk.map((t, j) => `t${j}: template(code: ${JSON.stringify(t.code)}) { name description category status }`).join(' ')}}`;
+		const query = `{${chunk.map((t, j) => `t${j}: template(code: ${JSON.stringify(t.code)}) { name description category status projects activeProjects }`).join(' ')}}`;
 		const r = await json(f, 'https://backboard.railway.com/graphql/v2', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
@@ -118,7 +119,9 @@ export async function loadTemplates(f: Fetch) {
 			name: t.name ?? m.name.split(' | ')[0],
 			desc: m.description,
 			deploy: `https://railway.com/deploy/${t.code}?referralCode=${referral}`,
-			source: t.source
+			source: t.source,
+			deploys: m.projects ?? 0,
+			running: m.activeProjects ?? 0
 		};
 		return [{ kind, item }];
 	});

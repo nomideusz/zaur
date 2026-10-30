@@ -21,6 +21,9 @@
 	let { data } = $props();
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
 	const templateCount = data.templates.reduce((n, g) => n + g.items.length, 0);
+	const tplItems = data.templates.flatMap((g) => g.items);
+	const tplDeploys = tplItems.reduce((n, tp) => n + tp.deploys, 0);
+	const tplRunning = tplItems.reduce((n, tp) => n + tp.running, 0);
 
 	// The layout set the language before this page rendered, and a switch reloads
 	// the page, so every text below is read once, in the right language.
@@ -320,7 +323,7 @@
 	// Console has shows the same three, however they look.
 	type Sum = { clicks: number; impressions: number; position: number | null };
 	type Search = { through: string; days: [string, number, number, number | null][]; now: Sum; before: Sum };
-	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'svelte-calendar'];
+	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'tutitutu', 'svelte-calendar'];
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
 	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
@@ -959,7 +962,7 @@
 			</summary>
 			<div class="fold">
 				<p class="lede">{t('templates.lede')}</p>
-				<p class="t-note">{t('templates.referral')}</p>
+				<p class="t-note">{t('templates.stats', { deploys: num(tplDeploys), running: num(tplRunning) })} {t('templates.referral')}</p>
 				<div class="t-find">
 					<label>{t('templates.search')} <input type="search" bind:value={find} autocomplete="off" spellcheck="false" /></label>
 					<ul class="chips">
@@ -975,7 +978,7 @@
 							<li id="tpl-{tp.slug}">
 								<a class="t-name" href="#tpl-{tp.slug}">{tp.name}</a>
 								<p>{tp.desc}</p>
-								<span class="t-src"><a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
+								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
 							</li>
 						{/each}
 					</ul>
@@ -2078,6 +2081,10 @@
 	.t-none {
 		padding: 0.75rem 0;
 		border-top: var(--rule) solid var(--ink);
+	}
+	.t-runs {
+		color: var(--quiet);
+		font-variant-numeric: tabular-nums;
 	}
 	.t-src {
 		display: flex;

@@ -265,6 +265,8 @@
 	"templates.heading": "Шаблони Railway",
 	"templates.lede": "Відкрите ПЗ на Railway в один клік, на незмінених образах з оригінальних проєктів. Де застосунок це дозволяє: адміністратор створюється під час першого запуску, реєстрацію закрито, нічні резервні копії.",
 	"templates.referral": "Посилання на розгортання містять мій реферальний код Railway.",
+	"templates.stats": "Railway рахує з них проєктів: {deploys}, досі працюють: {running}.",
+	"templates.running": "працює: {n}",
 	"templates.search": "Знайти шаблон",
 	"templates.none": "Нічого не знайдено за «{q}».",
 	"templates.deploy": "Розгорнути на Railway",

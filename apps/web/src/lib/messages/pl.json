@@ -265,6 +265,8 @@
 	"templates.heading": "Szablony Railway",
 	"templates.lede": "Wdrożenia otwartego oprogramowania na Railway jednym kliknięciem, na niezmienionych obrazach źródłowych. Tam, gdzie aplikacja na to pozwala: administrator tworzony przy pierwszym uruchomieniu, rejestracja zamknięta, nocne kopie zapasowe.",
 	"templates.referral": "Linki wdrożeń zawierają mój kod polecający Railway.",
+	"templates.stats": "Railway liczy z nich projekty: {deploys}, wciąż działające: {running}.",
+	"templates.running": "działa: {n}",
 	"templates.search": "Znajdź szablon",
 	"templates.none": "Nic nie pasuje do „{q}”.",
 	"templates.deploy": "Wdróż na Railway",

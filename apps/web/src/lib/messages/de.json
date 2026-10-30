@@ -263,6 +263,8 @@
 	"templates.heading": "Railway-Vorlagen",
 	"templates.lede": "Open-Source-Software mit einem Klick auf Railway, mit unveränderten Upstream-Images. Wo die App es zulässt: Admin beim ersten Start angelegt, Registrierung geschlossen, nächtliche Backups.",
 	"templates.referral": "Die Deploy-Links enthalten meinen Railway-Empfehlungscode.",
+	"templates.stats": "Railway zählt daraus {deploys} Projekte, davon {running} noch aktiv.",
+	"templates.running": "{n} aktiv",
 	"templates.search": "Vorlage suchen",
 	"templates.none": "Nichts passt zu „{q}“.",
 	"templates.deploy": "Auf Railway deployen",
