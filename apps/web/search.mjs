@@ -6,12 +6,12 @@
 // npm see at most four rounds a day.
 import { createSign } from "node:crypto";
 
-// The whole property unless `pages` narrows it or `skip` cuts a part out; the
-// Zaur suite and Friendly Festivals share zaur.app; the package hub there is
-// counted with neither.
+// The whole property unless `pages` narrows it. The
+// Zaur suite and Friendly Festivals share zaur.app, each by its own hosts; the
+// apex is this page itself, and the package hub is counted with neither.
 const GSC_SITES = {
   szkolyjogi: { property: "sc-domain:szkolyjogi.pl" },
-  zaur: { property: "sc-domain:zaur.app", skip: "^https://(festivals|svelte)\\.zaur\\.app/" },
+  zaur: { property: "sc-domain:zaur.app", pages: "^https://(webmail|demo|register|music)\\.zaur\\.app/" },
   thebest: { property: "sc-domain:thebest.travel" },
   kino: { property: "sc-domain:kino.net.pl" },
   kompi: { property: "sc-domain:kompi.pl" },
@@ -78,13 +78,10 @@ export function summarize(rows, through) {
   return { through, days, now: sum(days.slice(-28)), before: sum(days.slice(-56, -28)) };
 }
 
-async function fetchSite(token, { property, pages, skip }) {
+async function fetchSite(token, { property, pages }) {
   const day = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
   const body = { startDate: day(DAYS + 10), endDate: day(1), dimensions: ["date"] };
-  const filters = [];
-  if (pages) filters.push({ dimension: "page", operator: "includingRegex", expression: pages });
-  if (skip) filters.push({ dimension: "page", operator: "excludingRegex", expression: skip });
-  if (filters.length) body.dimensionFilterGroups = [{ filters }];
+  if (pages) body.dimensionFilterGroups = [{ filters: [{ dimension: "page", operator: "includingRegex", expression: pages }] }];
   const res = await fetch(
     `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(property)}/searchAnalytics/query`,
     {
