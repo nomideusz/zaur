@@ -55,7 +55,7 @@
 				url: `${origin}/`,
 				email: 'bartek@zaur.app',
 				address: { '@type': 'PostalAddress', addressLocality: 'Kraków', addressCountry: 'PL' },
-				knowsAbout: ['Svelte', 'SvelteKit', 'TypeScript', 'Web accessibility', 'Web performance'],
+				knowsAbout: ['Svelte', 'SvelteKit', 'TypeScript', 'Node.js', 'PostgreSQL', 'JMAP', 'OpenID Connect', 'Web accessibility', 'Web performance'],
 				knowsLanguage: ['pl', 'en'],
 				sameAs: [github, linkedin, 'https://www.npmjs.com/~nomideusz']
 			}
@@ -572,28 +572,8 @@
 	{@const title = w.site ?? host(w.href)}
 	{@const demos = w.demos?.filter((d) => isLive(d.href)) ?? []}
 	<article class="case" id={w.id}>
-		<div class="media">
-			{#if demos.length}
-				{#each demos as d (d.href)}
-					<figure class="demo">
-						<Live href={d.href} name={d.name} label={d.label} shot={shot(d.id)} phone={phoneFor(d.id)} />
-						<figcaption>{d.note}</figcaption>
-					</figure>
-				{/each}
-			{:else if shot(w.id) && isLive(w.href)}
-				<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
-			{:else if shot(w.id)}
-				<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
-					{@render still(shot(w.id)!, true)}
-				</a>
-			{:else if w.parts}
-				<ul class="parts">
-					{#each w.parts as [n, h], i (i)}
-						<li><b>{n}</b><span>{h}</span></li>
-					{/each}
-				</ul>
-			{/if}
-		</div>
+		<!-- The words come first in the markup, so a reader that skims (an agent, a screen reader)
+		     meets the facts before the live windows; .media takes the left column back by order. -->
 		<div class="case-body">
 			<h3>
 				{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
@@ -621,6 +601,28 @@
 				<a href={w.href}>{t('work.open', { host: host(w.href) })}</a>
 				{#if w.source}<a href={w.source}>{t('work.source')}</a>{/if}
 			</p>
+		</div>
+		<div class="media">
+			{#if demos.length}
+				{#each demos as d (d.href)}
+					<figure class="demo">
+						<Live href={d.href} name={d.name} label={d.label} shot={shot(d.id)} phone={phoneFor(d.id)} />
+						<figcaption>{d.note}</figcaption>
+					</figure>
+				{/each}
+			{:else if shot(w.id) && isLive(w.href)}
+				<Live href={w.href} name={w.name} shot={shot(w.id)} phone={phoneFor(w.id)} />
+			{:else if shot(w.id)}
+				<a class="window" href={w.href} tabindex="-1" aria-hidden="true">
+					{@render still(shot(w.id)!, true)}
+				</a>
+			{:else if w.parts}
+				<ul class="parts">
+					{#each w.parts as [n, h], i (i)}
+						<li><b>{n}</b><span>{h}</span></li>
+					{/each}
+				</ul>
+			{/if}
 		</div>
 	</article>
 {/snippet}
@@ -1469,6 +1471,7 @@
 	/* The window runs edge to edge and grows to the case's height, so the site
 	   fills the column instead of floating in it. */
 	.media {
+		order: -1;
 		display: flex;
 		flex-direction: column;
 		border-right: var(--rule) solid var(--ink);
