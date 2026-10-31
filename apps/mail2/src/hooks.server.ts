@@ -69,6 +69,8 @@ export const handle: Handle = async ({ event, resolve }) => {
 	if (DEMO_JMAP_URL) {
 		const policy = response.headers.get('content-security-policy');
 		if (policy) response.headers.set('content-security-policy', policy.replace("frame-ancestors 'none'", 'frame-ancestors https://zaur.app'));
+		// Only its front door is searchable; the rest is the same fake mailbox again.
+		if (event.url.pathname !== '/') response.headers.set('X-Robots-Tag', 'noindex');
 	} else {
 		response.headers.set('X-Frame-Options', 'DENY');
 	}
