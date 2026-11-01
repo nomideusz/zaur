@@ -18,7 +18,7 @@
 	import { isSafariUserAgent } from '@zaur/mail-core/utils/meet';
 	import { identityStyle } from '#lib/mail/colors';
 	import { initials } from '#lib/mail/rows';
-	import { GUEST_PREFIX, TILE_ASPECT, canPickSpeaker as pickSpeaker, deviceProblem, fitGrid, formatElapsed, onIOS, rosterOrder, type RosterEntry } from '#lib/meet/call';
+	import { GUEST_PREFIX, TILE_ASPECT, canPickSpeaker as pickSpeaker, deviceProblem, fitGrid, formatElapsed, onIOS, onPhone, rosterOrder, type RosterEntry } from '#lib/meet/call';
 	import type { CallTicket } from '../../../routes/meet.remote';
 	import type { MediaChoice } from './MeetLobby.svelte';
 	import MeetIcon, { type MeetIconName } from './MeetIcon.svelte';
@@ -182,6 +182,8 @@
 	 */
 	async function audioHealth(room: Room): Promise<string> {
 		const lines: string[] = [];
+		const self = await deviceHealth(room);
+		if (self) lines.push(`this device: ${self}`);
 		for (const person of room.remoteParticipants.values())
 			for (const publication of person.audioTrackPublications.values()) {
 				const report = await publication.audioTrack?.getRTCStatsReport();
@@ -195,26 +197,64 @@
 				// How this device reaches the server: a relay over TCP or TLS suffers most on a lossy network.
 				const pair = all.find((stat) => stat.type === 'candidate-pair' && stat.nominated && stat.state === 'succeeded');
 				const local = pair && report.get(pair.localCandidateId);
+				// Chrome only: the times this device's speaker asked for sound and none was ready.
+				const playout = inbound.playoutId && report.get(inbound.playoutId);
 				lines.push(
 					`lost ${inbound.packetsLost ?? '?'}/${inbound.packetsReceived ?? '?'}, concealed ${share(inbound.concealedSamples)}%, stretched ${share(stretched)}%, ` +
 						`jitter ${Math.round((inbound.jitter ?? 0) * 1000)} ms, rtt ${pair ? Math.round((pair.currentRoundTripTime ?? 0) * 1000) : '?'} ms, ` +
-						`via ${local ? `${local.candidateType}/${local.relayProtocol ?? local.protocol}` : '?'}`
+						`via ${local ? `${local.candidateType}/${local.relayProtocol ?? local.protocol}` : '?'}` +
+						(playout ? `, playout stalls ${playout.synthesizedSamplesEvents ?? '?'} (${seconds(playout.synthesizedSamplesDuration)} of ${seconds(playout.totalSamplesDuration)})` : '')
 				);
 			}
 		return lines.join('; ');
+	}
+
+	const seconds = (s?: number) => (s === undefined ? '?' : `${s.toFixed(1)} s`);
+
+	/**
+	 * The sending side, where a crackle the listener's numbers cannot see is made:
+	 * mic audio this device dropped before encoding (a busy phone), and how long
+	 * its camera was held back by the CPU, which starves the audio beside it.
+	 */
+	async function deviceHealth(room: Room): Promise<string> {
+		if (!LK) return '';
+		const parts: string[] = [];
+		const mic = room.localParticipant.getTrackPublication(LK.Track.Source.Microphone)?.track;
+		// Chrome 125+: MediaStreamTrack.stats, in milliseconds.
+		const capture = (mic?.mediaStreamTrack as { stats?: { totalFramesDuration: number; deliveredFramesDuration: number } } | undefined)?.stats;
+		if (capture?.totalFramesDuration)
+			parts.push(`mic dropped ${seconds((capture.totalFramesDuration - capture.deliveredFramesDuration) / 1000)} of ${seconds(capture.totalFramesDuration / 1000)}`);
+		const cam = room.localParticipant.getTrackPublication(LK.Track.Source.Camera)?.track;
+		const outbound = [...((await cam?.getRTCStatsReport())?.values() ?? [])].filter((stat) => stat.type === 'outbound-rtp');
+		if (outbound.length) {
+			const cpu = Math.max(...outbound.map((stat) => stat.qualityLimitationDurations?.cpu ?? 0));
+			const top = outbound.reduce((a, b) => ((b.frameWidth ?? 0) > (a.frameWidth ?? 0) ? b : a));
+			parts.push(
+				`camera ${top.frameWidth ?? '?'}×${top.frameHeight ?? '?'} at ${Math.round(top.framesPerSecond ?? 0)} fps in ${outbound.length} layers, ` +
+					`cpu-limited ${seconds(cpu)}, now ${top.qualityLimitationReason ?? '?'}`
+			);
+		}
+		if (navigator.hardwareConcurrency) parts.push(`${navigator.hardwareConcurrency} cores`);
+		return parts.join(', ');
 	}
 
 	onMount(() => {
 		const tick = setInterval(() => (now = Date.now()), 1000);
 		// The last reading is sent when the call ends (reading then would race the hang-up).
 		let health = '';
+		// Chrome hides the phone model from the user agent; it gives it when asked.
+		let model = '';
+		(navigator as { userAgentData?: { getHighEntropyValues(hints: string[]): Promise<{ model?: string }> } }).userAgentData
+			?.getHighEntropyValues(['model'])
+			.then((values) => (model = values.model ?? ''))
+			.catch(() => {});
 		// Also when the app is closed mid-call, which skips the teardown below.
 		const report = () => {
 			if (!health) return;
 			// An Android's agent says Linux first.
 			const ua = navigator.userAgent;
 			const system = (ua.match(/iPhone OS [\d_]+|Android [\d.]+/) ?? ua.match(/Mac OS X|Windows|Linux/))?.[0] ?? '?';
-			captureMessage(`Meet audio (${system}): ${health}`);
+			captureMessage(`Meet audio (${system}${model ? `, ${model}` : ''}): ${health}`);
 			void flush();
 			health = '';
 		};
@@ -230,16 +270,27 @@
 		void (async () => {
 			LK = await import('livekit-client');
 			if (leaving) return;
-			const { Room, RoomEvent, DisconnectReason } = LK;
+			const { Room, RoomEvent, DisconnectReason, VideoPresets } = LK;
+			// A browser encodes video on the CPU that also captures and plays the call's audio; on a
+			// phone, LiveKit's 720p in three layers starves it and the audio rattles both ways. A
+			// phone sends 540p and one small layer, about what WhatsApp sends.
+			const light = onPhone();
 			const room = new Room({
 				adaptiveStream: true,
 				dynacast: true,
 				audioCaptureDefaults: { deviceId: choice.mic },
 				// Phones default to whichever camera the OS lists first — usually the rear one.
-				videoCaptureDefaults: { deviceId: choice.cam, facingMode: 'user' },
-				// Opus DTX sends one packet every 400 ms through a pause, and phones decode the gaps
-				// as a rattle two or three times a second. A steady stream costs ~30 kbps more.
-				publishDefaults: { dtx: false },
+				videoCaptureDefaults: {
+					deviceId: choice.cam,
+					facingMode: 'user',
+					...(light && { resolution: VideoPresets.h540.resolution })
+				},
+				publishDefaults: {
+					// Opus DTX sends one packet every 400 ms through a pause, and phones decode the gaps
+					// as a rattle two or three times a second. A steady stream costs ~30 kbps more.
+					dtx: false,
+					...(light && { videoSimulcastLayers: [VideoPresets.h180] })
+				},
 				...(canPickSpeaker && { audioOutput: { deviceId: choice.speaker } })
 			});
 			// LiveKit keeps a Web Audio context running for audio processors and webAudioMix, neither

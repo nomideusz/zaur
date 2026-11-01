@@ -84,6 +84,9 @@ export const onIOS = () =>
 	typeof navigator !== 'undefined' &&
 	(/iP(hone|ad|od)/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1));
 
+/** A phone or tablet: iOS, or Android (whose agent also says Linux). */
+export const onPhone = () => onIOS() || (typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent));
+
 /** Whether this browser can send the call to a chosen speaker. */
 export const canPickSpeaker = () =>
 	typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype && !onIOS();
