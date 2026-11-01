@@ -87,6 +87,21 @@ export const onIOS = () =>
 /** A phone or tablet: iOS, or Android (whose agent also says Linux). */
 export const onPhone = () => onIOS() || (typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent));
 
+/** Whether this browser can send H.264; Android Chrome offers it only with a hardware encoder. */
+export const phoneSendsH264 = () =>
+	typeof RTCRtpSender !== 'undefined' &&
+	Boolean(RTCRtpSender.getCapabilities?.('video')?.codecs.some((codec) => codec.mimeType.toLowerCase() === 'video/h264'));
+
+/**
+ * A call on a phone takes the whole screen: Android drops its bars, and so does
+ * an iPad. An iPhone has no full screen for a page; there the call's own
+ * layout reaches the edges. Must run inside the tap that joins.
+ */
+export function callFullscreen(): void {
+	if (!onPhone() || !document.fullscreenEnabled || document.fullscreenElement) return;
+	void document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+}
+
 /** Whether this browser can send the call to a chosen speaker. */
 export const canPickSpeaker = () =>
 	typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype && !onIOS();

@@ -11,6 +11,7 @@
 <script lang="ts">
 	import { meetName } from '#lib/brand';
 	import { onMount } from 'svelte';
+	import { MediaQuery } from 'svelte/reactivity';
 	import type { LocalAudioTrack, LocalVideoTrack, Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
@@ -18,7 +19,19 @@
 	import { isSafariUserAgent } from '@zaur/mail-core/utils/meet';
 	import { identityStyle } from '#lib/mail/colors';
 	import { initials } from '#lib/mail/rows';
-	import { GUEST_PREFIX, TILE_ASPECT, canPickSpeaker as pickSpeaker, deviceProblem, fitGrid, formatElapsed, onIOS, onPhone, rosterOrder, type RosterEntry } from '#lib/meet/call';
+	import {
+		GUEST_PREFIX,
+		TILE_ASPECT,
+		canPickSpeaker as pickSpeaker,
+		deviceProblem,
+		fitGrid,
+		formatElapsed,
+		onIOS,
+		onPhone,
+		phoneSendsH264,
+		rosterOrder,
+		type RosterEntry
+	} from '#lib/meet/call';
 	import type { CallTicket } from '../../../routes/meet.remote';
 	import type { MediaChoice } from './MeetLobby.svelte';
 	import MeetIcon, { type MeetIconName } from './MeetIcon.svelte';
@@ -74,6 +87,16 @@
 	let lastSpoke = $state('');
 	let facing = $state<'user' | 'environment'>('user');
 	let noiseSuppression = $state(true);
+	/** Phone, one other person: their picture fills the screen and the controls float over it. */
+	let chrome = $state(true);
+	/** Any touch puts off hiding the controls again. */
+	let poke = $state(0);
+	let menuOpen = $state(false);
+	/** Tapping your own small picture swaps it with theirs. */
+	let swapped = $state(false);
+	let fullscreen = $state(false);
+	const canFullscreen = typeof document !== 'undefined' && document.fullscreenEnabled;
+	const narrow = new MediaQuery('max-width: 767.98px');
 
 	/*
 	 * iOS and iPadOS Safari have no getDisplayMedia at all — feature-detect
@@ -109,6 +132,29 @@
 	const cameras = $derived(devices.filter((d) => d.kind === 'videoinput').length);
 	const roster = $derived(rosterOrder(people));
 	const hands = $derived(roster.filter((p) => p.handSince));
+	const other = $derived(people.find((p) => !p.isLocal));
+	/** The two of you: who fills the stage and who sits in the corner. */
+	const big = $derived(swapped ? me : other);
+	const small = $derived(swapped ? other : me);
+	const immersive = $derived(narrow.current && layout === 'pair' && status === 'live');
+
+	// The controls step aside after a few quiet seconds, as in any phone call app; a
+	// tap brings them back. Never while something is open or needs reading.
+	$effect(() => {
+		if (!immersive) {
+			chrome = true;
+			return;
+		}
+		void poke;
+		if (!chrome || menuOpen || panelOpen || notice || playbackBlocked) return;
+		const timer = setTimeout(() => (chrome = false), 4000);
+		return () => clearTimeout(timer);
+	});
+
+	function toggleFullscreen() {
+		if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
+		else void document.documentElement.requestFullscreen({ navigationUI: 'hide' }).catch(() => {});
+	}
 
 	const ORDINAL = ['first', 'second', 'third'];
 	const KIND_LABEL: Record<MediaDeviceKind, string> = { audioinput: 'Microphone', audiooutput: 'Speakers', videoinput: 'Camera' };
@@ -225,12 +271,16 @@
 		if (capture?.totalFramesDuration)
 			parts.push(`mic dropped ${seconds((capture.totalFramesDuration - capture.deliveredFramesDuration) / 1000)} of ${seconds(capture.totalFramesDuration / 1000)}`);
 		const cam = room.localParticipant.getTrackPublication(LK.Track.Source.Camera)?.track;
-		const outbound = [...((await cam?.getRTCStatsReport())?.values() ?? [])].filter((stat) => stat.type === 'outbound-rtp');
+		const stats = await cam?.getRTCStatsReport();
+		const outbound = [...(stats?.values() ?? [])].filter((stat) => stat.type === 'outbound-rtp');
 		if (outbound.length) {
 			const cpu = Math.max(...outbound.map((stat) => stat.qualityLimitationDurations?.cpu ?? 0));
 			const top = outbound.reduce((a, b) => ((b.frameWidth ?? 0) > (a.frameWidth ?? 0) ? b : a));
+			// Which encoder ran: "MediaCodec…" or "VideoToolbox" is the phone's hardware, "libvpx" is software.
+			const codec = top.codecId && stats?.get(top.codecId)?.mimeType?.replace('video/', '');
 			parts.push(
 				`camera ${top.frameWidth ?? '?'}×${top.frameHeight ?? '?'} at ${Math.round(top.framesPerSecond ?? 0)} fps in ${outbound.length} layers, ` +
+					`${codec ?? '?'} by ${top.encoderImplementation ?? '?'}${top.powerEfficientEncoder ? ' (hardware)' : ''}, ` +
 					`cpu-limited ${seconds(cpu)}, now ${top.qualityLimitationReason ?? '?'}`
 			);
 		}
@@ -263,6 +313,18 @@
 			if (lk && status === 'live') void audioHealth(lk).then((line) => (health = line || health));
 		}, 10_000);
 		const iOS = onIOS();
+		const onFullscreen = () => (fullscreen = Boolean(document.fullscreenElement));
+		document.addEventListener('fullscreenchange', onFullscreen);
+		onFullscreen();
+		// The screen stays on through the call; the OS lets the lock go when the page is
+		// hidden, so it is taken again on the way back.
+		let wake: { release(): Promise<void> } | undefined;
+		const keepAwake = () => {
+			const lock = (navigator as { wakeLock?: { request(type: 'screen'): Promise<{ release(): Promise<void> }> } }).wakeLock;
+			if (document.visibilityState === 'visible' && lock) lock.request('screen').then((held) => (wake = held), () => {});
+		};
+		keepAwake();
+		document.addEventListener('visibilitychange', keepAwake);
 		// Safari 16.4+: the call keeps the audio session it needs from the start, rather than
 		// starting as playback and switching when the mic opens, which restarts the audio hardware.
 		const session = (navigator as { audioSession?: { type: string } }).audioSession;
@@ -275,6 +337,9 @@
 			// phone, LiveKit's 720p in three layers starves it and the audio rattles both ways. A
 			// phone sends 540p and one small layer, about what WhatsApp sends.
 			const light = onPhone();
+			// H.264 is the codec a phone encodes in hardware, as WhatsApp does; LiveKit's VP8 is
+			// software on every iPhone and most Androids. Only where the browser offers it.
+			const h264 = light && phoneSendsH264();
 			const room = new Room({
 				adaptiveStream: true,
 				dynacast: true,
@@ -289,7 +354,8 @@
 					// Opus DTX sends one packet every 400 ms through a pause, and phones decode the gaps
 					// as a rattle two or three times a second. A steady stream costs ~30 kbps more.
 					dtx: false,
-					...(light && { videoSimulcastLayers: [VideoPresets.h180] })
+					...(light && { videoSimulcastLayers: [VideoPresets.h180] }),
+					...(h264 && { videoCodec: 'h264' as const })
 				},
 				...(canPickSpeaker && { audioOutput: { deviceId: choice.speaker } })
 			});
@@ -368,6 +434,11 @@
 			clearInterval(sample);
 			report();
 			removeEventListener('pagehide', report);
+			document.removeEventListener('fullscreenchange', onFullscreen);
+			document.removeEventListener('visibilitychange', keepAwake);
+			void wake?.release().catch(() => {});
+			// The screen after the call is a page again, not a call.
+			if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
 			leaving = true;
 			void lk?.disconnect();
 			if (iOS && session) session.type = 'auto';
@@ -518,7 +589,7 @@
 	);
 </script>
 
-<svelte:window onkeydown={onKey} />
+<svelte:window onkeydown={onKey} onpointerdown={() => poke++} />
 
 {#snippet bars(height = 11)}
 	<span class="flex items-end gap-0.5" style:height="{height}px" aria-hidden="true">
@@ -528,16 +599,27 @@
 	</span>
 {/snippet}
 
-{#snippet tile(p: Person, small = false)}
-	<!-- Speaking is said twice, by the ring and by the bars, never by colour alone. -->
+{#snippet tile(p: Person, small = false, bare = false)}
+	<!-- Speaking is said twice, by the ring and by the bars, never by colour alone.
+	     Bare is the picture that fills a phone: no frame, no ring, its name in the bar above. -->
 	<div
-		class="relative size-full overflow-hidden bg-[var(--z-sunken)] {small ? 'rounded-[10px]' : 'rounded-[12px]'} {p.speaking
-			? 'shadow-[0_0_0_2px_var(--z-ch-confirmed-stroke),0_0_0_5px_color-mix(in_oklab,var(--z-ch-confirmed-stroke)_30%,transparent)]'
-			: 'shadow-[0_0_0_1px_var(--z-hairline)]'}"
+		class="relative size-full overflow-hidden {bare ? 'bg-black' : 'bg-[var(--z-sunken)]'} {bare
+			? ''
+			: small
+				? 'rounded-[10px]'
+				: 'rounded-[12px]'} {bare
+			? ''
+			: p.speaking
+				? 'shadow-[0_0_0_2px_var(--z-ch-confirmed-stroke),0_0_0_5px_color-mix(in_oklab,var(--z-ch-confirmed-stroke)_30%,transparent)]'
+				: 'shadow-[0_0_0_1px_var(--z-hairline)]'}"
 	>
 		{#if p.cam}
 			<!-- You see yourself mirrored, as in the lobby; the back camera shows the room as it is. -->
-			<MeetMedia track={p.cam} class="size-full object-cover {p.isLocal && facing === 'user' ? '-scale-x-100' : ''}" />
+			<MeetMedia
+				track={p.cam}
+				fit={bare ? 'auto' : 'class'}
+				class="size-full object-cover {p.isLocal && facing === 'user' ? '-scale-x-100' : ''}"
+			/>
 		{:else}
 			<div class="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
 				<span
@@ -555,15 +637,17 @@
 				{#if !small}Hand raised{/if}
 			</span>
 		{/if}
-		<span
-			class="absolute flex items-center gap-1.5 overflow-hidden rounded-[6px] border border-white/10 bg-[rgba(7,11,16,0.72)] font-medium whitespace-nowrap text-[#e8eef6] {small
-				? 'bottom-1.5 left-1.5 max-w-[calc(100%-12px)] px-1.5 py-px text-[11px]'
-				: 'bottom-2.5 left-2.5 max-w-[calc(100%-20px)] px-2 py-0.5 text-[12.5px]'}"
-		>
-			{#if !p.micOn}<span class="text-[var(--z-ch-discard-stroke)]" title="Muted"><MeetIcon name="mic-off" class="size-[13px]" /></span>{/if}
-			{#if p.speaking}{@render bars()}{/if}
-			<span class="truncate">{label(p)}</span>
-		</span>
+		{#if !bare}
+			<span
+				class="absolute flex items-center gap-1.5 overflow-hidden rounded-[6px] border border-white/10 bg-[rgba(7,11,16,0.72)] font-medium whitespace-nowrap text-[#e8eef6] {small
+					? 'bottom-1.5 left-1.5 max-w-[calc(100%-12px)] px-1.5 py-px text-[11px]'
+					: 'bottom-2.5 left-2.5 max-w-[calc(100%-20px)] px-2 py-0.5 text-[12.5px]'}"
+			>
+				{#if !p.micOn}<span class="text-[var(--z-ch-discard-stroke)]" title="Muted"><MeetIcon name="mic-off" class="size-[13px]" /></span>{/if}
+				{#if p.speaking}{@render bars()}{/if}
+				<span class="truncate">{label(p)}</span>
+			</span>
+		{/if}
 	</div>
 {/snippet}
 
@@ -635,7 +719,10 @@
 		positioning={{ placement: trigger === 'chevron' ? 'top-start' : 'bottom-end', gutter: 8, overflowPadding: 12 }}
 		lazyMount
 		unmountOnExit
-		onOpenChange={(details) => details.open && loadDevices()}
+		onOpenChange={(details) => {
+			menuOpen = details.open;
+			if (details.open) void loadDevices();
+		}}
 	>
 		<Menu.Trigger
 			class="inline-flex cursor-pointer items-center justify-center border transition-colors max-md:hidden {trigger === 'chevron'
@@ -677,20 +764,32 @@
 	</Menu.Item>
 {/snippet}
 
-<div class="z-screen flex flex-col overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
+<!-- On a phone with one other person the call is immersive: their picture reaches every
+     edge, and the bars float over it on a shade, fading out after a few quiet seconds. -->
+<div class="z-screen relative flex flex-col overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
 	<div class="hidden">
 		{#each sounds as sound (sound.sid)}
 			<MeetMedia track={sound} />
 		{/each}
 	</div>
 
-	<header class="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[var(--z-hairline)] bg-[var(--z-surface)] px-3.5 max-md:px-3">
+	<header
+		class="flex h-[52px] shrink-0 items-center justify-between gap-3 px-3.5 max-md:box-content max-md:px-3 max-md:pt-[env(safe-area-inset-top)] {immersive
+			? `absolute inset-x-0 top-0 z-20 bg-linear-to-b from-black/70 to-transparent pb-6 transition-[opacity,translate] duration-300 ${chrome ? '' : 'pointer-events-none -translate-y-3 opacity-0'}`
+			: 'border-b border-[var(--z-hairline)] bg-[var(--z-surface)]'}"
+	>
 		<div class="flex min-w-0 items-center gap-3 max-md:gap-2">
 			<span class="btn-tactile !size-8 !cursor-default !p-0 max-md:hidden" aria-hidden="true">
 				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><path d="M3 3H13L3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
 			</span>
 			<span class="h-4 w-px bg-[var(--z-line)] max-md:hidden"></span>
-			<h1 class="truncate text-[14px] font-semibold">{meetName}</h1>
+			<!-- Immersive, the picture has no name tag: the bar says whose it is. -->
+			{#if immersive && big}
+				{#if !big.micOn}<span class="text-[var(--z-ch-discard-stroke)]" title="Muted"><MeetIcon name="mic-off" /></span>{/if}
+				<h1 class="truncate text-[15px] font-semibold text-white">{label(big)}</h1>
+			{:else}
+				<h1 class="truncate text-[14px] font-semibold">{meetName}</h1>
+			{/if}
 			{#if startedAt}
 				<span class="z-mono inline-flex h-[22px] shrink-0 items-center gap-1.5 rounded-[6px] border border-[var(--z-line)] bg-[var(--z-sunken)] px-2 text-[11.5px] font-semibold text-[var(--z-strong)]">
 					<span class="size-[7px] rounded-full {statusLine.dot}"></span>
@@ -699,6 +798,17 @@
 			{/if}
 		</div>
 		<div class="flex items-center gap-2">
+			{#if canFullscreen}
+				<button
+					type="button"
+					class="inline-flex size-[30px] cursor-pointer items-center justify-center rounded-[8px] border max-md:hidden {PLAIN}"
+					title={fullscreen ? 'Exit full screen' : 'Full screen'}
+					aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+					onclick={toggleFullscreen}
+				>
+					<MeetIcon name={fullscreen ? 'collapse' : 'expand'} />
+				</button>
+			{/if}
 			<button type="button" class="btn-tactile !text-[12.5px] !font-semibold max-md:hidden" onclick={copyLink}>
 				<MeetIcon name={copied ? 'check' : 'link'} />
 				{copied ? 'Copied' : 'Copy link'}
@@ -740,7 +850,7 @@
 		</div>
 	</header>
 
-	<div class="flex min-h-0 flex-1">
+	<div class="flex min-h-0 flex-1 {immersive ? 'absolute inset-0' : ''}">
 		<main class="relative min-w-0 flex-1 overflow-hidden" bind:clientWidth={stageW} bind:clientHeight={stageH}>
 			{#if status === 'connecting' || !me}
 				<div class="absolute inset-0 flex flex-col items-center justify-center gap-3.5 text-center">
@@ -765,13 +875,34 @@
 					</div>
 				</div>
 			{:else if layout === 'pair'}
-				{@const other = people.find((p) => !p.isLocal)}
-				{#if other}
-					<div class="absolute" style:inset="{pad}px">{@render tile(other)}</div>
+				{#if big}
+					<div class="absolute" style:inset="{immersive ? 0 : pad}px">{@render tile(big, false, immersive)}</div>
 				{/if}
-				<div class="absolute z-[2] h-[130px] w-[208px] max-md:h-[132px] max-md:w-[96px]" style:right="{pad + 12}px" style:bottom="{pad + 12}px">
-					{@render tile(me, true)}
-				</div>
+				{#if immersive}
+					<!-- The whole picture is the switch for the bars, as in a phone's own call screen. -->
+					<button
+						type="button"
+						class="absolute inset-0 z-[1] cursor-default"
+						aria-label={chrome ? 'Hide call controls' : 'Show call controls'}
+						onclick={() => (chrome = !chrome)}
+					></button>
+				{/if}
+				{#if small}
+					<!-- Above the controls while they show, down in the corner once they go. -->
+					<button
+						type="button"
+						class="absolute z-[2] h-[130px] w-[208px] cursor-pointer rounded-[10px] transition-[bottom] duration-300 max-md:h-[132px] max-md:w-[96px]"
+						style:right="{immersive ? 12 : pad + 12}px"
+						style:bottom={immersive
+							? `calc(max(8px, env(safe-area-inset-bottom)) + ${chrome ? 88 : 12}px)`
+							: `${pad + 12}px`}
+						aria-label="Swap the two pictures"
+						title="Swap the two pictures"
+						onclick={() => (swapped = !swapped)}
+					>
+						{@render tile(small, true)}
+					</button>
+				{/if}
 			{:else if layout === 'grid'}
 				<div class="absolute flex items-center justify-center" style:inset="{pad}px">
 					<div class="flex flex-wrap justify-center gap-3" style:width="{grid.cols * grid.w + (grid.cols - 1) * 12}px">
@@ -820,7 +951,7 @@
 
 			{#if notice}
 				<div
-					class="absolute inset-x-0 bottom-4 z-10 mx-auto flex w-[min(440px,calc(100%-28px))] items-center gap-2.5 rounded-[9px] border py-2 pr-2 pl-3 shadow-[0_12px_32px_rgba(0,0,0,0.45)] {OFF}"
+					class="absolute inset-x-0 z-30 mx-auto flex {immersive ? 'bottom-[calc(max(8px,env(safe-area-inset-bottom))+92px)]' : 'bottom-4'} w-[min(440px,calc(100%-28px))] items-center gap-2.5 rounded-[9px] border py-2 pr-2 pl-3 shadow-[0_12px_32px_rgba(0,0,0,0.45)] {OFF}"
 					role="alert"
 				>
 					<MeetIcon name="alert" />
@@ -903,8 +1034,11 @@
 	</div>
 
 	<!-- Status | controls | Leave; on a phone, one evenly spaced row of icons. -->
+	<!-- On a phone the row keeps clear of the home indicator. -->
 	<footer
-		class="grid h-[76px] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 border-t border-[var(--z-hairline)] bg-[var(--z-canvas)] px-4 max-md:flex max-md:h-[84px] max-md:justify-between max-md:pb-2"
+		class="grid h-[76px] shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 max-md:box-content max-md:flex max-md:justify-between max-md:pb-[max(8px,env(safe-area-inset-bottom))] {immersive
+			? `absolute inset-x-0 bottom-0 z-20 bg-linear-to-t from-black/75 to-transparent pt-8 transition-[opacity,translate] duration-300 ${chrome ? '' : 'pointer-events-none translate-y-3 opacity-0'}`
+			: 'border-t border-[var(--z-hairline)] bg-[var(--z-canvas)]'}"
 	>
 		<div class="flex min-w-0 flex-col gap-0.5 max-lg:invisible max-md:hidden">
 			<div class="flex items-center gap-[7px] text-[12.5px] text-[var(--z-strong)]">
@@ -966,13 +1100,16 @@
 				<MeetIcon name="hand" />
 				<span class="max-md:sr-only">{handUp ? 'Lower hand' : 'Raise hand'}</span>
 			</button>
-			<!-- A phone's fifth control: Share, which does not fit the bar, and what only a phone has. -->
-			{#if canShare || canPickSpeaker || cameras > 1}
+			<!-- A phone's fifth control: full screen, Share, which does not fit the bar, and what only a phone has. -->
+			{#if canShare || canPickSpeaker || cameras > 1 || canFullscreen}
 				<Menu.Root
 					positioning={{ placement: 'top-end', gutter: 8, overflowPadding: 12 }}
 					lazyMount
 					unmountOnExit
-					onOpenChange={(details) => details.open && loadDevices()}
+					onOpenChange={(details) => {
+						menuOpen = details.open;
+						if (details.open) void loadDevices();
+					}}
 				>
 					<Menu.Trigger
 						class="{CTRL} rounded-[10px] md:hidden {PLAIN}"
@@ -985,6 +1122,9 @@
 					<Portal>
 						<Menu.Positioner>
 							<Menu.Content class="z-menu z-40 w-[260px]">
+								{#if canFullscreen}
+									{@render moreItem('fullscreen', fullscreen ? 'collapse' : 'expand', fullscreen ? 'Exit full screen' : 'Full screen', toggleFullscreen)}
+								{/if}
 								{#if canShare}
 									{@render moreItem('share', 'share', sharing ? 'Stop sharing' : 'Share screen', toggleShare)}
 								{/if}

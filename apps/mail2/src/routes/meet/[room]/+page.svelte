@@ -4,7 +4,7 @@
 	import MeetLobby, { type MediaChoice } from '#lib/components/meet/MeetLobby.svelte';
 	import MeetRoom, { type CallEnd } from '#lib/components/meet/MeetRoom.svelte';
 	import MeetIcon from '#lib/components/meet/MeetIcon.svelte';
-	import { formatElapsed } from '#lib/meet/call';
+	import { callFullscreen, formatElapsed } from '#lib/meet/call';
 	import { joinCall, type CallTicket } from '../../meet.remote';
 	import type { PageProps } from './$types';
 
@@ -36,6 +36,8 @@
 	});
 
 	async function join(next: MediaChoice) {
+		// Before the first await, while the tap still counts as one.
+		callFullscreen();
 		choice = next;
 		joining = true;
 		error = null;
