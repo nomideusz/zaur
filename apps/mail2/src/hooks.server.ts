@@ -5,6 +5,7 @@ import { legacyRedirect } from '#lib/legacy-links';
 import { DEMO_JMAP_URL } from '#lib/server/demo';
 import { pushWatcher } from '#lib/server/push-watcher';
 import { reportError } from '#lib/server/report';
+import { version } from '../package.json';
 
 // New-mail notifications for every subscribed browser (no-op without VAPID keys),
 // and the hourly prune of expired sessions and lapsed rate-limit windows.
@@ -53,7 +54,7 @@ function crossSiteForm({ request, url }: Parameters<Handle>[0]['event']): boolea
 // The 1.0 redirects are 302s so that pointing the domain back at webmail undoes them.
 export const handle: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname === '/health') {
-		return Response.json({ ok: true }, { headers: { 'cache-control': 'no-store' } });
+		return Response.json({ ok: true, version }, { headers: { 'cache-control': 'no-store' } });
 	}
 	const legacy = event.request.method === 'GET' ? legacyRedirect(event.url, process.env.PUBLIC_REGISTER_URL?.trim()) : null;
 	if (legacy) return new Response(null, { status: 302, headers: { location: legacy } });

@@ -51,3 +51,28 @@ jobs:
 
       - name: Production build
         run: pnpm --filter @zaur/mail2 build
+
+  # A version's first green push to main publishes it (README → Releases).
+  release:
+    needs: ci
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Release a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+          # Fine-grained PAT: two-workspaces/webmail only, Contents read/write.
+          MIRROR_TOKEN: ${{ secrets.WEBMAIL_MIRROR_TOKEN }}
+        run: |
+          version=$(node -p "require('./apps/mail2/package.json').version")
+          tag="mail2-v$version"
+          gh release view "$tag" >/dev/null 2>&1 && exit 0
+          awk -v h="## $version" '$0 == h {on=1; next} /^## /{on=0} on' apps/mail2/CHANGELOG.md > notes.md
+          test -s notes.md
+          bash apps/mail2/scripts/publish-mirror.sh "$tag" "https://x-access-token:$MIRROR_TOKEN@github.com/two-workspaces/webmail.git"
+          gh release create "$tag" --target "$GITHUB_SHA" --title "Mail $version" --notes-file notes.md

@@ -188,6 +188,22 @@ no auth of its own — fine for a quick test, take it down afterwards, or put a
 Cloudflare Access policy on the `*-dev` hostnames. Production runs on
 `webmail.zaur.app` — never point that name at a local port.
 
+## Releases
+
+The version lives in `package.json`. To release, bump it and add a matching
+`## x.y.z` section to `CHANGELOG.md`. Once CI passes on `main`, the `release`
+job in `.github/workflows/deploy-mail2.yml` copies the app to
+[two-workspaces/webmail](https://github.com/two-workspaces/webmail), tags
+`mail2-vx.y.z` and creates the GitHub release from that section. `/health`
+reports the running version.
+
+That repo's `main` only moves on a release, which is why the Railway template
+is meant to deploy from it. Deployments already attached to this repo stay on
+this repo's `main`, so `apps/mail2/Dockerfile` has to keep working here.
+
+Major means self-hosters must change something when they update (a variable, a
+volume, a store format); minor is a new feature; patch is a fix.
+
 ## Deploying (Dokploy)
 
 A Dokploy service builds `apps/mail2/Dockerfile` from the repo root on every
