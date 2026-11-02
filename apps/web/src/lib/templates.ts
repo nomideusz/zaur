@@ -10,7 +10,7 @@ const referral = 'sLjDXb';
 // Templates whose source is not a template repo of its own: [code, source].
 const extra = [
 	['sveltekit-better-auth-starter', 'https://github.com/nomideusz/sveltekit-better-auth-starter'],
-	['stalwart-webmail', 'https://github.com/nomideusz/zaur/tree/main/apps/mail2']
+	['stalwart-webmail', 'https://github.com/two-workspaces/webmail']
 ];
 
 // Groups in display order, keyed by repo name without "-railway"; each lists
