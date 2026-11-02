@@ -69,3 +69,9 @@ that already works.
 - If the WebView ceiling is hit later, revisit — but the trigger should be a specific
   measured shortfall (scroll jank, a platform integration Capacitor cannot reach), not a
   general preference.
+
+## Later
+
+- 2026-11-02: call audio on Android was the first measured shortfall. It is met inside the
+  shell, with a native call screen behind a Capacitor plugin, not by leaving Capacitor — see
+  [ADR-0006](0006-native-meet-call-screen.md).

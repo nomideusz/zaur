@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Meet's native call screen (ADR-0006), laid out as the web's phone call: the other
+  person's picture fills the screen, yours rides in a corner, and the two bars float
+  over the picture on a shade. The whole screen is the switch for the bars.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/call_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/call_ground"
+    android:clickable="true"
+    android:focusable="true">
+
+    <!-- Wrap-sized and centred: filled when the picture is the screen's way up, shown
+         whole (letterboxed) when it is not. -->
+    <io.livekit.android.renderer.TextureViewRenderer
+        android:id="@+id/call_big"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center" />
+
+    <LinearLayout
+        android:id="@+id/call_placeholder"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <TextView
+            android:id="@+id/call_initials"
+            android:layout_width="88dp"
+            android:layout_height="88dp"
+            android:background="@drawable/bg_call_avatar"
+            android:gravity="center"
+            android:textColor="@color/call_ink"
+            android:textSize="28sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/call_placeholder_text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:textColor="@color/call_soft"
+            android:textSize="14sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:id="@+id/call_small_card"
+        android:layout_width="100dp"
+        android:layout_height="140dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="20dp"
+        android:background="@drawable/bg_call_card"
+        android:clickable="true"
+        android:contentDescription="@string/call_swap"
+        android:elevation="6dp"
+        android:focusable="true"
+        android:outlineProvider="background">
+
+        <io.livekit.android.renderer.TextureViewRenderer
+            android:id="@+id/call_small"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@+id/call_top"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top"
+        android:background="@drawable/bg_call_shade_top"
+        android:orientation="vertical"
+        android:paddingStart="12dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="32dp">
+
+        <TextView
+            android:id="@+id/call_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textColor="#FFFFFF"
+            android:textSize="17sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/call_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:fontFamily="monospace"
+            android:textColor="@color/call_soft"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/call_bottom"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@drawable/bg_call_shade_bottom"
+        android:gravity="center"
+        android:orientation="horizontal"
+        android:paddingStart="12dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="12dp">
+
+        <ImageButton
+            android:id="@+id/call_mic"
+            style="@style/ZaurCallButton"
+            android:contentDescription="@string/call_mic"
+            android:src="@drawable/ic_call_mic" />
+
+        <ImageButton
+            android:id="@+id/call_cam"
+            style="@style/ZaurCallButton"
+            android:contentDescription="@string/call_cam"
+            android:src="@drawable/ic_call_cam" />
+
+        <ImageButton
+            android:id="@+id/call_flip"
+            style="@style/ZaurCallButton"
+            android:contentDescription="@string/call_flip"
+            android:src="@drawable/ic_call_flip" />
+
+        <ImageButton
+            android:id="@+id/call_speaker"
+            style="@style/ZaurCallButton"
+            android:contentDescription="@string/call_speaker"
+            android:src="@drawable/ic_call_speaker" />
+
+        <ImageButton
+            android:id="@+id/call_leave"
+            style="@style/ZaurCallButton"
+            android:layout_width="68dp"
+            android:background="@drawable/bg_call_leave"
+            android:contentDescription="@string/call_leave"
+            android:src="@drawable/ic_call_leave" />
+    </LinearLayout>
+</FrameLayout>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Meet's native call screen (ADR-0006). A call is dark whatever the theme, as on the web. -->
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <color name="call_ground">#000000</color>
+    <color name="call_surface">#E61C242E</color>
+    <color name="call_sunken">#10161D</color>
+    <color name="call_line">#33FFFFFF</color>
+    <color name="call_ink">#E8EEF6</color>
+    <color name="call_soft">#9AA7B6</color>
+    <color name="call_off_fill">#E64A1D20</color>
+    <color name="call_off_stroke">#F87171</color>
+
+    <style name="ZaurCall" parent="Theme.AppCompat.NoActionBar">
+        <item name="android:windowBackground">@color/call_ground</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="28">shortEdges</item>
+    </style>
+
+    <!-- The phone row of controls, as on the web: 52dp squares, 14dp corners. -->
+    <style name="ZaurCallButton">
+        <item name="android:layout_width">52dp</item>
+        <item name="android:layout_height">52dp</item>
+        <item name="android:layout_marginStart">6dp</item>
+        <item name="android:layout_marginEnd">6dp</item>
+        <item name="android:background">@drawable/bg_call_button</item>
+        <item name="android:scaleType">center</item>
+    </style>
+
+    <string name="call_joining">Joining…</string>
+    <string name="call_reconnecting">Reconnecting…</string>
+    <string name="call_alone">You\'re the first one here</string>
+    <string name="call_waiting">Waiting for others to join</string>
+    <string name="call_camera_off">Camera off</string>
+    <string name="call_you">You</string>
+    <string name="call_and_more">%1$s and %2$d more</string>
+    <string name="call_leave_hint">To leave the call, tap the red button</string>
+    <string name="call_no_server">The call server did not answer. The link is fine — try again in a moment.</string>
+    <string name="call_lost">The connection to the call was lost.</string>
+    <string name="call_duplicate">You joined this call somewhere else, so this window left it.</string>
+    <string name="call_mic_blocked">The microphone is blocked. Allow it for Zaur in the phone\'s Settings.</string>
+    <string name="call_cam_blocked">The camera is blocked. Allow it for Zaur in the phone\'s Settings.</string>
+    <string name="call_mic">Microphone</string>
+    <string name="call_cam">Camera</string>
+    <string name="call_flip">Switch camera</string>
+    <string name="call_speaker">Speaker, earpiece or headset</string>
+    <string name="call_leave">Leave the call</string>
+    <string name="call_swap">Swap the two pictures</string>
+</resources>

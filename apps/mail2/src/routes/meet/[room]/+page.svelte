@@ -4,13 +4,16 @@
 	import MeetLobby, { type MediaChoice } from '#lib/components/meet/MeetLobby.svelte';
 	import MeetRoom, { type CallEnd } from '#lib/components/meet/MeetRoom.svelte';
 	import MeetIcon from '#lib/components/meet/MeetIcon.svelte';
+	import { tick } from 'svelte';
 	import { callFullscreen, formatElapsed } from '#lib/meet/call';
+	import { nativeMeet } from '#lib/meet/native';
 	import { joinCall, type CallTicket } from '../../meet.remote';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
 
-	let phase = $state<'lobby' | 'room' | 'ended'>('lobby');
+	/** `native`: the Android app's own call screen is on top of this page. */
+	let phase = $state<'lobby' | 'room' | 'native' | 'ended'>('lobby');
 	let ticket = $state<CallTicket | null>(null);
 	let choice = $state<MediaChoice | null>(null);
 	let joining = $state(false);
@@ -36,19 +39,34 @@
 	});
 
 	async function join(next: MediaChoice) {
+		// In the Android app the call runs on its native screen (ADR-0006); the ticket is the same.
+		const native = nativeMeet();
 		// Before the first await, while the tap still counts as one.
-		callFullscreen();
+		if (!native) callFullscreen();
 		choice = next;
 		joining = true;
 		error = null;
 		try {
 			ticket = await joinCall({ room: data.room, name: next.name });
-			phase = 'room';
 		} catch (cause) {
 			const body = (cause as { body?: { message?: string } } | null)?.body;
 			error = body?.message ?? 'Could not start the video call';
+			return;
 		} finally {
 			joining = false;
+		}
+		if (!native) {
+			phase = 'room';
+			return;
+		}
+		phase = 'native';
+		// The lobby goes first, so its preview lets go of the camera and mic the call needs.
+		await tick();
+		try {
+			ended(await native.join({ wsUrl: ticket.wsUrl, token: ticket.token, micOn: next.micOn, camOn: next.camOn }));
+		} catch (cause) {
+			console.error('Meet: the app could not start the call', cause);
+			ended({ failed: 'The app could not start the call.', elapsed: 0, others: 0 });
 		}
 	}
 
@@ -65,6 +83,9 @@
 
 {#if phase === 'room' && ticket && choice}
 	<MeetRoom {ticket} {choice} {link} invite={data.you ? data.room : null} onEnd={ended} />
+{:else if phase === 'native'}
+	<!-- Behind the app's call screen; seen only for the moment it opens or closes. -->
+	<main class="z-screen flex items-center justify-center bg-[var(--z-ground)] text-[13px] text-[var(--z-soft)]">The call is open</main>
 {:else if phase === 'ended' && end && choice}
 	{@const failed = error ?? end.failed}
 	<main class="z-screen flex flex-col items-center justify-center gap-3.5 bg-[var(--z-ground)] px-6 text-center text-[var(--z-ink)]">

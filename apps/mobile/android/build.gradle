@@ -9,6 +9,8 @@ buildscript {
     dependencies {
         classpath 'com.android.tools.build:gradle:8.7.2'
         classpath 'com.google.gms:google-services:4.4.2'
+        // The native Meet call screen (ADR-0006) is Kotlin, as the LiveKit SDK it drives is.
+        classpath 'org.jetbrains.kotlin:kotlin-gradle-plugin:2.1.0'
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -21,6 +23,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // LiveKit's audio routing (com.github.davidliu:audioswitch) is published only here.
+        maven { url 'https://jitpack.io' }
     }
 }
 

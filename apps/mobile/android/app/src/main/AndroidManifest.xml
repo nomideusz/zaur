@@ -20,6 +20,15 @@
             </intent-filter>
         </activity>
 
+        <!-- Meet's native call screen (ADR-0006). Full screen and dark; turning the phone
+             does not restart it, which would drop the call. -->
+        <activity
+            android:name=".CallActivity"
+            android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:theme="@style/ZaurCall" />
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.fileprovider"
@@ -34,4 +43,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Android 13+ runtime permission; without it PushNotifications.requestPermissions() silently fails. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- Meet: the lobby's preview in the WebView and the native call screen. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+    <!-- Android 12+: needed to see and route to a Bluetooth headset. -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

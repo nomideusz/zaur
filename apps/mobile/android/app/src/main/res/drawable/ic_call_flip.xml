@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Meet's glyph, as on the web (MeetIcon.svelte): 16-unit box, 1.4 stroke, round caps. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="16"
+    android:viewportHeight="16">
+    <path
+        android:pathData="M13 8a5 5 0 1 1-1.5-3.6M13 2.4v2.8h-2.8"
+        android:strokeWidth="1.4"
+        android:strokeColor="#FFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+</vector>
