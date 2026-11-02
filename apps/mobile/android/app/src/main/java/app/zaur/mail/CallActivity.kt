@@ -1,9 +1,20 @@
 package app.zaur.mail
 
 import android.Manifest
+import android.app.PendingIntent
+import android.app.PictureInPictureParams
+import android.app.RemoteAction
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.content.res.Configuration
+import android.graphics.Rect
+import android.graphics.drawable.Icon
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import android.os.Handler
 import android.os.Looper
 import android.view.View
@@ -19,6 +30,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import io.livekit.android.AudioOptions
 import io.livekit.android.LiveKit
@@ -51,9 +63,12 @@ import livekit.org.webrtc.RendererCommon
  * phone layout — the other person fills it, you sit in a corner, the bars fade after a
  * few quiet seconds and a tap brings them back.
  *
- * Phase 1: one other person is shown; with more, the first to join is, and the bar
- * counts the rest. No foreground service yet, so leaving the app pauses your camera
- * and mic as Android requires.
+ * Away from the screen (phase 2) the call goes on: [CallService] keeps the mic and
+ * the process alive behind an ongoing notification, leaving the app shrinks the call
+ * to picture-in-picture, and your camera pauses whenever nobody can see the screen
+ * (locked, or another app with picture-in-picture off); the others see "camera off".
+ *
+ * One other person is shown; with more, the first to join is, and the bar counts the rest.
  */
 class CallActivity : AppCompatActivity() {
 
@@ -65,7 +80,19 @@ class CallActivity : AppCompatActivity() {
         const val RESULT_ELAPSED = "elapsed"
         const val RESULT_OTHERS = "others"
         const val RESULT_FAILED = "failed"
+        /** From the notification and the picture-in-picture window. */
+        const val ACTION_LEAVE = "app.zaur.mail.call.LEAVE"
+        const val ACTION_TOGGLE_MIC = "app.zaur.mail.call.TOGGLE_MIC"
         private const val BARS_LINGER_MS = 4000L
+
+        /** A tap that reaches the running call from outside its screen; only this app can send it. */
+        fun command(context: Context, action: String): PendingIntent =
+            PendingIntent.getBroadcast(
+                context,
+                action.hashCode(),
+                Intent(action).setPackage(context.packageName),
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+            )
     }
 
     private lateinit var room: Room
@@ -95,6 +122,18 @@ class CallActivity : AppCompatActivity() {
     private var startedAt = 0L
     private var reconnecting = false
     private var finished = false
+    private var inPip = false
+    /** Your camera, turned off by us because nobody can see the screen; back on with it. */
+    private var cameraPaused = false
+
+    private val commands = object : BroadcastReceiver() {
+        override fun onReceive(context: Context, intent: Intent) {
+            when (intent.action) {
+                ACTION_LEAVE -> leave()
+                ACTION_TOGGLE_MIC -> toggleMic()
+            }
+        }
+    }
 
     private val main = Handler(Looper.getMainLooper())
     private val hideBars = Runnable { showBars(false) }
@@ -153,13 +192,20 @@ class CallActivity : AppCompatActivity() {
         onBackPressedDispatcher.addCallback(
             this,
             object : OnBackPressedCallback(true) {
-                // Back does not hang up; a call ends only on the red button.
+                // Back does not hang up: it shrinks the call to a corner, or, where there is
+                // no picture-in-picture, says how to leave. A call ends only on the red button.
                 override fun handleOnBackPressed() {
+                    if (enterPip()) return
                     showBars(true)
                     Toast.makeText(this@CallActivity, R.string.call_leave_hint, Toast.LENGTH_SHORT).show()
                 }
             },
         )
+        val filter = IntentFilter().apply {
+            addAction(ACTION_LEAVE)
+            addAction(ACTION_TOGGLE_MIC)
+        }
+        ContextCompat.registerReceiver(this, commands, filter, ContextCompat.RECEIVER_NOT_EXPORTED)
 
         lifecycleScope.launch { room.events.collect { onEvent(it) } }
         lifecycleScope.launch {
@@ -171,6 +217,8 @@ class CallActivity : AppCompatActivity() {
             }
             startedAt = System.currentTimeMillis()
             main.post(tick)
+            // Started while the call is in front, as Android 12+ requires.
+            CallService.start(this@CallActivity, startedAt)
             if (intent.getBooleanExtra(EXTRA_MIC, true) && granted(Manifest.permission.RECORD_AUDIO)) {
                 room.localParticipant.setMicrophoneEnabled(true)
             }
@@ -178,6 +226,7 @@ class CallActivity : AppCompatActivity() {
                 room.localParticipant.setCameraEnabled(true)
             }
             refresh()
+            updatePip()
         }
     }
 
@@ -254,14 +303,15 @@ class CallActivity : AppCompatActivity() {
         val theirs = other?.let { camera(it) }
         val mine = camera(local)
 
-        // Alone, you fill the screen; with someone, they do, unless you swapped.
-        val bigIsMine = other == null || swapped
+        // Alone, you fill the screen; with someone, they do, unless you swapped. In the
+        // small window it is always them, and nothing else.
+        val bigIsMine = other == null || (swapped && !inPip)
         attach(big, if (bigIsMine) mine else theirs, isBig = true)
         attach(small, if (other == null) null else if (bigIsMine) theirs else mine, isBig = false)
         big.setMirror(bigIsMine && front)
         small.setMirror(!bigIsMine && front)
         big.visibility = if (bigTrack != null) View.VISIBLE else View.INVISIBLE
-        smallCard.visibility = if (other != null) View.VISIBLE else View.GONE
+        smallCard.visibility = if (other != null && !inPip) View.VISIBLE else View.GONE
         small.visibility = if (smallTrack != null) View.VISIBLE else View.INVISIBLE
 
         val shown: Participant = if (bigIsMine) local else other!!
@@ -284,8 +334,109 @@ class CallActivity : AppCompatActivity() {
         flipButton.isEnabled = local.isCameraEnabled
         flipButton.alpha = if (local.isCameraEnabled) 1f else 0.4f
         updateStatus()
+        updatePip()
+        if (inPip) return
         // Nobody to look at yet: the bars stay.
         if (other == null) showBars(true) else if (barsShown) scheduleHide()
+    }
+
+    // ------------------------------------------------------------ away from the screen
+
+    private fun pipSupported() =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)
+
+    /** The small window: upright, with mute and leave; on Android 12+ it opens by itself on Home. */
+    private fun pipParams(): PictureInPictureParams? {
+        if (!pipSupported() || startedAt == 0L || finished) return null
+        val micOn = room.localParticipant.isMicrophoneEnabled
+        val mute = getString(if (micOn) R.string.call_mute else R.string.call_unmute)
+        val actions = listOf(
+            RemoteAction(
+                Icon.createWithResource(this, if (micOn) R.drawable.ic_call_mic else R.drawable.ic_call_mic_off),
+                mute,
+                mute,
+                command(this, ACTION_TOGGLE_MIC),
+            ),
+            RemoteAction(
+                Icon.createWithResource(this, R.drawable.ic_call_leave),
+                getString(R.string.call_leave_short),
+                getString(R.string.call_leave),
+                command(this, ACTION_LEAVE),
+            ),
+        )
+        val builder = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(3, 4))
+            .setActions(actions)
+        // The shrink animates from the picture itself rather than from the whole screen.
+        val picture = Rect()
+        if (big.getGlobalVisibleRect(picture) && !picture.isEmpty) builder.setSourceRectHint(picture)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            builder.setAutoEnterEnabled(true).setSeamlessResizeEnabled(false)
+        }
+        return builder.build()
+    }
+
+    private fun updatePip() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        pipParams()?.let { setPictureInPictureParams(it) }
+    }
+
+    /** Shrinks the call to a corner; false where the phone has no picture-in-picture. */
+    private fun enterPip(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return false
+        val params = pipParams() ?: return false
+        return try {
+            enterPictureInPictureMode(params)
+        } catch (cause: IllegalStateException) {
+            false // turned off for this app in the phone's settings
+        }
+    }
+
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        // Android 8 to 11 has no auto-enter: Home is the moment to shrink.
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) enterPip()
+    }
+
+    override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean, newConfig: Configuration) {
+        super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
+        inPip = isInPictureInPictureMode
+        if (inPip) {
+            main.removeCallbacks(hideBars)
+            topBar.visibility = View.GONE
+            bottomBar.visibility = View.GONE
+        } else {
+            topBar.visibility = View.VISIBLE
+            bottomBar.visibility = View.VISIBLE
+            // Closed with its X: the window is gone and the screen was not reopened. That is
+            // leaving, as in every calling app; expanded, the screen is started again.
+            if (lifecycle.currentState == Lifecycle.State.CREATED) {
+                leave()
+                return
+            }
+            showBars(true)
+        }
+        refresh()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Nobody can see the screen: your camera pauses rather than film a pocket.
+        if (!finished && !isFinishing && ::room.isInitialized && room.localParticipant.isCameraEnabled) {
+            cameraPaused = true
+            lifecycleScope.launch { room.localParticipant.setCameraEnabled(false) }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        if (cameraPaused && ::room.isInitialized && !finished) {
+            cameraPaused = false
+            lifecycleScope.launch {
+                room.localParticipant.setCameraEnabled(true)
+                refresh()
+            }
+        }
     }
 
     private fun camera(participant: Participant): VideoTrack? {
@@ -346,6 +497,7 @@ class CallActivity : AppCompatActivity() {
 
     private fun showBars(show: Boolean) {
         main.removeCallbacks(hideBars)
+        if (inPip) return
         barsShown = show
         val lift = 16 * resources.displayMetrics.density
         topBar.animate().alpha(if (show) 1f else 0f).translationY(if (show) 0f else -lift).setDuration(250).start()
@@ -405,6 +557,7 @@ class CallActivity : AppCompatActivity() {
     private fun finishWith(failed: String?, others: Int = 0) {
         if (finished) return
         finished = true
+        CallService.stop(this)
         val elapsed = if (startedAt > 0) System.currentTimeMillis() - startedAt else 0L
         val data = Intent()
             .putExtra(RESULT_ELAPSED, elapsed)
@@ -416,6 +569,8 @@ class CallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         main.removeCallbacksAndMessages(null)
+        CallService.stop(this)
+        runCatching { unregisterReceiver(commands) }
         if (::room.isInitialized) {
             bigTrack?.removeRenderer(big)
             smallTrack?.removeRenderer(small)

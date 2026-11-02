@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted — phase 1 built, not yet released
+Accepted — phases 1 and 2 built, not yet released
 
 ## Date
 
@@ -74,7 +74,7 @@ mail2 lobby (WebView) ── joinCall (session cookie, same as the browser) ─�
 | Phase | Scope | State |
 |---|---|---|
 | 1. Core | Plugin bridge; `CallActivity` with one other person full screen, you in the corner, swap, mute, camera, flip, audio route, leave; reconnect and error endings; camera/mic/Bluetooth permissions (which the WebView lobby also needed) | Built 2026-11-02 |
-| 2. Phone-call behaviour | Foreground service with an ongoing-call notification so the call survives the screen locking or switching apps (`FOREGROUND_SERVICE_MICROPHONE`/`CAMERA` on Android 14+); picture-in-picture | Next |
+| 2. Phone-call behaviour | `CallService`, a foreground service of type `microphone` (`mediaPlayback` when the mic is refused) behind an ongoing, silent notification with a timer and Leave, so the call survives the screen locking or another app; picture-in-picture (auto on Home from Android 12, on Home or Back before), with Mute and Leave in the window, closing it leaves the call; your camera pauses while nobody can see the screen | Built 2026-11-02 |
 | 3. Links | `/meet/…` links open in the app when it is installed: an App Links intent filter and `/.well-known/assetlinks.json` served by mail2 | After 2 |
 | 4. Group calls | A native grid for three or more; until then the first person to join is shown and the bar counts the rest | When needed |
 | iOS | The same plugin over LiveKit's Swift SDK, once the shell has an iOS project | Later |
@@ -85,8 +85,11 @@ mail2 lobby (WebView) ── joinCall (session cookie, same as the browser) ─�
   and JitPack as a repository (LiveKit's audio routing library is published only there).
 - The app now declares `CAMERA`, `RECORD_AUDIO`, `MODIFY_AUDIO_SETTINGS` and `BLUETOOTH_CONNECT`.
   Before this, the WebView lobby could not reach the camera or mic in the app at all.
-- **Phase 1 limit:** without the foreground service, Android pauses your camera and mic when you
-  leave the app mid-call. The call itself stays connected.
+- **Away from the screen:** the call keeps its mic and connection while the phone is locked or
+  another app is open; your camera pauses then (the others see it off) and comes back with the
+  screen. The service is not of type `camera` on purpose: nothing films a pocket. On Android 13+
+  the ongoing notification needs the notification permission, asked with camera and mic; refused,
+  the call still goes on, only without the notification.
 - Only people with the app get the native call. Anyone who opens a link in a browser, and every
   iPhone, still gets the web call; the web fixes above remain the baseline.
 - The call reports Meet sends to Traceway come from the web call only. A native call does not
@@ -97,7 +100,10 @@ mail2 lobby (WebView) ── joinCall (session cookie, same as the browser) ─�
 ## Files
 
 - `apps/mobile/android/app/src/main/java/app/zaur/mail/ZaurMeetPlugin.kt` — the bridge
-- `apps/mobile/android/app/src/main/java/app/zaur/mail/CallActivity.kt` — the call screen
+- `apps/mobile/android/app/src/main/java/app/zaur/mail/CallActivity.kt` — the call screen and its
+  picture-in-picture
+- `apps/mobile/android/app/src/main/java/app/zaur/mail/CallService.kt` — the call kept alive away
+  from the screen, and its notification
 - `apps/mobile/android/app/src/main/res/layout/activity_call.xml`, `values/call.xml`,
   `drawable/ic_call_*`, `drawable/bg_call_*` — its layout, strings, colours and glyphs
 - `apps/mail2/src/lib/meet/native.ts` and `apps/mail2/src/routes/meet/[room]/+page.svelte` — the

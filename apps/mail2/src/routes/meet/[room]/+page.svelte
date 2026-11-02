@@ -84,8 +84,10 @@
 {#if phase === 'room' && ticket && choice}
 	<MeetRoom {ticket} {choice} {link} invite={data.you ? data.room : null} onEnd={ended} />
 {:else if phase === 'native'}
-	<!-- Behind the app's call screen; seen only for the moment it opens or closes. -->
-	<main class="z-screen flex items-center justify-center bg-[var(--z-ground)] text-[13px] text-[var(--z-soft)]">The call is open</main>
+	<!-- Behind the app's call screen: seen as it opens or closes, and while the call is a small window. -->
+	<main class="z-screen flex items-center justify-center bg-[var(--z-ground)] px-6 text-center text-[13px] text-[var(--z-soft)]">
+		The call is on in its own window. Tap the small window to go back to it.
+	</main>
 {:else if phase === 'ended' && end && choice}
 	{@const failed = error ?? end.failed}
 	<main class="z-screen flex flex-col items-center justify-center gap-3.5 bg-[var(--z-ground)] px-6 text-center text-[var(--z-ink)]">

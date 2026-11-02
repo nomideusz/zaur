@@ -20,14 +20,22 @@
             </intent-filter>
         </activity>
 
-        <!-- Meet's native call screen (ADR-0006). Full screen and dark; turning the phone
-             does not restart it, which would drop the call. -->
+        <!-- Meet's native call screen (ADR-0006). Full screen and dark; turning the phone or
+             shrinking to picture-in-picture does not restart it, which would drop the call. -->
         <activity
             android:name=".CallActivity"
             android:configChanges="orientation|screenSize|screenLayout|smallestScreenSize|keyboardHidden|keyboard|navigation|uiMode"
             android:exported="false"
             android:launchMode="singleTop"
+            android:resizeableActivity="true"
+            android:supportsPictureInPicture="true"
             android:theme="@style/ZaurCall" />
+
+        <!-- Keeps a call's mic and process alive while its screen is not in front. -->
+        <service
+            android:name=".CallService"
+            android:exported="false"
+            android:foregroundServiceType="microphone|mediaPlayback" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -49,6 +57,10 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <!-- Android 12+: needed to see and route to a Bluetooth headset. -->
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <!-- Meet, phase 2: a call goes on with the screen off or another app in front. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
     <uses-feature android:name="android.hardware.microphone" android:required="false" />
 </manifest>

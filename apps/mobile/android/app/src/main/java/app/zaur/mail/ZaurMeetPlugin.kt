@@ -27,6 +27,8 @@ import com.getcapacitor.annotation.PermissionCallback
     permissions = [
         Permission(alias = "camera", strings = [Manifest.permission.CAMERA]),
         Permission(alias = "microphone", strings = [Manifest.permission.RECORD_AUDIO]),
+        // Android 13+: without it the ongoing-call notification is hidden (the call still goes on).
+        Permission(alias = "notifications", strings = [Manifest.permission.POST_NOTIFICATIONS]),
     ],
 )
 class ZaurMeetPlugin : Plugin() {
