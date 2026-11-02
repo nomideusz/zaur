@@ -261,7 +261,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 
 ### Live Window
 - **Style:** 2px ink frame, a Paper toolbar (host, Desktop / Mobile switch, Open ↗), then a 16:10 screen (4:5 under 600px). Desktop renders the site at 1280 wide scaled to fit; Mobile at a real 390 wide, centred on lilac. A capture shows until the site loads; meanwhile a Quiet status dot before the host blinks (two steps, no easing; still under reduced motion) and a corner label reads "Loading the live site…". Loaded, the dot turns Live Green. The site is framed only when the window comes within half a screen of view, so windows never race each other.
-- **Use:** the cover button hands the site the pointer ("Click" or, without hover, "Tap" to use it here); while it is in use an ink Done button gives the page its scroll back, and a mouse leaving does too. An inactive site is inert, out of the tab order. Focus moves to Done on hand-off and back to the cover after. The width switch is labelled with the site's name. Never sticky.
+- **Use:** the cover button hands the site the pointer ("Click" or, without hover, "Tap" to use it here); while it is in use an ink Done button gives the page its scroll back, and a mouse leaving does too. An inactive site is inert, out of the tab order, and if it focuses itself as it loads the page takes the keyboard back. Focus moves to Done on hand-off and back to the cover after. The width switch is labelled with the site's name. Never sticky.
 - **Touch:** toolbar controls are at least 2.25rem high.
 
 ### Site Row

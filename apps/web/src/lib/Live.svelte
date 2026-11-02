@@ -22,6 +22,13 @@
 	let screen: HTMLDivElement;
 	let cover = $state<HTMLButtonElement>();
 	let done = $state<HTMLButtonElement>();
+	let frame = $state<HTMLIFrameElement>();
+	// A framed site can focus itself as it loads, inert or not, and every key then
+	// goes to a window nobody is using: the page's own shortcuts and scrolling stop.
+	// Only the hand-off gives a site the keyboard, so anything else is handed back.
+	const release = () => {
+		if (!active && frame && document.activeElement === frame) frame.blur();
+	};
 	// Keyboard focus follows the hand-off: into the bar's Done, then back.
 	const use = async () => {
 		if (!loaded) return;
@@ -52,7 +59,13 @@
 			{ rootMargin: '50% 0px' }
 		);
 		io.observe(screen);
-		return () => io.disconnect();
+		// A task later: during the window's blur event the browser is still moving focus.
+		const stolen = () => setTimeout(release);
+		addEventListener('blur', stolen);
+		return () => {
+			io.disconnect();
+			removeEventListener('blur', stolen);
+		};
 	});
 </script>
 
@@ -81,6 +94,7 @@
 		{/if}
 		{#if near}
 			<iframe
+				bind:this={frame}
 				src={href}
 				title={t('live.title', { name })}
 				class:shown={loaded}
@@ -89,7 +103,10 @@
 				style:width="{vw}px"
 				style:height="{h / s}px"
 				style:transform="scale({s})"
-				onload={() => (loaded = true)}
+				onload={() => {
+					loaded = true;
+					release();
+				}}
 			></iframe>
 		{/if}
 		{#if !active}

@@ -34,8 +34,10 @@ function matchToken(token: string, e: Indexed): Match | null {
 		const g = trigramSimilarity(token, w);
 		if (g > tri.s) tri = { word: w, s: g };
 	}
-	if (typo.s >= (token.length < 5 ? 0.75 : 0.7)) return { how: 'typo', token, word: typo.word, score: 0.7 * typo.s };
-	if (tri.s >= 0.4) return { how: 'trigram', token, word: tri.word, score: 0.6 * tri.s };
+	// A near miss on the name beats one in the description, in the same ratio as an exact hit.
+	const place = (word: string) => (e.foldedName.includes(word) ? 1 : 0.8);
+	if (typo.s >= (token.length < 5 ? 0.75 : 0.7)) return { how: 'typo', token, word: typo.word, score: 0.7 * typo.s * place(typo.word) };
+	if (tri.s >= 0.4) return { how: 'trigram', token, word: tri.word, score: 0.6 * tri.s * place(tri.word) };
 	return null;
 }
 

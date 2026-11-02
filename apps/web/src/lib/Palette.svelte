@@ -49,7 +49,11 @@
 		}
 	}
 	function onnav(e: KeyboardEvent) {
-		if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+		// A search field's Esc only clears its text; here it closes, as the footer says.
+		if (e.key === 'Escape') {
+			e.preventDefault();
+			palette.open = false;
+		} else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
 			e.preventDefault();
 			if (shown.length) at = (at + (e.key === 'ArrowDown' ? 1 : shown.length - 1)) % shown.length;
 		} else if (e.key === 'Enter' && shown[at]) {
