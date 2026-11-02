@@ -139,14 +139,14 @@ The page is a single Swiss concert poster in the International Typographic Style
 
 The first viewport scales as one object: every measure in it is in vw (or the poster unit, below), derived from a 2512px-wide comp, so the poster keeps its proportions at any width above 900px. Below 900px the sheet stops scaling and becomes a stack. The interaction is the poster answering back: pointing at a product lights the packages it is built from, pointing at a package lights the products that use it, and the swap is instant.
 
-Everything shown is real. Windows run the live site for the flagships (a capture underneath until it loads); every smaller project shows a capture. The calendar package opens Packages as itself: its `<day-calendar>` widget on a sample timetable, loaded when the case nears view, its auto theme probing the page (`--accent` on `:root` names Signal Orange for it). Version numbers are read from npm, not typed. The search-traffic readout comes from Google Search Console and disappears when the source is unavailable: a weekly chart only where a site gets 20+ clicks a day, 28-day totals elsewhere, nothing under 1,000 impressions. The system refuses the SaaS hero and the wired node graph, and keeps the portfolio's case studies honest by filling them with running sites instead of mock-ups.
+Everything shown is real. Windows run the live site for the flagships (a capture underneath until it loads); every smaller project shows a capture. Packages show themselves running in three acts (below), never as a table of thumbnails; the calendar's `<day-calendar>` widget loads when the machine nears view, its auto theme probing the page (`--accent` on `:root` names Signal Orange for it). Version numbers are read from npm, not typed. The search-traffic readout comes from Google Search Console and disappears when the source is unavailable: a weekly chart only where a site gets 20+ clicks a day, 28-day totals elsewhere, nothing under 1,000 impressions. The system refuses the SaaS hero and the wired node graph, and keeps the portfolio's case studies honest by filling them with running sites instead of mock-ups.
 
 **Key Characteristics:**
 - Three flat fields (orange programme, lilac column and media, warm-grey ground) plus ink bands, separated by ink rules; no fourth field colour.
 - One family, Inter Tight, self-hosted at 500 / 700 / 800.
 - Type is the image: product names at poster scale, descenders crossing the rules below them; section names at the same scale on ink.
 - No shadows, gradients or rounding, except the 3px corner on chips and small controls, and the round live dot.
-- Instant hover swaps; the only authored motion is the fold's short height reveal (and a live window's status dot blinking while its site loads).
+- Instant hover swaps; the authored motion is the fold's short height reveal, the booking signal stepping through the machine's cell heads, and the darkroom's picture sharpening shape by shape (plus a status dot blinking while something loads). Reduced motion lands each on its end state.
 - Live data or nothing: versions, traffic and windows come from live sources.
 
 ## Colors
@@ -233,7 +233,7 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 ## Components
 
 ### Navigation (top bar)
-- **Style:** sticky black bar, Paper text, tabs separated by 2px Bar Rule dividers. Tabs name the sections they jump to; a fold reached by its tab opens.
+- **Style:** sticky black bar, Paper text, tabs separated by 2px Bar Rule dividers. Tabs name the sections they jump to; a fold reached by its tab opens. After the address sit the page's own tools: Search with its `/` key, and Keys, which shows every text as its message key (Paper fill while on).
 - **States:** links turn Signal Orange on hover; focus ring turns orange and sits inside the link (-3px offset).
 - **Mobile:** one row of four equal tabs; the name, address and language links live in the intro. Above 900px the bar ends on the language menu (LocaleSwitcher, square, ink on ink).
 
@@ -267,9 +267,32 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 ### Site Row
 - **Style:** a 2px-framed capture (or the radio), then title, an optional search line, a short description and chips, then the spec list in its own column. One ruled row each.
 
-### Package Table
-- **Style:** one 2px-ruled row per package: name (a link to the row itself, to share), version, description, a Quiet meta line read from npm at build (license · svelte range · dependency count), the install line, "Used in" in Quiet, then Demo, On npm and Source flush right. A row reached by its anchor fills Chip White.
-- **Packages as themselves:** where a package can show itself in a row, it does, under the install line. svelte-qr encodes its own row's address (scan to open the row on a phone) in Ink on Paper inside a 10rem 2px frame, beside a text field, an L/M/Q/H segmented switch (2px outlined 3px-corner buttons, the chosen one filled Ink) and its version · modules · bytes line, plus Save PNG. svelte-media shows what one `processAndStore` call made of the Szkoły Jogi capture at build (`scripts/media.mjs`, output committed in `src/lib/media/` like the captures): medium and thumbnail side by side at one scale, the medium revealing its derive-hook triangle placeholder, then a ruled file list (key · size · fit · kB). svelte-scheduler, svelte-payments and svelte-notify share one sample booking (`src/lib/booking.svelte.ts`), the Vinyasa class from the calendar case, so the three rows read as one story top to bottom: guests and a cancellation policy price the booking and work out a refund at the chosen hour; the ledger lists its charge and refunds in integer grosze, and a second Refund on the same key comes back a duplicate, marked with a 4px orange bar; the confirmation or cancellation email renders in a sandboxed frame (no scripts, no same origin), themed in the poster's orange, ink and paper, with svelte-qr's code inside. svelte-search searches the page itself (`src/lib/find.ts`, the package's pure matching: Polish-locale folding, then exact, edit distance and trigrams): a field with four Try buttons (a folded Polish name, a Polish word for an English one, two typos), the folded query, the query's trigrams as 3px-corner chips filled Ink where the top result shares them, then up to six ruled results (kind · name linking to its row, with why it matched · score). A result inside a fold opens it. The Template Finder runs on the same matching.
+### Packages Section
+The section runs in three acts, then an index. A package's `#pkg-<id>` anchor lands where it demonstrates itself. Stats stay out: no download or search charts here. Everything marked as a call really ran in the visitor's tab.
+
+### Booking Machine (act one, `BookingMachine.svelte`, `booking.svelte.ts`)
+- **Style:** one sample booking through five ruled cells on a 12-track grid: svelte-calendar (paper) spanning two rows beside svelte-scheduler and svelte-payments (ground), then svelte-notify and svelte-qr (lilac) beside the tape. Each cell opens on a head: package name linking to npm, version flush right, 2px ink rule.
+- **The signal:** the booking passes through by turning each head Signal Orange in turn, an instant swap about 420ms apart. It runs once when the machine comes into view, so nobody meets it empty. Light, never a drawn line.
+- **Behaviour:** clicking any calendar event (an imported `.ics` included) books it; guests rerun the chain; dragging the booked class updates the email and ticket without rebooking; Pay and Refund go through `executeKeyedOperation`, so a second press comes back a duplicate, marked by a Signal Orange result line. A refund switches the email to the cancellation. It always says it is sample data.
+- **Tape:** the ink log (`Tape.svelte`) of each real call and its return value, newest first, scrolling inside the row. Orange marks only a stopped replay. Also used in the darkroom.
+- **Scratch QR (`ScratchQr.svelte`):** the ticket's real code (Ink on Paper, 2px frame), L/M/Q/H switch. A pointer scratches it in lilac; the meter counts modules touched beside where a test decoder gave out (L 8%, M 11%, Q 17%, H 21%, measured with jsQR). Never claim the standard's 7–30% against modules: that counts codewords. It never says whether the code still reads; the visitor's phone does.
+
+### Ticket View (`TicketView.svelte`, `ticket.ts`)
+- **Style:** the phone's reward for scanning: a full-screen Signal Orange sheet with the class name at poster scale, ruled facts, add-to-calendar links. Labelled a sample. The booking lives only in the address (`#ticket=`), validated on read. "Open the ticket here" reaches it without a second device.
+
+### Darkroom (act two, `Darkroom.svelte`, `fit.worker.ts`)
+- **Style:** the case grid: picture on lilac, readings on ground. The default picture is the maker's portrait, its fit prebuilt (`me.webp?shapes=100&geometrize`), replaying slowly then in a rush. Pointing at the picture opens a square loupe on the photo beneath, framed in 2px ink, the same size from any direction; a button shows the whole photo for a keyboard. Captures never appear here.
+- **Bring your own:** drop, paste or choose a photo, kept in the tab. `validateImageFile` checks it, `fitShapes` runs in a worker loaded on first need, presets refit. The weight in kB is the one large number. The svelte-media list shows the package's sizes, qualities and keys, encoded by the browser and saved by clicking; the copy says the server does this with sharp, because `processAndStore` cannot run here.
+
+### Sky (act three, `Sky.svelte`)
+- **Style:** zaur-world at full width, the poster's one non-flat picture because it is a window on the real sky, over an ink board: title, a clock at band scale, a 24-hour slider (paper rule, square orange handle), Now / Play 24 hours / weather looks / My sky (location only on that click), and Radio Bartek's tuner.
+- **Behaviour:** loads near view, pauses off-screen. Kraków by default, as the station's DJ talks about its weather.
+
+### Search Palette (`Palette.svelte`)
+- **Style:** a native `<dialog>` from the bar, `/` or Ctrl+K: 4px ink frame on ground, ink at 55% behind. Shows each matching step of `src/lib/find.ts` (Polish-locale folding, then exact, edit distance and trigrams): the folded query, trigrams as 3px-corner chips filled Ink where the top result shares them, then up to eight ruled results (kind · name with why it matched · score), the current one Signal Orange. Four Try buttons when empty. A result inside a fold opens it. The Template Finder runs on the same matching. At 900px and below the bar shows it as a drawn icon.
+
+### Package Index
+- **Style:** one 2px-ruled row per package on one subgrid, so install lines and links stand in columns: name and version over a Quiet meta line read from npm at build (license · svelte range · dependency count), description, the install line, then Try it, Docs, On npm and Source. svelte-search and svelte-i18n demonstrate on the page itself, so their rows hold their anchors, and their buttons open the palette and flip the keys. A row reached by its anchor fills Chip White.
 
 ### Install Line
 - **Style:** the command and a bold "Copy" button in one 2px ink outline with a 3px corner, split by a 2px rule; 0.875rem. The command still selects in one click where the clipboard is refused. The button reads "Copied" for two seconds, announced politely. Used for `npm i …` and the skill's `npx skills add …`.

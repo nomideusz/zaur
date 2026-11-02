@@ -4,15 +4,16 @@
 	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
 	import { shapesOf } from '#lib/shapes';
-	import { GeometrizedImage, shapeCount, type GeometrizePlaceholder } from '@nomideusz/svelte-geometrize';
-	import { downloadQrPng, getQrCapacity, getQrMatrix, matrixToSvg, type ErrorCorrection } from '@nomideusz/svelte-qr';
-	import media from '#lib/media/manifest.json';
+	import { GeometrizedImage } from '@nomideusz/svelte-geometrize';
 	import Live from '#lib/Live.svelte';
-	import Radio from '#lib/Radio.svelte';
-	import CalendarDemo from '#lib/CalendarDemo.svelte';
+	import BookingMachine from '#lib/BookingMachine.svelte';
+	import Darkroom from '#lib/Darkroom.svelte';
+	import Sky from '#lib/Sky.svelte';
+	import Palette, { palette } from '#lib/Palette.svelte';
+	import TicketView from '#lib/TicketView.svelte';
+	import { decodeTicket, ticketHash, type Ticket } from '#lib/ticket';
 	import Daily, { linked } from '#lib/Daily.svelte';
-	import { fold, gramsOf, indexed, search as match, tokensOf, type Entry } from '#lib/find';
-	import { booking, canRefund, discountFrom, email, perPerson, policies, quote, rebook, sendRefund, thursday } from '#lib/booking.svelte';
+	import { indexed, search as match, tokensOf, type Entry } from '#lib/find';
 	import { track } from '#lib/visit';
 	import { i18n, t, list, pairs } from '#lib/i18n';
 	import { routing, languages, short } from '#lib/i18n-routing';
@@ -148,9 +149,7 @@
 			name: '@nomideusz/svelte-calendar',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-calendar',
 			demo: 'https://svelte-calendar.xyz',
-			source: 'https://github.com/nomideusz/svelte-calendar',
-			// Opens the section as a case: its own widget, live on this page.
-			featured: true
+			source: 'https://github.com/nomideusz/svelte-calendar'
 		},
 		{
 			name: '@nomideusz/svelte-search',
@@ -189,7 +188,7 @@
 			name: '@nomideusz/svelte-notify',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
 		}
-	] as { name: string; npm: string; demo?: string; source?: string; featured?: boolean }[];
+	] as { name: string; npm: string; demo?: string; source?: string }[];
 	// Every svelte-* package has its demo and docs on one hub: svelte.zaur.app/<name>.
 	const hub = 'https://svelte.zaur.app';
 
@@ -278,8 +277,6 @@
 		websites.filter((w) => w.basket === basket && !w.live).map((w) => ({ ...w, img: platesFor(w.id, w.name)?.frames[0].src }));
 	const clients = siteCards('client');
 	const side = siteCards('side');
-	// A featured package gets a case of its own, not a row.
-	const featured = (p: (typeof pkgs)[number]) => !!p.featured;
 	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
 	// What a developer weighs before installing: license, Svelte range, dependency count.
 	const metaOf = (id: string) => {
@@ -323,13 +320,10 @@
 	// Console has shows the same three, however they look.
 	type Sum = { clicks: number; impressions: number; position: number | null };
 	type Search = { through: string; days: [string, number, number, number | null][]; now: Sum; before: Sum };
-	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'tutitutu', 'svelte-calendar'];
+	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'tutitutu'];
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
 	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
-	// A package's demo gets no search traffic to speak of; npm counts its
-	// downloads, day by day for the same ninety days, from the same endpoint.
-	let downloads = $state<Record<string, { through: string; days: string[]; values: number[] }>>({});
 	const tenths = new Intl.NumberFormat(intl, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 	const rank = (p: number | null) => (p === null ? '—' : tenths.format(p));
 	const compact = new Intl.NumberFormat(intl, { notation: 'compact' });
@@ -347,11 +341,6 @@
 			{ label: t('daily.position'), days, values: s.days.map((d) => d[3]), now: now.position, change: before.position === null ? '—' : t('daily.was', { position: rank(before.position) }), fmt: rank, line: true }
 		];
 	};
-	const downloadRow = (id: string): Row => {
-		const { days, values } = downloads[id];
-		const total = (from: number, to?: number) => values.slice(from, to).reduce((a, v) => a + v, 0);
-		return { label: t('daily.downloads'), days, values, now: total(-28), change: change(total(-28), total(-56, -28)), fmt: num };
-	};
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
 	// svelte-ignore state_referenced_locally (prerendered: data never changes)
 	const pinned = data.usedVersions;
@@ -363,19 +352,23 @@
 	};
 
 	// The package demonstrating itself: the whole page as its message keys, and
-	// back. zaur.app/#keys opens it that way (the demo site links there).
-	// The switch stays under the pointer while everything around it changes
-	// length; the #keys link, arriving from elsewhere, centres the row instead.
+	// back, from the bar or its row. zaur.app/#keys opens it that way (the demo
+	// site links there). What is being read stays put while everything around it
+	// changes length; the #keys link, arriving from elsewhere, centres the row.
 	// The page above keeps settling for a few frames after the swap (Firefox and
 	// Safari don't anchor scrolling through it), so it is held for a second, on
 	// every resize only: scrolling meanwhile is left alone.
 	const flipKeys = async () => {
-		const at = () => document.querySelector('#pkg-svelte-i18n .p-keys')?.getBoundingClientRect().top;
-		const before = location.hash === '#keys' ? undefined : at();
+		const arriving = location.hash === '#keys';
+		const reading = arriving ? null : document.elementFromPoint(innerWidth / 2, innerHeight / 2)?.closest('[id]');
+		const id = reading?.id;
+		const at = () => (id ? document.getElementById(id)?.getBoundingClientRect().top : undefined);
+		const before = at();
 		keys.on = !keys.on;
-		if (location.hash === '#keys') history.replaceState(null, '', location.pathname);
+		if (arriving) history.replaceState(null, '', location.pathname);
 		await tick();
-		if (before === undefined) return document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
+		if (arriving) return document.getElementById('pkg-svelte-i18n')?.scrollIntoView({ block: 'center' });
+		if (before === undefined) return;
 		const hold = () => {
 			const after = at();
 			if (after !== undefined) scrollBy({ top: after - before, behavior: 'instant' });
@@ -389,8 +382,6 @@
 	// The other package demonstrating itself: every capture held at its triangles,
 	// fewer or more of them, and back to the photos. zaur.app/#shapes opens it so.
 	let shapes = $state({ on: false, n: 60 });
-	// One capture beside the switch, so what it does shows where it is pressed.
-	const sample = platesFor('pikastro', 'pikastro.eu')?.frames[0].src;
 	const flipShapes = async () => {
 		shapes.on = !shapes.on;
 		if (location.hash === '#shapes') {
@@ -400,63 +391,35 @@
 		}
 	};
 
-	// svelte-qr demonstrating itself: the code for this row's own address, so a
-	// phone can pick the page up right here; typing encodes anything else.
-	const qrHome = `${site}#pkg-svelte-qr`;
-	const levels: ErrorCorrection[] = ['L', 'M', 'Q', 'H'];
-	let qr = $state({ text: qrHome, level: 'M' as ErrorCorrection });
-	const qrCode = $derived.by(() => {
-		const data = qr.text || qrHome;
-		const used = new TextEncoder().encode(data).length;
-		try {
-			const m = getQrMatrix(data, { errorCorrection: qr.level });
-			const v = (m.length - 17) / 4;
-			// The poster's ink on paper; the SVG holds only path data, never the text.
-			const svg = matrixToSvg(m, { foreground: '#0b0a09', background: '#f8f6f1' });
-			return { data, used, n: m.length, v, cap: getQrCapacity(qr.level, v), svg };
-		} catch {
-			return { data, used, cap: getQrCapacity(qr.level) };
-		}
-	});
-
-	// svelte-media demonstrating itself: what one processAndStore call made of a
-	// capture at build (scripts/media.mjs), files and manifest committed.
-	const stored = import.meta.glob<string>('../lib/media/**/*.webp', { eager: true, import: 'default' });
-	const storedUrl = (key: string) => stored[`../lib/media/${key}`];
-	const sizes = ['thumbnail', 'medium', 'large', 'original'] as const;
-	// JSON widens the placeholder's literal version field; the script wrote it from the real type.
-	const placeholder = media.derived as GeometrizePlaceholder;
-	const kb = new Intl.NumberFormat(intl, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 1 });
-
-	// svelte-search demonstrating itself: everything this page lists, searchable
-	// with the package's own matching, each step of it on show (lib/find).
+	// svelte-search demonstrating itself: the search in the bar, over everything
+	// this page lists, each step of its matching on show (lib/Palette, lib/find).
 	const pageEntries = indexed([
 		...work.map((w): Entry => ({ kind: 'product', name: w.name, text: w.what, href: `#${w.id}` })),
 		...pkgs.map((p): Entry => ({ kind: 'package', name: p.id, text: p.desc, href: `#pkg-${p.id}` })),
 		...tplEntries.map((e): Entry => ({ ...e, href: `#tpl-${e.href}` })),
 		...websites.filter((w) => !w.live).map((w): Entry => ({ kind: 'site', name: w.name, text: w.desc, href: `#${w.id}` }))
 	]);
-	// A folded Polish name, a Polish word for an English one, two typos.
-	const tries = ['szkoly', 'kalendarz', 'metabse', 'chromiun'];
-	let probe = $state('');
-	const found = $derived(match(pageEntries, probe));
-	const probeGrams = $derived([...new Set(gramsOf(probe))]);
-	const shared = $derived(new Set(found[0] ? gramsOf(found[0].folded) : []));
-	const score = new Intl.NumberFormat(intl, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-	const why = (r: (typeof found)[number]) =>
-		r.matches.map((m) => (m.how === 'exact' ? t('packages.search.exact') : t(`packages.search.${m.how}`, { token: m.token, word: m.word! }))).join(' · ');
+	const usedLine = (id: string) => (usedIn(id).length ? usedInText(id) : '');
+	// A package whose demo is the page itself has its anchor in the index.
+	const inPlace = (id: string) => id === 'svelte-search' || id === 'svelte-i18n';
 
-	// svelte-scheduler, -payments and -notify on one sample booking (lib/booking).
-	const pln = new Intl.NumberFormat(intl, { style: 'currency', currency: 'PLN' });
-	const classAt = new Intl.DateTimeFormat(intl, { weekday: 'long', hour: '2-digit', minute: '2-digit' }).format(thursday);
-	const bk = $derived(quote());
-	// The email dates the class's next Thursday, so it renders in the browser only.
-	let inBrowser = $state(false);
-	const mail = $derived(inBrowser ? email(locale, `${site}#pkg-svelte-scheduler`) : null);
+	// A scanned ticket: the phone opens this page with the booking in its address.
+	let ticket = $state<Ticket | null>(null);
+	const readTicket = () => {
+		ticket = location.hash.startsWith(ticketHash) ? decodeTicket(location.hash.slice(ticketHash.length)) : null;
+	};
+	const closeTicket = () => {
+		ticket = null;
+		history.replaceState(null, '', location.pathname + location.search);
+		document.getElementById('machine')?.scrollIntoView();
+	};
+	$effect(() => {
+		document.documentElement.style.overflow = ticket ? 'hidden' : '';
+	});
 
 	onMount(() => {
-		inBrowser = true;
 		track();
+		readTicket();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') flipShapes();
 		// A link to a fold or into one (the Templates tab, a shared #tpl-n8n-queue) opens it. The
@@ -479,7 +442,10 @@
 			const id = (e.target as Element).closest?.('a[href^="#"]')?.getAttribute('href')?.slice(1);
 			if (id) unfold(id);
 		};
-		const onhash = () => unfold();
+		const onhash = () => {
+			readTicket();
+			unfold();
+		};
 		unfold();
 		addEventListener('hashchange', onhash);
 		addEventListener('click', onclick);
@@ -487,7 +453,6 @@
 			.then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
 			.then((t) => {
 				traffic = t.search;
-				downloads = t.npm;
 			})
 			.catch(() => (trafficDown = true));
 		for (const p of pkgs) {
@@ -653,10 +618,6 @@
 	{/if}
 {/snippet}
 
-{#snippet npm(id: string)}
-	{#if downloads[id]}{@render daily([downloadRow(id)], 'npm', downloads[id].through)}{/if}
-{/snippet}
-
 <svelte:head>
 	<title>{title}</title>
 	<meta name="description" content={description} />
@@ -687,6 +648,13 @@
 		<a href="#clients">{t('nav.clients')}</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
+	<!-- i18n.t, not t: both stay readable while the page shows its keys. -->
+	<button type="button" class="tool find" aria-label={i18n.t('nav.search')} onclick={() => (palette.open = true)}>
+		<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5.5 5.5" /></svg>
+		<span class="tool-label">{i18n.t('nav.search')}</span>
+		<kbd aria-hidden="true">/</kbd>
+	</button>
+	<button type="button" class="tool keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t('nav.keys')}</button>
 	<!-- The language switch is @nomideusz/svelte-i18n's own component: it writes
 	     the locale cookie and moves to the same page under the new prefix. -->
 	<span class="lang"><LocaleSwitcher {i18n} {routing} labels={short} label={t('nav.language')} /></span>
@@ -761,202 +729,61 @@
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">{t('packages.lede')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
-		{#each pkgs.filter(featured) as p (p.id)}
-			<article class="case" id="pkg-{p.id}">
-				<div class="media">
-					<figure class="demo">
-						<CalendarDemo locale={intl} />
-						<figcaption>{t('packages.calendar.note')}</figcaption>
-					</figure>
-				</div>
-				<div class="case-body">
-					<h3>
-						<a href={p.demo}>{host(p.demo!)}</a>
-					</h3>
-					<p class="meta">{p.name} {version(p.id)}{#if metaOf(p.id)} · {metaOf(p.id)}{/if}</p>
-					<p class="what">{p.desc}</p>
-					{@render npm(p.id)}
-					{@render search(p.id)}
-					{@render install(`npm i ${p.name}`)}
-					{#if usedIn(p.id).length}<p class="p-used">{usedInText(p.id)}</p>{/if}
-					<p class="go">
-						{#if p.docs}<a href={p.docs}>{t('packages.docs')}</a>{/if}
-						<a href={p.npm}>{t('packages.npm')}</a>
-						{#if p.source}<a href={p.source}>{t('work.source')}</a>{/if}
-					</p>
-				</div>
-			</article>
-		{/each}
-		<ul class="ptable">
-			{#each pkgs.filter((p) => !featured(p)) as p (p.id)}
-				<li id="pkg-{p.id}">
-					<a class="p-name" href="#pkg-{p.id}">{p.id}</a>
-					<span class="p-ver">{version(p.id)}</span>
-					<div>
-						<p>{p.desc}</p>
-						{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
-						{#if downloads[p.id]}
-							{@render daily([downloadRow(p.id)], 'npm', downloads[p.id].through, false)}
-						{/if}
+
+		<BookingMachine locale={intl} language={locale} {site} {version} {npmOf} usedIn={usedLine} />
+
+		<Darkroom locale={intl} {version} {npmOf} usedIn={usedLine}>
+			<p class="p-try">
+				<button type="button" class="p-keys" aria-pressed={shapes.on} onclick={flipShapes}>{t(shapes.on ? 'packages.geometrize.photos' : 'packages.geometrize.shapes')}</button>
+				{#if shapes.on}
+					<label class="p-n">
+						<input type="range" min="1" max="60" bind:value={shapes.n} aria-label={t('packages.geometrize.count')} />
+						<span>{shapes.n}</span>
+					</label>
+					<!-- fewer: the fit is in order, so dropping its tail leaves the coarse picture -->
+					{@html `<style>.geometrize > svg > g > :nth-child(n + ${shapes.n + 1}) { display: none }</style>`}
+				{/if}
+				<span class="p-hint">{t('packages.geometrize.hint')}</span>
+			</p>
+		</Darkroom>
+
+		<Sky href="https://radiobartek.com" locale={intl} version={version('zaur-world')} npm={npmOf('zaur-world') ?? ''} used={usedLine('zaur-world')} />
+
+		<div class="pindex">
+			<h3>{t('packages.index')}</h3>
+			<ul class="ptable">
+				{#each pkgs as p (p.id)}
+					<li id={inPlace(p.id) ? `pkg-${p.id}` : undefined}>
+						<div class="p-id">
+							{#if inPlace(p.id)}<span class="p-name">{p.id}</span>{:else}<a class="p-name" href="#pkg-{p.id}">{p.id}</a>{/if}
+							<span class="p-ver">{version(p.id)}</span>
+							{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
+						</div>
+						<div class="p-about">
+							<p>{p.desc}</p>
+							{#if inPlace(p.id) && usedIn(p.id).length}<p class="p-meta">{usedInText(p.id)}</p>{/if}
+						</div>
 						{@render install(`npm i ${p.name}`)}
-						{#if p.id === 'svelte-i18n'}
-							<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
-							<p class="p-try">
+						<p class="p-links">
+							{#if p.id === 'svelte-search'}
+								<button type="button" class="p-keys" onclick={() => (palette.open = true)}>{t('nav.search')}</button>
+							{:else if p.id === 'svelte-i18n'}
+								<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
 								<button type="button" class="p-keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t(keys.on ? 'packages.i18n.text' : 'packages.i18n.keys')}</button>
-								{i18n.t(keys.on ? 'packages.i18n.hintOn' : 'packages.i18n.hint')}
-							</p>
-						{:else if p.id === 'svelte-geometrize'}
-							<p class="p-try">
-								<button type="button" class="p-keys" aria-pressed={shapes.on} onclick={flipShapes}>{t(shapes.on ? 'packages.geometrize.photos' : 'packages.geometrize.shapes')}</button>
-								{#if shapes.on}
-									<label class="p-n">
-										<input type="range" min="1" max="60" bind:value={shapes.n} aria-label={t('packages.geometrize.count')} />
-										<span>{shapes.n}</span>
-									</label>
-									<!-- fewer: the fit is in order, so dropping its tail leaves the coarse picture -->
-									{@html `<style>.geometrize > svg > g > :nth-child(n + ${shapes.n + 1}) { display: none }</style>`}
-								{/if}
-								<span class="p-hint">{t('packages.geometrize.hint')}</span>
-							</p>
-							{#if sample}<div class="p-sample" aria-hidden="true">{@render still(sample)}</div>{/if}
-						{:else if p.id === 'svelte-qr'}
-							<div class="p-qr">
-								{#if qrCode.svg}<div class="p-qr-code">{@html qrCode.svg}</div>{/if}
-								<div class="p-qr-controls">
-									<label class="p-field">{t('packages.qr.label')} <input type="text" bind:value={qr.text} autocomplete="off" spellcheck="false" /></label>
-									<div class="p-seg" role="group" aria-label={t('packages.qr.level')}>
-										<span aria-hidden="true">{t('packages.qr.level')}</span>
-										{#each levels as l (l)}<button type="button" aria-pressed={qr.level === l} onclick={() => (qr.level = l)}>{l}</button>{/each}
-									</div>
-									<p class="p-meta" aria-live="polite">
-										{#if qrCode.svg}{t('packages.qr.meta', { v: qrCode.v, n: qrCode.n, used: qrCode.used, cap: qrCode.cap })}{:else}{t('packages.qr.tooLong', { level: qr.level, cap: qrCode.cap })}{/if}
-									</p>
-									{#if qrCode.svg}
-										<button type="button" class="p-keys" onclick={() => downloadQrPng(qrCode.data, 'qr.png', { errorCorrection: qr.level })}>{t('packages.qr.save')}</button>
-									{/if}
-								</div>
-							</div>
-							<p class="p-try">{t('packages.qr.hint')}</p>
-						{:else if p.id === 'svelte-media'}
-							{@const f = media.files}
-							<!-- medium and thumbnail side by side at one scale: flex shares are their widths -->
-							<div class="p-scale">
-								{#each [f.medium, f.thumbnail] as x, i (x.key)}
-									<span style:flex="{x.width} 1 0" style:aspect-ratio="{x.width} / {x.height}">
-										{#if i === 0}
-											{#key shapes.on}
-												<GeometrizedImage {placeholder} src={shapes.on ? undefined : storedUrl(x.key)} alt="" loading="lazy" revealMs={900} />
-											{/key}
-										{:else}
-											<img src={storedUrl(x.key)} alt="" width={x.width} height={x.height} loading="lazy" decoding="async" />
-										{/if}
-									</span>
-								{/each}
-							</div>
-							<ul class="p-files">
-								{#each sizes as size (size)}
-									{@const x = f[size]}
-									<li><code>{x.key.split('/').pop()}</code><span>{x.width}×{x.height}</span><span>{x.fit ?? ''}</span><span>{kb.format(x.bytes / 1000)}</span></li>
-								{/each}
-								<li><code>derived</code><span>{t('packages.media.shapes', { n: shapeCount(placeholder) })}</span><span></span><span>{kb.format(JSON.stringify(media.derived).length / 1000)}</span></li>
-							</ul>
-							<p class="p-try">{t('packages.media.hint')}</p>
-						{:else if p.id === 'svelte-search'}
-							<div class="p-stack">
-								<label class="p-field">{t('packages.search.label')} <input type="search" bind:value={probe} autocomplete="off" spellcheck="false" /></label>
-								<div class="p-seg" role="group" aria-label={t('packages.search.try')}>
-									<span aria-hidden="true">{t('packages.search.try')}</span>
-									{#each tries as q (q)}<button type="button" aria-pressed={probe === q} onclick={() => (probe = q)}>{q}</button>{/each}
-								</div>
-								{#if tokensOf(probe).length}
-									<p class="p-meta" aria-live="polite">normalize → <code>{fold(probe)}</code> · {t('packages.search.meta', { count: found.length, total: pageEntries.length })}</p>
-									<p class="p-grams">
-										<span>{t('packages.search.trigrams')}</span>
-										{#each probeGrams as g (g)}<code class:on={shared.has(g)}>{g}</code>{/each}
-									</p>
-									{#if found.length}
-										<ol class="p-files p-found">
-											{#each found.slice(0, 6) as r (r.href)}
-												<li>
-													<span>{t(`packages.search.kind.${r.kind}`)}</span>
-													<span><a href={r.href}>{r.name}</a><small>{why(r)}</small></span>
-													<span>{score.format(r.score)}</span>
-												</li>
-											{/each}
-										</ol>
-									{:else}
-										<p class="p-meta">{t('packages.search.none', { q: probe.trim() })}</p>
-									{/if}
-								{/if}
-							</div>
-							<p class="p-try">{t('packages.search.hint')}</p>
-						{:else if p.id === 'svelte-scheduler'}
-							<div class="p-stack">
-								<p class="p-book">{t('packages.booking.class', { when: classAt, price: pln.format(perPerson) })}</p>
-								<div class="p-seg" role="group" aria-label={t('packages.booking.guests')}>
-									<span aria-hidden="true">{t('packages.booking.guests')}</span>
-									{#each [1, 2, 3, 4, 5, 6] as n (n)}<button type="button" aria-pressed={booking.people === n} onclick={() => rebook(n)}>{n}</button>{/each}
-								</div>
-								<ul class="p-files p-sum">
-									<li><span>{t('packages.booking.base', { n: booking.people, price: pln.format(perPerson) })}</span><span>{pln.format(bk.price.basePrice)}</span></li>
-									{#if bk.price.groupDiscount}<li><span>{t('packages.booking.discount', { n: discountFrom })}</span><span>−{pln.format(bk.price.groupDiscount)}</span></li>{/if}
-									<li><span>{t('packages.booking.fee')}</span><span>{pln.format(bk.price.processingFee)}</span></li>
-									<li><b>{t('packages.booking.total')}</b><b>{pln.format(bk.price.totalAmount)}</b></li>
-								</ul>
-								<div class="p-seg" role="group" aria-label={t('packages.booking.policy')}>
-									<span aria-hidden="true">{t('packages.booking.policy')}</span>
-									{#each policies as x (x)}<button type="button" aria-pressed={booking.policy === x} onclick={() => (booking.policy = x)}>{t(`packages.booking.${x}`)}</button>{/each}
-								</div>
-								<label class="p-n">
-									<input type="range" min="0" max="192" bind:value={booking.hours} />
-									<span>{t('packages.booking.cancel', { h: booking.hours })}</span>
-								</label>
-								<p class="p-meta" aria-live="polite">{t('packages.booking.refund', { pct: bk.refund.refundPercentage, amount: pln.format(bk.refund.refundAmount) })}</p>
-							</div>
-							<p class="p-try">{t('packages.booking.hint')}</p>
-						{:else if p.id === 'svelte-payments'}
-							<div class="p-stack">
-								<ul class="p-files p-ledger">
-									<li><code>{bk.charge}</code><span>charge</span><span>{bk.totalMinor}</span></li>
-									{#each booking.refunds as r (r.key)}<li><code>{r.key}</code><span>refund</span><span>{r.amount}</span></li>{/each}
-								</ul>
-								<p class="p-meta">derivePaymentStatus → <code>{bk.status}</code></p>
-								<button type="button" class="p-keys" disabled={!canRefund(bk)} onclick={sendRefund}>{t('packages.booking.send')} {pln.format(bk.refund.refundAmount)}</button>
-								{#if booking.log.length}
-									<ul class="p-log" aria-live="polite">
-										{#each booking.log as l, i (i)}<li class:dup={l.status === 'duplicate'}>{t(`packages.booking.${l.status}`, { key: l.key })}</li>{/each}
-									</ul>
-								{/if}
-							</div>
-							<p class="p-try">{t('packages.booking.ledgerHint')}</p>
-						{:else if p.id === 'svelte-notify'}
-							<div class="p-stack">
-								<div class="p-seg" role="group" aria-label={t('packages.booking.mail')}>
-									<span aria-hidden="true">{t('packages.booking.mail')}</span>
-									{#each ['confirmation', 'cancellation'] as const as m (m)}<button type="button" aria-pressed={booking.mail === m} onclick={() => (booking.mail = m)}>{t(`packages.booking.${m}`)}</button>{/each}
-								</div>
-								<!-- no scripts and no same origin: the email is markup and nothing else -->
-								<div class="p-mail">{#if mail}<iframe title={mail.subject} srcdoc={mail.html} sandbox=""></iframe>{/if}</div>
-							</div>
-							<p class="p-try">{t('packages.booking.mailHint')}</p>
-						{:else if p.id === 'zaur-world'}
-							<div class="p-sample"><Radio href={p.demo!} /></div>
-							<p class="p-try">{t('packages.world.hint')}</p>
-						{/if}
-					</div>
-					<p class="p-used">{usedIn(p.id).length ? usedInText(p.id) : ''}</p>
-					<p class="p-links">
-						{#if p.demo}<a href={p.demo}>{t('packages.demo')}</a>{/if}
-						{#if p.docs}<a href={p.docs}>{t('packages.docs')}</a>{/if}
-						<a href={p.npm}>{t('packages.npm')}</a>
-						{#if p.source}<a href={p.source}>{t('packages.source')}</a>{/if}
-					</p>
-				</li>
-			{/each}
-		</ul>
+							{:else}
+								<a href="#pkg-{p.id}">{t('packages.try')}</a>
+							{/if}
+							{#if p.docs}<a href={p.docs}>{t('packages.docs')}</a>{/if}
+							<a href={p.npm}>{t('packages.npm')}</a>
+							{#if p.source}<a href={p.source}>{t('packages.source')}</a>{/if}
+						</p>
+					</li>
+				{/each}
+			</ul>
+		</div>
 	</section>
 
-	<div class="folds">
+		<div class="folds">
 		<details id="templates">
 			<summary>
 				<h2>{t('templates.heading')} · {templateCount}</h2>
@@ -1043,6 +870,9 @@
 
 </main>
 
+<Palette entries={pageEntries} locale={intl} />
+{#if ticket}<TicketView {ticket} locale={intl} onclose={closeTicket} />{/if}
+
 <footer class="foot">
 	<p class="hire">{t('foot.hire')}</p>
 	<a class="write" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
@@ -1081,7 +911,7 @@
 		   width and squeeze the tabs below the caption floor. */
 		grid-template-columns:
 			minmax(max-content, 28vw) repeat(3, minmax(max-content, 9.4vw))
-			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto;
+			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto auto auto;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -1121,6 +951,47 @@
 	}
 	.bar a:hover {
 		color: var(--orange);
+	}
+	/* The page's own controls, sitting among the tabs: search and the message keys. */
+	.tool {
+		display: flex;
+		align-items: center;
+		gap: 0.5em;
+		padding: 0 0.9vw;
+		border: 0;
+		border-left: var(--rule) solid var(--bar-rule);
+		background: none;
+		color: inherit;
+		font-size: max(13px, 1.2vw);
+		white-space: nowrap;
+		cursor: pointer;
+	}
+	.tool:hover {
+		color: var(--orange);
+	}
+	.tool[aria-pressed='true'] {
+		background: var(--paper);
+		color: var(--ink);
+	}
+	.tool svg {
+		display: none;
+		width: 1.25rem;
+		height: 1.25rem;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 2.5;
+		stroke-linecap: square;
+	}
+	.tool kbd {
+		display: grid;
+		place-items: center;
+		min-width: 1.5em;
+		height: 1.5em;
+		border: var(--rule) solid currentColor;
+		border-radius: 3px;
+		font: inherit;
+		font-weight: 700;
+		line-height: 1;
 	}
 	/* LocaleSwitcher is styled through its own custom properties: black on the
 	   bar, square like everything else on the poster. */
@@ -1590,16 +1461,38 @@
 		padding: 1.25rem 1.39vw;
 		border-bottom: var(--rule) solid var(--ink);
 	}
+	/* The index: what a developer came for, once the demos have made the case. */
+	.pindex h3 {
+		padding: 1.4vw 1.39vw 0.8vw;
+		border-bottom: var(--rule) solid var(--ink);
+		font-weight: 800;
+		font-size: max(2rem, 3.6vw);
+		line-height: 1.05;
+		letter-spacing: -0.035em;
+	}
+	/* One grid across the rows, so the install lines and the links stand in columns. */
+	.ptable {
+		display: grid;
+		grid-template-columns: minmax(16rem, max-content) minmax(0, 1fr) max-content max-content;
+		column-gap: 1.5rem;
+	}
 	.ptable > li {
 		display: grid;
-		grid-template-columns: minmax(13rem, 21vw) 4.5rem minmax(0, 1fr) minmax(9rem, 17vw) max-content;
-		gap: 0.5rem 2rem;
+		grid-column: 1 / -1;
+		grid-template-columns: subgrid;
 		align-items: baseline;
-		padding: 0.85rem 1.39vw;
+		padding: 0.55rem 1.39vw;
+		scroll-margin-top: 3.66vw;
 	}
-	/* Inter Tight is narrow: the description column would run past 75ch on a laptop. */
-	.ptable > li > div {
-		max-width: 66ch;
+	.p-id {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		gap: 0 1rem;
+		align-items: baseline;
+	}
+	.p-id .p-meta {
+		grid-column: 1 / -1;
+		margin: 0;
 	}
 	.ptable > li + li {
 		border-top: var(--rule) solid var(--ink);
@@ -1607,9 +1500,14 @@
 	.ptable > li:target {
 		background: var(--chip);
 	}
+	.p-about {
+		max-width: 62ch;
+		font-size: 0.9375rem;
+		line-height: 1.35;
+	}
 	.p-name {
 		font-weight: 700;
-		font-size: max(1.25rem, 1.8vw);
+		font-size: max(1.125rem, 1.45vw);
 		letter-spacing: -0.02em;
 		text-decoration: none;
 	}
@@ -1634,7 +1532,9 @@
 		border-radius: 3px;
 		font-size: 0.875rem;
 	}
+	/* The command takes any spare width, so Copy always closes the outline. */
 	.p-install code {
+		flex: 1;
 		align-self: center;
 		padding: 0.1rem 0.45rem;
 		font: inherit;
@@ -1658,13 +1558,6 @@
 	.p-install button:focus-visible {
 		outline-offset: -4px;
 	}
-	.p-used {
-		color: var(--quiet);
-		font-size: 0.875rem;
-	}
-	.case-body .p-used {
-		margin-top: 0.6rem;
-	}
 	.p-try {
 		max-width: 54ch;
 		margin-top: 0.6rem;
@@ -1680,15 +1573,6 @@
 		color: var(--paper);
 		font: inherit;
 		cursor: pointer;
-	}
-	.p-sample {
-		max-width: 24rem;
-		margin-top: 0.75rem;
-		overflow: hidden;
-		border: var(--rule) solid var(--ink);
-	}
-	.p-sample :global(.radio) {
-		border-bottom: 0;
 	}
 	.p-hint {
 		display: block;
@@ -1713,216 +1597,22 @@
 		background: none;
 		color: var(--ink);
 	}
-	/* svelte-qr's row: the code, and what drives it beside. */
-	.p-qr {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: start;
-		gap: 1rem 1.5rem;
-		margin-top: 0.75rem;
-	}
-	.p-qr-code {
-		flex: none;
-		width: 10rem;
-		border: var(--rule) solid var(--ink);
-		line-height: 0;
-	}
-	.p-qr-code :global(svg) {
-		width: 100%;
-		height: auto;
-	}
-	.p-qr-controls {
-		flex: 1 1 14rem;
-		display: grid;
-		justify-items: start;
-		gap: 0.6rem;
-	}
-	.p-qr-controls .p-meta {
-		margin: 0;
-	}
-	.p-field {
-		display: grid;
-		gap: 0.3rem;
-		width: 100%;
-		font-weight: 700;
-		font-size: 0.875rem;
-	}
-	.p-field input {
-		width: 100%;
-	}
-	/* One of four, the chosen one filled. */
-	.p-seg {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.4rem;
-		font-weight: 700;
-		font-size: 0.875rem;
-	}
-	.p-seg span {
-		margin-right: 0.35rem;
-	}
-	.p-seg button {
-		min-width: 2rem;
-		height: 1.75rem;
-		border: var(--rule) solid var(--ink);
-		border-radius: 3px;
-		background: none;
-		color: var(--ink);
-		font: inherit;
-		cursor: pointer;
-	}
-	.p-seg button:hover {
-		background: var(--chip);
-	}
-	.p-seg button[aria-pressed='true'] {
-		background: var(--ink);
-		color: var(--paper);
-	}
-	/* svelte-media's row: two of its files at one scale, then all it returned. */
-	.p-scale {
-		display: flex;
-		align-items: flex-end;
-		gap: 0.5rem;
-		max-width: 32rem;
-		margin-top: 0.75rem;
-	}
-	.p-scale span {
-		display: block;
-		overflow: hidden;
-		border: var(--rule) solid var(--ink);
-	}
-	.p-scale img,
-	.p-scale :global(.geometrize) {
-		display: block;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-	}
-	.p-files {
-		max-width: 32rem;
-		margin-top: 0.6rem;
-		font-size: 0.875rem;
-		font-variant-numeric: tabular-nums;
-	}
-	.p-files li {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) 5.5rem 3.25rem 4rem;
-		gap: 0 0.75rem;
-		padding: 0.2rem 0;
-		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
-	}
-	/* The keys share one long id: keep their size prefix, clip the rest. */
-	.p-files code {
-		overflow: hidden;
-		font: inherit;
-		white-space: nowrap;
-		text-overflow: ellipsis;
-	}
-	.p-files span:last-child {
-		text-align: right;
-	}
-	/* The booking rows: controls stacked, one booking through three packages. */
-	.p-stack {
-		display: grid;
-		justify-items: start;
-		gap: 0.6rem;
-		max-width: 32rem;
-		margin-top: 0.75rem;
-	}
-	.p-stack > .p-files,
-	.p-stack > .p-meta {
-		width: 100%;
-		margin: 0;
-	}
-	.p-book {
-		font-weight: 700;
-	}
-	.p-sum li {
-		grid-template-columns: minmax(0, 1fr) auto;
-	}
-	/* svelte-search's row: the query's trigrams, filled where the top result has them too. */
-	.p-grams {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.3rem;
-		font-size: 0.875rem;
-	}
-	.p-grams span {
-		margin-right: 0.35rem;
-		font-weight: 700;
-	}
-	.p-grams code {
-		padding: 0 0.35rem;
-		border: var(--rule) solid var(--ink);
-		border-radius: 3px;
-		font: inherit;
-		font-variant-numeric: tabular-nums;
-	}
-	.p-grams code.on {
-		background: var(--ink);
-		color: var(--paper);
-	}
-	.p-found {
-		padding: 0;
-		list-style: none;
-	}
-	.p-found li {
-		grid-template-columns: 5.5rem minmax(0, 1fr) 2.5rem;
-		align-items: baseline;
-	}
-	.p-found li > span:first-child {
-		color: var(--quiet);
-	}
-	.p-found a {
-		font-weight: 700;
-	}
-	.p-found small {
-		display: block;
-		color: var(--quiet);
-		font-size: 0.8125rem;
-	}
-	.p-ledger li {
-		grid-template-columns: minmax(0, 1fr) 3.5rem 4.5rem;
-	}
-	.p-sum li > :last-child {
-		text-align: right;
-	}
 	.p-keys:disabled {
 		border-color: color-mix(in srgb, var(--ink) 35%, transparent);
 		background: none;
 		color: var(--quiet);
 		cursor: default;
 	}
-	.p-log {
-		font-size: 0.875rem;
-		overflow-wrap: anywhere;
-	}
-	/* A replay the ledger stopped, the package's whole point: marked in orange. */
-	.p-log li {
-		padding-left: 0.5rem;
-		border-left: 4px solid transparent;
-	}
-	.p-log .dup {
-		border-left-color: var(--orange);
-		font-weight: 700;
-	}
-	.p-mail {
-		width: 100%;
-		border: var(--rule) solid var(--ink);
-		background: var(--paper);
-	}
-	.p-mail iframe {
-		display: block;
-		width: 100%;
-		height: 34rem;
-		border: 0;
-	}
 	.p-links {
 		display: flex;
-		gap: 1rem;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem 1rem;
 		justify-self: end;
+	}
+	.p-links .p-keys {
+		margin-right: 0;
+		font-size: 0.875rem;
 	}
 
 	/* Folds: closed catalogs, opened in place. */
@@ -2064,8 +1754,7 @@
 		gap: 0.75rem;
 		font-weight: 700;
 	}
-	.t-find input,
-	.p-field input {
+	.t-find input {
 		width: 18rem;
 		height: 2.25rem;
 		padding: 0 0.6rem;
@@ -2077,8 +1766,7 @@
 		font-weight: 500;
 	}
 	/* The browser's clear button is tinted blue; ink, like everything else. */
-	.t-find input::-webkit-search-cancel-button,
-	.p-field input::-webkit-search-cancel-button {
+	.t-find input::-webkit-search-cancel-button {
 		filter: grayscale(1) brightness(0);
 	}
 	.t-none {
@@ -2204,7 +1892,7 @@
 	/* Below 900 the sheet stops scaling and becomes a stack. */
 	@media (max-width: 900px) {
 		.bar {
-			grid-template-columns: repeat(4, minmax(0, 1fr));
+			grid-template-columns: repeat(4, minmax(0, 1fr)) 2.75rem;
 			height: auto;
 		}
 		/* Four tabs fill a phone's bar; the language moves to the intro's links. */
@@ -2214,9 +1902,22 @@
 		.intro-lang {
 			display: flex;
 		}
-		/* One row of sections; the name and the address are in the intro below. */
+		/* One row of sections; the name and the address are in the intro below. The
+		   keys stay in their index row; search keeps its place as a drawn icon. */
 		.mark,
-		.mail {
+		.mail,
+		.keys {
+			display: none;
+		}
+		.tool {
+			justify-content: center;
+			padding: 0;
+		}
+		.tool svg {
+			display: block;
+		}
+		.tool-label,
+		.tool kbd {
 			display: none;
 		}
 		.tabs a {
@@ -2351,14 +2052,16 @@
 		.websites .lede {
 			padding: 1rem;
 		}
-		.ptable > li {
-			grid-template-columns: 1fr auto;
-			gap: 0.25rem 1rem;
-			padding: 1rem;
+		.pindex h3 {
+			padding: 1.25rem 1rem 0.6rem;
 		}
-		.ptable > li > p,
-		.ptable > li > div {
-			grid-column: 1 / -1;
+		.ptable {
+			display: block;
+		}
+		.ptable > li {
+			grid-template-columns: minmax(0, 1fr);
+			gap: 0.4rem;
+			padding: 1rem;
 		}
 		.p-links {
 			justify-self: start;
@@ -2491,11 +2194,8 @@
 			min-height: 2.75rem;
 		}
 		.p-install,
-		.p-seg button {
+		.p-keys {
 			min-height: 2.75rem;
-		}
-		.p-seg button {
-			min-width: 2.75rem;
 		}
 	}
 </style>

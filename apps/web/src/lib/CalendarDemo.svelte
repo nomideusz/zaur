@@ -5,21 +5,34 @@
 	// so it loads only when the case comes within half a screen of view.
 	// Import reads any calendar app's .ics export into it, Subscribe a feed's
 	// address (fetched by static-server.mjs, as Google, Outlook and iCloud send
-	// no CORS headers; so not under `vite dev`). A clicked event offers Google's
-	// and Outlook's "add" pages, a drag is kept, and Download writes what it
-	// shows as an .ics.
-	import { googleCalendarUrl, outlookCalendarUrl, parseIcs, toIcs, type TimelineEvent } from '@nomideusz/svelte-calendar';
+	// no CORS headers; so not under `vite dev`). A clicked event is booked by the
+	// machine around it, whatever calendar it came from; a drag is kept, and
+	// Download writes what it shows as an .ics.
+	import { parseIcs, toIcs, type TimelineEvent } from '@nomideusz/svelte-calendar';
 	import { t } from '#lib/i18n';
 
-	let { locale }: { locale: string } = $props();
+	let {
+		locale,
+		bookedId = '',
+		bookedAt = 0,
+		onpick,
+		onmove
+	}: {
+		locale: string;
+		/** The event in the booking, filled in Signal Orange: by id once one is picked, by its start until then. */
+		bookedId?: string;
+		bookedAt?: number;
+		onpick?: (ev: TimelineEvent) => void;
+		onmove?: (ev: TimelineEvent) => void;
+	} = $props();
+	const isBooked = (x: TimelineEvent) => (bookedId ? x.id === bookedId : +new Date(x.start) === bookedAt);
 	let box: HTMLElement;
 	let shown = $state<TimelineEvent[]>([]);
 	let name = $state('');
 	let note = $state('');
 	let feed = $state('');
 	let busy = $state(false);
-	let picked = $state<TimelineEvent>();
-	let events = $derived(shown.length ? JSON.stringify(shown) : '');
+	let events = $derived(shown.length ? JSON.stringify(shown.map((x) => (isBooked(x) ? { ...x, color: '#e75926' } : x))) : '');
 
 	// A yoga studio's week (the names read the same in every language), repeated
 	// over the weeks around this one so ‹ › never lands on an empty grid.
@@ -62,7 +75,6 @@
 			return;
 		}
 		shown = found;
-		picked = undefined;
 		name = cal.name || fallback;
 		note = t('packages.calendar.imported', { name });
 	}
@@ -89,14 +101,12 @@
 
 	// The widget hands back its own copy of the event; ours keeps description and URL.
 	const ours = (ev: TimelineEvent) => shown.find((x) => x.id === ev.id) ?? ev;
-	const pick = (e: CustomEvent<{ event: TimelineEvent }>) => (picked = ours(e.detail.event));
+	const pick = (e: CustomEvent<{ event: TimelineEvent }>) => onpick?.(ours(e.detail.event));
 	function move(e: CustomEvent<{ event: TimelineEvent; start: Date; end: Date }>) {
 		const { event, start, end } = e.detail;
 		shown = shown.map((x) => (x.id === event.id ? { ...x, start, end } : x));
-		if (picked?.id === event.id) picked = { ...picked, start, end };
+		onmove?.({ ...ours(event), start, end });
 	}
-	const when = (ev: TimelineEvent) =>
-		new Intl.DateTimeFormat(locale, ev.allDay ? { dateStyle: 'medium' } : { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }).format(ev.start);
 
 	function save() {
 		const a = document.createElement('a');
@@ -124,13 +134,6 @@
 <div class="cal" bind:this={box}>
 	{#if events}<day-calendar {events} {locale} view="week-planner" height="600" readonly="false" mincolumnwidth="100" oneventclick={pick} oneventmove={move}></day-calendar>{/if}
 </div>
-{#if picked}
-	<p class="ics">
-		<span>{t('packages.calendar.add', { title: picked.title, when: when(picked) })}</span>
-		<a class="btn" href={googleCalendarUrl(picked)} target="_blank" rel="noopener">Google Calendar</a>
-		<a class="btn" href={outlookCalendarUrl(picked)} target="_blank" rel="noopener">Outlook</a>
-	</p>
-{/if}
 <div class="ics">
 	<label class="btn">{t('packages.calendar.import')}<input type="file" accept=".ics,.ical,.ifb,text/calendar" onchange={load} /></label>
 	<form onsubmit={subscribe}>

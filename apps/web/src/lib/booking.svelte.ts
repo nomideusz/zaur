@@ -1,57 +1,79 @@
-// One sample booking that three package rows share, the way the packages meet
-// on Szkoły Jogi and thebest.travel: svelte-scheduler prices it and works out
-// a refund, svelte-payments keeps its ledger, svelte-notify writes its emails.
-import { CANCELLATION_POLICIES, calculatePrice, calculateRefund, type PriceStructure } from '@nomideusz/svelte-scheduler';
+// One sample booking running through five packages, the way they meet on Szkoły
+// Jogi and thebest.travel: svelte-calendar picks the class, svelte-scheduler
+// prices it, svelte-payments keeps its ledger, svelte-notify writes its emails
+// and svelte-qr carries its ticket. Every line on the tape is a call that just
+// ran in this tab, with what it returned. No money moves and nothing is sent.
+import { CANCELLATION_POLICIES, calculatePrice, calculateRefund, generateBookingReference, type PriceStructure } from '@nomideusz/svelte-scheduler';
 import { chargeKey, derivePaymentStatus, executeKeyedOperation, refundKey, type LedgerEvent } from '@nomideusz/svelte-payments/ledger';
 import { bookingConfirmationTemplate, cancellationTemplate } from '@nomideusz/svelte-notify';
+import { encodeTicket, ticketHash, type Ticket } from './ticket';
 
 export const policies = ['flexible', 'moderate', 'strict', 'no_refund'] as const;
 export type Policy = (typeof policies)[number];
+export type Pkg = 'svelte-calendar' | 'svelte-scheduler' | 'svelte-payments' | 'svelte-notify' | 'svelte-qr';
+export type Line = { id: number; pkg: string; call: string; out: string; stopped?: boolean };
 
-// The format generateBookingReference('ZR') makes; fixed, so the prerendered
-// page and the browser agree on it.
-const ref = 'ZR-7K2M9Q4D';
-const pricing: PriceStructure = {
+export const discountFrom = 3;
+const pricing: Omit<PriceStructure, 'basePrice'> = {
 	model: 'per_person',
-	basePrice: 55,
 	currency: 'PLN',
 	groupDiscountsEnabled: true,
-	groupDiscountTiers: [{ id: 'group', minParticipants: 3, maxParticipants: 6, discountType: 'percentage', discountValue: 10 }],
+	groupDiscountTiers: [{ id: 'group', minParticipants: discountFrom, maxParticipants: 6, discountType: 'percentage', discountValue: 10 }],
 	guidePaysProcessingFee: false
 };
-// A Thursday at 18:00, the Vinyasa class in the calendar case. Refunds only
-// care about the hours before it, so any Thursday does.
-export const thursday = new Date(2026, 0, 1, 18);
-export const discountFrom = 3;
-export const perPerson = pricing.basePrice;
+/** A longer class costs more; an imported event of any length gets the nearest rate. */
+const rateFor = (minutes: number) => (minutes >= 120 ? 80 : minutes >= 90 ? 65 : minutes >= 75 ? 55 : 45);
+const grosze = (x: number) => Math.round(x * 100);
+const pln = (x: number) => `${x.toFixed(2)} PLN`;
+
+// The class's next Thursday at 18:00. Read in the browser only: a date baked in
+// at build would be stale by the next visit. The fixed date keeps the prerender stable.
+function nextThursday() {
+	const d = new Date();
+	d.setDate(d.getDate() + ((11 - d.getDay()) % 7 || 7));
+	d.setHours(18, 0, 0, 0);
+	return +d;
+}
 
 export const booking = $state({
+	title: 'Vinyasa',
+	eventId: '',
+	start: +new Date(2026, 0, 1, 18),
+	minutes: 75,
 	people: 2,
 	policy: 'moderate' as Policy,
 	hours: 36,
 	mail: 'confirmation' as 'confirmation' | 'cancellation',
+	ref: 'ZR-7K2M9Q4D',
+	paid: false,
 	refunded: 0,
-	refunds: [] as { key: string; amount: number }[],
-	log: [] as { status: 'executed' | 'duplicate'; key: string }[]
+	/** The package the signal is passing through right now. */
+	hot: null as Pkg | null,
+	stopped: false,
+	tape: [] as Line[]
 });
 
-// Scheduler works in złoty, payments and notify in grosze: convert once, here.
-const minor = (x: number) => Math.round(x * 100);
+export const rate = () => rateFor(booking.minutes);
 
 export function quote() {
-	const price = calculatePrice({ pricing, participants: booking.people });
-	const policy = CANCELLATION_POLICIES[booking.policy];
-	const refund = calculateRefund(price.totalAmount, policy, thursday, 'guest', new Date(+thursday - booking.hours * 3_600_000));
-	const totalMinor = minor(price.totalAmount);
-	const refundMinor = minor(refund.refundAmount);
+	const price = calculatePrice({ pricing: { ...pricing, basePrice: rate() }, participants: booking.people });
+	const refund = calculateRefund(
+		price.totalAmount,
+		CANCELLATION_POLICIES[booking.policy],
+		new Date(booking.start),
+		'guest',
+		new Date(booking.start - booking.hours * 3_600_000)
+	);
+	const totalMinor = grosze(price.totalAmount);
+	const refundMinor = grosze(refund.refundAmount);
 	return {
 		price,
 		refund,
 		totalMinor,
 		refundMinor,
-		charge: chargeKey(ref),
-		refundKey: refundMinor > 0 ? refundKey(ref, refundMinor) : null,
-		status: derivePaymentStatus(totalMinor, Math.min(booking.refunded, totalMinor))
+		chargeKey: chargeKey(booking.ref),
+		refundKey: refundMinor > 0 ? refundKey(booking.ref, refundMinor) : null,
+		status: booking.paid ? derivePaymentStatus(totalMinor, Math.min(booking.refunded, totalMinor)) : 'unpaid'
 	};
 }
 
@@ -62,59 +84,150 @@ const store = {
 	insert: async (e: LedgerEvent) => !claimed.has(e.eventKey) && !!claimed.set(e.eventKey, e.amount),
 	markCompleted: async () => {}
 };
+export const ledger = $state({ rows: [] as { key: string; kind: 'charge' | 'refund'; amount: number }[] });
+
+let lineId = 0;
+function log(pkg: Pkg, call: string, out: string, stopped = false) {
+	const fn = call.slice(0, call.indexOf('('));
+	const line = { id: ++lineId, pkg, call, out, stopped };
+	// A slider sends a call per pixel: it rewrites its own line instead of flooding the tape.
+	if (booking.tape[0]?.call.startsWith(`${fn}(`) && fn === 'calculateRefund') booking.tape[0] = line;
+	else booking.tape = [line, ...booking.tape].slice(0, 40);
+}
+
+const moved = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const wait = (ms: number) => new Promise((go) => setTimeout(go, moved() ? 0 : ms));
+let runs = 0;
+
+/** The signal passes through one package: its head lights, and it does its work. */
+async function pass(pkg: Pkg, work: () => void | Promise<void>, run: number) {
+	if (run !== runs) return;
+	booking.hot = pkg;
+	await work();
+	await wait(420);
+}
+
+async function charge() {
+	const q = quote();
+	const event: LedgerEvent = { eventKey: q.chargeKey, type: 'charge', subjectId: booking.ref, paymentId: 'tr_sample', amount: q.totalMinor, currency: 'PLN' };
+	const out = await executeKeyedOperation(store, event, async () => ({ id: 'tr_sample' }));
+	if (out.status === 'executed') {
+		booking.paid = true;
+		ledger.rows = [...ledger.rows, { key: q.chargeKey, kind: 'charge', amount: q.totalMinor }];
+	}
+	booking.stopped = out.status === 'duplicate';
+	log('svelte-payments', `executeKeyedOperation(store, { eventKey: '${q.chargeKey}', amount: ${q.totalMinor} })`, out.status, out.status === 'duplicate');
+}
+
+/** A new booking runs the whole way: price, charge, email, ticket. */
+export async function run() {
+	const me = ++runs;
+	claimed.clear();
+	ledger.rows = [];
+	booking.ref = generateBookingReference('ZR');
+	booking.paid = false;
+	booking.refunded = 0;
+	booking.stopped = false;
+	booking.mail = 'confirmation';
+	await pass(
+		'svelte-scheduler',
+		() => {
+			const { totalAmount } = quote().price;
+			log('svelte-scheduler', `calculatePrice({ basePrice: ${rate()}, participants: ${booking.people} })`, pln(totalAmount));
+		},
+		me
+	);
+	await pass('svelte-payments', charge, me);
+	await pass('svelte-notify', () => log('svelte-notify', `bookingConfirmationTemplate({ serviceName: '${booking.title}', totalAmount: ${quote().totalMinor} })`, 'subject + html + text'), me);
+	await pass('svelte-qr', () => log('svelte-qr', `getQrMatrix(ticketUrl, { errorCorrection: 'H' })`, `${booking.ref}`), me);
+	if (me === runs) booking.hot = null;
+}
+
+/** First view: the next Vinyasa, booked once, so the machine is seen working. */
+export function start() {
+	if (booking.tape.length) return;
+	booking.start = nextThursday();
+	void run();
+}
+
+export function pick(id: string, title: string, start: Date, end: Date) {
+	booking.eventId = id;
+	booking.title = title;
+	booking.start = +start;
+	booking.minutes = Math.round((+end - +start) / 60_000);
+	log('svelte-calendar', `oneventclick({ title: '${title}' })`, start.toISOString().slice(0, 16));
+	void run();
+}
+
+/** A dragged class keeps its booking: the email and the ticket follow it. */
+export function moveClass(id: string, start: Date, end: Date) {
+	if (id !== booking.eventId) return;
+	booking.start = +start;
+	booking.minutes = Math.round((+end - +start) / 60_000);
+	log('svelte-calendar', `oneventmove({ title: '${booking.title}' })`, start.toISOString().slice(0, 16));
+}
 
 export function rebook(people: number) {
 	booking.people = people;
-	booking.refunded = 0;
-	booking.refunds = [];
-	booking.log = [];
-	claimed.clear();
+	void run();
 }
+
+export function requote() {
+	const { refund } = quote();
+	log('svelte-scheduler', `calculateRefund(total, ${booking.policy}, { hoursBefore: ${booking.hours} })`, `${refund.refundPercentage}% · ${pln(refund.refundAmount)}`);
+}
+
+export const payAgain = async () => {
+	await charge();
+};
 
 // A refund key names the total refunded after it, so only a higher total is a
 // new movement; a key already in the ledger can be sent again, to replay it.
-export const canRefund = (q: ReturnType<typeof quote>) => !!q.refundKey && (claimed.has(q.refundKey) || q.refundMinor > booking.refunded);
+export const canRefund = (q: ReturnType<typeof quote>) => booking.paid && !!q.refundKey && (claimed.has(q.refundKey) || q.refundMinor > booking.refunded);
 
 export async function sendRefund() {
 	const q = quote();
 	if (!q.refundKey || !canRefund(q)) return;
 	const amount = claimed.get(q.refundKey) ?? q.refundMinor - booking.refunded;
-	const event: LedgerEvent = { eventKey: q.refundKey, type: 'refund', subjectId: ref, paymentId: 'tr_sample', amount, currency: 'PLN' };
+	const event: LedgerEvent = { eventKey: q.refundKey, type: 'refund', subjectId: booking.ref, paymentId: 'tr_sample', amount, currency: 'PLN' };
 	const out = await executeKeyedOperation(store, event, async () => ({ id: 're_sample' }));
+	booking.stopped = out.status === 'duplicate';
+	log('svelte-payments', `executeKeyedOperation(store, { eventKey: '${q.refundKey}', amount: ${amount} })`, out.status, out.status === 'duplicate');
 	if (out.status === 'executed') {
 		booking.refunded = q.refundMinor;
-		booking.refunds.push({ key: q.refundKey, amount });
+		ledger.rows = [...ledger.rows, { key: q.refundKey, kind: 'refund', amount }];
+		booking.mail = 'cancellation';
+		log('svelte-notify', `cancellationTemplate({ refundAmount: ${q.refundMinor} })`, 'subject + html + text');
 	}
-	booking.log = [{ status: out.status, key: q.refundKey }, ...booking.log].slice(0, 3);
 }
 
-// The class's next Thursday at 18:00, read in the browser only: a date baked in
-// at build would be stale by the next visit.
-function nextThursday() {
-	const d = new Date();
-	d.setDate(d.getDate() + ((11 - d.getDay()) % 7 || 7));
-	d.setHours(18, 0, 0, 0);
-	return d;
-}
+export const ticketOf = (): Ticket => ({
+	title: booking.title,
+	start: booking.start,
+	minutes: booking.minutes,
+	people: booking.people,
+	total: quote().totalMinor,
+	refunded: booking.refunded,
+	ref: booking.ref
+});
+export const ticketUrl = (site: string) => `${site}${ticketHash}${encodeTicket(ticketOf())}`;
 
 export function email(language: string, verifyUrl: string) {
 	const q = quote();
 	const data = {
 		guestName: 'Ola',
 		guestEmail: 'ola@example.com',
-		serviceName: 'Vinyasa',
-		slotStartTime: nextThursday(),
+		serviceName: booking.title,
+		slotStartTime: new Date(booking.start),
 		participants: booking.people,
 		totalAmount: q.totalMinor,
 		currency: 'PLN',
-		bookingReference: ref,
+		bookingReference: booking.ref,
 		providerName: 'Szkoły Jogi',
 		language,
 		brand: 'zaur.app',
 		theme: { accent: '#e75926', radius: '3px', text: '#0b0a09', muted: '#4a4842', canvas: '#f8f6f1' },
 		verifyUrl
 	};
-	return booking.mail === 'cancellation'
-		? cancellationTemplate({ ...data, cancelledBy: 'guest', refundAmount: q.refundMinor })
-		: bookingConfirmationTemplate(data);
+	return booking.mail === 'cancellation' ? cancellationTemplate({ ...data, cancelledBy: 'guest', refundAmount: booking.refunded || q.refundMinor }) : bookingConfirmationTemplate(data);
 }
