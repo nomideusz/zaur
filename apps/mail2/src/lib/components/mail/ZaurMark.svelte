@@ -1,20 +1,18 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import { appName, MARK } from '#lib/brand';
+	import { appName, hasBird, MARK } from '#lib/brand';
+	import BirdMark from '../BirdMark.svelte';
 
 	/**
-	 * The brand mark and the shell's home button (#lib/brand: Zaur's Z that folds
-	 * an envelope, or a plain envelope).
-	 * The envelope's top edge, the flap's long arm and its bottom edge are one
-	 * stroke — a Z; the sides and the flap's short arm are the same stroke, faint.
-	 * It is a button among buttons: the same `btn-tactile` body, the same
-	 * `--z-strong` ink and 1.3 stroke as the glyphs beside it. Only the app icon
-	 * (white on the accent blue) wears colour; in the shell, a coloured mark
-	 * beside monochrome glyphs reads as someone else's. Clicking goes home
-	 * (Mail); on Mail it marks itself the current page.
+	 * The brand mark and the shell's home button (#lib/brand): Zaur's bird, in
+	 * its own colours as on the app icon, or elsewhere a plain envelope in the
+	 * `--z-strong` ink and 1.3 stroke of the glyphs beside it. It is a button
+	 * among buttons, the same `btn-tactile` body. Clicking goes home (Mail); on
+	 * Mail it marks itself the current page.
 	 *
-	 * The mark never carries a count. Its geometry is mirrored in
-	 * `scripts/generate-icons.py`, which draws every icon in `static/`.
+	 * The mark never carries a count. The bird comes from `scripts/zaur-bird.py`
+	 * and the envelope from `scripts/generate-icons.py`, which draw every icon in
+	 * `static/`.
 	 */
 	interface Props {
 		/** Where home is. */
@@ -50,10 +48,14 @@
 	}}
 	class="btn-tactile !size-8 shrink-0 !p-0 {className}"
 >
-	<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-		<g stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
-			<path d={MARK.faint} stroke-opacity="0.4" />
-			<path d={MARK.bold} />
-		</g>
-	</svg>
+	{#if hasBird}
+		<BirdMark class="w-[22px]" />
+	{:else}
+		<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<g stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round">
+				<path d={MARK.faint} stroke-opacity="0.4" />
+				<path d={MARK.bold} />
+			</g>
+		</svg>
+	{/if}
 </a>

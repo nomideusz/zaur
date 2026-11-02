@@ -15,10 +15,14 @@ export const mailDomain = PUBLIC_MAIL_DOMAIN;
 export const iconBase = `/icons/${PUBLIC_APP_ICON}`;
 
 /**
- * The mark on a 16-unit grid, faint stroke then bold, as scripts/generate-icons.py
- * draws it: Zaur's Z that folds an envelope, or a plain envelope.
+ * Zaur's mark is its bird (#lib/bird, drawn by BirdMark.svelte; every icon in
+ * static/icons/zaur/ comes from scripts/zaur-bird.py). Elsewhere the app wears
+ * the plain envelope below.
  */
-export const MARK =
-	PUBLIC_APP_ICON === 'zaur'
-		? { faint: 'M2 4V12M14 4V12M2 4L8 8', bold: 'M2 4H14L2 12H14' }
-		: { faint: 'M2 4L8 8L14 4', bold: 'M2 4H14V12H2Z' };
+export const hasBird = PUBLIC_APP_ICON === 'zaur';
+
+/**
+ * The plain envelope on a 16-unit grid, faint stroke then bold, as
+ * scripts/generate-icons.py draws it.
+ */
+export const MARK = { faint: 'M2 4L8 8L14 4', bold: 'M2 4H14V12H2Z' };

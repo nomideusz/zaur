@@ -11,7 +11,8 @@
 </script>
 
 <script lang="ts">
-	import { meetName } from '#lib/brand';
+	import { hasBird, MARK, meetName } from '#lib/brand';
+	import BirdMark from '../BirdMark.svelte';
 	import { onMount } from 'svelte';
 	import { browser } from '$app/env';
 	import { whoIsHere } from '../../../routes/meet.remote';
@@ -316,7 +317,7 @@
 			<div class="flex items-center gap-2.5">
 				<!-- The mark, not the home button: leaving is the call's Leave, not a logo. -->
 				<span class="btn-tactile !size-8 !cursor-default !p-0" aria-hidden="true">
-					<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><path d="M3 3H13L3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					{#if hasBird}<BirdMark class="w-[22px]" />{:else}<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d={MARK.faint} stroke-opacity="0.4" /><path d={MARK.bold} /></g></svg>{/if}
 				</span>
 				<span class="text-[13px] font-semibold text-[var(--z-muted)]">{meetName}</span>
 			</div>

@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
-"""Draw the app's icons, two sets: a plain envelope (static/icons/mail/, the
-default) and Zaur's Z that folds an envelope (static/icons/zaur/), picked at
-runtime by PUBLIC_APP_ICON (#lib/brand.ts mirrors both marks).
+"""Draw the plain set of the app's icons: an envelope (static/icons/mail/, the
+default). PUBLIC_APP_ICON picks the set at runtime; Zaur's (static/icons/zaur/,
+its bird) is drawn by scripts/zaur-bird.py.
 
-On a 16-unit grid, an envelope 12 x 8. Its top edge, the flap's long arm
-running corner to corner, and its bottom edge are one bold stroke — a Z. The
-sides and the flap's short arm are the same stroke, faint: the letter it seals.
-White on the accent blue, deepening downward (--z-accent-stroke to
---z-accent-edge). ZaurMark.svelte draws the same paths in the shell's ink.
+On a 16-unit grid, an envelope 12 x 8, its flap a faint stroke. White on the
+accent blue, deepening downward (--z-accent-stroke to --z-accent-edge).
+ZaurMark.svelte draws the same paths in the shell's ink (#lib/brand.ts mirrors
+them).
 
 Every file comes from the one SVG below, favicon.svg included.
 
@@ -24,10 +23,9 @@ from PIL import Image
 
 STATIC = Path(__file__).resolve().parent.parent / "static"
 
-# Each mark on its grid, faint stroke then bold — mirrored in src/lib/brand.ts.
+# The mark on its grid, faint stroke then bold — mirrored in src/lib/brand.ts.
 MARKS = {
     "mail": ("M2 4L8 8L14 4", "M2 4H14V12H2Z"),
-    "zaur": ("M2 4V12M14 4V12M2 4L8 8", "M2 4H14L2 12H14"),
 }
 def svg(mark: tuple[str, str], share: float, stroke: float, radius: float, tile: bool = True) -> str:
     """The mark scaled to `share` of a 16-unit tile with corner `radius`; `tile=False` leaves it bare (alpha only)."""

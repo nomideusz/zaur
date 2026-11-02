@@ -12,7 +12,8 @@
 
 <script lang="ts">
 	import { page } from '$app/state';
-	import { MARK } from '#lib/brand';
+	import { hasBird, MARK } from '#lib/brand';
+	import BirdMark from '../BirdMark.svelte';
 	import { offered } from '#lib/features';
 
 	/**
@@ -35,25 +36,30 @@
 </script>
 
 {#snippet sectionIcon(href: string, className: string)}
-	<svg class={className} viewBox="0 0 16 16" fill="none" aria-hidden="true">
-		<g stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
-			{#if href === '/'}
-				<path d={MARK.faint} stroke-opacity="0.4" />
-				<path d={MARK.bold} />
-			{:else if href === '/contacts'}
-				<circle cx="8" cy="5.5" r="2.5" />
-				<path d="M3.5 13.5c.6-2.4 2.3-3.5 4.5-3.5s3.9 1.1 4.5 3.5" />
-			{:else if href === '/calendar'}
-				<rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
-				<path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" />
-			{:else if href === '/files'}
-				<path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" />
-			{:else}
-				<circle cx="8" cy="8" r="2" />
-				<path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.8 3.8l1 1M11.2 11.2l1 1M3.8 12.2l1-1M11.2 4.8l1-1" />
-			{/if}
-		</g>
-	</svg>
+	<!-- Zaur's Mail is its bird, as a silhouette in the row's ink. -->
+	{#if href === '/' && hasBird}
+		<BirdMark mono class={className} />
+	{:else}
+		<svg class={className} viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<g stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round">
+				{#if href === '/'}
+					<path d={MARK.faint} stroke-opacity="0.4" />
+					<path d={MARK.bold} />
+				{:else if href === '/contacts'}
+					<circle cx="8" cy="5.5" r="2.5" />
+					<path d="M3.5 13.5c.6-2.4 2.3-3.5 4.5-3.5s3.9 1.1 4.5 3.5" />
+				{:else if href === '/calendar'}
+					<rect x="2.5" y="3.5" width="11" height="10" rx="1.5" />
+					<path d="M2.5 6.5h11M5.5 2v3M10.5 2v3" />
+				{:else if href === '/files'}
+					<path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z" />
+				{:else}
+					<circle cx="8" cy="8" r="2" />
+					<path d="M8 2v1.5M8 12.5V14M2 8h1.5M12.5 8H14M3.8 3.8l1 1M11.2 11.2l1 1M3.8 12.2l1-1M11.2 4.8l1-1" />
+				{/if}
+			</g>
+		</svg>
+	{/if}
 {/snippet}
 
 <nav class="z-group {className}" aria-label="Sections">

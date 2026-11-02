@@ -9,7 +9,8 @@
 </script>
 
 <script lang="ts">
-	import { meetName } from '#lib/brand';
+	import { hasBird, MARK, meetName } from '#lib/brand';
+	import BirdMark from '../BirdMark.svelte';
 	import { onMount } from 'svelte';
 	import { MediaQuery } from 'svelte/reactivity';
 	import type { LocalAudioTrack, LocalVideoTrack, Participant, Room, ScreenShareCaptureOptions, Track } from 'livekit-client';
@@ -780,7 +781,7 @@
 	>
 		<div class="flex min-w-0 items-center gap-3 max-md:gap-2">
 			<span class="btn-tactile !size-8 !cursor-default !p-0 max-md:hidden" aria-hidden="true">
-				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><path d="M3 3H13L3 13H13" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" /></svg>
+				{#if hasBird}<BirdMark class="w-[22px]" />{:else}<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none"><g stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"><path d={MARK.faint} stroke-opacity="0.4" /><path d={MARK.bold} /></g></svg>{/if}
 			</span>
 			<span class="h-4 w-px bg-[var(--z-line)] max-md:hidden"></span>
 			<!-- Immersive, the picture has no name tag: the bar says whose it is. -->
