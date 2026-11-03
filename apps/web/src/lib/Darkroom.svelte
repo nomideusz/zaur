@@ -274,7 +274,7 @@
 			</label>
 			<p class="weight">
 				<b>{kb.format(fitBytes / 1000)}</b>
-				{#if smaller > 1}<span>{t('darkroom.weight', { photo: fmt(photo.bytes), times: smaller })}</span>{/if}
+				<span>{smaller > 1 ? t('darkroom.weight', { photo: fmt(photo.bytes), times: smaller }) : ' '}</span>
 			</p>
 			{#if usedIn('svelte-geometrize')}<p class="used">{usedIn('svelte-geometrize')}</p>{/if}
 			<div>{@render children?.()}</div>
@@ -285,13 +285,18 @@
 			<ul class="files">
 				{#each files as f (f.key)}
 					<li><a href={f.href} download={f.name}><code>{f.name}</code></a><span>{f.dims}</span><span>{f.fit}</span><span>{kb.format(f.bytes / 1000)}</span></li>
+				{:else}
+					<!-- The rows' height from the first paint, so the sections below never move. -->
+					{#each Object.entries(IMAGE_SIZES) as [size, spec] (size)}
+						<li><span>{size}</span><span>—</span><span>{spec.fit}</span><span>—</span></li>
+					{/each}
 				{/each}
 			</ul>
 			<p class="used">{t(lossy ? 'darkroom.files' : 'darkroom.filesPng')}</p>
 			{#if usedIn('svelte-media')}<p class="used">{usedIn('svelte-media')}</p>{/if}
 		</section>
 
-		{#if lines.length}<div class="trace"><Tape {lines} label={t('darkroom.tape')} /></div>{/if}
+		<div class="trace"><Tape {lines} label={t('darkroom.tape')} empty={t('machine.tapeEmpty')} /></div>
 	</div>
 </div>
 
@@ -598,10 +603,16 @@
 		header {
 			padding-inline: 1rem;
 		}
+		.weight span {
+			flex-basis: 100%;
+		}
 	}
 	@media (pointer: coarse) {
 		.act,
 		.seg button {
+			min-height: 2.75rem;
+		}
+		.range input {
 			min-height: 2.75rem;
 		}
 	}

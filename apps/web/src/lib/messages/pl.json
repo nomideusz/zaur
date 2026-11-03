@@ -17,7 +17,8 @@
 
 	"intro.portrait": "Portret Bartosza Dymeta",
 	"intro.role": "Product engineer · Svelte i TypeScript · Kraków",
-	"intro.pitch": "Strony buduję od 1999 roku. Dziś dyryguję AI i tworzę czyste, szybkie produkty, w których wciąż bije ludzkie serce.",
+	"intro.pitch": "Strony buduję od 1999 roku. Dziś tworzę czyste, szybkie produkty, w których wciąż bije ludzkie serce. Wszystko utrzymuję sam. Produkty: {products}, otwarte pakiety: {packages}, szablony Railway: {templates}.",
+	"intro.running": "Railway liczy działające z nich projekty: {running}.",
 	"intro.kit": "Zbudowane z moich otwartych pakietów",
 	"intro.point": "Wskaż produkt, a podświetlą się jego pakiety.",
 

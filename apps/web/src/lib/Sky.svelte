@@ -416,7 +416,10 @@
 		.tuner {
 			flex-wrap: wrap;
 		}
+		/* Its own lines under the button, kept open for the song that arrives after load. */
 		.tuner p {
+			flex-basis: 100%;
+			min-height: 3lh;
 			white-space: normal;
 		}
 	}

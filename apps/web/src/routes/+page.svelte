@@ -677,6 +677,16 @@
 							<span class="name">{w.name}</span>
 							<span class="ver">{w.kind}</span>
 						</a>
+						<!-- The row reads about the product; this opens it. -->
+						<a
+							class="out"
+							href={w.href}
+							aria-label={t('work.open', { host: host(w.href) })}
+							onpointerenter={point('work', w.id)}
+							onpointerleave={leave}
+							onfocus={point('work', w.id)}
+							onblur={leave}
+						>{host(w.href)} ↗</a>
 					</li>
 				{/each}
 			</ul>
@@ -687,7 +697,10 @@
 				<h1 id="who">Bartosz Dymet</h1>
 				<img class="me" src={me} alt={t('intro.portrait')} width="480" height="480" />
 				<p class="role">{t('intro.role')}</p>
-				<p class="pitch">{t('intro.pitch')}</p>
+				<p class="pitch">
+					{t('intro.pitch', { products: num(products.length), packages: num(pkgs.length), templates: num(templateCount) })}
+					{#if tplRunning}{t('intro.running', { running: num(tplRunning) })}{/if}
+				</p>
 			</div>
 			<p class="links">
 				<a class="phone" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
@@ -884,10 +897,11 @@
 	</div>
 </footer>
 
-<!-- Each language in its own name, as plain links: a static page needs no menu. -->
+<!-- Each language in its own name, as plain links: a static page needs no menu.
+     A full load, because the language is read once as the page starts (+layout). -->
 {#snippet langs()}
 	{#each routing.supportedLocales as l (l)}
-		<a href={localizeHref('/', l, routing)} hreflang={l} lang={l} aria-current={l === locale ? 'page' : undefined}>{languages[l]}</a>
+		<a href={localizeHref('/', l, routing)} hreflang={l} lang={l} data-sveltekit-reload aria-current={l === locale ? 'page' : undefined}>{languages[l]}</a>
 	{/each}
 {/snippet}
 
@@ -1075,6 +1089,7 @@
 		flex-direction: column;
 	}
 	.programme li {
+		position: relative;
 		flex: 1 0 var(--row);
 		display: flex;
 	}
@@ -1104,14 +1119,36 @@
 		background: var(--orange-lit);
 		box-shadow: inset 0 calc(-1 * var(--rule)) var(--paper);
 	}
+	/* The address stands over the kind, like a venue under its billing. It lies on
+	   top of the row's link rather than inside it: a link can't hold a link. */
+	.out {
+		position: absolute;
+		right: 1.64vw;
+		bottom: calc(1.4vw + 1.53vw * 1.45);
+		padding: 0 0.3em;
+		margin-right: -0.3em;
+		font-weight: 700;
+		font-size: 1.53vw;
+		line-height: 1.25;
+		white-space: nowrap;
+	}
+	.out:hover {
+		background: var(--ink);
+		color: var(--paper);
+	}
 	.lit .name,
-	.lit .ver {
+	.lit .ver,
+	.lit .out:not(:hover) {
 		color: var(--paper);
 	}
 	/* Focus is drawn inside the row, so it reads apart from the light. */
-	.row:focus-visible {
+	.row:focus-visible,
+	.out:focus-visible {
 		outline-color: var(--paper);
 		outline-offset: -6px;
+	}
+	.out:focus-visible {
+		outline-offset: 0;
 	}
 
 	/* The intro: who, in the column beside the products. */
@@ -1152,7 +1189,7 @@
 	.pitch {
 		max-width: 32ch;
 		margin-top: calc(1.5 * var(--u));
-		font-size: max(1rem, calc(1.45 * var(--u)));
+		font-size: max(1rem, calc(1.35 * var(--u)));
 		line-height: 1.35;
 	}
 	.links {
@@ -1216,6 +1253,24 @@
 	/* On the sheet the kit fills the rest of the column as a ruled list, a small
 	   programme of its own beside the big one. */
 	@media (min-width: 901px) {
+		/* The bar names me on the sheet, so the column opens on what I do. The heading
+		   stays for readers that skim by headings; at 900 and below it shows, as the
+		   bar drops the name. */
+		.who h1 {
+			position: absolute;
+			width: 1px;
+			height: 1px;
+			overflow: hidden;
+			clip-path: inset(50%);
+			white-space: nowrap;
+		}
+		.me {
+			grid-row: 1 / span 2;
+			margin-top: 0;
+		}
+		.role {
+			margin-top: 0;
+		}
 		.kit {
 			flex: 1;
 			display: flex;
@@ -1614,6 +1669,16 @@
 		margin-right: 0;
 		font-size: 0.875rem;
 	}
+	/* A small laptop can't hold four tracks once a language runs long: the links
+	   take a line of their own under the description and the install line. */
+	@media (min-width: 901px) and (max-width: 1180px) {
+		.ptable {
+			grid-template-columns: minmax(14rem, max-content) minmax(0, 1fr) max-content;
+		}
+		.p-links {
+			grid-column: 2 / -1;
+		}
+	}
 
 	/* Folds: closed catalogs, opened in place. */
 	.folds details {
@@ -1944,13 +2009,13 @@
 		.poster {
 			--bar: 2.75rem;
 			--u: 1vw;
-			grid-template-columns: 1fr;
-			grid-template-rows: auto 1fr;
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: auto auto auto 1fr;
 			min-height: calc(100svh - var(--bar));
 		}
 		.programme {
 			border-right: 0;
-			border-bottom: var(--rule-heavy) solid var(--ink);
+			border-block: var(--rule-heavy) solid var(--ink);
 		}
 		.programme li {
 			flex-basis: 13vw;
@@ -1965,10 +2030,33 @@
 			padding-bottom: 0.6rem;
 			font-size: 0.8125rem;
 		}
+		.out {
+			right: 1rem;
+			bottom: calc(0.2rem + 0.6rem + 1.45 * 0.8125rem);
+			font-size: 0.8125rem;
+		}
+		/* Who I am, then the products, then the packages they are built from: the
+		   intro's parts take their places in the stack around the programme. */
 		.intro {
+			display: contents;
+		}
+		.who,
+		.intro .links,
+		.kit {
+			background: var(--lilac);
+		}
+		.who {
+			order: -2;
+			padding: 1.5rem 1rem 0;
+		}
+		.intro .links {
 			order: -1;
-			padding: 1.5rem 1rem;
-			border-bottom: var(--rule-heavy) solid var(--ink);
+			margin: 0;
+			padding: 1rem 1rem 1.25rem;
+		}
+		.kit {
+			margin: 0;
+			padding: 1.25rem 1rem 1.5rem;
 		}
 		.intro h1 {
 			font-size: 2.5rem;
@@ -1985,10 +2073,6 @@
 		}
 		.links {
 			gap: 0.4rem 1.5rem;
-			margin-top: 1rem;
-		}
-		.kit {
-			padding-top: 1.25rem;
 		}
 		/* No pointer to light anything with: the kit is chips under its heading. */
 		.kit .point {
@@ -2126,7 +2210,7 @@
 	   still sitting on the rule. */
 	@media (max-width: 600px) {
 		.programme li {
-			flex-basis: max(3.75rem, 16vw);
+			flex-basis: max(4.25rem, 18vw);
 		}
 		.row {
 			display: grid;
@@ -2139,6 +2223,15 @@
 			justify-self: end;
 			align-self: start;
 			padding: 0;
+			line-height: 1.2;
+		}
+		/* On the kind's line, at its far end, with the name free underneath. */
+		.out {
+			top: 0.45rem;
+			right: auto;
+			bottom: auto;
+			left: 1rem;
+			margin: 0 0 0 -0.3em;
 			line-height: 1.2;
 		}
 		.name {
@@ -2196,6 +2289,16 @@
 		.p-install,
 		.p-keys {
 			min-height: 2.75rem;
+		}
+		/* Over the outline's own rules, so the whole 44px is the button. */
+		.p-install button {
+			margin-block: calc(-1 * var(--rule));
+		}
+		/* The address is one line among the row's text, so its target grows without
+		   its type: downward over the name would steal the row's own tap. */
+		.programme .out {
+			padding-block: 0.5rem;
+			margin-block: -0.5rem;
 		}
 	}
 </style>

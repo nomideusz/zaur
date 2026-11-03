@@ -53,6 +53,24 @@ async function tryFile(path) {
   }
 }
 
+// The build writes compressed copies beside each text file (precompress in
+// vite.config.ts): the best one this client takes, or the file itself.
+async function encodedCopy(path, accept = "") {
+  const takes = new Map(
+    accept.split(",").map((part) => {
+      const [name, ...params] = part.trim().toLowerCase().split(";");
+      const q = params.map((p) => p.trim()).find((p) => p.startsWith("q="));
+      return [name, q ? Number(q.slice(2)) : 1];
+    }),
+  );
+  for (const [encoding, ext] of [["br", ".br"], ["gzip", ".gz"]]) {
+    if (!(takes.get(encoding) > 0)) continue;
+    const copy = await tryFile(`${path}${ext}`);
+    if (copy) return { file: copy, encoding };
+  }
+  return { file: path };
+}
+
 const server = createServer(async (req, res) => {
   try {
     const url = new URL(req.url ?? "/", `http://${req.headers.host ?? "localhost"}`);
@@ -108,9 +126,24 @@ const server = createServer(async (req, res) => {
     const cache = url.pathname.startsWith("/_app/immutable/")
       ? "public, max-age=31536000, immutable"
       : "no-cache";
-    const body = await readFile(resolved);
-    res.writeHead(status, { "content-type": type, "cache-control": cache });
-    res.end(body);
+    const { file, encoding } = await encodedCopy(resolved, req.headers["accept-encoding"]);
+    // "no-cache" means revalidate, which takes something to revalidate against.
+    const { size, mtimeMs } = await stat(file);
+    const etag = `W/"${size}-${Math.round(mtimeMs)}"`;
+    const headers = {
+      "content-type": type,
+      "cache-control": cache,
+      vary: "accept-encoding",
+      etag,
+      ...(encoding && { "content-encoding": encoding }),
+    };
+    if (status === 200 && req.headers["if-none-match"] === etag) {
+      res.writeHead(304, headers);
+      res.end();
+      return;
+    }
+    res.writeHead(status, headers);
+    res.end(await readFile(file));
   } catch (err) {
     console.error("[static] handler error:", err);
     res.writeHead(500);

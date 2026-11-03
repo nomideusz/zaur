@@ -17,7 +17,8 @@
 
 	"intro.portrait": "Portrait de Bartosz Dymet",
 	"intro.role": "Ingénieur produit · Svelte et TypeScript · Cracovie",
-	"intro.pitch": "Je crée des sites web depuis 1999. Aujourd’hui, j’orchestre l’IA pour faire des produits propres et rapides, qui gardent un cœur humain.",
+	"intro.pitch": "Je crée des sites web depuis 1999. Aujourd’hui, je fais des produits propres et rapides, qui gardent un cœur humain. Je fais tout tourner moi-même : {products} produits, {packages} paquets open source et {templates} modèles Railway.",
+	"intro.running": "Railway en compte {running} projets actifs.",
 	"intro.kit": "Construit avec mes paquets open source",
 	"intro.point": "Survolez un produit pour voir ses paquets.",
 

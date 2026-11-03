@@ -165,17 +165,25 @@
 	/* The page's .p-keys, which is scoped there. */
 	.ics form {
 		display: flex;
+		flex-wrap: wrap;
 		gap: 0.4rem;
+		max-width: 100%;
 	}
 	input[type='url'] {
 		width: 14rem;
 		min-width: 0;
+		max-width: 100%;
 		padding: 0.1rem 0.4rem;
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
 		background: var(--paper);
 		color: var(--ink);
 		font: inherit;
+	}
+	/* The browser's default grey falls short of 4.5:1 on Paper. */
+	input[type='url']::placeholder {
+		color: var(--quiet);
+		opacity: 1;
 	}
 	.btn {
 		position: relative;

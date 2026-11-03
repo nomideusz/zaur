@@ -85,7 +85,8 @@
 			<div class="pad">
 				<p class="class">
 					<b>{booking.title}</b>
-					{#if awake}<span>{when.format(booking.start)}</span>{/if}
+					<!-- The date is the browser's, so its line stands empty until then. -->
+					<span>{awake ? when.format(booking.start) : ' '}</span>
 					<span>{t('machine.price.per', { minutes: booking.minutes, price: pln.format(rate()) })}</span>
 				</p>
 				<div class="seg" role="group" aria-label={t('machine.price.guests')}>
@@ -459,6 +460,9 @@
 			grid-template-columns: minmax(0, 1fr);
 			padding: 1.25rem 1rem;
 		}
+		.class span {
+			flex-basis: 100%;
+		}
 		.grid {
 			grid-template-columns: minmax(0, 1fr);
 		}
@@ -490,7 +494,8 @@
 			min-width: 2.75rem;
 			min-height: 2.75rem;
 		}
-		.sample button {
+		.sample button,
+		.range input {
 			min-height: 2.75rem;
 		}
 	}

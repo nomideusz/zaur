@@ -25,6 +25,8 @@ const pricing: Omit<PriceStructure, 'basePrice'> = {
 const rateFor = (minutes: number) => (minutes >= 120 ? 80 : minutes >= 90 ? 65 : minutes >= 75 ? 55 : 45);
 const grosze = (x: number) => Math.round(x * 100);
 const pln = (x: number) => `${x.toFixed(2)} PLN`;
+/** The wall-clock time the calendar shows; toISOString would print UTC. */
+const wall = (d: Date) => new Date(+d - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
 // The class's next Thursday at 18:00. Read in the browser only: a date baked in
 // at build would be stale by the next visit. The fixed date keeps the prerender stable.
@@ -155,7 +157,7 @@ export function pick(id: string, title: string, start: Date, end: Date) {
 	booking.title = title;
 	booking.start = +start;
 	booking.minutes = Math.round((+end - +start) / 60_000);
-	log('svelte-calendar', `oneventclick({ title: '${title}' })`, start.toISOString().slice(0, 16));
+	log('svelte-calendar', `oneventclick({ title: '${title}' })`, wall(start));
 	void run();
 }
 
@@ -164,7 +166,7 @@ export function moveClass(id: string, start: Date, end: Date) {
 	if (id !== booking.eventId) return;
 	booking.start = +start;
 	booking.minutes = Math.round((+end - +start) / 60_000);
-	log('svelte-calendar', `oneventmove({ title: '${booking.title}' })`, start.toISOString().slice(0, 16));
+	log('svelte-calendar', `oneventmove({ title: '${booking.title}' })`, wall(start));
 }
 
 export function rebook(people: number) {

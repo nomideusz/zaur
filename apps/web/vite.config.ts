@@ -17,7 +17,8 @@ export default defineConfig({
 				pages: 'dist',
 				assets: 'dist',
 				fallback: '404.html',
-				precompress: false,
+				// A .br and a .gz beside each text file, which static-server.mjs serves.
+				precompress: true,
 				strict: true
 			}),
 			// One page per language: / is English, the rest sit under their prefix.

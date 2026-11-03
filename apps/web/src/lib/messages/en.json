@@ -17,7 +17,8 @@
 
 	"intro.portrait": "Portrait of Bartosz Dymet",
 	"intro.role": "Product engineer · Svelte and TypeScript · Kraków",
-	"intro.pitch": "I've built websites since 1999. Now I orchestrate AI to make clean, fast products that still have a human heart inside.",
+	"intro.pitch": "I've built websites since 1999. Now I make clean, fast products that still have a human heart inside. I run all of it myself: {products} products, {packages} open-source packages and {templates} Railway templates.",
+	"intro.running": "Railway counts {running} projects still running from them.",
 	"intro.kit": "Built from my open-source packages",
 	"intro.point": "Point at a product to light its packages.",
 

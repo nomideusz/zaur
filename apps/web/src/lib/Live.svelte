@@ -69,25 +69,27 @@
 	});
 </script>
 
-<div class="live">
+<!-- Leaving only drops the pointer hand-off; the cover button is the control. The
+     toolbar counts as inside, or Done would go as the pointer reached it. A finger
+     lifting also "leaves", so only a mouse or pen hands it back. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="live" onpointerleave={(e) => e.pointerType !== 'touch' && (active = false)}>
 	<div class="bar">
 		<span class="host"><span class="dot" class:on={loaded} aria-hidden="true"></span>{host}</span>
+		<!-- Before the switch, so coming and going it takes room from the host alone
+		     and no button slides under the pointer. -->
+		{#if active}<button type="button" class="done" bind:this={done} onclick={finish}>{t('live.done')}</button>{/if}
 		<span class="views" role="group" aria-label={t('live.width', { name })}>
 			<button type="button" aria-pressed={!mobile} onclick={() => (mobile = false)}>{t('live.desktop')}</button>
 			<button type="button" aria-pressed={mobile} onclick={() => (mobile = true)}>{t('live.mobile')}</button>
 		</span>
-		{#if active}<button type="button" class="done" bind:this={done} onclick={finish}>{t('live.done')}</button>{/if}
 		<a href={href} target="_blank" rel="noopener">{t('live.open')}</a>
 	</div>
-	<!-- Leaving only drops the pointer hand-off; the cover button is the control.
-	     A finger lifting also "leaves", so only a mouse or pen hands it back. -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		class="screen"
 		bind:this={screen}
 		bind:clientWidth={w}
 		bind:clientHeight={h}
-		onpointerleave={(e) => e.pointerType !== 'touch' && (active = false)}
 	>
 		{#if !loaded && still}
 			<img src={still} alt="" loading="lazy" decoding="async" style:left="{left}px" style:width="{vw * s}px" />
