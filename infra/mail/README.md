@@ -8,7 +8,7 @@ Stalwart runs as a **deployed binary**, not application source in this repo. Thi
 |---------|----------|
 | Webmail client | `apps/mail2` |
 | Account registration | `apps/register` |
-| Stalwart binary | CapRover / ops (not vendored here) |
+| Stalwart | Dokploy compose `mail` on contabo, image `stalwartlabs/stalwart` (not vendored here) |
 
 ## Related URLs
 
@@ -49,7 +49,37 @@ Two config objects had vanished from the settings DB (cause unknown, possibly th
 - the `submission` NetworkListener (587/STARTTLS) — docker still mapped the port, but nothing listened inside, so connections were accepted and immediately closed;
 - the `report` MtaDeliverySchedule — every outbound DMARC/TLS report failed with `Queue strategy not found` and rescheduled forever.
 
-Both were recreated with `stalwart-cli create` (listener mirrors the 465 one with `tlsImplicit: false`; schedule mirrors `dsn` with `queueId` = the `report` virtual queue), followed by a container restart. If other subsystems misbehave, suspect more missing objects and audit with `snapshot`.
+Both were recreated with `stalwart-cli create` (listener mirrors the 465 one with `implicitTls: false`, called `tlsImplicit` before 1.0; schedule mirrors `dsn` with `queueId` = the `report` virtual queue), followed by a container restart. If other subsystems misbehave, suspect more missing objects and audit with `snapshot`.
+
+## Version and upgrades
+
+Production runs Stalwart v1.0.2, moved from v0.16.27 on 2026-11-03. The compose lives in Dokploy
+(`mail`). The container must stay named `mail` on `dokploy-network`, because mail2, register and
+the backup script all find it by that name.
+
+| Volume | Mount | Holds |
+|--------|-------|-------|
+| `stalwart-v1-config` | `/etc/stalwart` | `config.json`, which only points at the store |
+| `stalwart-v1-data` | `/var/lib/stalwart-v1` | RocksDB with all settings, accounts and mail |
+
+v0.16 to v1 cannot upgrade in place. `stalwartlabs/stalwart-migrate` copies into a new empty store
+and needs a v0.16.27 source. Migration tool 1.0.5 writes a v1.0.1 store, so v1.0.1 has to boot once
+before v1.0.2. What the move changed:
+
+- OAuth tokens are not migrated, so everyone signs in again. mail2 sends a rejected session to
+  `/login`; IMAP, SMTP and app passwords carry on.
+- Unregistered OAuth client ids are refused. `zaur-mail2-prod` is an `x:OAuthClient` with
+  `firstParty: true`, since mail2 runs the sign-in on its own page. A new mail2 hostname needs its
+  redirect URI added there.
+- New v1.0.2 permissions (`sysEncryption*`, `sysExternalPublicKey*`, `sysSmimeTrustAnchor*`,
+  `taskExternalPublicKeyMaintenance`) were granted to the System Administrator role by hand.
+- The search index is rebuilt from the copied mail on first boot with Meilisearch reachable.
+- 3 `x:SpamTrainingSample` objects whose blobs were already missing were not copied.
+
+The old `captain--stalwart-config` and `captain--stalwart-data` volumes are the v0.16 store as of
+the cutover, and `/root/mail-upgrade/state` is the migration state. Mail received since then exists
+only in v1, so going back means `stalwart-migrate rollback` into a new store, not just redeploying
+the old compose. Delete them once v1 has proved itself.
 
 ## Stalwart authentication
 
@@ -81,7 +111,7 @@ scripts against production.
 
 Nightly at 03:30, `/root/backup_mail.sh` on contabo (`/etc/cron.d/backup-mail`, log
 `/var/log/backup_mail.log`) stops the `mail` container for ~2 s, copies the
-`captain--stalwart-config` and `captain--stalwart-data` volumes, restarts it, then pushes the copy
+`stalwart-v1-config` and `stalwart-v1-data` volumes, restarts it, then pushes the copy
 with restic over SFTP to dedi (`storage-vps` in contabo's `~/.ssh/config`), repo
 `/srv/zaur/backups/mail`. Retention: 7 daily, 4 weekly, 12 monthly.
 
@@ -92,7 +122,8 @@ reservation back. `mkfs` does the same, so after recreating the image re-run
 `fallocate -l 1T /srv/zaur.img` while it is unmounted and check `du -h` reports ~1T.
 
 Restore: `restic -r sftp:storage-vps:/srv/zaur/backups/mail restore latest --target /` on contabo
-with the `mail` container stopped (the password file path is in the script).
+with the `mail` container stopped (the password file path is in the script). `latest` is the v1 store;
+snapshots of the `captain--` paths from before 2026-11-03 are v0.16 and need that server version.
 
 The script names the container. It failed every night from 2026-07-08 to 2026-09-20 because it
 still scaled the old CapRover swarm service after mail moved to a Dokploy compose container, and
