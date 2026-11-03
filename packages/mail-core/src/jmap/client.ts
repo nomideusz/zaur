@@ -439,6 +439,8 @@ export class JMAPClient {
 		};
 		let response = await execute();
 		if (response.status === 401 && this.refreshAuth) {
+			// A cached session would let the next connect() pass on a dead token.
+			sessionCache.delete(`${this.serverUrl}|${this.authHeader}`);
 			const token = await this.refreshAuth();
 			if (token) {
 				this.authHeader = `Bearer ${token}`;

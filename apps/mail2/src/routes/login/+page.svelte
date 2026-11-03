@@ -79,6 +79,8 @@
 				? `You're signed out of ${data.returnName} and ${appName}. Sign in to get back to ${data.returnName}.`
 				: `You're signed out of ${appName}. Sign in again whenever you're ready.`}
 		/>
+	{:else if data.expired}
+		<AuthAlert tone="ok" title="Please sign in again" hint="Your session ended. Your mail is all still here." />
 	{:else if data.welcome}
 		<AuthAlert tone="ok" title="Welcome — almost done" hint="Sign in with the address and password you just created." />
 	{/if}

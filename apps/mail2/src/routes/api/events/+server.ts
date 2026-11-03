@@ -39,6 +39,7 @@ export const GET: RequestHandler = async ({ request }) => {
 	try {
 		upstream = await client.openEventStream();
 	} catch (cause) {
+		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
 		console.error('[api/events] Could not open the push stream:', cause);
 		reportError(cause, { where: 'api/events stream' });
 		error(502, 'Failed to connect to the push stream');

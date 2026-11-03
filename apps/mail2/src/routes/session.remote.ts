@@ -3,15 +3,12 @@ import { error } from '@sveltejs/kit';
 import { command, query, getRequestEvent } from '$app/server';
 import {
 	accountKey,
-	deletePushSubscriptionsForSession,
 	getAccount,
 	getActiveAccount,
-	getStoreDb,
 	readSessionFull,
-	removeAccount,
 	setActiveAccount
 } from '@zaur/server-auth';
-import { pushWatcher } from '#lib/server/push-watcher';
+import { signOutOf } from '#lib/server/sign-out';
 
 /**
  * Who is signed in — reads the session cookie through @zaur/server-auth.
@@ -68,9 +65,5 @@ export const signOutAccount = command(key, async ({ key }) => {
 	const { cookies } = getRequestEvent();
 	const session = readSessionFull(cookies);
 	if (!session) error(401, 'Unauthorized');
-	const remaining = removeAccount(cookies, key);
-	if (!remaining) deletePushSubscriptionsForSession(getStoreDb(), session.id);
-	// The watcher re-reads the session's accounts, so the account stops notifying now.
-	pushWatcher.sync();
-	return { signedIn: remaining !== null };
+	return { signedIn: signOutOf(cookies, session, key) !== null };
 });

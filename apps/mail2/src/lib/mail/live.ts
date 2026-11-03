@@ -43,6 +43,7 @@ export function changedTypes(change: StateChange | null | undefined): ChangedTyp
 }
 
 const STALE_MS = 90_000;
+const RELOADED_AT_KEY = 'zaur-live-reloaded-at';
 const RECONNECT_MS = 5_000;
 const RECONNECT_MAX_MS = 120_000;
 /** Only while the stream is down — push is the channel, this is the net. */
@@ -175,7 +176,30 @@ export class LiveUpdates {
 			this.#closeStream();
 			this.#startPolling();
 			this.#scheduleReconnect();
+			void this.#reloadIfSignedOut();
 		};
+	}
+
+	/**
+	 * `EventSource` cannot see the status, so ask once: a 401 means the account's
+	 * session is over, in a tab that loaded while it was good. A reload meets the
+	 * session gate, which goes to sign-in. At most once a minute, so a server that
+	 * keeps answering 401 to a session the gate accepts cannot become a reload loop.
+	 */
+	async #reloadIfSignedOut() {
+		const abort = new AbortController();
+		try {
+			const { status } = await fetch('/api/events', { signal: abort.signal });
+			if (status !== 401) return;
+			const last = Number(sessionStorage.getItem(RELOADED_AT_KEY)) || 0;
+			if (Date.now() - last < 60_000) return;
+			sessionStorage.setItem(RELOADED_AT_KEY, String(Date.now()));
+			location.reload();
+		} catch {
+			// Offline or storage blocked: polling carries on, and so does the next close.
+		} finally {
+			abort.abort();
+		}
 	}
 
 	#closeStream() {

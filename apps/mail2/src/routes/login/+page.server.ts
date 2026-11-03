@@ -49,6 +49,7 @@ export const load: PageServerLoad = ({ cookies, url }) => {
 		next,
 		continueTo,
 		signedOut,
+		expired: url.searchParams.get('expired') === '1',
 		returnName,
 		welcome: url.searchParams.get('welcome') === '1',
 		registerUrl: process.env.PUBLIC_REGISTER_URL?.trim() || null,
