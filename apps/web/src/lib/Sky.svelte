@@ -130,7 +130,8 @@
 				}
 				if (!timer) {
 					refresh();
-					timer = setInterval(refresh, 20_000);
+					// The sky is on the first screen, so a forgotten tab must not keep asking.
+					timer = setInterval(() => document.hidden || refresh(), 20_000);
 				}
 			},
 			{ rootMargin: '20% 0px' }
@@ -159,7 +160,7 @@
 			<output class="time" for="sky-hour">{label}</output>
 			<label class="scrub">
 				<span class="sr">{t('sky.scrub')}</span>
-				<input id="sky-hour" type="range" min="0" max="23.99" step="0.05" value={hour} oninput={(e) => { stopTour(); scrubTo(+e.currentTarget.value); }} />
+				<input id="sky-hour" type="range" min="0" max="23.99" step="0.05" value={hour} aria-valuetext={label} oninput={(e) => { stopTour(); scrubTo(+e.currentTarget.value); }} />
 			</label>
 		</div>
 
@@ -380,6 +381,11 @@
 		}
 	}
 	@media (pointer: coarse) {
+		.name a {
+			display: inline-flex;
+			align-items: center;
+			min-height: 2.75rem;
+		}
 		.seg button,
 		.listen {
 			min-height: 2.75rem;

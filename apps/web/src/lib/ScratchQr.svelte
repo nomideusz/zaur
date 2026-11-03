@@ -204,6 +204,25 @@
 		text-decoration-thickness: 3px;
 		text-underline-offset: 0.2em;
 	}
+	/* The machine's wide row: the code beside its controls, not over them. */
+	@media (min-width: 1181px) {
+		.qr {
+			grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+			column-gap: 1rem;
+			align-content: start;
+			align-items: start;
+		}
+		.code {
+			grid-row: 1 / span 5;
+		}
+		.qr > :not(.code) {
+			grid-column: 2;
+		}
+		/* The label takes its own line, so the four levels never split. */
+		.seg span {
+			flex-basis: 100%;
+		}
+	}
 	@media (pointer: coarse) {
 		.seg button,
 		.actions button {

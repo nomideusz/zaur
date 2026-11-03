@@ -23,7 +23,7 @@ let shared: ReturnType<typeof gather> | undefined;
 export const load = ({ fetch }) => (shared ??= gather(fetch));
 
 async function gather(fetch: typeof globalThis.fetch) {
-	const [pairs, live, templates, usage] = await Promise.all([
+	const [pairs, live, templates, uses] = await Promise.all([
 		Promise.all(
 			names.map((id) =>
 				fetch(`https://registry.npmjs.org/@nomideusz/${id}/latest`)
@@ -48,6 +48,6 @@ async function gather(fetch: typeof globalThis.fetch) {
 		versions: Object.fromEntries(pairs.filter(([, v]) => v)) as Record<string, string>,
 		live: live.filter((h) => h !== null),
 		templates,
-		uses: usage.uses
+		uses
 	};
 }

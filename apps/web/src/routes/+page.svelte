@@ -1423,6 +1423,7 @@
 		font-variant-numeric: tabular-nums;
 	}
 	.here h4 {
+		margin: 0;
 		font-weight: 700;
 		font-size: max(1.125rem, 1.45vw);
 		letter-spacing: -0.02em;
@@ -1459,9 +1460,16 @@
 		text-decoration: none;
 		cursor: pointer;
 	}
+	.p-keys:hover {
+		background: var(--orange);
+		color: var(--ink);
+	}
 	.p-keys[aria-pressed='true'] {
 		background: none;
 		color: var(--ink);
+	}
+	.p-keys[aria-pressed='true']:hover {
+		background: var(--chip);
 	}
 
 	/* Folds: closed catalogs, opened in place. */
@@ -1828,6 +1836,7 @@
 			margin-top: 0.5rem;
 		}
 		.pitch {
+			max-width: 52ch;
 			margin-top: 1rem;
 		}
 		.links {

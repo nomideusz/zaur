@@ -32,7 +32,7 @@
 	let note = $state('');
 	let feed = $state('');
 	let busy = $state(false);
-	let height = $state(600);
+	let height = $state(540);
 	let events = $derived(shown.length ? JSON.stringify(shown.map((x) => (isBooked(x) ? { ...x, color: '#e75926' } : x))) : '');
 
 	// A yoga studio's week (the names read the same in every language), repeated
@@ -153,7 +153,7 @@
 <style>
 	/* Holds the widget's height before it loads, so nothing below it moves. */
 	.cal {
-		min-height: 600px;
+		min-height: 540px;
 	}
 	day-calendar {
 		display: block;

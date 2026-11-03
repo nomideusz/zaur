@@ -245,13 +245,13 @@
 		border-right: var(--rule) solid var(--ink);
 	}
 	.notify {
-		grid-column: 1 / 6;
+		grid-column: 1 / 5;
 	}
 	.ticket {
-		grid-column: 6 / 9;
+		grid-column: 5 / 10;
 	}
 	.trace {
-		grid-column: 9 / -1;
+		grid-column: 10 / -1;
 		position: relative;
 		min-height: 20rem;
 		border-top: var(--rule) solid var(--ink);
@@ -474,6 +474,20 @@
 		height: 100%;
 		min-height: 24rem;
 		border: 0;
+	}
+	/* With room, the code stands beside its controls and the row takes its height;
+	   the email scrolls inside what that leaves it. */
+	@media (min-width: 1181px) {
+		.ticket .pad {
+			min-height: 22rem;
+		}
+		.ticket .pad > :global(.qr) {
+			width: 100%;
+		}
+		.mail,
+		.mail iframe {
+			min-height: 16rem;
+		}
 	}
 	@media (max-width: 1180px) and (min-width: 901px) {
 		.notify {
