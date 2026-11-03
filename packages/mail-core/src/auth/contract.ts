@@ -8,16 +8,26 @@ export function parseStalwartAuthResponse(value: unknown): StalwartAuthResponse 
 	const record = value as Record<string, unknown>;
 	if (record.type === 'mfaRequired') return { type: 'mfaRequired' };
 	if (record.type === 'failure') return { type: 'failure' };
+	// Stalwart 0.16 answers with the code, 1.0 with the redirect that carries it.
 	const clientCode =
 		typeof record.clientCode === 'string'
 			? record.clientCode
 			: typeof record.client_code === 'string'
 				? record.client_code
-				: null;
+				: codeFromLocation(record.location);
 	if (record.type === 'authenticated' && clientCode) {
 		return { type: 'authenticated', clientCode };
 	}
 	return null;
+}
+
+function codeFromLocation(location: unknown): string | null {
+	if (typeof location !== 'string') return null;
+	try {
+		return new URL(location).searchParams.get('code') || null;
+	} catch {
+		return null;
+	}
 }
 
 export function describeStalwartAuthResponse(value: unknown): {
@@ -49,16 +59,34 @@ export function createStalwartAuthPayload(input: {
 	scope: string;
 	codeChallenge: string;
 }) {
+	// 1.0 requires a state, but this flow has no browser redirect for it to
+	// protect, so the challenge (already unique per attempt) stands in.
+	const state = input.codeChallenge;
 	return {
 		type: 'authCode',
 		accountName: input.accountName,
 		accountSecret: input.accountSecret,
 		mfaToken: input.mfaToken?.trim() || null,
+		// Stalwart 0.16 reads these fields and ignores the two below.
 		clientId: input.clientId,
 		redirectUri: input.redirectUri,
 		scope: input.scope,
+		state,
 		codeChallenge: input.codeChallenge,
-		codeChallengeMethod: 'S256'
+		codeChallengeMethod: 'S256',
+		// Stalwart 1.0 reads the authorization request from `query` and ignores
+		// the fields above. The person is signing in to this app on its own login
+		// page, so there is no third party for a consent screen to name.
+		query: new URLSearchParams({
+			response_type: 'code',
+			client_id: input.clientId,
+			redirect_uri: input.redirectUri,
+			scope: input.scope,
+			state,
+			code_challenge: input.codeChallenge,
+			code_challenge_method: 'S256'
+		}).toString(),
+		consent: true
 	} as const;
 }
 

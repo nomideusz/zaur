@@ -161,8 +161,8 @@ test('API keys cannot manage credentials; app passwords inherit', () => {
 	assert.deepEqual(credentialPermissions('AppPassword'), { '@type': 'Inherit' });
 	const apiKey = credentialPermissions('ApiKey');
 	assert.equal(apiKey['@type'], 'Disable');
-	assert.ok((apiKey as any).permissions.includes('sysApiKeyCreate'));
-	assert.ok((apiKey as any).permissions.includes('sysAccountPasswordUpdate'));
+	assert.equal((apiKey as any).permissions.sysApiKeyCreate, true);
+	assert.equal((apiKey as any).permissions.sysAccountPasswordUpdate, true);
 });
 
 test('one-time secrets are read from the creation response only', () => {

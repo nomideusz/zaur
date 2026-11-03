@@ -80,7 +80,9 @@ The credential flow reuses webmail 1.0's exactly, via the shared
   for tokens — the session stores **tokens, never the password**. Needs the
   `STALWART_OAUTH_*` env block (see `.env.example`) and an OAuth client
   registered in Stalwart (`zaur-mail2-prod`, redirect
-  `https://mail2.zaur.app/api/auth/oauth/callback`).
+  `https://mail2.zaur.app/api/auth/oauth/callback`). Stalwart 1.0 refuses
+  unregistered clients and limits ordinary ones to their scopes, so create it
+  with `firstParty: true`, or Files and account settings stop working.
 - **Password fallback (dev default):** with no OAuth config, credentials go
   via HTTP Basic to the JMAP server and the password is sealed in the session
   store. `.env.example` points it at the live mail server.

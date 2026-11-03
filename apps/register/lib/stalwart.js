@@ -113,8 +113,13 @@ function extractJmapError(response) {
   return 'Account creation failed.';
 }
 
+// Stalwart 1.0 renamed EmailAlias.enabled to enable.
+function isAliasEnabled(alias) {
+  return (alias?.enable ?? alias?.enabled) !== false;
+}
+
 function filterDomains(domains, allowlist) {
-  const enabled = domains.filter((d) => d.isEnabled !== false);
+  const enabled = domains.filter((d) => d.enable !== false);
   if (allowlist.length === 0) return enabled;
   return enabled.filter((d) => allowlist.includes(d.name.toLowerCase()));
 }
@@ -144,7 +149,8 @@ async function listDomains(forceRefresh = false) {
   const rawDomains = (Array.isArray(domainList) ? domainList : Object.values(domainList)).map((d) => ({
     id: d.id,
     name: d.name,
-    isEnabled: d.isEnabled,
+    // Stalwart 1.0 renamed Domain.isEnabled to enable.
+    enable: d.enable ?? d.isEnabled,
   }));
 
   const domains = filterDomains(rawDomains, config.allowlist).map(({ id, name }) => ({ id, name }));
@@ -230,7 +236,7 @@ async function findAliasMatches(username, domainId) {
 
     return aliases.some(
       (alias) =>
-        alias?.enabled !== false &&
+        isAliasEnabled(alias) &&
         alias?.domainId === domainId &&
         typeof alias?.name === 'string' &&
         alias.name.toLowerCase() === normalized,
@@ -286,7 +292,7 @@ async function listAccounts() {
     domain: domainsById.get(account.domainId) || null,
     email: account.emailAddress || `${account.name}@${domainsById.get(account.domainId) || 'unknown'}`,
     aliases: (Array.isArray(account.aliases) ? account.aliases : Object.values(account.aliases || {}))
-      .filter((alias) => alias?.enabled !== false)
+      .filter(isAliasEnabled)
       .map((alias) => ({
         name: alias.name,
         domainId: alias.domainId,

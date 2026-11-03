@@ -39,7 +39,13 @@ import type {
 	JMAPFileNodeCapability,
 	JMAPFileRights
 } from './file-types';
-import { FILE_NODE_PROPERTIES } from './file-types';
+import {
+	fileNodeFilterToServer,
+	fileNodeFromServer,
+	fileNodeProperties,
+	fileNodeToServer,
+	usesAtType
+} from './file-types';
 import type { JMAPAddressBook, JMAPContactCard } from './contact-types';
 import { ADDRESS_BOOK_PROPERTIES, CONTACTS_URN, CONTACT_CARD_PROPERTIES } from './contact-types';
 import { JmapMethodError } from './errors';
@@ -1005,12 +1011,13 @@ export class JMAPClient {
 		if (!this.hasFileNode()) return [];
 
 		const accountId = this.fileNodeAccount(options?.accountId);
+		const atType = usesAtType(this.getFileNodeCapability());
 		const response = await this.fileNodeRequest([
 			[
 				'FileNode/query',
 				{
 					accountId,
-					filter,
+					filter: fileNodeFilterToServer(filter, atType),
 					sort: [
 						{ property: 'nodeType', isAscending: true },
 						{ property: 'name', isAscending: true }
@@ -1025,7 +1032,7 @@ export class JMAPClient {
 				{
 					accountId,
 					'#ids': { resultOf: 'fnq', name: 'FileNode/query', path: '/ids' },
-					properties: [...FILE_NODE_PROPERTIES],
+					properties: fileNodeProperties(atType),
 					fetchParents: options?.fetchParents ?? false
 				},
 				'fng'
@@ -1035,7 +1042,7 @@ export class JMAPClient {
 		assertNoMethodErrors(response, 'FileNode/query failed');
 		const getResult = response.methodResponses?.find(([name]) => name === 'FileNode/get');
 		if (getResult?.[0] !== 'FileNode/get') return [];
-		return (getResult[1].list as JMAPFileNode[]) ?? [];
+		return ((getResult[1].list as JMAPFileNode[]) ?? []).map(fileNodeFromServer);
 	}
 
 	async getFileNodes(
@@ -1051,7 +1058,7 @@ export class JMAPClient {
 				{
 					accountId: this.fileNodeAccount(accountId),
 					ids,
-					properties: [...FILE_NODE_PROPERTIES],
+					properties: fileNodeProperties(usesAtType(this.getFileNodeCapability())),
 					fetchParents
 				},
 				'fng'
@@ -1061,7 +1068,7 @@ export class JMAPClient {
 		assertNoMethodErrors(response, 'FileNode/get failed');
 		const first = response.methodResponses?.[0];
 		if (first?.[0] !== 'FileNode/get') return [];
-		return (first[1].list as JMAPFileNode[]) ?? [];
+		return ((first[1].list as JMAPFileNode[]) ?? []).map(fileNodeFromServer);
 	}
 
 	async createFileNode(input: {
@@ -1089,7 +1096,10 @@ export class JMAPClient {
 		const response = await this.fileNodeRequest([
 			[
 				'FileNode/set',
-				{ accountId: this.fileNodeAccount(input.accountId), create: { [creationId]: data } },
+				{
+					accountId: this.fileNodeAccount(input.accountId),
+					create: { [creationId]: fileNodeToServer(data, usesAtType(this.getFileNodeCapability())) }
+				},
 				'fns'
 			]
 		]);
@@ -1133,7 +1143,7 @@ export class JMAPClient {
 				'FileNode/set',
 				{
 					accountId: this.fileNodeAccount(patch.accountId),
-					update: { [id]: update }
+					update: { [id]: fileNodeToServer(update, usesAtType(this.getFileNodeCapability())) }
 				},
 				'fnu'
 			]

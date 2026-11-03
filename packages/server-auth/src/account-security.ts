@@ -90,7 +90,11 @@ const API_KEY_DISABLED_PERMISSIONS = [
  */
 export function credentialPermissions(type: CredentialType) {
 	return type === 'ApiKey'
-		? { '@type': 'Disable' as const, permissions: [...API_KEY_DISABLED_PERMISSIONS] }
+		? {
+				'@type': 'Disable' as const,
+				// A set, like allowedIps: Stalwart refuses it as an array.
+				permissions: Object.fromEntries(API_KEY_DISABLED_PERMISSIONS.map((name) => [name, true]))
+			}
 		: { '@type': 'Inherit' as const };
 }
 
