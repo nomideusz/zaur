@@ -32,6 +32,7 @@
 	let note = $state('');
 	let feed = $state('');
 	let busy = $state(false);
+	let height = $state(600);
 	let events = $derived(shown.length ? JSON.stringify(shown.map((x) => (isBooked(x) ? { ...x, color: '#e75926' } : x))) : '');
 
 	// A yoga studio's week (the names read the same in every language), repeated
@@ -121,6 +122,7 @@
 			([e]) => {
 				if (!e.isIntersecting) return;
 				near.disconnect();
+				if (matchMedia('(max-width: 900px)').matches) height = 440;
 				shown = sample();
 				import('@nomideusz/svelte-calendar/widget');
 			},
@@ -132,7 +134,7 @@
 </script>
 
 <div class="cal" bind:this={box}>
-	{#if events}<day-calendar {events} {locale} view="week-planner" height="600" readonly="false" mincolumnwidth="100" oneventclick={pick} oneventmove={move}></day-calendar>{/if}
+	{#if events}<day-calendar {events} {locale} view="week-planner" {height} readonly="false" mincolumnwidth="100" oneventclick={pick} oneventmove={move}></day-calendar>{/if}
 </div>
 <div class="ics">
 	<label class="btn">{t('packages.calendar.import')}<input type="file" accept=".ics,.ical,.ifb,text/calendar" onchange={load} /></label>
@@ -151,6 +153,11 @@
 	}
 	day-calendar {
 		display: block;
+	}
+	@media (max-width: 900px) {
+		.cal {
+			min-height: 440px;
+		}
 	}
 	.ics {
 		display: flex;

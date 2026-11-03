@@ -269,7 +269,11 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 - **Style:** a 2px-framed capture (or the radio), then title, an optional search line, a short description and chips, then the spec list in its own column. One ruled row each.
 
 ### Packages Section
-The section runs in three acts, then an index. A package's `#pkg-<id>` anchor lands where it demonstrates itself. Stats stay out: no download or search charts here. Everything marked as a call really ran in the visitor's tab. Whatever a demo fills in after load (a date, a weight, its tape, its files, the song on air) has its space from the first paint, so the page never jumps as a visitor scrolls past.
+The section runs in three acts, then an index. Under the lede, a ruled strip names the three acts and "Install: all 10", so the way past the demos is on the first screen. The lede says the two packages without an act, svelte-search and svelte-i18n, run the page itself. A package's `#pkg-<id>` anchor lands where it demonstrates itself. Stats stay out: no download or search charts here. Everything marked as a call really ran in the visitor's tab. Whatever a demo fills in after load (a date, a weight, its tape, its files, the song on air) has its space from the first paint, so the page never jumps as a visitor scrolls past.
+
+Every package that demonstrates here ends in its install line and its "Used in" names, each name linking to that product or site on this page (Radio Bartek links out, as it plays in the sky).
+
+At 900px and below the section folds what is secondary, by CSS alone so the first paint never jumps: svelte-scheduler, svelte-payments and svelte-notify shut to their head and one line (the total, the payment status, the email's subject), svelte-media and each index row to their head. The cell heads still light as the booking passes. A square plus and minus opens each; a link to a package opens its part. The calendar and the QR ticket stay open, as the booking's two ends. Above 900px nothing folds.
 
 ### Booking Machine (act one, `BookingMachine.svelte`, `booking.svelte.ts`)
 - **Style:** one sample booking through five ruled cells on a 12-track grid: svelte-calendar (paper) spanning two rows beside svelte-scheduler and svelte-payments (ground), then svelte-notify and svelte-qr (lilac) beside the tape. Each cell opens on a head: package name linking to npm, version flush right, 2px ink rule.
@@ -293,10 +297,10 @@ The section runs in three acts, then an index. A package's `#pkg-<id>` anchor la
 - **Style:** a native `<dialog>` from the bar, `/` or Ctrl+K: 4px ink frame on ground, ink at 55% behind. Shows each matching step of `src/lib/find.ts` (Polish-locale folding, then exact, edit distance and trigrams): the folded query, trigrams as 3px-corner chips filled Ink where the top result shares them, then up to eight ruled results (kind · name with why it matched · score), the current one Signal Orange. Four Try buttons when empty. A result inside a fold opens it. The Template Finder runs on the same matching. At 900px and below the bar shows it as a drawn icon.
 
 ### Package Index
-- **Style:** one 2px-ruled row per package on one subgrid, so install lines and links stand in columns: name and version over a Quiet meta line read from npm at build (license · svelte range · dependency count), description, the install line, then Try it, Docs, On npm and Source. svelte-search and svelte-i18n demonstrate on the page itself, so their rows hold their anchors, and their buttons open the palette and flip the keys. A row reached by its anchor fills Chip White.
+- **Style:** one 2px-ruled row per package on one subgrid, so install lines and links stand in columns: name and version over a Quiet meta line read from npm at build (license · svelte range · dependency count), description, the install line, then Try it, Docs, On npm and Source. svelte-search and svelte-i18n demonstrate on the page itself, so their rows hold their anchors, and their buttons open the palette and flip the keys. A row reached by its anchor fills Chip White. At 900px and below a row shuts to its name, version and install line; its plus opens the description, meta and links.
 
 ### Install Line
-- **Style:** the command and a bold "Copy" button in one 2px ink outline with a 3px corner, split by a 2px rule; 0.875rem. The command still selects in one click where the clipboard is refused. The button reads "Copied" for two seconds, announced politely. Used for `npm i …` and the skill's `npx skills add …`.
+- **Style (`Install.svelte`):** the command and a bold "Copy" button in one 2px outline in the text's colour (Ink, Paper on the sky's board) with a 3px corner, split by a 2px rule; 0.875rem. The command still selects in one click where the clipboard is refused. The button reads "Copied" for two seconds, announced politely. Used for `npm i …` and the skill's `npx skills add …`.
 
 ### Fold (catalog disclosure)
 - **Style:** native `<details>` on Warm Ground, headline-size summary with count, square plus/minus toggle at the right, 2px ink rule below; when open, a 2px rule also closes the summary.

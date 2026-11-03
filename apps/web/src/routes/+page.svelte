@@ -9,6 +9,10 @@
 	import BookingMachine from '#lib/BookingMachine.svelte';
 	import Darkroom from '#lib/Darkroom.svelte';
 	import Sky from '#lib/Sky.svelte';
+	import Install from '#lib/Install.svelte';
+	import PhoneFold from '#lib/PhoneFold.svelte';
+	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
+	import { opened, watchOpened } from '#lib/opened.svelte';
 	import Palette, { palette } from '#lib/Palette.svelte';
 	import TicketView from '#lib/TicketView.svelte';
 	import { decodeTicket, ticketHash, type Ticket } from '#lib/ticket';
@@ -244,8 +248,6 @@
 	const products = work.filter((w) => !w.wip);
 	const wip = work.filter((w) => w.wip);
 	const flagships = products.filter((w) => w.built);
-	const usedIn = (id: string) => [...work, ...websites].filter((w) => w.uses?.includes(id)).map((w) => w.name);
-	const usedInText = (id: string) => t('packages.usedIn', { list: and.format(usedIn(id)) });
 	// Group names come from templates.ts in English; the key is their slug.
 	const kindSlug = (kind: string) => kind.toLowerCase().replace(/[^a-z]+/g, '-');
 	const kindName = (kind: string) => t(`templates.kind.${kindSlug(kind)}`);
@@ -284,17 +286,6 @@
 		if (!m) return '';
 		return [m.license, m.svelte && `svelte ${m.svelte}`, t('packages.deps', { count: m.deps, n: m.deps })].filter(Boolean).join(' · ');
 	};
-	// The install line copies itself; the line stays selectable where the clipboard is refused.
-	let copied = $state('');
-	const copy = (cmd: string) =>
-		navigator.clipboard
-			.writeText(cmd)
-			.then(() => {
-				copied = cmd;
-				setTimeout(() => copied === cmd && (copied = ''), 2000);
-			})
-			.catch(() => {});
-
 	// The signature: pointing at a product lights the packages it is built from,
 	// pointing at a package lights the products that use it. No lines, only light.
 	let active = $state<{ kind: 'pkg' | 'work'; id: string } | null>(null);
@@ -399,7 +390,17 @@
 		...tplEntries.map((e): Entry => ({ ...e, href: `#tpl-${e.href}` })),
 		...websites.filter((w) => !w.live).map((w): Entry => ({ kind: 'site', name: w.name, text: w.desc, href: `#${w.id}` }))
 	]);
-	const usedLine = (id: string) => (usedIn(id).length ? usedInText(id) : '');
+	// Each name links to its own part of the page; the radio plays in the sky, so it links out.
+	const usedLine = (id: string): UsedList | null => {
+		const rows = [
+			...work.filter((w) => w.uses?.includes(id)).map((w) => ({ name: w.name, href: `#${w.id}` })),
+			...websites.filter((w) => w.uses?.includes(id)).map((w) => ({ name: w.name, href: w.live ? w.href : `#${w.id}` }))
+		];
+		if (!rows.length) return null;
+		const [before, after] = t('packages.usedIn', { list: '' }).split('');
+		const hrefs = new Map(rows.map((r) => [r.name, r.href]));
+		return { before, after, parts: and.formatToParts(rows.map((r) => r.name)).map((p) => ({ text: p.value, href: p.type === 'element' ? hrefs.get(p.value) : undefined })) };
+	};
 	// A package whose demo is the page itself has its anchor in the index.
 	const inPlace = (id: string) => id === 'svelte-search' || id === 'svelte-i18n';
 
@@ -417,6 +418,7 @@
 		document.documentElement.style.overflow = ticket ? 'hidden' : '';
 	});
 
+	onMount(watchOpened);
 	onMount(() => {
 		track();
 		readTicket();
@@ -495,14 +497,6 @@
 			<span>{#if used}{used}<span class="latest">→ {version(u)}</span>{:else}{version(u)}{/if}</span>
 		</a>
 	</li>
-{/snippet}
-
-<!-- An install line and the button that copies it. -->
-{#snippet install(cmd: string)}
-	<span class="p-install">
-		<code>{cmd}</code>
-		<button type="button" onclick={() => copy(cmd)}><span aria-live="polite">{t(copied === cmd ? 'packages.copied' : 'packages.copy')}</span></button>
-	</span>
 {/snippet}
 
 {#snippet card(c: Card)}
@@ -741,7 +735,13 @@
 
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
-		<p class="lede">{t('packages.lede')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
+		<p class="lede">{t('packages.lede')} {t('packages.inPlace')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
+		<nav class="p-acts" aria-label={t('packages.acts')}>
+			<a href="#machine">{t('machine.title')}</a>
+			<a href="#darkroom">{t('darkroom.title')}</a>
+			<a href="#pkg-zaur-world">{t('sky.title', { city: 'Kraków' })}</a>
+			<a href="#install">{t('packages.installAll', { n: pkgs.length })}</a>
+		</nav>
 
 		<BookingMachine locale={intl} language={locale} {site} {version} {npmOf} usedIn={usedLine} />
 
@@ -762,21 +762,22 @@
 
 		<Sky href="https://radiobartek.com" locale={intl} version={version('zaur-world')} npm={npmOf('zaur-world') ?? ''} used={usedLine('zaur-world')} />
 
-		<div class="pindex">
+		<div class="pindex" id="install">
 			<h3>{t('packages.index')}</h3>
 			<ul class="ptable">
 				{#each pkgs as p (p.id)}
-					<li id={inPlace(p.id) ? `pkg-${p.id}` : undefined}>
+					<li id={inPlace(p.id) ? `pkg-${p.id}` : undefined} class:shut={!opened[`row-${p.id}`]}>
 						<div class="p-id">
 							{#if inPlace(p.id)}<span class="p-name">{p.id}</span>{:else}<a class="p-name" href="#pkg-{p.id}">{p.id}</a>{/if}
 							<span class="p-ver">{version(p.id)}</span>
+							<PhoneFold id="row-{p.id}" name={p.id} />
 							{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
 						</div>
 						<div class="p-about">
 							<p>{p.desc}</p>
-							{#if inPlace(p.id) && usedIn(p.id).length}<p class="p-meta">{usedInText(p.id)}</p>{/if}
+							{#if inPlace(p.id) && usedLine(p.id)}<p class="p-meta"><UsedIn list={usedLine(p.id)!} /></p>{/if}
 						</div>
-						{@render install(`npm i ${p.name}`)}
+						<Install cmd="npm i {p.name}" />
 						<p class="p-links">
 							{#if p.id === 'svelte-search'}
 								<button type="button" class="p-keys" onclick={() => (palette.open = true)}>{t('nav.search')}</button>
@@ -842,7 +843,7 @@
 							<a class="t-name" href={s.source}>{s.name}</a>
 							<div>
 								<p>{s.desc}</p>
-								{@render install(`npx skills add nomideusz/${s.name}`)}
+								<Install cmd="npx skills add nomideusz/{s.name}" />
 							</div>
 							<a class="t-src" href={s.source}>{t('skills.source')}</a>
 						</li>
@@ -1509,6 +1510,29 @@
 	}
 
 	/* Packages: the shared building blocks, one ruled row each. */
+	/* The section's contents: the three demos by name, and the way past them. */
+	.p-acts {
+		display: grid;
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+		border-bottom: var(--rule) solid var(--ink);
+	}
+	.p-acts a {
+		padding: 0.7rem 1.39vw;
+		font-weight: 700;
+		font-size: max(1.125rem, 1.45vw);
+		line-height: 1.2;
+		letter-spacing: -0.02em;
+		text-decoration: none;
+	}
+	.p-acts a + a {
+		border-left: var(--rule) solid var(--ink);
+	}
+	.p-acts a:hover {
+		background: var(--orange);
+	}
+	.p-acts a:focus-visible {
+		outline-offset: -5px;
+	}
 	.packages .lede,
 	.websites .lede {
 		max-width: none;
@@ -1537,7 +1561,6 @@
 		grid-template-columns: subgrid;
 		align-items: baseline;
 		padding: 0.55rem 1.39vw;
-		scroll-margin-top: 3.66vw;
 	}
 	.p-id {
 		display: grid;
@@ -1577,41 +1600,8 @@
 		color: var(--quiet);
 		font-size: 0.875rem;
 	}
-	/* The command and its copy button in one outline, split by a rule. */
-	.p-install {
-		display: inline-flex;
-		max-width: 100%;
-		min-height: 1.75rem;
+	.ptable :global(.p-install) {
 		margin-top: 0.4rem;
-		border: var(--rule) solid var(--ink);
-		border-radius: 3px;
-		font-size: 0.875rem;
-	}
-	/* The command takes any spare width, so Copy always closes the outline. */
-	.p-install code {
-		flex: 1;
-		align-self: center;
-		padding: 0.1rem 0.45rem;
-		font: inherit;
-		user-select: all;
-		overflow-wrap: anywhere;
-	}
-	.p-install button {
-		flex: none;
-		padding: 0 0.6rem;
-		border: 0;
-		border-left: var(--rule) solid var(--ink);
-		background: none;
-		color: inherit;
-		font: inherit;
-		font-weight: 700;
-		cursor: pointer;
-	}
-	.p-install button:hover {
-		background: var(--chip);
-	}
-	.p-install button:focus-visible {
-		outline-offset: -4px;
 	}
 	.p-try {
 		max-width: 54ch;
@@ -2136,6 +2126,22 @@
 		.websites .lede {
 			padding: 1rem;
 		}
+		.p-acts {
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+		}
+		.p-acts a {
+			display: flex;
+			align-items: center;
+			min-height: 2.75rem;
+			padding: 0.6rem 1rem;
+			font-size: 1rem;
+		}
+		.p-acts a:nth-child(odd) {
+			border-left: 0;
+		}
+		.p-acts a:nth-child(n + 3) {
+			border-top: var(--rule) solid var(--ink);
+		}
 		.pindex h3 {
 			padding: 1.25rem 1rem 0.6rem;
 		}
@@ -2146,6 +2152,16 @@
 			grid-template-columns: minmax(0, 1fr);
 			gap: 0.4rem;
 			padding: 1rem;
+		}
+		/* A row shut is its name and its install line: the reason for the list. */
+		.p-id {
+			grid-template-columns: minmax(0, 1fr) auto auto;
+			align-items: center;
+		}
+		.ptable > .shut .p-about,
+		.ptable > .shut .p-meta,
+		.ptable > .shut .p-links {
+			display: none;
 		}
 		.p-links {
 			justify-self: start;
@@ -2286,13 +2302,8 @@
 			align-items: center;
 			min-height: 2.75rem;
 		}
-		.p-install,
 		.p-keys {
 			min-height: 2.75rem;
-		}
-		/* Over the outline's own rules, so the whole 44px is the button. */
-		.p-install button {
-			margin-block: calc(-1 * var(--rule));
 		}
 		/* The address is one line among the row's text, so its target grows without
 		   its type: downward over the name would steal the row's own tap. */

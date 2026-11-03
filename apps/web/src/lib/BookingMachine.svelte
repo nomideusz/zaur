@@ -7,6 +7,10 @@
 	import CalendarDemo from '#lib/CalendarDemo.svelte';
 	import ScratchQr from '#lib/ScratchQr.svelte';
 	import Tape from '#lib/Tape.svelte';
+	import Install from '#lib/Install.svelte';
+	import PhoneFold from '#lib/PhoneFold.svelte';
+	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
+	import { opened } from '#lib/opened.svelte';
 	import { t } from '#lib/i18n';
 	import { booking, canRefund, discountFrom, email, ledger, moveClass, payAgain, pick, policies, quote, rate, rebook, requote, run, sendRefund, start, ticketUrl, type Pkg } from '#lib/booking.svelte';
 
@@ -25,7 +29,7 @@
 		site: string;
 		version: (id: string) => string;
 		npmOf: (id: string) => string | undefined;
-		usedIn: (id: string) => string;
+		usedIn: (id: string) => UsedList | null;
 	} = $props();
 
 	let root: HTMLElement;
@@ -52,18 +56,23 @@
 	});
 </script>
 
-{#snippet head(id: Pkg)}
-	<header class="head" class:hot={booking.hot === id}>
-		<h4><a href={npmOf(id)}>{id}</a></h4>
-		<span>{version(id)}</span>
-	</header>
-{/snippet}
-
-{#snippet cell(id: Pkg, cls: string, body: Snippet)}
-	<section class={['cell', cls]} id="pkg-{id}">
-		{@render head(id)}
-		{@render body()}
-		{#if usedIn(id)}<p class="used">{usedIn(id)}</p>{/if}
+<!-- With a gist, the cell folds on a phone to its head and that one line. -->
+{#snippet cell(id: Pkg, cls: string, body: Snippet, gist?: Snippet)}
+	{@const used = usedIn(id)}
+	<section class={['cell', cls, { shut: gist && !opened[id] }]} id="pkg-{id}">
+		<header class="head" class:hot={booking.hot === id}>
+			<h4><a href={npmOf(id)}>{id}</a></h4>
+			<span>{version(id)}</span>
+			{#if gist}<PhoneFold {id} name={id} />{/if}
+		</header>
+		{#if gist}<p class="gist">{@render gist()}</p>{/if}
+		<div class="inside">
+			{@render body()}
+			<div class="foot">
+				<Install cmd="npm i @nomideusz/{id}" />
+				{#if used}<p class="used"><UsedIn list={used} /></p>{/if}
+			</div>
+		</div>
 	</section>
 {/snippet}
 
@@ -110,7 +119,8 @@
 				<p class="result" aria-live="polite">{t('machine.refund.back', { pct: q.refund.refundPercentage, amount: pln.format(q.refund.refundAmount) })}</p>
 			</div>
 		{/snippet}
-		{@render cell('svelte-scheduler', 'price', scheduler)}
+		{#snippet schedulerGist()}{t('machine.price.total')} {pln.format(q.price.totalAmount)}{/snippet}
+		{@render cell('svelte-scheduler', 'price', scheduler, schedulerGist)}
 
 		{#snippet payments()}
 			<div class="pad">
@@ -129,7 +139,8 @@
 				<p class="result" class:stopped={booking.stopped} aria-live="polite">{t(booking.stopped ? 'machine.pay.stopped' : 'machine.pay.hint')}</p>
 			</div>
 		{/snippet}
-		{@render cell('svelte-payments', 'pay', payments)}
+		{#snippet paymentsGist()}derivePaymentStatus → {q.status}{/snippet}
+		{@render cell('svelte-payments', 'pay', payments, paymentsGist)}
 
 		{#snippet notify()}
 			<div class="pad">
@@ -140,7 +151,8 @@
 				<div class="mail">{#if mail}<iframe title={mail.subject} srcdoc={mail.html} sandbox=""></iframe>{/if}</div>
 			</div>
 		{/snippet}
-		{@render cell('svelte-notify', 'notify', notify)}
+		{#snippet notifyGist()}{mail?.subject ?? '\u00a0'}{/snippet}
+		{@render cell('svelte-notify', 'notify', notify, notifyGist)}
 
 		{#snippet qr()}
 			<!-- Browser only, like the email: a prerendered ticket would carry the build's date. -->
@@ -195,7 +207,16 @@
 		display: flex;
 		flex-direction: column;
 		min-width: 0;
-		scroll-margin-top: 3.66vw;
+	}
+	/* A phone's alone: above 900px every cell stands open. */
+	.gist {
+		display: none;
+	}
+	.inside {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-width: 0;
 	}
 	.cell:target .head:not(.hot) {
 		background: var(--chip);
@@ -263,14 +284,22 @@
 	h4 a:hover {
 		text-decoration: underline;
 	}
-	.used,
 	.hint {
 		padding: 0.5rem 1rem 0.6rem 1.39vw;
 		color: var(--quiet);
 		font-size: 0.875rem;
 	}
-	.used {
+	.foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 1rem;
 		margin-top: auto;
+		padding: 0.5rem 1rem 0.6rem 1.39vw;
+	}
+	.used {
+		color: var(--quiet);
+		font-size: 0.875rem;
 	}
 	.cal .hint {
 		border-top: var(--rule) solid var(--ink);
@@ -480,12 +509,31 @@
 		}
 		.head,
 		.pad,
-		.used,
+		.foot,
 		.hint {
 			padding-inline: 1rem;
 		}
+		.head {
+			align-items: center;
+		}
+		.head span {
+			margin-left: auto;
+		}
+		.shut .inside {
+			display: none;
+		}
+		.shut .gist {
+			display: block;
+			overflow: hidden;
+			padding: 0.5rem 1rem;
+			font-weight: 700;
+			font-size: 0.875rem;
+			font-variant-numeric: tabular-nums;
+			white-space: nowrap;
+			text-overflow: ellipsis;
+		}
 		.trace {
-			min-height: 18rem;
+			min-height: 11rem;
 		}
 	}
 	@media (pointer: coarse) {

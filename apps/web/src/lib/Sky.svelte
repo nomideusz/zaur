@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n';
+	import Install from '#lib/Install.svelte';
+	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
 	import type { WorldHandle } from '@nomideusz/zaur-world';
 
 	// The package at full width: tonight's real sky over Kraków, a slider through
 	// its 24 hours, its weather looks, and Radio Bartek played under it. The DJ
 	// talks about Kraków's weather, so that stays the default place; another sky
 	// only comes from the visitor's own click (and the browser's permission).
-	let { href, locale, version, npm, used }: { href: string; locale: string; version: string; npm: string; used: string } = $props();
+	let { href, locale, version, npm, used }: { href: string; locale: string; version: string; npm: string; used: UsedList | null } = $props();
 
 	const api = $derived(new URL('/api/now-playing', href).href);
 	const stream = $derived(new URL('/stream.mp3', href).href);
@@ -168,6 +170,7 @@
 		<div class="name">
 			<h3 id="sky-h">{t('sky.title', { city })}</h3>
 			<p class="ver"><a href={npm}>zaur-world</a> {version}</p>
+			<div class="install"><Install cmd="npm i @nomideusz/zaur-world" /></div>
 		</div>
 		<p class="what">{t('sky.lede')}</p>
 
@@ -203,7 +206,7 @@
 				{:else}{t('radio.idle')}{/if}
 			</p>
 		</div>
-		<p class="foot">{t('sky.radio')} {#if used}<span>{used}</span>{/if}</p>
+		<p class="foot">{t('sky.radio')} {#if used}<span><UsedIn list={used} /></span>{/if}</p>
 	</div>
 	<audio
 		bind:this={audio}
@@ -221,7 +224,6 @@
 		border-bottom: var(--rule) solid var(--ink);
 		background: var(--ink);
 		color: var(--paper);
-		scroll-margin-top: 3.66vw;
 	}
 	/* A window on the real sky, the poster's one picture that isn't flat. */
 	canvas {
@@ -247,6 +249,9 @@
 		margin-top: 0.2rem;
 		font-size: 0.875rem;
 		font-variant-numeric: tabular-nums;
+	}
+	.install {
+		margin-top: 0.5rem;
 	}
 	.what {
 		max-width: 62ch;
@@ -404,7 +409,7 @@
 	}
 	@media (max-width: 900px) {
 		canvas {
-			height: 62vh;
+			height: 40vh;
 		}
 		.board {
 			grid-template-columns: minmax(0, 1fr);

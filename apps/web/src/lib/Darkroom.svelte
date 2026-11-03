@@ -10,6 +10,10 @@
 	import portrait from '#lib/me.webp';
 	import portraitFit from '#lib/me.webp?shapes=100&geometrize';
 	import Tape from '#lib/Tape.svelte';
+	import Install from '#lib/Install.svelte';
+	import PhoneFold from '#lib/PhoneFold.svelte';
+	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
+	import { opened } from '#lib/opened.svelte';
 	import { t } from '#lib/i18n';
 	import type { FitRequest } from '#lib/fit.worker';
 
@@ -23,7 +27,7 @@
 		locale: string;
 		version: (id: string) => string;
 		npmOf: (id: string) => string | undefined;
-		usedIn: (id: string) => string;
+		usedIn: (id: string) => UsedList | null;
 		/** The switch that holds every capture on the page at its triangles. */
 		children?: Snippet;
 	} = $props();
@@ -59,6 +63,9 @@
 	const kb = $derived(new Intl.NumberFormat(locale, { style: 'unit', unit: 'kilobyte', maximumFractionDigits: 1 }));
 	const fmt = (b: number) => (b >= 1e6 ? new Intl.NumberFormat(locale, { style: 'unit', unit: 'megabyte', maximumFractionDigits: 1 }).format(b / 1e6) : kb.format(b / 1000));
 	const smaller = $derived(photo.bytes && fitBytes ? Math.round(photo.bytes / fitBytes) : 0);
+
+	const usedGeometrize = $derived(usedIn('svelte-geometrize'));
+	const usedMedia = $derived(usedIn('svelte-media'));
 
 	const log = (pkg: string, call: string, out: string, stopped = false) => (lines = [{ id: ++lineId, pkg, call, out, stopped }, ...lines].slice(0, 12));
 
@@ -276,24 +283,32 @@
 				<b>{kb.format(fitBytes / 1000)}</b>
 				<span>{smaller > 1 ? t('darkroom.weight', { photo: fmt(photo.bytes), times: smaller }) : ' '}</span>
 			</p>
-			{#if usedIn('svelte-geometrize')}<p class="used">{usedIn('svelte-geometrize')}</p>{/if}
+			<div class="foot">
+				<Install cmd="npm i @nomideusz/svelte-geometrize" />
+				{#if usedGeometrize}<p class="used"><UsedIn list={usedGeometrize} /></p>{/if}
+			</div>
 			<div>{@render children?.()}</div>
 		</section>
 
-		<section id="pkg-svelte-media" class="part">
-			<header><h4><a href={npmOf('svelte-media')}>svelte-media</a></h4><span>{version('svelte-media')}</span></header>
-			<ul class="files">
-				{#each files as f (f.key)}
-					<li><a href={f.href} download={f.name}><code>{f.name}</code></a><span>{f.dims}</span><span>{f.fit}</span><span>{kb.format(f.bytes / 1000)}</span></li>
-				{:else}
-					<!-- The rows' height from the first paint, so the sections below never move. -->
-					{#each Object.entries(IMAGE_SIZES) as [size, spec] (size)}
-						<li><span>{size}</span><span>—</span><span>{spec.fit}</span><span>—</span></li>
+		<section id="pkg-svelte-media" class={['part', { shut: !opened['svelte-media'] }]}>
+			<header><h4><a href={npmOf('svelte-media')}>svelte-media</a></h4><span>{version('svelte-media')}</span><PhoneFold id="svelte-media" name="svelte-media" /></header>
+			<div class="inside">
+				<ul class="files">
+					{#each files as f (f.key)}
+						<li><a href={f.href} download={f.name}><code>{f.name}</code></a><span>{f.dims}</span><span>{f.fit}</span><span>{kb.format(f.bytes / 1000)}</span></li>
+					{:else}
+						<!-- The rows' height from the first paint, so the sections below never move. -->
+						{#each Object.entries(IMAGE_SIZES) as [size, spec] (size)}
+							<li><span>{size}</span><span>—</span><span>{spec.fit}</span><span>—</span></li>
+						{/each}
 					{/each}
-				{/each}
-			</ul>
-			<p class="used">{t(lossy ? 'darkroom.files' : 'darkroom.filesPng')}</p>
-			{#if usedIn('svelte-media')}<p class="used">{usedIn('svelte-media')}</p>{/if}
+				</ul>
+				<p class="used">{t(lossy ? 'darkroom.files' : 'darkroom.filesPng')}</p>
+				<div class="foot">
+					<Install cmd="npm i @nomideusz/svelte-media" />
+					{#if usedMedia}<p class="used"><UsedIn list={usedMedia} /></p>{/if}
+				</div>
+			</div>
 		</section>
 
 		<div class="trace"><Tape {lines} label={t('darkroom.tape')} empty={t('machine.tapeEmpty')} /></div>
@@ -436,7 +451,16 @@
 		gap: 0.6rem;
 		padding-bottom: 0.9rem;
 		border-top: var(--rule) solid var(--ink);
-		scroll-margin-top: 3.66vw;
+	}
+	.inside {
+		display: grid;
+		gap: 0.6rem;
+	}
+	.foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.4rem 1rem;
 	}
 	.part:target header {
 		background: var(--chip);
@@ -601,7 +625,20 @@
 			margin-inline: 1rem;
 		}
 		header {
+			align-items: center;
 			padding-inline: 1rem;
+		}
+		header span {
+			margin-left: auto;
+		}
+		.shut {
+			padding-bottom: 0;
+		}
+		.shut .inside {
+			display: none;
+		}
+		.trace {
+			height: 8rem;
 		}
 		.weight span {
 			flex-basis: 100%;
