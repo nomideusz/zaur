@@ -274,7 +274,7 @@ At 900px and below the section folds what is secondary, by CSS alone so the firs
 - **Style:** the phone's reward for scanning: a full-screen Signal Orange sheet with the class name at poster scale, ruled facts, add-to-calendar links. Labelled a sample. The booking lives only in the address (`#ticket=`), validated on read. "Open the ticket here" reaches it without a second device.
 
 ### Darkroom (`Darkroom.svelte`, `fit.worker.ts`)
-- **Style:** the case grid: picture on lilac, readings on ground. The default picture is the maker's portrait, its fit prebuilt (`me.webp?shapes=100&geometrize`), replaying slowly then in a rush. Pointing at the picture opens a square loupe on the photo beneath, framed in 2px ink, the same size from any direction; a button shows the whole photo for a keyboard. Captures never appear here.
+- **Style:** the case grid: picture on lilac, readings on ground. The default picture is a cat in a sink, the maker's own photo, its fit prebuilt (`cat.webp?shapes=100&geometrize`), replaying slowly then in a rush. Pointing at the picture opens a square loupe on the photo beneath, framed in 2px ink, the same size from any direction; a button shows the whole photo for a keyboard. Captures never appear here.
 - **Bring your own:** drop, paste or choose a photo, kept in the tab. `validateImageFile` checks it, `fitShapes` runs in a worker loaded on first need, presets refit. The weight in kB is the one large number. The svelte-media list shows the package's sizes, qualities and keys, encoded by the browser and saved by clicking; the copy says the server does this with sharp, because `processAndStore` cannot run here.
 
 ### Sky (`Sky.svelte`)

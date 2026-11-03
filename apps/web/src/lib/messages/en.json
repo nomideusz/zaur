@@ -201,7 +201,7 @@
 	"darkroom.fitted": "{n} shapes in {ms} ms",
 	"darkroom.fitting": "Fitting in a worker: {tries} shapes tried",
 	"darkroom.keys": "{n} keys",
-	"darkroom.lede": "That’s me, rebuilt from shapes. Drop, paste or choose a photo of your own and your browser refits it. Move across the picture to compare.",
+	"darkroom.lede": "That’s a cat in a sink, rebuilt from shapes. Drop, paste or choose a photo of your own and your browser refits it. Move across the picture to compare.",
 	"darkroom.preset": "Look",
 	"darkroom.private": "It stays in this tab: nothing is uploaded.",
 	"darkroom.shapes": "{n} of {total} shapes",
