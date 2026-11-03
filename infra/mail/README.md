@@ -79,7 +79,13 @@ before v1.0.2. What the move changed:
 The old `captain--stalwart-config` and `captain--stalwart-data` volumes are the v0.16 store as of
 the cutover, and `/root/mail-upgrade/state` is the migration state. Mail received since then exists
 only in v1, so going back means `stalwart-migrate rollback` into a new store, not just redeploying
-the old compose. Delete them once v1 has proved itself.
+the old compose. The one-shot `mail-upgrade-cleanup.timer` on contabo removes all of them on
+2026-11-10, after checking that `mail` is healthy on the v1 volumes. To keep them longer:
+`systemctl disable --now mail-upgrade-cleanup.timer`.
+
+`http.x-forwarded-missing` is set to debug level (`EventTracingLevel`). The listener trusts
+Traefik's header, and mail2 and register call `http://mail:8080` directly without one, which logged
+a warning on every call.
 
 ## Stalwart authentication
 

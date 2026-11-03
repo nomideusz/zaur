@@ -2,9 +2,9 @@ import { redirect } from '@sveltejs/kit';
 import { accountKey, getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import { featuresOf, offered, type Features } from '#lib/features';
 import { DEMO_JMAP_URL, signInDemo } from '#lib/server/demo';
-import { createConnectedClient } from '#lib/server/jmap';
+import { createConnectedClient, isSessionRejected } from '#lib/server/jmap';
 import { meetConfig } from '#lib/server/meet';
-import { isSessionRejected, signOutOf } from '#lib/server/sign-out';
+import { signOutOf } from '#lib/server/sign-out';
 import type { LayoutServerLoad } from './$types';
 
 /**

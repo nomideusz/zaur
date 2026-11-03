@@ -10,10 +10,8 @@
  * Email state is kept in memory, so mail that arrives while this process is
  * down is not announced after a restart. Two things differ from 1.0: a watcher
  * that cannot connect backs off instead of retrying every five seconds forever,
- * and an account that fails auth is left for the next resync rather than taking
- * its session's subscription with it. 1.0's watcher refreshes tokens for the
- * same shared sessions; a refresh race between the two must not cost a device
- * its notifications.
+ * and an account the server refuses waits for new tokens rather than taking its
+ * session's subscription with it, or asking again with the ones it refused.
  */
 import {
 	accountKey,
@@ -29,7 +27,7 @@ import {
 import type { JMAPClient, JMAPEmail } from '@zaur/mail-core';
 import { aiSettings, categorizeInBackground } from '#lib/server/categorize';
 import { parsePrefs } from '#lib/settings';
-import { createConnectedClient } from '#lib/server/jmap';
+import { createConnectedClient, isSessionRejected } from '#lib/server/jmap';
 import { pushPublicKey, sendPush, type PushMessage } from '#lib/server/push';
 
 const POLL_INTERVAL_MS = 30_000;
@@ -109,6 +107,12 @@ class PushWatcher {
 	}
 }
 
+export function sameCredentials(a: SessionData, b: SessionData): boolean {
+	return (
+		a.accessToken === b.accessToken && a.refreshToken === b.refreshToken && a.password === b.password
+	);
+}
+
 class SubscriptionWatcher {
 	private stopped = false;
 	private accounts = new Map<string, AccountWatcher>();
@@ -153,7 +157,7 @@ class SubscriptionWatcher {
 		for (const [key, account] of wanted) {
 			const existing = this.accounts.get(key);
 			if (existing) {
-				existing.update(this.row, showAccount);
+				existing.update(this.row, account, showAccount);
 				continue;
 			}
 			const watcher = new AccountWatcher(this.row, account, showAccount, this.onGone);
@@ -177,6 +181,8 @@ class AccountWatcher {
 	private poll: ReturnType<typeof setInterval> | null = null;
 	private retry: ReturnType<typeof setTimeout> | null = null;
 	private attempts = 0;
+	/** The credentials the server refused. Asking again with them cannot help. */
+	private refused: SessionData | null = null;
 	private readonly key: string;
 	private readonly label: string;
 
@@ -190,9 +196,15 @@ class AccountWatcher {
 		this.label = account.displayName?.trim() || account.username;
 	}
 
-	update(row: PushSubscriptionRow, showAccount: boolean): void {
+	update(row: PushSubscriptionRow, account: SessionData, showAccount: boolean): void {
 		this.row = row;
+		this.account = account;
 		this.showAccount = showAccount;
+		if (this.refused && !sameCredentials(this.refused, account)) {
+			this.refused = null;
+			this.attempts = 0;
+			void this.start();
+		}
 	}
 
 	async start(): Promise<void> {
@@ -210,6 +222,11 @@ class AccountWatcher {
 				this.poll = setInterval(() => void this.check(client, inbox.id), POLL_INTERVAL_MS);
 			}
 		} catch (cause) {
+			if (isSessionRejected(cause)) {
+				console.warn('[push-watcher] waiting for a new sign-in:', this.key);
+				this.refused = this.account;
+				return;
+			}
 			console.warn('[push-watcher] could not watch', this.key, cause);
 			this.scheduleRetry();
 		}

@@ -82,6 +82,18 @@ async function refreshSession(session: SessionData): Promise<SessionData> {
 	}
 }
 
+/**
+ * The server refused this account's credentials and a refresh could not mend
+ * it: only signing in again will. An outage throws something else, and must
+ * never sign anyone out.
+ */
+export function isSessionRejected(cause: unknown): boolean {
+	return (
+		cause instanceof Error &&
+		(cause.message === 'Unauthorized' || cause.message === 'Invalid username or password')
+	);
+}
+
 function shouldRefresh(session: SessionData): boolean {
 	return Boolean(
 		session.refreshToken &&
