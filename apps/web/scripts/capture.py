@@ -32,7 +32,6 @@ WINDOWS = {
     'kompi': 'https://kompi.pl',
     'festivals': 'https://festivals.zaur.app',
     'mail-demo': 'https://demo.zaur.app',
-    'signup': 'https://register.zaur.app',
 }
 # Sites kept out of a live window (fixtar is a client's shop): whole-page captures.
 PAGES = {'fixtar': 'https://fixtar.pl'}

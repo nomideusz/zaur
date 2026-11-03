@@ -12,6 +12,7 @@
 	import Tape from '#lib/Tape.svelte';
 	import Install from '#lib/Install.svelte';
 	import PhoneFold from '#lib/PhoneFold.svelte';
+	import PkgLinks from '#lib/PkgLinks.svelte';
 	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
 	import { opened } from '#lib/opened.svelte';
 	import { t } from '#lib/i18n';
@@ -21,12 +22,14 @@
 		locale,
 		version,
 		npmOf,
+		linksOf,
 		usedIn,
 		children
 	}: {
 		locale: string;
 		version: (id: string) => string;
 		npmOf: (id: string) => string | undefined;
+		linksOf: (id: string) => { docs?: string; source?: string };
 		usedIn: (id: string) => UsedList | null;
 		/** The switch that holds every capture on the page at its triangles. */
 		children?: Snippet;
@@ -271,7 +274,7 @@
 		<p class="note" role={error ? 'alert' : undefined} class:bad={error}>{error || t('darkroom.private')}</p>
 
 		<section id="pkg-svelte-geometrize" class="part">
-			<header><h4><a href={npmOf('svelte-geometrize')}>svelte-geometrize</a></h4><span>{version('svelte-geometrize')}</span></header>
+			<header><h4><a href={npmOf('svelte-geometrize')}>svelte-geometrize</a></h4><PkgLinks {...linksOf('svelte-geometrize')} /><span>{version('svelte-geometrize')}</span></header>
 			<div class="seg" role="group" aria-label={t('darkroom.preset')}>
 				{#each presets as p (p)}<button type="button" aria-pressed={preset === p} disabled={busy} onclick={() => usePreset(p)}>{p}</button>{/each}
 			</div>
@@ -291,7 +294,7 @@
 		</section>
 
 		<section id="pkg-svelte-media" class={['part', { shut: !opened['svelte-media'] }]}>
-			<header><h4><a href={npmOf('svelte-media')}>svelte-media</a></h4><span>{version('svelte-media')}</span><PhoneFold id="svelte-media" name="svelte-media" /></header>
+			<header><h4><a href={npmOf('svelte-media')}>svelte-media</a></h4><PkgLinks {...linksOf('svelte-media')} /><span>{version('svelte-media')}</span><PhoneFold id="svelte-media" name="svelte-media" /></header>
 			<div class="inside">
 				<ul class="files">
 					{#each files as f (f.key)}
@@ -573,7 +576,7 @@
 		font: inherit;
 	}
 	.trace {
-		height: 11rem;
+		height: 7rem;
 		border-top: var(--rule) solid var(--ink);
 		overflow: hidden;
 	}
@@ -627,9 +630,6 @@
 		header {
 			align-items: center;
 			padding-inline: 1rem;
-		}
-		header span {
-			margin-left: auto;
 		}
 		.shut {
 			padding-bottom: 0;

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, type Snippet } from 'svelte';
 	import { keys } from '#lib/keys.svelte';
 	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
@@ -10,9 +10,9 @@
 	import Darkroom from '#lib/Darkroom.svelte';
 	import Sky from '#lib/Sky.svelte';
 	import Install from '#lib/Install.svelte';
-	import PhoneFold from '#lib/PhoneFold.svelte';
+	import PkgLinks from '#lib/PkgLinks.svelte';
 	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
-	import { opened, watchOpened } from '#lib/opened.svelte';
+	import { watchOpened } from '#lib/opened.svelte';
 	import Palette, { palette } from '#lib/Palette.svelte';
 	import TicketView from '#lib/TicketView.svelte';
 	import { decodeTicket, ticketHash, type Ticket } from '#lib/ticket';
@@ -86,12 +86,14 @@
 		built?: string[];
 		proof?: [string, string][];
 		parts?: [string, string][];
+		/** A second address worth opening, beside the product's own. */
+		also?: string;
 		/** Live windows shown instead of a capture, when the product itself sits behind a sign-in. */
 		demos?: { id: string; href: string; name: string; label?: string; note: string }[];
 		/** Not launched yet: shown folded under Work in progress, not among the products. */
 		wip?: boolean;
 	};
-	type WorkFacts = Pick<Work, 'id' | 'name' | 'href' | 'site' | 'source' | 'uses' | 'wip'> & { demos?: { id: string; href: string; label?: string }[] };
+	type WorkFacts = Pick<Work, 'id' | 'name' | 'href' | 'site' | 'source' | 'uses' | 'wip' | 'also'> & { demos?: { id: string; href: string; label?: string }[] };
 	const facts: WorkFacts[] = [
 		{
 			id: 'szkolyjogi',
@@ -105,10 +107,8 @@
 			href: 'https://webmail.zaur.app',
 			site: 'zaur.app',
 			source: 'https://github.com/nomideusz/zaur',
-			demos: [
-				{ id: 'mail-demo', href: 'https://demo.zaur.app', label: 'webmail.zaur.app' },
-				{ id: 'signup', href: 'https://register.zaur.app' }
-			],
+			also: 'https://register.zaur.app',
+			demos: [{ id: 'mail-demo', href: 'https://demo.zaur.app', label: 'webmail.zaur.app' }],
 			uses: ['svelte-calendar']
 		},
 		{
@@ -280,28 +280,6 @@
 	const clients = siteCards('client');
 	const side = siteCards('side');
 	const npmOf = (id: string) => pkgs.find((p) => p.id === id)?.npm;
-	// What a developer weighs before installing: license, Svelte range, dependency count.
-	const metaOf = (id: string) => {
-		const m = data.meta[id];
-		if (!m) return '';
-		return [m.license, m.svelte && `svelte ${m.svelte}`, t('packages.deps', { count: m.deps, n: m.deps })].filter(Boolean).join(' · ');
-	};
-	// The signature: pointing at a product lights the packages it is built from,
-	// pointing at a package lights the products that use it. No lines, only light.
-	let active = $state<{ kind: 'pkg' | 'work'; id: string } | null>(null);
-	const litPkgs = $derived.by(() => {
-		if (!active) return null;
-		if (active.kind === 'pkg') return new Set([active.id]);
-		return new Set(work.find((w) => w.id === active!.id)?.uses ?? []);
-	});
-	const litWork = $derived.by(() => {
-		if (!active) return null;
-		if (active.kind === 'work') return new Set([active.id]);
-		return new Set(work.filter((w) => w.uses.includes(active!.id)).map((w) => w.id));
-	});
-	const point = (kind: 'pkg' | 'work', id: string) => () => (active = { kind, id });
-	const leave = () => (active = null);
-
 	// Seeded once from the prerendered numbers; npm refreshes them on mount.
 	// svelte-ignore state_referenced_locally
 	let versions = $state<Record<string, string>>({ ...data.versions });
@@ -333,15 +311,11 @@
 		];
 	};
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
-	// svelte-ignore state_referenced_locally (prerendered: data never changes)
-	const pinned = data.usedVersions;
-	/** The version a product runs when it is behind the latest on npm; a product built from source is never behind. */
-	const behind = (product: string, pkg: string) => {
-		const used = pinned[product]?.[pkg];
-		const latest = versions[pkg];
-		return used && used !== 'workspace' && latest && used !== latest ? used : undefined;
+	/** A package's Docs and Source, where it has them; the links in its head. */
+	const linksOf = (id: string) => {
+		const p = pkgs.find((x) => x.id === id);
+		return { docs: p?.docs, source: p?.source };
 	};
-
 	// The package demonstrating itself: the whole page as its message keys, and
 	// back, from the bar or its row. zaur.app/#keys opens it that way (the demo
 	// site links there). What is being read stays put while everything around it
@@ -371,8 +345,8 @@
 	};
 
 	// The other package demonstrating itself: every capture held at its triangles,
-	// fewer or more of them, and back to the photos. zaur.app/#shapes opens it so.
-	let shapes = $state({ on: false, n: 60 });
+	// and back to the photos. zaur.app/#shapes opens it so.
+	let shapes = $state({ on: false });
 	const flipShapes = async () => {
 		shapes.on = !shapes.on;
 		if (location.hash === '#shapes') {
@@ -401,8 +375,8 @@
 		const hrefs = new Map(rows.map((r) => [r.name, r.href]));
 		return { before, after, parts: and.formatToParts(rows.map((r) => r.name)).map((p) => ({ text: p.value, href: p.type === 'element' ? hrefs.get(p.value) : undefined })) };
 	};
-	// A package whose demo is the page itself has its anchor in the index.
-	const inPlace = (id: string) => id === 'svelte-search' || id === 'svelte-i18n';
+	// The three whose demo is this page itself: its sky, its search, its languages.
+	const running = ['zaur-world', 'svelte-search', 'svelte-i18n'].map((id) => pkgs.find((p) => p.id === id)!);
 
 	// A scanned ticket: the phone opens this page with the booking in its address.
 	let ticket = $state<Ticket | null>(null);
@@ -483,20 +457,17 @@
 	{/if}
 {/snippet}
 
-<!-- A package under a product: the version the product runs, and the latest
-     beside it in Quiet when the product is behind. -->
-{#snippet chip(product: string, name: string, u: string)}
-	{@const used = behind(product, u)}
-	<li>
-		<a
-			class="chip"
-			href={npmOf(u)}
-			aria-label={used ? t('chip.behind', { pkg: u, name, used, latest: version(u) }) : undefined}
-		>
-			<span>{u}</span>
-			<span>{#if used}{used}<span class="latest">→ {version(u)}</span>{:else}{version(u)}{/if}</span>
-		</a>
-	</li>
+<!-- The facts behind a product or a site, shut until asked for. Every smaller site
+     gets the same fold, with its search figures inside, whatever they look like. -->
+{#snippet how(specs: [string, string][], uses: string[], extra?: Snippet)}
+	<details class="how">
+		<summary>{t('work.details')}{@render toggle()}</summary>
+		{@render extra?.()}
+		<dl class="facts">
+			{#each specs as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
+			{#if uses.length}<div><dt>{t('nav.packages')}</dt><dd><a href="#packages">{uses.length} / {pkgs.length}</a></dd></div>{/if}
+		</dl>
+	</details>
 {/snippet}
 
 {#snippet card(c: Card)}
@@ -507,23 +478,11 @@
 			</a>
 		{/if}
 		<div class="site">
-			<h3>
-				{#if searching(c.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
-				<a href={c.href}>{c.name}</a>
-			</h3>
+			<h3><a href={c.href}>{c.name}</a></h3>
 			<p>{c.desc}</p>
-			{@render search(c.id)}
-			{#if c.uses?.length}
-				<ul class="chips">
-					{#each c.uses as u (u)}
-						{@render chip(c.id, c.name, u)}
-					{/each}
-				</ul>
-			{/if}
 		</div>
-		<dl>
-			{#each c.specs as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-		</dl>
+		{#snippet figures()}{@render search(c.id)}{/snippet}
+		{@render how(c.specs, c.uses ?? [], figures)}
 	</li>
 {/snippet}
 
@@ -534,10 +493,7 @@
 		<!-- The words come first in the markup, so a reader that skims (an agent, a screen reader)
 		     meets the facts before the live windows; .media takes the left column back by order. -->
 		<div class="case-body">
-			<h3>
-				{#if searching(w.id)}<span class="dot" class:off={!traffic} aria-hidden="true"></span>{/if}
-				<a href={w.href}>{title}</a>
-			</h3>
+			<h3><a href={w.href}>{title}</a></h3>
 			{#if host(w.href) !== title}<p class="meta">{host(w.href)}</p>{/if}
 			<p class="what">{w.what}</p>
 			{#if searching(w.id)}
@@ -548,18 +504,12 @@
 			<ul class="built">
 				{#each w.built ?? [] as b, i (i)}<li>{b}</li>{/each}
 			</ul>
-			<dl class="facts">
-				{#each w.proof ?? [] as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
-			</dl>
-			<ul class="chips">
-				{#each w.uses as u (u)}
-					{@render chip(w.id, w.name, u)}
-				{/each}
-			</ul>
 			<p class="go">
 				<a href={w.href}>{t('work.open', { host: host(w.href) })}</a>
+				{#if w.also}<a href={w.also}>{t('work.open', { host: host(w.also) })}</a>{/if}
 				{#if w.source}<a href={w.source}>{t('work.source')}</a>{/if}
 			</p>
+			{@render how(w.proof ?? [], w.uses)}
 		</div>
 		<div class="media">
 			{#if demos.length}
@@ -638,56 +588,40 @@
 	<nav class="tabs" aria-label={t('nav.sections')}>
 		<a href="#work">{t('nav.work')}</a>
 		<a href="#packages">{t('nav.packages')}</a>
-		<a href="#templates">{t('nav.templates')}</a>
 		<a href="#clients">{t('nav.clients')}</a>
+		<a href="#templates">{t('nav.templates')}</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
-	<!-- i18n.t, not t: both stay readable while the page shows its keys. -->
+	<!-- i18n.t, not t: it stays readable while the page shows its keys. -->
 	<button type="button" class="tool find" aria-label={i18n.t('nav.search')} onclick={() => (palette.open = true)}>
 		<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" /><path d="m15.5 15.5 5.5 5.5" /></svg>
 		<span class="tool-label">{i18n.t('nav.search')}</span>
 		<kbd aria-hidden="true">/</kbd>
 	</button>
-	<button type="button" class="tool keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t('nav.keys')}</button>
 	<!-- The language switch is @nomideusz/svelte-i18n's own component: it writes
 	     the locale cookie and moves to the same page under the new prefix. -->
 	<span class="lang"><LocaleSwitcher {i18n} {routing} labels={short} label={t('nav.language')} /></span>
 </header>
 
 <main id="main">
-	<div class="poster" class:pointing={litPkgs?.size} style:--rows={products.length}>
+	<div class="poster" style:--rows={products.length}>
 		<nav class="programme" aria-label={t('nav.products')}>
 			<ul>
 				{#each products as w (w.id)}
-					<li class:lit={litWork?.has(w.id)}>
-						<a
-							class="row"
-							href="#{w.id}"
-							onpointerenter={point('work', w.id)}
-							onpointerleave={leave}
-							onfocus={point('work', w.id)}
-							onblur={leave}
-						>
+					<li>
+						<a class="row" href="#{w.id}">
 							<span class="name">{w.name}</span>
 							<span class="ver">{w.kind}</span>
 						</a>
 						<!-- The row reads about the product; this opens it. -->
-						<a
-							class="out"
-							href={w.href}
-							aria-label={t('work.open', { host: host(w.href) })}
-							onpointerenter={point('work', w.id)}
-							onpointerleave={leave}
-							onfocus={point('work', w.id)}
-							onblur={leave}
-						>{host(w.href)} ↗</a>
+						<a class="out" href={w.href} aria-label={t('work.open', { host: host(w.href) })}>{host(w.href)} ↗</a>
 					</li>
 				{/each}
 			</ul>
 		</nav>
 
-		<section class="intro" aria-labelledby="who">
-			<div class="who">
+		<div class="intro">
+			<section class="who" aria-labelledby="who">
 				<h1 id="who">Bartosz Dymet</h1>
 				<img class="me" src={me} alt={t('intro.portrait')} width="480" height="480" />
 				<p class="role">{t('intro.role')}</p>
@@ -695,34 +629,15 @@
 					{t('intro.pitch', { products: num(products.length), packages: num(pkgs.length), templates: num(templateCount) })}
 					{#if tplRunning}{t('intro.running', { running: num(tplRunning) })}{/if}
 				</p>
-			</div>
+			</section>
 			<p class="links">
 				<a class="phone" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 				<a href={github}>GitHub</a>
 				<a href={linkedin}>LinkedIn</a>
-				<span class="intro-lang">{@render langs()}</span>
+				<span class="intro-lang"><LocaleSwitcher {i18n} {routing} labels={short} label={t('nav.language')} /></span>
 			</p>
-			<div class="kit">
-				<h2>{t('intro.kit')}</h2>
-				<p class="point">{t('intro.point')}</p>
-				<ul class="chips">
-					{#each pkgs as p (p.id)}
-						<li class:lit={litPkgs?.has(p.id)}>
-							<a
-								class="chip"
-								href="#pkg-{p.id}"
-								onpointerenter={point('pkg', p.id)}
-								onpointerleave={leave}
-								onfocus={point('pkg', p.id)}
-								onblur={leave}
-							>
-								<span>{p.id}</span><span>{version(p.id)}</span>
-							</a>
-						</li>
-					{/each}
-				</ul>
-			</div>
-		</section>
+			<Sky href="https://radiobartek.com" />
+		</div>
 	</div>
 
 	<section class="work" id="work" aria-labelledby="work-h">
@@ -735,69 +650,55 @@
 
 	<section class="packages" id="packages" aria-labelledby="packages-h">
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
-		<p class="lede">{t('packages.lede')} {t('packages.inPlace')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
-		<nav class="p-acts" aria-label={t('packages.acts')}>
-			<a href="#machine">{t('machine.title')}</a>
-			<a href="#darkroom">{t('darkroom.title')}</a>
-			<a href="#pkg-zaur-world">{t('sky.title', { city: 'Kraków' })}</a>
-			<a href="#install">{t('packages.installAll', { n: pkgs.length })}</a>
-		</nav>
+		<p class="lede">{t('packages.lede')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
 
-		<BookingMachine locale={intl} language={locale} {site} {version} {npmOf} usedIn={usedLine} />
-
-		<Darkroom locale={intl} {version} {npmOf} usedIn={usedLine}>
-			<p class="p-try">
-				<button type="button" class="p-keys" aria-pressed={shapes.on} onclick={flipShapes}>{t(shapes.on ? 'packages.geometrize.photos' : 'packages.geometrize.shapes')}</button>
-				{#if shapes.on}
-					<label class="p-n">
-						<input type="range" min="1" max="60" bind:value={shapes.n} aria-label={t('packages.geometrize.count')} />
-						<span>{shapes.n}</span>
-					</label>
-					<!-- fewer: the fit is in order, so dropping its tail leaves the coarse picture -->
-					{@html `<style>.geometrize > svg > g > :nth-child(n + ${shapes.n + 1}) { display: none }</style>`}
-				{/if}
-				<span class="p-hint">{t('packages.geometrize.hint')}</span>
-			</p>
+		<Darkroom locale={intl} {version} {npmOf} {linksOf} usedIn={usedLine}>
+			<button type="button" class="p-keys" aria-pressed={shapes.on} onclick={flipShapes}>{t(shapes.on ? 'packages.geometrize.photos' : 'packages.geometrize.shapes')}</button>
 		</Darkroom>
 
-		<Sky href="https://radiobartek.com" locale={intl} version={version('zaur-world')} npm={npmOf('zaur-world') ?? ''} used={usedLine('zaur-world')} />
+		<BookingMachine locale={intl} language={locale} {site} {version} {npmOf} {linksOf} usedIn={usedLine} />
 
-		<div class="pindex" id="install">
-			<h3>{t('packages.index')}</h3>
-			<ul class="ptable">
-				{#each pkgs as p (p.id)}
-					<li id={inPlace(p.id) ? `pkg-${p.id}` : undefined} class:shut={!opened[`row-${p.id}`]}>
-						<div class="p-id">
-							{#if inPlace(p.id)}<span class="p-name">{p.id}</span>{:else}<a class="p-name" href="#pkg-{p.id}">{p.id}</a>{/if}
-							<span class="p-ver">{version(p.id)}</span>
-							<PhoneFold id="row-{p.id}" name={p.id} />
-							{#if metaOf(p.id)}<p class="p-meta">{metaOf(p.id)}</p>{/if}
-						</div>
-						<div class="p-about">
-							<p>{p.desc}</p>
-							{#if inPlace(p.id) && usedLine(p.id)}<p class="p-meta"><UsedIn list={usedLine(p.id)!} /></p>{/if}
-						</div>
-						<Install cmd="npm i {p.name}" />
-						<p class="p-links">
+		<div class="here">
+			<h3>{t('packages.here')}</h3>
+			<ul>
+				{#each running as p (p.id)}
+					{@const used = usedLine(p.id)}
+					<li id="pkg-{p.id}">
+						<header>
+							<h4><a href={p.npm}>{p.id}</a></h4>
+							<PkgLinks docs={p.docs} source={p.source} />
+							<span>{version(p.id)}</span>
+						</header>
+						<p>{p.desc}</p>
+						<p class="p-try">
 							{#if p.id === 'svelte-search'}
 								<button type="button" class="p-keys" onclick={() => (palette.open = true)}>{t('nav.search')}</button>
 							{:else if p.id === 'svelte-i18n'}
 								<!-- i18n.t, not t: the switch stays readable while the page shows keys. -->
 								<button type="button" class="p-keys" aria-pressed={keys.on} onclick={flipKeys}>{i18n.t(keys.on ? 'packages.i18n.text' : 'packages.i18n.keys')}</button>
 							{:else}
-								<a href="#pkg-{p.id}">{t('packages.try')}</a>
+								<a class="p-keys" href="#sky">{t('sky.title', { city: 'Kraków' })}</a>
 							{/if}
-							{#if p.docs}<a href={p.docs}>{t('packages.docs')}</a>{/if}
-							<a href={p.npm}>{t('packages.npm')}</a>
-							{#if p.source}<a href={p.source}>{t('packages.source')}</a>{/if}
 						</p>
+						<div class="p-foot">
+							<Install cmd="npm i {p.name}" />
+							{#if used}<p class="p-used"><UsedIn list={used} /></p>{/if}
+						</div>
 					</li>
 				{/each}
 			</ul>
 		</div>
 	</section>
 
-		<div class="folds">
+	<section class="websites" id="clients" aria-labelledby="clients-h">
+		<div class="strip"><h2 id="clients-h">{t('clients.heading')} <span class="n">· {clients.length}</span></h2></div>
+		<p class="lede">{t('clients.lede')}</p>
+		<ul class="sites">
+			{#each clients as c (c.id)}{@render card(c)}{/each}
+		</ul>
+	</section>
+
+	<section class="folds" aria-label={t('folds.label')}>
 		<details id="templates">
 			<summary>
 				<h2>{t('templates.heading')} · {templateCount}</h2>
@@ -851,17 +752,7 @@
 				</ul>
 			</div>
 		</details>
-	</div>
 
-	<section class="websites" id="clients" aria-labelledby="clients-h">
-		<div class="strip"><h2 id="clients-h">{t('clients.heading')} <span class="n">· {clients.length}</span></h2></div>
-		<p class="lede">{t('clients.lede')}</p>
-		<ul class="sites">
-			{#each clients as c (c.id)}{@render card(c)}{/each}
-		</ul>
-	</section>
-
-	<section class="folds" aria-label={t('folds.label')}>
 		<details id="wip">
 			<summary>
 				<h2>{t('wip.heading')} · {wip.length}</h2>
@@ -926,7 +817,7 @@
 		   width and squeeze the tabs below the caption floor. */
 		grid-template-columns:
 			minmax(max-content, 28vw) repeat(3, minmax(max-content, 9.4vw))
-			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto auto auto;
+			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto auto;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -967,7 +858,7 @@
 	.bar a:hover {
 		color: var(--orange);
 	}
-	/* The page's own controls, sitting among the tabs: search and the message keys. */
+	/* The page's own search, sitting among the tabs. */
 	.tool {
 		display: flex;
 		align-items: center;
@@ -983,10 +874,6 @@
 	}
 	.tool:hover {
 		color: var(--orange);
-	}
-	.tool[aria-pressed='true'] {
-		background: var(--paper);
-		color: var(--ink);
 	}
 	.tool svg {
 		display: none;
@@ -1029,17 +916,20 @@
 	}
 	.intro-lang {
 		display: none;
+		--asini-font-sans: inherit;
+		--asini-surface: var(--lilac);
+		--asini-text: var(--ink);
+		--asini-border: var(--ink);
+		--asini-border-strong: var(--ink);
+		--asini-accent: var(--ink);
+		--asini-radius-sm: 3px;
 	}
 	.foot-lang {
 		display: flex;
-	}
-	.foot-lang,
-	.intro-lang {
 		flex-wrap: wrap;
 		gap: 0.4rem 1rem;
 	}
-	.foot-lang [aria-current],
-	.intro-lang [aria-current] {
+	.foot-lang [aria-current] {
 		font-weight: 700;
 		text-decoration: none;
 	}
@@ -1063,9 +953,10 @@
 
 	/* The rows share the screen under the bar, so the sheet fills the first view
 	   whatever its shape. --u is 1vw until a row is shorter than the comp's 7.5vw,
-	   or the intro (about 51u tall, French wrapping most) taller than the screen
-	   under the bar, as in a window wider than 16:10; then the names and the
-	   intro shrink with it to fit. Rows are at least --row and grow to fill the
+	   or the column (the intro, the sky's board and its smallest window: under
+	   52u, French wrapping most) taller than the screen under the bar, as in a
+	   window wider than 16:10; then the names and the column shrink with it to
+	   fit. Rows are at least --row and grow to fill the
 	   column, so a tall window gets taller bands (names stay on their rules) and
 	   a short one, where the intro sets the height, gets no orange gap under the
 	   last row. */
@@ -1116,7 +1007,8 @@
 		padding-bottom: 1.05vw;
 		font-size: 1.53vw;
 	}
-	.lit .row {
+	.programme li:hover .row,
+	.programme li:focus-within .row {
 		background: var(--orange-lit);
 		box-shadow: inset 0 calc(-1 * var(--rule)) var(--paper);
 	}
@@ -1137,9 +1029,8 @@
 		background: var(--ink);
 		color: var(--paper);
 	}
-	.lit .name,
-	.lit .ver,
-	.lit .out:not(:hover) {
+	.programme li:hover :is(.name, .ver, .out:not(:hover)),
+	.programme li:focus-within :is(.name, .ver, .out:not(:hover)) {
 		color: var(--paper);
 	}
 	/* Focus is drawn inside the row, so it reads apart from the light. */
@@ -1152,11 +1043,10 @@
 		outline-offset: 0;
 	}
 
-	/* The intro: who, in the column beside the products. */
+	/* The intro: who, in the column beside the products; the sky takes the rest. */
 	.intro {
 		display: flex;
 		flex-direction: column;
-		padding: calc(2 * var(--u)) calc(1.6 * var(--u)) calc(1.6 * var(--u));
 		background: var(--lilac);
 	}
 	/* Name across the top; the portrait sits beside role and pitch. */
@@ -1200,20 +1090,6 @@
 		margin-top: calc(1.3 * var(--u));
 		font-size: max(13px, calc(1.05 * var(--u)));
 	}
-	.kit {
-		margin-top: auto;
-		padding-top: calc(1.6 * var(--u));
-	}
-	.kit h2 {
-		margin-bottom: calc(0.7 * var(--u));
-		font-weight: 700;
-		font-size: max(13px, calc(0.95 * var(--u)));
-	}
-	.kit .point {
-		margin: calc(-0.5 * var(--u)) 0 calc(0.7 * var(--u));
-		color: var(--quiet);
-		font-size: max(13px, calc(0.95 * var(--u)));
-	}
 	.links .phone {
 		display: none;
 	}
@@ -1239,20 +1115,9 @@
 	.chip span + span {
 		font-variant-numeric: tabular-nums;
 	}
-	/* The latest release beside the version a product runs, when it is behind. */
-	.chip .latest {
-		margin-left: 0.4em;
-		color: var(--quiet);
-	}
-	.chip:hover,
-	.chips .lit .chip {
+	.chip:hover {
 		background: var(--chip);
 	}
-	.pointing .kit li:not(.lit) .chip {
-		opacity: 0.35;
-	}
-	/* On the sheet the kit fills the rest of the column as a ruled list, a small
-	   programme of its own beside the big one. */
 	@media (min-width: 901px) {
 		/* The bar names me on the sheet, so the column opens on what I do. The heading
 		   stays for readers that skim by headings; at 900 and below it shows, as the
@@ -1272,28 +1137,11 @@
 		.role {
 			margin-top: 0;
 		}
-		.kit {
-			flex: 1;
-			display: flex;
-			flex-direction: column;
-			margin-top: calc(1.6 * var(--u));
+		.who {
+			padding: calc(2 * var(--u)) calc(1.6 * var(--u)) 0;
 		}
-		.kit .chips {
-			flex: 1;
-			display: grid;
-			grid-auto-rows: minmax(calc(2 * var(--u)), 1fr);
-			gap: 0;
-			border-top: var(--rule) solid var(--ink);
-		}
-		.kit .chip {
-			justify-content: space-between;
-			height: 100%;
-			min-height: 0;
-			padding: 0 calc(0.4 * var(--u));
-			border: 0;
-			border-bottom: var(--rule) solid var(--ink);
-			border-radius: 0;
-			font-size: max(13px, calc(1.25 * var(--u)));
+		.intro .links {
+			padding: 0 calc(1.6 * var(--u)) calc(1.3 * var(--u));
 		}
 	}
 
@@ -1311,18 +1159,6 @@
 	}
 	h3 a:hover {
 		text-decoration: underline;
-	}
-	.dot {
-		width: 0.75rem;
-		height: 0.75rem;
-		border-radius: 50%;
-		background: var(--live);
-	}
-	.sites .dot {
-		align-self: center;
-	}
-	.dot.off {
-		background: var(--quiet);
 	}
 	.meta {
 		margin-top: 0.3rem;
@@ -1348,9 +1184,43 @@
 		color: var(--quiet);
 	}
 	/* Inter Tight sets about 1.3 characters to the ch: 54ch holds a line near 70. */
-	.facts dd,
-	.sites > li > dl dd {
+	.facts dd {
 		max-width: 54ch;
+	}
+	/* The details of a case or a row: shut until asked for. */
+	.how > summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		min-height: 2.25rem;
+		font-weight: 700;
+		cursor: pointer;
+		list-style: none;
+	}
+	.how > summary::-webkit-details-marker {
+		display: none;
+	}
+	.how > summary:hover {
+		text-decoration: underline;
+	}
+	.how .toggle {
+		flex: none;
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0.15rem;
+		stroke-width: 2.5;
+	}
+	/* In a row the fold is an action, flush right like every other. */
+	.sites .how > summary {
+		justify-content: flex-end;
+		gap: 0.6rem;
+	}
+	.how[open] > summary {
+		margin-bottom: 0.5rem;
+	}
+	.how .facts {
+		margin: 0.75rem 0 0;
 	}
 
 	/* Linked daily charts: label, ninety days, the number, how it moved. */
@@ -1386,9 +1256,8 @@
 	.websites {
 		border-bottom: var(--rule-heavy) solid var(--ink);
 	}
-	/* Open source runs on into the folds, so the heavy rule closes the last fold. */
 	.packages {
-		border-bottom: var(--rule) solid var(--ink);
+		border-bottom: var(--rule-heavy) solid var(--ink);
 	}
 	.case {
 		display: grid;
@@ -1435,9 +1304,6 @@
 	}
 	.demo :global(.live) {
 		flex: 1;
-	}
-	.demo + .demo {
-		border-top: var(--rule) solid var(--ink);
 	}
 	.demo figcaption {
 		padding: 0.6rem 1.39vw;
@@ -1508,31 +1374,13 @@
 		margin-top: 1.1rem;
 		font-weight: 700;
 	}
+	.case .how {
+		margin-top: 1.1rem;
+		border-top: var(--rule) solid var(--ink);
+		padding-top: 0.4rem;
+	}
 
-	/* Packages: the shared building blocks, one ruled row each. */
-	/* The section's contents: the three demos by name, and the way past them. */
-	.p-acts {
-		display: grid;
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-		border-bottom: var(--rule) solid var(--ink);
-	}
-	.p-acts a {
-		padding: 0.7rem 1.39vw;
-		font-weight: 700;
-		font-size: max(1.125rem, 1.45vw);
-		line-height: 1.2;
-		letter-spacing: -0.02em;
-		text-decoration: none;
-	}
-	.p-acts a + a {
-		border-left: var(--rule) solid var(--ink);
-	}
-	.p-acts a:hover {
-		background: var(--orange);
-	}
-	.p-acts a:focus-visible {
-		outline-offset: -5px;
-	}
+	/* Packages: each one once, where it runs. */
 	.packages .lede,
 	.websites .lede {
 		max-width: none;
@@ -1540,8 +1388,8 @@
 		padding: 1.25rem 1.39vw;
 		border-bottom: var(--rule) solid var(--ink);
 	}
-	/* The index: what a developer came for, once the demos have made the case. */
-	.pindex h3 {
+	/* The three whose demo is this page: head, one line, a way to try it, the install. */
+	.here h3 {
 		padding: 1.4vw 1.39vw 0.8vw;
 		border-bottom: var(--rule) solid var(--ink);
 		font-weight: 800;
@@ -1549,158 +1397,104 @@
 		line-height: 1.05;
 		letter-spacing: -0.035em;
 	}
-	/* One grid across the rows, so the install lines and the links stand in columns. */
-	.ptable {
+	.here ul {
 		display: grid;
-		grid-template-columns: minmax(16rem, max-content) minmax(0, 1fr) max-content max-content;
-		column-gap: 1.5rem;
+		grid-template-columns: repeat(3, minmax(0, 1fr));
 	}
-	.ptable > li {
-		display: grid;
-		grid-column: 1 / -1;
-		grid-template-columns: subgrid;
-		align-items: baseline;
-		padding: 0.55rem 1.39vw;
+	.here li {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6rem;
+		min-width: 0;
+		padding-bottom: 1rem;
 	}
-	.p-id {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		gap: 0 1rem;
-		align-items: baseline;
+	.here li + li {
+		border-left: var(--rule) solid var(--ink);
 	}
-	.p-id .p-meta {
-		grid-column: 1 / -1;
-		margin: 0;
-	}
-	.ptable > li + li {
-		border-top: var(--rule) solid var(--ink);
-	}
-	.ptable > li:target {
+	.here li:target header {
 		background: var(--chip);
 	}
-	.p-about {
-		max-width: 62ch;
-		font-size: 0.9375rem;
-		line-height: 1.35;
+	.here header {
+		display: flex;
+		align-items: baseline;
+		gap: 1rem;
+		padding: 0.5rem 1.39vw 0.45rem;
+		border-bottom: var(--rule) solid var(--ink);
+		font-variant-numeric: tabular-nums;
 	}
-	.p-name {
+	.here h4 {
 		font-weight: 700;
 		font-size: max(1.125rem, 1.45vw);
 		letter-spacing: -0.02em;
+	}
+	.here h4 a {
 		text-decoration: none;
 	}
-	.p-name:hover {
+	.here h4 a:hover {
 		text-decoration: underline;
 	}
-	.p-ver {
-		font-variant-numeric: tabular-nums;
+	.here li > p,
+	.p-foot {
+		padding-inline: 1.39vw;
 	}
-	.p-meta {
-		margin-top: 0.3rem;
-		color: var(--quiet);
-		font-size: 0.875rem;
+	.p-foot {
+		display: grid;
+		gap: 0.4rem;
+		justify-items: start;
+		margin-top: auto;
 	}
-	.ptable :global(.p-install) {
-		margin-top: 0.4rem;
-	}
-	.p-try {
-		max-width: 54ch;
-		margin-top: 0.6rem;
+	.p-used {
 		color: var(--quiet);
 		font-size: 0.875rem;
 	}
 	.p-keys {
-		margin-right: 0.4rem;
+		display: inline-block;
 		padding: 0.1rem 0.5rem;
 		border: var(--rule) solid var(--ink);
 		border-radius: 3px;
 		background: var(--ink);
 		color: var(--paper);
 		font: inherit;
+		font-size: 0.875rem;
+		text-decoration: none;
 		cursor: pointer;
-	}
-	.p-hint {
-		display: block;
-		margin-top: 0.3rem;
-	}
-	.p-n {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4rem;
-		margin-right: 0.4rem;
-		color: var(--ink);
-		font-variant-numeric: tabular-nums;
-	}
-	.p-n input {
-		width: 8rem;
-		accent-color: var(--ink);
-	}
-	.p-n span {
-		min-width: 3ch;
 	}
 	.p-keys[aria-pressed='true'] {
 		background: none;
 		color: var(--ink);
 	}
-	.p-keys:disabled {
-		border-color: color-mix(in srgb, var(--ink) 35%, transparent);
-		background: none;
-		color: var(--quiet);
-		cursor: default;
-	}
-	.p-links {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		gap: 0.25rem 1rem;
-		justify-self: end;
-	}
-	.p-links .p-keys {
-		margin-right: 0;
-		font-size: 0.875rem;
-	}
-	/* A small laptop can't hold four tracks once a language runs long: the links
-	   take a line of their own under the description and the install line. */
-	@media (min-width: 901px) and (max-width: 1180px) {
-		.ptable {
-			grid-template-columns: minmax(14rem, max-content) minmax(0, 1fr) max-content;
-		}
-		.p-links {
-			grid-column: 2 / -1;
-		}
-	}
 
 	/* Folds: closed catalogs, opened in place. */
-	.folds details {
+	.folds > details {
 		border-bottom: var(--rule) solid var(--ink);
 		interpolate-size: allow-keywords;
 	}
 	.folds .case:last-child {
 		border-bottom: 0;
 	}
-	.folds details:last-child {
+	.folds > details:last-child {
 		border-bottom-width: var(--rule-heavy);
 	}
 	/* The one authored moment: a short height reveal where supported; elsewhere folds open instantly. */
-	.folds details::details-content {
+	.folds > details::details-content {
 		height: 0;
 		overflow: clip;
 		transition:
 			height 220ms cubic-bezier(0.2, 0, 0, 1),
 			content-visibility 220ms allow-discrete;
 	}
-	.folds details[open]::details-content {
+	.folds > details[open]::details-content {
 		height: auto;
 	}
-	.folds details:global(.jump)::details-content {
+	.folds > details:global(.jump)::details-content {
 		transition: none;
 	}
 	@media (prefers-reduced-motion: reduce) {
-		.folds details::details-content {
+		.folds > details::details-content {
 			transition: none;
 		}
 	}
-	summary,
+	.folds > details > summary,
 	.strip {
 		display: flex;
 		align-items: center;
@@ -1711,7 +1505,7 @@
 		cursor: pointer;
 		list-style: none;
 	}
-	summary::-webkit-details-marker {
+	.folds > details > summary::-webkit-details-marker {
 		display: none;
 	}
 	summary h2,
@@ -1731,10 +1525,10 @@
 	.strip .n {
 		color: var(--orange);
 	}
-	summary:hover {
+	.folds > details > summary:hover {
 		background: color-mix(in srgb, var(--ink) 6%, var(--ground));
 	}
-	summary:focus-visible {
+	.folds > details > summary:focus-visible {
 		outline-offset: -4px;
 	}
 	.toggle {
@@ -1746,10 +1540,10 @@
 		stroke: var(--ink);
 		stroke-width: 1.6;
 	}
-	details[open] .toggle .v {
+	details[open] > summary .toggle .v {
 		display: none;
 	}
-	details[open] summary {
+	.folds > details[open] > summary {
 		border-bottom: var(--rule) solid var(--ink);
 	}
 
@@ -1852,7 +1646,7 @@
 	   and what it is, the facts in a column of their own. */
 	.sites > li {
 		display: grid;
-		grid-template-columns: minmax(11rem, 18vw) minmax(0, 1fr) minmax(0, 1.1fr);
+		grid-template-columns: minmax(8rem, 10vw) minmax(0, 1.2fr) minmax(0, 1fr);
 		gap: 0 1.39vw;
 		align-items: start;
 		padding: 1.1rem 1.39vw 1.3rem;
@@ -1890,25 +1684,6 @@
 	.site > p:not(.meta) {
 		max-width: 52ch;
 		margin-top: 0.5rem;
-	}
-	.sites > li > dl {
-		font-size: 0.9375rem;
-	}
-	.sites > li > dl div {
-		display: grid;
-		grid-template-columns: 6.5rem 1fr;
-		gap: 0.75rem;
-		padding: 0.2rem 0;
-		border-top: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
-	}
-	.sites > li > dl div:first-child {
-		border-top: 0;
-	}
-	.sites > li > dl dt {
-		color: var(--quiet);
-	}
-	.site .chips {
-		margin-top: 0.9rem;
 	}
 
 	/* The page closes on one more programme row: the address, at poster scale. */
@@ -1957,11 +1732,10 @@
 		.intro-lang {
 			display: flex;
 		}
-		/* One row of sections; the name and the address are in the intro below. The
-		   keys stay in their index row; search keeps its place as a drawn icon. */
+		/* One row of sections; the name and the address are in the intro below;
+		   search keeps its place as a drawn icon. */
 		.mark,
-		.mail,
-		.keys {
+		.mail {
 			display: none;
 		}
 		.tool {
@@ -2025,14 +1799,13 @@
 			bottom: calc(0.2rem + 0.6rem + 1.45 * 0.8125rem);
 			font-size: 0.8125rem;
 		}
-		/* Who I am, then the products, then the packages they are built from: the
-		   intro's parts take their places in the stack around the programme. */
+		/* Who I am, then the products, then the sky to play with: the intro's parts
+		   take their places in the stack around the programme. */
 		.intro {
 			display: contents;
 		}
 		.who,
-		.intro .links,
-		.kit {
+		.intro .links {
 			background: var(--lilac);
 		}
 		.who {
@@ -2043,10 +1816,6 @@
 			order: -1;
 			margin: 0;
 			padding: 1rem 1rem 1.25rem;
-		}
-		.kit {
-			margin: 0;
-			padding: 1.25rem 1rem 1.5rem;
 		}
 		.intro h1 {
 			font-size: 2.5rem;
@@ -2063,13 +1832,6 @@
 		}
 		.links {
 			gap: 0.4rem 1.5rem;
-		}
-		/* No pointer to light anything with: the kit is chips under its heading. */
-		.kit .point {
-			display: none;
-		}
-		.kit h2 {
-			margin-bottom: 0.6rem;
 		}
 		.links .phone {
 			display: inline;
@@ -2126,48 +1888,29 @@
 		.websites .lede {
 			padding: 1rem;
 		}
-		.p-acts {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
-		}
-		.p-acts a {
-			display: flex;
-			align-items: center;
-			min-height: 2.75rem;
-			padding: 0.6rem 1rem;
-			font-size: 1rem;
-		}
-		.p-acts a:nth-child(odd) {
-			border-left: 0;
-		}
-		.p-acts a:nth-child(n + 3) {
-			border-top: var(--rule) solid var(--ink);
-		}
-		.pindex h3 {
+		.here h3 {
 			padding: 1.25rem 1rem 0.6rem;
 		}
-		.ptable {
-			display: block;
-		}
-		.ptable > li {
+		.here ul {
 			grid-template-columns: minmax(0, 1fr);
-			gap: 0.4rem;
-			padding: 1rem;
 		}
-		/* A row shut is its name and its install line: the reason for the list. */
-		.p-id {
-			grid-template-columns: minmax(0, 1fr) auto auto;
+		.here li + li {
+			border-top: var(--rule) solid var(--ink);
+			border-left: 0;
+		}
+		.here header {
 			align-items: center;
+			padding-inline: 1rem;
 		}
-		.ptable > .shut .p-about,
-		.ptable > .shut .p-meta,
-		.ptable > .shut .p-links {
-			display: none;
-		}
-		.p-links {
-			justify-self: start;
+		.here li > p,
+		.p-foot {
+			padding-inline: 1rem;
 		}
 		summary {
 			padding: 0 1rem;
+		}
+		.how > summary {
+			padding: 0;
 		}
 		.fold {
 			padding: 1.5rem 1rem 2.5rem;
@@ -2179,7 +1922,7 @@
 		.strip {
 			padding: 1rem 1rem 0.6rem;
 		}
-		/* The text runs round a small capture; chips and facts take the full width. */
+		/* The text runs round a small capture; the fold takes the full width. */
 		.sites > li {
 			display: flow-root;
 			padding: 1rem 1rem 1.25rem;
@@ -2192,12 +1935,9 @@
 		.sites h3 {
 			font-size: 1.375rem;
 		}
-		.site .chips,
-		.sites > li > dl {
+		.sites .how {
 			clear: both;
-		}
-		.sites > li > dl {
-			margin-top: 0.9rem;
+			padding-top: 0.5rem;
 		}
 		.t-src {
 			justify-self: start;
@@ -2271,15 +2011,15 @@
 			width: auto;
 			margin: 0;
 		}
-		.sites > li > dl {
+		.sites .how {
 			grid-column: 2;
+			clear: none;
 		}
 	}
 
 
 	/* A standalone action is at least 24px tall for a mouse, */
 	.go a,
-	.p-links a,
 	.t-src a,
 	a.t-src {
 		display: inline-flex;
@@ -2294,7 +2034,6 @@
 		}
 		.intro .links a,
 		.go a,
-		.p-links a,
 		.t-src a,
 		a.t-src,
 		.foot .small a {
@@ -2303,6 +2042,9 @@
 			min-height: 2.75rem;
 		}
 		.p-keys {
+			min-height: 2.75rem;
+		}
+		.how > summary {
 			min-height: 2.75rem;
 		}
 		/* The address is one line among the row's text, so its target grows without

@@ -9,6 +9,7 @@
 	import Tape from '#lib/Tape.svelte';
 	import Install from '#lib/Install.svelte';
 	import PhoneFold from '#lib/PhoneFold.svelte';
+	import PkgLinks from '#lib/PkgLinks.svelte';
 	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
 	import { opened } from '#lib/opened.svelte';
 	import { t } from '#lib/i18n';
@@ -20,6 +21,7 @@
 		site,
 		version,
 		npmOf,
+		linksOf,
 		usedIn
 	}: {
 		/** The Intl locale, for dates and money. */
@@ -29,6 +31,7 @@
 		site: string;
 		version: (id: string) => string;
 		npmOf: (id: string) => string | undefined;
+		linksOf: (id: string) => { docs?: string; source?: string };
 		usedIn: (id: string) => UsedList | null;
 	} = $props();
 
@@ -62,6 +65,7 @@
 	<section class={['cell', cls, { shut: gist && !opened[id] }]} id="pkg-{id}">
 		<header class="head" class:hot={booking.hot === id}>
 			<h4><a href={npmOf(id)}>{id}</a></h4>
+			<PkgLinks {...linksOf(id)} />
 			<span>{version(id)}</span>
 			{#if gist}<PhoneFold {id} name={id} />{/if}
 		</header>
@@ -515,9 +519,6 @@
 		}
 		.head {
 			align-items: center;
-		}
-		.head span {
-			margin-left: auto;
 		}
 		.shut .inside {
 			display: none;

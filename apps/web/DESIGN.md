@@ -1,6 +1,6 @@
 ---
 name: zaur.app
-description: One maker's estate as a Swiss programme poster; the product names are the poster, and pointing at one lights the packages it is built from.
+description: One maker's estate as a Swiss programme poster; the product names are the poster, and the real sky beside them is the first thing to play with.
 colors:
   orange: "#e75926"
   orange-lit: "#d54819"
@@ -87,14 +87,6 @@ components:
   programme-row-lit:
     backgroundColor: "{colors.orange-lit}"
     textColor: "{colors.paper}"
-  kit-row:
-    backgroundColor: "{colors.lilac}"
-    textColor: "{colors.ink}"
-    typography: "{typography.label}"
-    rounded: "{rounded.none}"
-  kit-row-lit:
-    backgroundColor: "{colors.chip}"
-    textColor: "{colors.ink}"
   chip:
     backgroundColor: "{colors.lilac}"
     textColor: "{colors.ink}"
@@ -135,11 +127,13 @@ components:
 
 **Creative North Star: "The Product Programme"**
 
-The page is a single Swiss concert poster in the International Typographic Style, pushed hard. The programme of the evening is the maker's products: a flat signal-orange field carries their names in giant black neo-grotesk, each with what it is set flush right like a venue. Beside it, a flat lilac column introduces the maker and lists the open-source packages the products are built from, as a smaller ruled programme of names and versions. Below the poster the page runs as a sequence of sections, each opened by a black band carrying its name at poster scale: the products as case studies with the real sites running inside them, the packages as three running demos and an index, folded catalogs, and the client sites as ruled rows. It closes on one more orange row: the address.
+The page is a single Swiss concert poster in the International Typographic Style, pushed hard. The programme of the evening is the maker's products: a flat signal-orange field carries their names in giant black neo-grotesk, each with what it is set flush right like a venue. Beside it, a flat lilac column introduces the maker, and under that stands a window on the real sky with its clock, slider and radio: the first thing to play with, on the first screen. Below the poster the page runs as a sequence of sections, each opened by a black band carrying its name at poster scale: the products as case studies with the real sites running inside them, the packages as running demos, the client sites as ruled rows, then the folded catalogs. It closes on one more orange row: the address.
 
-The first viewport scales as one object: every measure in it is in vw (or the poster unit, below), derived from a 2512px-wide comp, so the poster keeps its proportions at any width above 900px. Below 900px the sheet stops scaling and becomes a stack. The interaction is the poster answering back: pointing at a product lights the packages it is built from, pointing at a package lights the products that use it, and the swap is instant.
+The first viewport scales as one object: every measure in it is in vw (or the poster unit, below), derived from a 2512px-wide comp, so the poster keeps its proportions at any width above 900px. Below 900px the sheet stops scaling and becomes a stack. The poster answers back in two ways: a pointed-at product row lights instantly, and the sky moves when you drag its day.
 
-Everything shown is real. Windows run the live site for the flagships (a capture underneath until it loads); every smaller project shows a capture. Packages show themselves running in three acts (below), never as a table of thumbnails; the calendar's `<day-calendar>` widget loads when the machine nears view, its auto theme probing the page (`--accent` on `:root` names Signal Orange for it). Version numbers are read from npm, not typed. The search-traffic readout comes from Google Search Console and disappears when the source is unavailable: every site it covers shows the same daily charts and 28-day figures, good or bad, zeros included. No threshold hides a low one. The system refuses the SaaS hero and the wired node graph, and keeps the portfolio's case studies honest by filling them with running sites instead of mock-ups.
+Everything shown is real. Windows run the live site for the flagships (a capture underneath until it loads); every smaller project shows a capture. Packages show themselves running (below), never as a table of thumbnails; the calendar's `<day-calendar>` widget loads when the machine nears view, its auto theme probing the page (`--accent` on `:root` names Signal Orange for it). Version numbers are read from npm, not typed. The search-traffic readout comes from Google Search Console and disappears when the source is unavailable: every site it covers shows the same daily charts and 28-day figures, good or bad, zeros included. No threshold hides a low one. The system refuses the SaaS hero and the wired node graph, and keeps the portfolio's case studies honest by filling them with running sites instead of mock-ups.
+
+**The Once Rule.** A thing is stated once. Each package appears in one place, where it runs, with its head, its install line and its "Used in" names; no list of packages stands anywhere else. Facts behind a product or a site wait in its fold. A reader in a hurry gets names, one line each and something to play with; a reader who stays can open everything.
 
 **Key Characteristics:**
 - Three flat fields (orange programme, lilac column and media, warm-grey ground) plus ink bands, separated by ink rules; no fourth field colour.
@@ -154,21 +148,21 @@ Everything shown is real. Windows run the live site for the flagships (a capture
 A signal-orange and lilac poster on warm grey, held together by near-black ink.
 
 ### Primary
-- **Signal Orange** (orange): the programme field and the closing row. Also the hover colour of bar links, the count after a section name, the current month in a growth chart, and the radio's play button.
+- **Signal Orange** (orange): the programme field, the closing row and the sky's slider handle. Also the hover colour of bar links, the count after a section name, the current month in a growth chart, and the radio's play button.
 - **Burnt Orange** (orange-lit): the lit programme row and the hovered closing row, always paired with Paper text.
 - **Ember Rule** (orange-rule): the 2px rules between rows on orange; near-black with an orange cast so it reads as ink on orange without going dead grey.
 
 ### Secondary
-- **Programme Lilac** (lilac): the intro column beside the programme and the media column of every case study, where windows sit on it.
+- **Programme Lilac** (lilac): the intro column beside the programme and the media column of the darkroom and the demos.
 
 ### Neutral
 - **Ink** (ink): text, frames, rules, the top bar, section bands, focus outline, selection background. Also the `theme-color`.
 - **Warm Ground** (ground): page background, case bodies, site rows and folds. Fold summary hover is ground with 6% ink.
 - **Paper** (paper): text on ink, the lit row name, the inset rule under a lit row, window toolbars and backing.
-- **Chip White** (chip): fill of a lit or hovered chip or kit row, and of a package row reached by its anchor.
+- **Chip White** (chip): fill of a hovered chip, and of a package head reached by its anchor.
 - **Bar Rule** (bar-rule): the dividers between tabs inside the black bar.
-- **Quiet** (quiet): secondary text on the ground (spec labels, "Used in" lines, chart months) and the not-yet-live status dot.
-- **Live Green** (live): the status dot beside a product whose live readout has loaded. A signal, never a fill.
+- **Quiet** (quiet): secondary text on the ground (spec labels, "Used in" lines, chart months) and a live window's not-yet-live status dot.
+- **Live Green** (live): a live window's status dot, once the site has loaded. A signal, never a fill.
 
 ### Named Rules
 **The Three Fields Rule.** Orange is the programme, lilac is what sits beside or under it (the intro, the windows), warm grey is the reading ground. Ink bands open sections. A new surface takes one of these; it does not invent a fourth field colour.
@@ -191,7 +185,7 @@ A signal-orange and lilac poster on warm grey, held together by near-black ink.
 - **Title** (800, max(1.5rem, 2.2vw), -0.035em; 1.375rem on mobile): site row names; package names in the table run 700 at max(1.25rem, 1.8vw).
 - **Wordmark** (800, 2.24vw, -0.01em): the name in the bar, above 900px only.
 - **Body** (500, 1rem / 1.45): descriptions, capped at 52–66ch; a case's lead line runs at max(1rem, 1.1vw), section ledes at max(1.125rem, 1.45vw).
-- **Label** (500, max(13px, 0.95 poster units), tabular numerals): chips, kit rows (1.25 units), versions, tabs (1.2vw), programme "kind" (1.53vw).
+- **Label** (500, max(13px, 0.95 poster units), tabular numerals): chips, the sky's board, versions, tabs (1.2vw), programme "kind" (1.53vw).
 - **Caption** (500, 0.8125–0.875rem): the small text below the poster: meta lines, spec lists, window toolbars, figure captions, chart values, install lines. 0.8125rem for chart figures, 0.9375rem for spec lists and the footer, 0.875rem for the rest.
 
 ### Named Rules
@@ -203,19 +197,18 @@ A signal-orange and lilac poster on warm grey, held together by near-black ink.
 
 ## Layout
 
-Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black bar (3.66vw tall) runs across the top: the name in the first 28vw, four tabs in page order (Products, Packages, Templates, Clients) in fixed tracks, the address at the right. The poster below is a two-column grid: the programme at 63.42vw, the intro column filling the rest. The programme's rows share the screen under the bar (between 5vw and 11.25vw each), and the poster unit `--u` (1vw, defined page-wide) shrinks with them on short screens so the names and the intro still fit. The bar's name is the only one on the sheet: the intro's heading is visually hidden above 900px and the column opens on the role. It stacks role and portrait, the pitch (first person: the maker's own line about the human heart inside the products, then counts read from the page's own data, never typed; it does not mention AI) and links (GitHub, LinkedIn; no CV, no availability banner), then the package kit fills the rest of the column as a ruled list.
+Desktop opens on one vw-scaled sheet built from a 2512px comp. A sticky black bar (3.66vw tall) runs across the top: the name in the first 28vw, four tabs in page order (Products, Packages, Clients, Templates) in fixed tracks, the address at the right. The poster below is a two-column grid: the programme at 63.42vw, the intro column filling the rest. The programme's rows share the screen under the bar (between 5vw and 11.25vw each), and the poster unit `--u` (1vw, defined page-wide) shrinks with them on short screens so the names and the column still fit. The bar's name is the only one on the sheet: the intro's heading is visually hidden above 900px and the column opens on the role. It stacks role and portrait, the pitch (first person: the maker's own line about the human heart inside the products, then counts read from the page's own data, never typed; it does not mention AI) and links (GitHub, LinkedIn; no CV, no availability banner), then the sky fills the rest of the column, flush to its edges.
 
-Below the poster every section is full width. A case study is a two-track grid (media 1.35fr on lilac, body 1fr on ground) with a 1.39vw gutter. Products come straight after the poster, then the developer's path (Packages, then the Railway templates and Skills folds), then Clients, then the remaining folds (Work in progress, Side projects): an employer and a developer each reach their part by the second section. Smaller work runs as ruled rows: capture (18vw), name and description, facts. Side projects sit in a fold with the catalogs. Tables (packages, catalogs) are multi-track grids with flush-right actions. On desktop a case body rides sticky beside a taller window. Section gutters are 1.39vw; content inside uses rem.
+Below the poster every section is full width. A case study is a two-track grid (media 1.35fr, body 1fr on ground) with a 1.39vw gutter. Products come straight after the poster, then Packages, then Clients, then every fold in one block (Railway templates, Skills, Work in progress, Side projects). Smaller work runs as ruled rows: capture (10vw), name and one line, a fold flush right. Tables (the catalogs) are multi-track grids with flush-right actions. On desktop a case body rides sticky beside a taller window. Section gutters are 1.39vw; content inside uses rem.
 
-At 900px and below the sheet becomes a stack: the bar is one row of four equal tabs (the name and address live in the intro, the languages join the intro's links), the name, role, pitch and links come first, then the programme, then the kit as wrapping chips under its heading (the pointing hint goes: there is nothing to point with), so the products sit on a phone's first screen; the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. A skip link leads to the content.
+At 900px and below the sheet becomes a stack: the bar is one row of four equal tabs (the name and address live in the intro, and the intro's links end on the language menu), the name, role, pitch and links come first, then the programme, then the sky, so the products sit on a phone's first screen and the sky is the next thing a thumb reaches; the programme goes full width with 13vw rows, every grid collapses to one `minmax(0, 1fr)` track, and side gutters become 1rem. A skip link leads to the content.
 
 The stack adapts by width class, not by scaling:
-- **Phones (600px and below):** a programme row sets its address at the top left and its kind at the top right, and gives the name the full width beneath them, still on the rule, so a long name never meets either (rows max(4.25rem, 18vw)). Site rows float a 7.5rem capture with the text running round it. A tab label too wide for its tab hyphenates or breaks rather than overlapping its neighbour.
-- **Tablets (601–900px):** site rows run as two columns, the capture in the first and text and facts in the second (the radio stays a full-width band above its words and facts).
+- **Phones (600px and below):** a programme row sets its address at the top left and its kind at the top right, and gives the name the full width beneath them, still on the rule, so a long name never meets either (rows max(4.25rem, 18vw)). Site rows float a 7.5rem capture with the text running round it, the fold under them. A tab label too wide for its tab hyphenates or breaks rather than overlapping its neighbour.
+- **Tablets (601–900px):** site rows run as two columns, the capture in the first and text and fold in the second.
 - **The bar above 900px** keeps the comp's vw tracks but never lets one shrink below its content, and its text never drops below 13px, so it neither overflows by the scrollbar's width nor squeezes the tabs on small laptops.
-- **Standalone actions** (Open and Source, Demo, On npm, Deploy on Railway) are at least 24px tall for a mouse.
-- **Touch (`pointer: coarse`):** links that stand alone as actions (intro links, Open and Source, Demo, On npm, Deploy on Railway, footer and language links), the install line and the demos' sliders grow to 44px. A programme row's address grows its target 0.5rem each way, without growing its type. Links inside running text stay as they are.
-- **Small laptops (901–1180px):** the package index runs on three tracks, its links on a line of their own, so a long language never pans the page sideways.
+- **Standalone actions** (Open and Source, Deploy on Railway) are at least 24px tall for a mouse.
+- **Touch (`pointer: coarse`):** links that stand alone as actions (intro links, Open and Source, a package's Docs and Source, Deploy on Railway, footer and language links), a fold's summary, the install line and the demos' sliders grow to 44px. A programme row's address grows its target 0.5rem each way, without growing its type. Links inside running text stay as they are.
 - **Large screens:** the root size grows above 1600px (`clamp(100%, 0.5vw + 0.5rem, 150%)`: 16px up to 1600, about 21px at 2560, 24px at most), so the rem-set reading text keeps pace with the vw-scaled poster.
 
 Anchors land just under the bar: 3.25rem scroll padding at 900px and below, max(4rem, 3.66vw + 0.75rem) above.
@@ -225,40 +218,33 @@ Anchors land just under the bar: 3.25rem scroll padding at 900px and below, max(
 Flat. There is no shadow, blur or gradient anywhere. Depth comes from field colour and ink rules: a 4px rule closes the poster, divides programme from intro and closes each section; 2px rules do everything else. The lit programme row draws a 2px Paper rule along its bottom edge using an inset box-shadow; that is a rule drawn on the row, not elevation.
 
 ### Named Rules
-**The Flat Sheet Rule.** Nothing lifts off the poster. State is shown by colour swaps (orange-lit, chip white, dimming to 0.35), never by shadow or movement.
+**The Flat Sheet Rule.** Nothing lifts off the poster. State is shown by colour swaps (orange-lit, chip white), never by shadow or movement.
 
 ## Shapes
 
-Square everything: fields, bands, windows, cards, kit rows and the fold toggle are sharp-cornered, outlined in 2px ink where they need an edge. Two exceptions are part of the world: small outlined things (chips, the install line, the window's Desktop/Mobile switch and Done button) have a 3px corner, and the live status dot is a circle. The fold toggle is a square 2px ink box with a drawn SVG plus that becomes a minus when open.
+Square everything: fields, bands, windows, cards and the fold toggle are sharp-cornered, outlined in 2px ink where they need an edge. Two exceptions are part of the world: small outlined things (chips, the install line, the window's Desktop/Mobile switch and Done button) have a 3px corner, and the live status dot is a circle. The fold toggle is a square 2px ink box with a drawn SVG plus that becomes a minus when open.
 
 ## Components
 
 ### Navigation (top bar)
-- **Style:** sticky black bar, Paper text, tabs separated by 2px Bar Rule dividers. Tabs name the sections they jump to; a fold reached by its tab opens. After the address sit the page's own tools: Search with its `/` key, and Keys, which shows every text as its message key (Paper fill while on).
+- **Style:** sticky black bar, Paper text, tabs separated by 2px Bar Rule dividers. Tabs name the sections they jump to; a fold reached by its tab opens. After the address sits the page's own search, with its `/` key.
 - **States:** links turn Signal Orange on hover; focus ring turns orange and sits inside the link (-3px offset).
 - **Mobile:** one row of four equal tabs; the name, address and language links live in the intro. Above 900px the bar ends on the language menu (LocaleSwitcher, square, ink on ink).
 
 ### Programme Row (signature)
 - **Style:** full-width orange row, product name at display scale left, what it is flush right, 2px Ember Rule between rows. Over the kind stands the product's address, bold and underlined with an arrow ("kino.net.pl ↗"). The row jumps to the case study; the address opens the product itself, so every product is one click from the first view.
-- **Lit (hover or focus, or a pointed package is used by it):** background Burnt Orange, name, kind and address in Paper, 2px Paper rule along the bottom. Instant swap, no transition; the swap is also the focus indicator. A hovered address fills Ink with Paper text.
-- **Behaviour:** pointing at a row lights every package it uses and dims the rest to 0.35. A product with no packages lights and dims nothing.
-
-### Package Kit
-- **Desktop:** a ruled list filling the rest of the intro column: one row per package, name left, version right, 2px ink rule between rows, label type at 1.25 units, rows sharing the space equally.
-- **Mobile:** the same links as wrapping outlined chips.
-- **Lit:** fill turns Chip White; pointing at a package lights the products that use it. A Quiet line under the kit heading says so ("Point at a product…"). A focused programme row draws a 3px Paper outline inside itself, so focus reads apart from the light.
+- **Lit (hover or focus):** background Burnt Orange, name, kind and address in Paper, 2px Paper rule along the bottom. Instant swap, no transition; the swap is also the focus indicator. A hovered address fills Ink with Paper text.
 
 ### Chips
 - **Style:** 2px ink outline, 3px corner, transparent, package name and version separated by 1em; sized in poster units (2.2 high, 0.55 padding), 2.25rem high on mobile.
-- **Use:** under a case study or site row, naming the packages it is built from, each linking to npm. In the templates fold, one chip per group (name and count, narrowed with the search) links to the group's heading.
-- **Version:** the version that product runs, read from its lockfile at build time. When it is behind the latest on npm, the latest follows in Quiet ("0.20.1 → 1.5.0") and the link's accessible name says both. A product that builds the package from source beside it shows the latest alone.
+- **Use:** in the templates fold, one chip per group (name and count, narrowed with the search) links to the group's heading. Never under a product: The Once Rule. A product's Details fold counts the packages it runs ("9 / 10"), linking to the section.
 - **Lit / hover:** fill turns Chip White.
 
 ### Section Band
 - **Style:** an open section starts on a full-width Ink band: name in Paper at band scale, nudged down 0.1em; the count after a middle dot in Signal Orange. Folds keep the Warm Ground summary, so ink means open and ground means folded.
 
 ### Case Study
-- **Style:** media on lilac (a live window, stacked demo windows with captions, a parts list, or a growth chart), body on ground: case title, a meta line, the lead, "What I built" as a square-bulleted list, a spec list with Quiet labels and 25% ink hairlines, chips, then bold action links. At 900px and below the title, meta line and lead come above the media, so no window shows before its name.
+- **Style:** media (a live window with an optional caption, or a capture), body on ground: case title, a meta line, the lead, the search charts, "What I built" as a square-bulleted list, bold action links, then a Details fold holding the spec list with Quiet labels and 25% ink hairlines. At 900px and below the title, meta line and lead come above the media, so no window shows before its name.
 
 ### Live Window
 - **Style:** 2px ink frame, a Paper toolbar (host, Desktop / Mobile switch, Open ↗), then a 16:10 screen (4:5 under 600px). Desktop renders the site at 1280 wide scaled to fit; Mobile at a real 390 wide, centred on lilac. A capture shows until the site loads; meanwhile a Quiet status dot before the host blinks (two steps, no easing; still under reduced motion) and a corner label reads "Loading the live site…". Loaded, the dot turns Live Green. The site is framed only when the window comes within half a screen of view, so windows never race each other.
@@ -266,38 +252,40 @@ Square everything: fields, bands, windows, cards, kit rows and the fold toggle a
 - **Touch:** toolbar controls are at least 2.25rem high.
 
 ### Site Row
-- **Style:** a 2px-framed capture (or the radio), then title, an optional search line, a short description and chips, then the spec list in its own column. One ruled row each.
+- **Style:** a 2px-framed capture, then title and a short description, then a Details fold flush right in its own column, holding the search charts and the spec list. Every row gets the same fold, whatever its figures look like. One ruled row each.
+
+### Details Fold
+- **Style:** a native `<details>`: "Details" in 700 with a small square plus and minus (1.5rem), opened instantly. Under a case it sits on a 2px rule, its label left and the toggle at the far right; in a row both stand flush right.
 
 ### Packages Section
-The section runs in three acts, then an index. Under the lede, a ruled strip names the three acts and "Install: all 10", so the way past the demos is on the first screen. The lede says the two packages without an act, svelte-search and svelte-i18n, run the page itself. A package's `#pkg-<id>` anchor lands where it demonstrates itself. Stats stay out: no download or search charts here. Everything marked as a call really ran in the visitor's tab. Whatever a demo fills in after load (a date, a weight, its tape, its files, the song on air) has its space from the first paint, so the page never jumps as a visitor scrolls past.
+Each package once, where it runs. Under the lede: the darkroom, the booking machine, then "Running on this page", the three whose demo is the page itself. A package's `#pkg-<id>` anchor lands in its own cell. Every cell has the same head (name to npm, Docs and Source, the version flush right) and ends in its install line and its "Used in" names, each name linking to that product or site on this page (Radio Bartek links out). Stats stay out: no download or search charts here. Everything marked as a call really ran in the visitor's tab. Whatever a demo fills in after load (a date, a weight, its tape, its files) has its space from the first paint, so the page never jumps as a visitor scrolls past.
 
-Every package that demonstrates here ends in its install line and its "Used in" names, each name linking to that product or site on this page (Radio Bartek links out, as it plays in the sky).
+At 900px and below the section folds what is secondary, by CSS alone so the first paint never jumps: svelte-scheduler, svelte-payments and svelte-notify shut to their head and one line (the total, the payment status, the email's subject), svelte-media to its head. The cell heads still light as the booking passes. A square plus and minus opens each; a link to a package opens its part. The calendar and the QR ticket stay open, as the booking's two ends. Above 900px nothing folds.
 
-At 900px and below the section folds what is secondary, by CSS alone so the first paint never jumps: svelte-scheduler, svelte-payments and svelte-notify shut to their head and one line (the total, the payment status, the email's subject), svelte-media and each index row to their head. The cell heads still light as the booking passes. A square plus and minus opens each; a link to a package opens its part. The calendar and the QR ticket stay open, as the booking's two ends. Above 900px nothing folds.
-
-### Booking Machine (act one, `BookingMachine.svelte`, `booking.svelte.ts`)
+### Booking Machine (`BookingMachine.svelte`, `booking.svelte.ts`)
 - **Style:** one sample booking through five ruled cells on a 12-track grid: svelte-calendar (paper) spanning two rows beside svelte-scheduler and svelte-payments (ground), then svelte-notify and svelte-qr (lilac) beside the tape. Each cell opens on a head: package name linking to npm, version flush right, 2px ink rule.
 - **The signal:** the booking passes through by turning each head Signal Orange in turn, an instant swap about 420ms apart. It runs once when the machine comes into view, so nobody meets it empty. Light, never a drawn line.
 - **Behaviour:** clicking any calendar event (an imported `.ics` included) books it; guests rerun the chain; dragging the booked class updates the email and ticket without rebooking; Pay and Refund go through `executeKeyedOperation`, so a second press comes back a duplicate, marked by a Signal Orange result line. A refund switches the email to the cancellation. It always says it is sample data.
+- **Calendar:** a click books; importing or subscribing to a calendar, and downloading one, wait behind an "Import .ics" fold under the grid, which opens by itself to report a result.
 - **Tape:** the ink log (`Tape.svelte`) of each real call and its return value, newest first, scrolling inside the row. Orange marks only a stopped replay. Also used in the darkroom.
 - **Scratch QR (`ScratchQr.svelte`):** the ticket's real code (Ink on Paper, 2px frame), L/M/Q/H switch. A pointer scratches it in lilac; the meter counts modules touched beside where a test decoder gave out (L 8%, M 11%, Q 17%, H 21%, measured with jsQR). Never claim the standard's 7–30% against modules: that counts codewords. It never says whether the code still reads; the visitor's phone does.
 
 ### Ticket View (`TicketView.svelte`, `ticket.ts`)
 - **Style:** the phone's reward for scanning: a full-screen Signal Orange sheet with the class name at poster scale, ruled facts, add-to-calendar links. Labelled a sample. The booking lives only in the address (`#ticket=`), validated on read. "Open the ticket here" reaches it without a second device.
 
-### Darkroom (act two, `Darkroom.svelte`, `fit.worker.ts`)
+### Darkroom (`Darkroom.svelte`, `fit.worker.ts`)
 - **Style:** the case grid: picture on lilac, readings on ground. The default picture is the maker's portrait, its fit prebuilt (`me.webp?shapes=100&geometrize`), replaying slowly then in a rush. Pointing at the picture opens a square loupe on the photo beneath, framed in 2px ink, the same size from any direction; a button shows the whole photo for a keyboard. Captures never appear here.
 - **Bring your own:** drop, paste or choose a photo, kept in the tab. `validateImageFile` checks it, `fitShapes` runs in a worker loaded on first need, presets refit. The weight in kB is the one large number. The svelte-media list shows the package's sizes, qualities and keys, encoded by the browser and saved by clicking; the copy says the server does this with sharp, because `processAndStore` cannot run here.
 
-### Sky (act three, `Sky.svelte`)
-- **Style:** zaur-world at full width, the poster's one non-flat picture because it is a window on the real sky, over an ink board: title, a clock at band scale, a 24-hour slider (paper rule, square orange handle), Now / Play 24 hours / weather looks / My sky (location only on that click), and Radio Bartek's tuner.
-- **Behaviour:** loads near view, pauses off-screen. Kraków by default, as the station's DJ talks about its weather.
+### Sky (`Sky.svelte`)
+- **Style:** zaur-world filling the rest of the poster's lilac column, flush to its edges, the poster's one non-flat picture because it is a window on the real sky, over an ink board: title with a link to the package, a clock, a 24-hour slider (paper rule, square orange handle), Now / Play 24 hours / weather looks, and Radio Bartek's tuner on one line. Measures in poster units above 900px; at 900px and below it follows the programme, the window at max(13rem, 30svh).
+- **Behaviour:** loads after first paint (the column's lilac stands in the window until then), pauses off-screen, and the now-playing line stops polling with it. Kraków always, as the station's DJ talks about its weather.
+
+### Running On This Page
+- **Style:** a heading at case-title scale over three ruled cells (one column at 900px and below): zaur-world, svelte-search, svelte-i18n. Head, description, one ink button that shows the package at work (back up to the sky, open the palette, flip the page to its message keys), install line, "Used in". A cell reached by its anchor fills its head Chip White.
 
 ### Search Palette (`Palette.svelte`)
 - **Style:** a native `<dialog>` from the bar, `/` or Ctrl+K: 4px ink frame on ground, ink at 55% behind. Shows each matching step of `src/lib/find.ts` (Polish-locale folding, then exact, edit distance and trigrams): the folded query, trigrams as 3px-corner chips filled Ink where the top result shares them, then up to eight ruled results (kind · name with why it matched · score), the current one Signal Orange. Four Try buttons when empty. A result inside a fold opens it. The Template Finder runs on the same matching. At 900px and below the bar shows it as a drawn icon.
-
-### Package Index
-- **Style:** one 2px-ruled row per package on one subgrid, so install lines and links stand in columns: name and version over a Quiet meta line read from npm at build (license · svelte range · dependency count), description, the install line, then Try it, Docs, On npm and Source. svelte-search and svelte-i18n demonstrate on the page itself, so their rows hold their anchors, and their buttons open the palette and flip the keys. A row reached by its anchor fills Chip White. At 900px and below a row shuts to its name, version and install line; its plus opens the description, meta and links.
 
 ### Install Line
 - **Style (`Install.svelte`):** the command and a bold "Copy" button in one 2px outline in the text's colour (Ink, Paper on the sky's board) with a 3px corner, split by a 2px rule; 0.875rem. The command still selects in one click where the clipboard is refused. The button reads "Copied" for two seconds, announced politely. Used for `npm i …` and the skill's `npx skills add …`.
@@ -322,7 +310,8 @@ At 900px and below the section folds what is secondary, by CSS alone so the firs
 - **Do** keep every first-viewport measure in vw or poster units above 900px so the poster scales as one sheet; switch to rem and a stack at 900px and below.
 - **Do** separate fields with ink rules: 4px between the poster's major fields and to close a section, 2px everywhere else.
 - **Do** show the real thing: live site windows with a capture underneath, npm versions read live, the Search Console readout hidden when unavailable.
-- **Do** light related items through the hover and focus link, with instant colour swaps and dimming to 0.35.
+- **Do** state each thing once, and keep a product's or site's secondary facts in its fold.
+- **Do** put something to play with on the first screen, and swap state instantly.
 - **Do** open every section on an ink band and add long catalogs inside a fold.
 - **Do** name an action by what it does ("Deploy on Railway", "Open kino.net.pl", "On npm").
 - **Do** use `minmax(0, 1fr)` for any track that holds windows or long words, so phones never pan sideways.
@@ -330,7 +319,7 @@ At 900px and below the section folds what is secondary, by CSS alone so the firs
 ### Don't:
 - **Don't** add shadows, gradients or blur; the only inset box-shadow allowed draws the lit row's Paper rule.
 - **Don't** round corners beyond 3px, and only on small outlined things (the live dot's circle is the one other exception).
-- **Don't** connect packages and products with drawn lines; the link is shown by lighting.
+- **Don't** list the packages anywhere but the demos they run in: no kit on the poster, no chips under products, no index.
 - **Don't** put numbers before product names, or type a usage figure that does not come from a live source.
 - **Don't** introduce a second typeface or a fourth field colour.
 - **Don't** set text below the caption floor (0.8125rem, 13px on the poster).

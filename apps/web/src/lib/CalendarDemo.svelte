@@ -136,15 +136,19 @@
 <div class="cal" bind:this={box}>
 	{#if events}<day-calendar {events} {locale} view="week-planner" {height} readonly="false" mincolumnwidth="100" oneventclick={pick} oneventmove={move}></day-calendar>{/if}
 </div>
-<div class="ics">
-	<label class="btn">{t('packages.calendar.import')}<input type="file" accept=".ics,.ical,.ifb,text/calendar" onchange={load} /></label>
-	<form onsubmit={subscribe}>
-		<input type="url" bind:value={feed} required pattern="(https|webcals?)://.+" placeholder="webcal://…" aria-label={t('packages.calendar.feed')} autocomplete="off" spellcheck="false" />
-		<button type="submit" class="btn" disabled={busy}>{t('packages.calendar.subscribe')}</button>
-	</form>
-	<button type="button" class="btn" disabled={!events} onclick={save}>{t('packages.calendar.export')}</button>
-	<span aria-live="polite">{note}</span>
-</div>
+<!-- The class to click is the point; a calendar of your own waits behind this. -->
+<details class="ics" open={!!note}>
+	<summary>{t('packages.calendar.import')}</summary>
+	<div>
+		<label class="btn">{t('packages.calendar.import')}<input type="file" accept=".ics,.ical,.ifb,text/calendar" onchange={load} /></label>
+		<form onsubmit={subscribe}>
+			<input type="url" bind:value={feed} required pattern="(https|webcals?)://.+" placeholder="webcal://…" aria-label={t('packages.calendar.feed')} autocomplete="off" spellcheck="false" />
+			<button type="submit" class="btn" disabled={busy}>{t('packages.calendar.subscribe')}</button>
+		</form>
+		<button type="button" class="btn" disabled={!events} onclick={save}>{t('packages.calendar.export')}</button>
+		<span aria-live="polite">{note}</span>
+	</div>
+</details>
 
 <style>
 	/* Holds the widget's height before it loads, so nothing below it moves. */
@@ -160,14 +164,25 @@
 		}
 	}
 	.ics {
+		padding: 0.5rem 1.39vw;
+		border-top: var(--rule) solid var(--ink);
+		font-size: 0.875rem;
+	}
+	summary {
+		font-weight: 700;
+		cursor: pointer;
+	}
+	.ics > div {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.4rem;
-		margin: 0;
-		padding: 0.6rem 1.39vw;
-		border-top: var(--rule) solid var(--ink);
-		font-size: 0.875rem;
+		margin-top: 0.5rem;
+	}
+	@media (pointer: coarse) {
+		summary {
+			padding-block: 0.65rem;
+		}
 	}
 	/* The page's .p-keys, which is scoped there. */
 	.ics form {

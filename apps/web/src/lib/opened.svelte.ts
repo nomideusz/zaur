@@ -3,12 +3,10 @@
 // reads this and the prerendered page never jumps.
 export const opened = $state<Record<string, boolean>>({});
 
-/** A link to a package (Try it, a search result, a shared address) opens its panel and its index row. */
+/** A link to a package (a search result, a shared address) opens its panel. */
 function open(hash: string | null | undefined) {
 	const id = hash && /^#pkg-(.+)$/.exec(hash)?.[1];
-	if (!id) return;
-	opened[id] = true;
-	opened[`row-${id}`] = true;
+	if (id) opened[id] = true;
 }
 
 export function watchOpened() {

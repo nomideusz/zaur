@@ -1,15 +1,12 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { t } from '#lib/i18n';
-	import Install from '#lib/Install.svelte';
-	import UsedIn, { type UsedList } from '#lib/UsedIn.svelte';
 	import type { WorldHandle } from '@nomideusz/zaur-world';
 
-	// The package at full width: tonight's real sky over Kraków, a slider through
-	// its 24 hours, its weather looks, and Radio Bartek played under it. The DJ
-	// talks about Kraków's weather, so that stays the default place; another sky
-	// only comes from the visitor's own click (and the browser's permission).
-	let { href, locale, version, npm, used }: { href: string; locale: string; version: string; npm: string; used: UsedList | null } = $props();
+	// The first thing on the page to play with: tonight's real sky over Kraków in
+	// the poster's column, a slider through its 24 hours, its weather looks, and
+	// Radio Bartek under it. The DJ talks about Kraków's weather, so it stays there.
+	let { href }: { href: string } = $props();
 
 	const api = $derived(new URL('/api/now-playing', href).href);
 	const stream = $derived(new URL('/stream.mp3', href).href);
@@ -26,9 +23,6 @@
 	let hour = $state(12);
 	let live = $state(true);
 	let look = $state<Look | null>(null);
-	let city = $state(geo.city);
-	let locating = $state(false);
-	let noLocation = $state(false);
 	let touring = $state(false);
 
 	const label = $derived(`${String(Math.floor(hour) % 24).padStart(2, '0')}:${String(Math.floor((hour % 1) * 60)).padStart(2, '0')}`);
@@ -84,20 +78,6 @@
 		tourFrame = requestAnimationFrame(step);
 	}
 
-	async function mine() {
-		locating = true;
-		noLocation = false;
-		try {
-			const place = await sky?.relocate();
-			if (place) city = sky?.city() ?? `${place.lat.toFixed(1)}, ${place.lon.toFixed(1)}`;
-			else noLocation = true;
-		} catch {
-			noLocation = true;
-		} finally {
-			locating = false;
-		}
-	}
-
 	async function refresh() {
 		try {
 			const j = await (await fetch(api)).json();
@@ -128,12 +108,15 @@
 		let clock: ReturnType<typeof setInterval> | undefined;
 		let gone = false;
 		hour = new Date().getHours() + new Date().getMinutes() / 60;
-		// The sky (and its ~25 kB) loads only when the band nears view, and stops when it leaves.
+		// The sky (and its ~25 kB) loads after the page has painted, and stops, with
+		// the now-playing line, when the band leaves the screen.
 		const io = new IntersectionObserver(
 			async ([e]) => {
 				if (!e.isIntersecting) {
 					sky?.pause();
 					stopTour();
+					clearInterval(timer);
+					timer = undefined;
 					return;
 				}
 				if (sky) sky.resume();
@@ -164,33 +147,26 @@
 	});
 </script>
 
-<section class="world" id="pkg-zaur-world" aria-labelledby="sky-h">
-	<canvas bind:this={canvas} aria-hidden="true"></canvas>
+<section class="world" id="sky" aria-labelledby="sky-h">
+	<div class="window"><canvas bind:this={canvas} aria-hidden="true"></canvas></div>
 	<div class="board">
 		<div class="name">
-			<h3 id="sky-h">{t('sky.title', { city })}</h3>
-			<p class="ver"><a href={npm}>zaur-world</a> {version}</p>
-			<div class="install"><Install cmd="npm i @nomideusz/zaur-world" /></div>
+			<h2 id="sky-h">{t('sky.title', { city: geo.city })}</h2>
+			<a href="#pkg-zaur-world">zaur-world</a>
 		</div>
-		<p class="what">{t('sky.lede')}</p>
 
 		<div class="clock">
 			<output class="time" for="sky-hour">{label}</output>
 			<label class="scrub">
 				<span class="sr">{t('sky.scrub')}</span>
 				<input id="sky-hour" type="range" min="0" max="23.99" step="0.05" value={hour} oninput={(e) => { stopTour(); scrubTo(+e.currentTarget.value); }} />
-				<span class="hours" aria-hidden="true"><span>00</span><span>06</span><span>12</span><span>18</span><span>24</span></span>
 			</label>
 		</div>
 
-		<div class="controls">
-			<div class="seg" role="group" aria-label={t('sky.controls')}>
-				<button type="button" aria-pressed={live && !look} onclick={toLive}>{t('sky.now')}</button>
-				<button type="button" aria-pressed={touring} onclick={tour}>{t(touring ? 'sky.stop' : 'sky.tour')}</button>
-				{#each looks as l (l)}<button type="button" aria-pressed={look === l} onclick={() => pickLook(l)}>{t(`sky.look.${l}`)}</button>{/each}
-				<button type="button" disabled={locating} onclick={mine}>{t(locating ? 'sky.locating' : 'sky.mine')}</button>
-			</div>
-			{#if noLocation}<p class="note" role="status">{t('sky.noLocation')}</p>{/if}
+		<div class="seg" role="group" aria-label={t('sky.controls')}>
+			<button type="button" aria-pressed={live && !look} onclick={toLive}>{t('sky.now')}</button>
+			<button type="button" aria-pressed={touring} onclick={tour}>{t(touring ? 'sky.stop' : 'sky.tour')}</button>
+			{#each looks as l (l)}<button type="button" aria-pressed={look === l} onclick={() => pickLook(l)}>{t(`sky.look.${l}`)}</button>{/each}
 		</div>
 
 		<div class="tuner">
@@ -206,7 +182,6 @@
 				{:else}{t('radio.idle')}{/if}
 			</p>
 		</div>
-		<p class="foot">{t('sky.radio')} {#if used}<span><UsedIn list={used} /></span>{/if}</p>
 	</div>
 	<audio
 		bind:this={audio}
@@ -218,63 +193,64 @@
 </section>
 
 <style>
+	/* The rest of the poster's column: the window takes what the board leaves. */
 	.world {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr);
-		border-bottom: var(--rule) solid var(--ink);
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		min-height: 0;
+		border-top: var(--rule) solid var(--ink);
 		background: var(--ink);
 		color: var(--paper);
 	}
-	/* A window on the real sky, the poster's one picture that isn't flat. */
+	/* A window on the real sky, the poster's one picture that isn't flat. Until it
+	   loads the column's lilac stands in it, so nothing flashes dark. */
+	.window {
+		position: relative;
+		flex: 1;
+		min-height: calc(9 * var(--u));
+		background: var(--lilac);
+	}
 	canvas {
+		position: absolute;
+		inset: 0;
 		display: block;
 		width: 100%;
-		height: min(58vh, 42vw);
-		min-height: 18rem;
+		height: 100%;
 	}
 	.board {
 		display: grid;
-		grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-		gap: 0.75rem 1.39vw;
-		padding: 1.1vw 1.39vw 1.2vw;
-		border-top: var(--rule) solid var(--ink);
+		gap: calc(0.6 * var(--u));
+		padding: calc(0.9 * var(--u)) calc(1.6 * var(--u)) calc(1.1 * var(--u));
+		font-size: max(13px, calc(0.95 * var(--u)));
 	}
-	h3 {
-		font-weight: 800;
-		font-size: max(2rem, 3.6vw);
-		line-height: 1.05;
-		letter-spacing: -0.035em;
+	.name {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
 	}
-	.ver {
-		margin-top: 0.2rem;
-		font-size: 0.875rem;
-		font-variant-numeric: tabular-nums;
-	}
-	.install {
-		margin-top: 0.5rem;
-	}
-	.what {
-		max-width: 62ch;
-		align-self: end;
+	h2 {
+		font-weight: 700;
+		font-size: max(1rem, calc(1.35 * var(--u)));
+		letter-spacing: -0.02em;
 	}
 	.clock {
-		grid-column: 1 / -1;
 		display: grid;
 		grid-template-columns: max-content minmax(0, 1fr);
-		gap: 1.39vw;
+		gap: calc(1.2 * var(--u));
 		align-items: center;
 	}
 	.time {
 		min-width: 3.1em;
 		font-weight: 800;
-		font-size: max(2.5rem, 5.4vw);
+		font-size: max(2rem, calc(3.2 * var(--u)));
 		line-height: 1;
 		letter-spacing: -0.04em;
 		font-variant-numeric: tabular-nums;
 	}
 	.scrub {
 		display: grid;
-		gap: 0.2rem;
 	}
 	/* The day as one long square-handled rule. */
 	input[type='range'] {
@@ -313,26 +289,15 @@
 	input[type='range']:focus-visible {
 		outline-color: var(--orange);
 	}
-	.hours {
-		display: flex;
-		justify-content: space-between;
-		color: color-mix(in srgb, var(--paper) 70%, transparent);
-		font-size: 0.8125rem;
-		font-variant-numeric: tabular-nums;
-	}
-	.controls {
-		min-width: 0;
-	}
 	.seg {
 		display: flex;
 		flex-wrap: wrap;
-		gap: 0.4rem;
-		font-size: 0.875rem;
+		gap: calc(0.35 * var(--u));
 		font-weight: 700;
 	}
 	.seg button {
-		height: 2.25rem;
-		padding: 0 0.7rem;
+		min-height: max(1.75rem, calc(2.2 * var(--u)));
+		padding: 0 calc(0.55 * var(--u));
 		border: var(--rule) solid var(--paper);
 		border-radius: 3px;
 		background: none;
@@ -340,27 +305,18 @@
 		font: inherit;
 		cursor: pointer;
 	}
-	.seg button:hover:not(:disabled, [aria-pressed='true']) {
+	.seg button:hover:not([aria-pressed='true']) {
 		border-color: var(--orange);
 		color: var(--orange);
 	}
 	.seg button[aria-pressed='true'] {
-		border-color: var(--paper);
 		background: var(--paper);
 		color: var(--ink);
-	}
-	.seg button:disabled {
-		opacity: 0.6;
-		cursor: default;
 	}
 	.seg button:focus-visible,
 	.listen:focus-visible,
 	a:focus-visible {
 		outline-color: var(--orange);
-	}
-	.note {
-		margin-top: 0.4rem;
-		font-size: 0.875rem;
 	}
 	.tuner {
 		display: flex;
@@ -373,14 +329,13 @@
 		align-items: center;
 		gap: 0.4rem;
 		flex: none;
-		height: 2.25rem;
+		min-height: max(1.75rem, calc(2.2 * var(--u)));
 		padding: 0 0.75rem 0 0.55rem;
 		border: 0;
 		background: var(--orange);
 		color: var(--ink);
 		font: inherit;
 		font-weight: 700;
-		font-size: 0.875rem;
 		cursor: pointer;
 	}
 	.listen:hover {
@@ -391,50 +346,56 @@
 		height: 1.1rem;
 		fill: currentColor;
 	}
+	/* One line, whatever is on air, so the column never changes height. */
 	.tuner p {
 		min-width: 0;
 		overflow: hidden;
 		white-space: nowrap;
 		text-overflow: ellipsis;
-		font-size: 0.875rem;
 	}
-	.tuner p span,
-	.foot span {
+	.tuner p span {
 		color: color-mix(in srgb, var(--paper) 70%, transparent);
 	}
-	.foot {
-		grid-column: 1 / -1;
-		max-width: 90ch;
-		font-size: 0.875rem;
-	}
 	@media (max-width: 900px) {
-		canvas {
-			height: 40vh;
+		.world {
+			border-top: 0;
+		}
+		.window {
+			flex: none;
+			height: max(13rem, 30svh);
 		}
 		.board {
-			grid-template-columns: minmax(0, 1fr);
-			padding: 1rem;
+			gap: 0.6rem;
+			padding: 0.9rem 1rem 1.1rem;
+			font-size: 0.875rem;
 		}
 		.clock {
 			gap: 0.75rem;
 		}
-		.tuner {
-			flex-wrap: wrap;
+		.seg {
+			gap: 0.3rem;
 		}
-		/* Its own lines under the button, kept open for the song that arrives after load. */
-		.tuner p {
-			flex-basis: 100%;
-			min-height: 3lh;
-			white-space: normal;
+		.seg button {
+			padding: 0 0.5rem;
 		}
 	}
 	@media (pointer: coarse) {
 		.seg button,
 		.listen {
-			height: 2.75rem;
+			min-height: 2.75rem;
 		}
 		.seg button {
 			min-width: 2.75rem;
+		}
+		input[type='range'] {
+			height: 2.75rem;
+		}
+		input[type='range']::-webkit-slider-thumb {
+			height: 2.75rem;
+			margin-top: calc(2px - 1.375rem);
+		}
+		input[type='range']::-moz-range-thumb {
+			height: 2.75rem;
 		}
 	}
 </style>
