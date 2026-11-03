@@ -10,14 +10,12 @@
 	"nav.work": "Produkty",
 	"nav.clients": "Klienci",
 	"nav.packages": "Pakiety",
-	"nav.templates": "Szablony",
 	"nav.language": "Język",
 	"nav.search": "Szukaj",
 
 	"intro.portrait": "Portret Bartosza Dymeta",
 	"intro.role": "Product engineer · Svelte i TypeScript · Kraków",
-	"intro.pitch": "Strony buduję od 1999 roku. Dziś tworzę czyste, szybkie produkty, w których wciąż bije ludzkie serce. Wszystko utrzymuję sam. Produkty: {products}, otwarte pakiety: {packages}, szablony Railway: {templates}.",
-	"intro.running": "Railway liczy działające z nich projekty: {running}.",
+	"intro.pitch": "Strony buduję od 1999 roku. Dziś tworzę czyste, szybkie produkty, w których wciąż bije ludzkie serce. Wszystko utrzymuję sam. Produkty: {products}, otwarte pakiety: {packages}.",
 
 	"work.heading": "Produkty",
 	"work.details": "Szczegóły",
@@ -115,7 +113,7 @@
 	"daily.note": "90 dni; sumy to ostatnie 28 dni wobec 28 wcześniejszych · {source}, do {date}",
 
 	"clients.heading": "Klienci",
-	"clients.lede": "Sklep internetowy i pięć stron firmowych, które buduję i utrzymuję.",
+	"clients.lede": "Sklep internetowy i sześć innych stron, które buduję i utrzymuję.",
 
 	"site.fixtar.desc": "Sklep z elektronarzędziami, który zbudowałem i prowadzę dla klienta: katalog, koszyk, płatności, zamówienia.",
 	"site.fixtar.specs.0.k": "Produkty",

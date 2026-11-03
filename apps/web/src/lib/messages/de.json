@@ -10,14 +10,12 @@
 	"nav.work": "Produkte",
 	"nav.clients": "Kunden",
 	"nav.packages": "Pakete",
-	"nav.templates": "Vorlagen",
 	"nav.language": "Sprache",
 	"nav.search": "Suchen",
 
 	"intro.portrait": "Porträt von Bartosz Dymet",
 	"intro.role": "Produktentwickler · Svelte und TypeScript · Krakau",
-	"intro.pitch": "Ich baue Websites seit 1999. Heute mache ich saubere, schnelle Produkte, in denen noch ein menschliches Herz schlägt. Alles betreibe ich selbst: {products} Produkte, {packages} Open-Source-Pakete und {templates} Railway-Vorlagen.",
-	"intro.running": "Railway zählt daraus {running} aktive Projekte.",
+	"intro.pitch": "Ich baue Websites seit 1999. Heute mache ich saubere, schnelle Produkte, in denen noch ein menschliches Herz schlägt. Alles betreibe ich selbst: {products} Produkte und {packages} Open-Source-Pakete.",
 
 	"work.heading": "Produkte",
 	"work.details": "Details",
@@ -115,7 +113,7 @@
 	"daily.note": "90 Tage; Summen: die letzten 28 gegen die 28 davor · {source}, bis {date}",
 
 	"clients.heading": "Kunden",
-	"clients.lede": "Ein Onlineshop und fünf Firmenwebsites, die ich baue und betreibe.",
+	"clients.lede": "Ein Onlineshop und sechs weitere Websites, die ich baue und betreibe.",
 
 	"site.fixtar.desc": "Shop für Elektrowerkzeuge, den ich für einen Kunden gebaut habe und betreibe: Katalog, Kasse, Zahlungen, Bestellungen.",
 	"site.fixtar.specs.0.k": "Produkte",

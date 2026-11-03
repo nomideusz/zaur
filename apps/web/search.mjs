@@ -1,30 +1,12 @@
-// The page's live numbers, served at /api/traffic. Google Search for
-// everything on the page that Search Console has, read with the yoga panel's
-// service account (GSC_SERVICE_ACCOUNT_JSON, readonly scope): every site gets
-// the same three, good or bad, clicks, impressions and average position, day
-// by day. npm downloads for every package. Cached for six hours, so Google and
-// npm see at most four rounds a day.
+// The page's live numbers, served at /api/traffic. Google Search for Szkoły
+// Jogi, the one site whose figures show, read with the yoga panel's service
+// account (GSC_SERVICE_ACCOUNT_JSON, readonly scope): clicks, impressions and
+// average position, day by day. npm downloads for every package. Cached for six
+// hours, so Google and npm see at most four rounds a day.
 import { createSign } from "node:crypto";
 
-// The whole property unless `pages` narrows it. The
-// Zaur suite and Friendly Festivals share zaur.app, each by its own hosts; the
-// apex is this page itself, and the package hub is counted with neither.
 const GSC_SITES = {
   szkolyjogi: { property: "sc-domain:szkolyjogi.pl" },
-  zaur: { property: "sc-domain:zaur.app", pages: "^https://(webmail|demo|register|music)\\.zaur\\.app/" },
-  thebest: { property: "sc-domain:thebest.travel" },
-  kino: { property: "sc-domain:kino.net.pl" },
-  kompi: { property: "sc-domain:kompi.pl" },
-  festivals: { property: "sc-domain:zaur.app", pages: "^https://festivals\\.zaur\\.app/" },
-  fixtar: { property: "https://fixtar.pl/" },
-  pikastro: { property: "sc-domain:pikastro.eu" },
-  wibroakustyka: { property: "sc-domain:wibroakustyka.ai" },
-  intertech: { property: "https://intertechpoland.pl/" },
-  polaczenie: { property: "sc-domain:gabinet-polaczenie.pl" },
-  kurcz: { property: "sc-domain:kurcz.pl" },
-  tutitutu: { property: "https://tutitutu.pl/" },
-  // The one package searched for by its own domain; the rest show npm downloads.
-  "svelte-calendar": { property: "sc-domain:svelte-calendar.xyz" },
 };
 
 const DAYS = 90;
@@ -78,10 +60,9 @@ export function summarize(rows, through) {
   return { through, days, now: sum(days.slice(-28)), before: sum(days.slice(-56, -28)) };
 }
 
-async function fetchSite(token, { property, pages }) {
+async function fetchSite(token, { property }) {
   const day = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
   const body = { startDate: day(DAYS + 10), endDate: day(1), dimensions: ["date"] };
-  if (pages) body.dimensionFilterGroups = [{ filters: [{ dimension: "page", operator: "includingRegex", expression: pages }] }];
   const res = await fetch(
     `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(property)}/searchAnalytics/query`,
     {
@@ -93,7 +74,7 @@ async function fetchSite(token, { property, pages }) {
   if (!res.ok) throw new Error(`${property} ${res.status}`);
   const rows = (await res.json()).rows ?? [];
   // Google returns only final days, usually through two or three days ago; a
-  // quiet site's newest row can be older, and its days still end there.
+  // quiet stretch's newest row can be older, and its days still end there.
   const newest = rows.reduce((d, r) => (r.keys[0] > d ? r.keys[0] : d), day(3));
   return summarize(rows, newest);
 }
@@ -134,8 +115,7 @@ async function fetchDownloads() {
   return out;
 }
 
-// One site failing leaves the others standing; without the Search Console key
-// the packages still get their downloads.
+// Without the Search Console key the packages still get their downloads.
 async function fetchSearch() {
   if (!process.env.GSC_SERVICE_ACCOUNT_JSON) return {};
   const token = await gscToken(JSON.parse(process.env.GSC_SERVICE_ACCOUNT_JSON));

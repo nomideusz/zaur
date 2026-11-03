@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { onMount, tick, type Snippet } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { keys } from '#lib/keys.svelte';
 	import { alternates, intlLocale, localizeHref, LocaleSwitcher } from '@nomideusz/svelte-i18n';
 	import { platesFor, phoneFor } from '#lib/plates';
@@ -221,8 +221,8 @@
 		{ id: 'tutitutu', name: 'tutitutu.pl', href: 'https://tutitutu.pl', basket: 'client' },
 		{ id: 'intertech', name: 'intertechpoland.pl', href: 'https://intertechpoland.pl', basket: 'client' },
 		{ id: 'polaczenie', name: 'gabinet-polaczenie.pl', href: 'https://gabinet-polaczenie.pl', basket: 'client' },
+		{ id: 'kurcz', name: 'kurcz.pl', href: 'https://kurcz.pl', basket: 'client', uses: ['svelte-i18n'] },
 		{ id: 'radiobartek', name: 'radiobartek.com', href: 'https://radiobartek.com', basket: 'side', live: true, uses: ['zaur-world'] },
-		{ id: 'kurcz', name: 'kurcz.pl', href: 'https://kurcz.pl', basket: 'side', uses: ['svelte-i18n'] },
 		{ id: 'kruk', name: 'kruk.live', href: 'https://kruk.live', basket: 'side' }
 	];
 	const websites: Site[] = siteFacts.map((s) => ({
@@ -284,15 +284,14 @@
 	// svelte-ignore state_referenced_locally
 	let versions = $state<Record<string, string>>({ ...data.versions });
 	let registryDown = $state(false);
-	// Google Search, live from the server (search.mjs, /api/traffic): clicks, impressions and
-	// average position for each of the last ninety days. Every site Search
-	// Console has shows the same three, however they look.
+	// Google Search for Szkoły Jogi, the one product whose figures show, live from the
+	// server (search.mjs, /api/traffic): clicks, impressions and average position
+	// for each of the last ninety days.
 	type Sum = { clicks: number; impressions: number; position: number | null };
 	type Search = { through: string; days: [string, number, number, number | null][]; now: Sum; before: Sum };
-	const searched = ['szkolyjogi', 'zaur', 'thebest', 'kino', 'kompi', 'festivals', 'fixtar', 'pikastro', 'wibroakustyka', 'intertech', 'polaczenie', 'kurcz', 'tutitutu'];
 	let traffic = $state<Record<string, Search> | null>(null);
 	let trafficDown = $state(false);
-	const searching = (id: string) => searched.includes(id) && !trafficDown && (!traffic || !!traffic[id]);
+	const searching = (id: string) => id === 'szkolyjogi' && !trafficDown && (!traffic || !!traffic[id]);
 	const tenths = new Intl.NumberFormat(intl, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 	const rank = (p: number | null) => (p === null ? '—' : tenths.format(p));
 	const compact = new Intl.NumberFormat(intl, { notation: 'compact' });
@@ -395,7 +394,7 @@
 		readTicket();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') showShapes();
-		// A link to a fold or into one (the Templates tab, a shared #tpl-n8n-queue) opens it. The
+		// A link to a fold or into one (a search result, a shared #tpl-n8n-queue) opens it. The
 		// page is too short to scroll to the fold until it has grown, and nothing
 		// reports the end of its reveal, so the fold opens without one: the scroll
 		// then finds the full page in the same layout pass.
@@ -454,12 +453,10 @@
 	{/if}
 {/snippet}
 
-<!-- The facts behind a product or a site, shut until asked for. Every smaller site
-     gets the same fold, with its search figures inside, whatever they look like. -->
-{#snippet how(specs: [string, string][], uses: string[], extra?: Snippet)}
+<!-- The facts behind a product or a site, shut until asked for. -->
+{#snippet how(specs: [string, string][], uses: string[])}
 	<details class="how">
 		<summary>{t('work.details')}{@render toggle()}</summary>
-		{@render extra?.()}
 		<dl class="facts">
 			{#each specs as [k, v], i (i)}<div><dt>{k}</dt><dd>{v}</dd></div>{/each}
 			{#if uses.length}<div><dt>{t('nav.packages')}</dt><dd><a href="#packages">{uses.length} / {pkgs.length}</a></dd></div>{/if}
@@ -478,8 +475,7 @@
 			<h3><a href={c.href}>{c.name}</a></h3>
 			<p>{c.desc}</p>
 		</div>
-		{#snippet figures()}{@render search(c.id)}{/snippet}
-		{@render how(c.specs, c.uses ?? [], figures)}
+		{@render how(c.specs, c.uses ?? [])}
 	</li>
 {/snippet}
 
@@ -586,7 +582,6 @@
 		<a href="#work">{t('nav.work')}</a>
 		<a href="#packages">{t('nav.packages')}</a>
 		<a href="#clients">{t('nav.clients')}</a>
-		<a href="#templates">{t('nav.templates')}</a>
 	</nav>
 	<a class="mail" href="mailto:bartek@zaur.app">bartek@zaur.app</a>
 	<!-- i18n.t, not t: it stays readable while the page shows its keys. -->
@@ -623,8 +618,7 @@
 				<img class="me" src={me} alt={t('intro.portrait')} width="480" height="480" />
 				<p class="role">{t('intro.role')}</p>
 				<p class="pitch">
-					{t('intro.pitch', { products: num(products.length), packages: num(pkgs.length), templates: num(templateCount) })}
-					{#if tplRunning}{t('intro.running', { running: num(tplRunning) })}{/if}
+					{t('intro.pitch', { products: num(products.length), packages: num(pkgs.length) })}
 				</p>
 			</section>
 			<p class="links">
@@ -694,39 +688,6 @@
 	</section>
 
 	<section class="folds" aria-label={t('folds.label')}>
-		<details id="templates">
-			<summary>
-				<h2>{t('templates.heading')} · {templateCount}</h2>
-				{@render toggle()}
-			</summary>
-			<div class="fold">
-				<p class="lede">{t('templates.lede')}</p>
-				<p class="t-note">{t('templates.stats', { deploys: num(tplDeploys), running: num(tplRunning) })} {t('templates.referral')}</p>
-				<div class="t-find">
-					<label>{t('templates.search')} <input type="search" bind:value={find} autocomplete="off" spellcheck="false" /></label>
-					<ul class="chips">
-						{#each groups as g (g.kind)}
-							<li><a class="chip" href="#tpl-{kindSlug(g.kind)}"><span>{kindName(g.kind)}</span><span>{g.items.length}</span></a></li>
-						{/each}
-					</ul>
-				</div>
-				{#each groups as g (g.kind)}
-					<h3 id="tpl-{kindSlug(g.kind)}">{kindName(g.kind)}</h3>
-					<ul class="table">
-						{#each g.items as tp (tp.slug)}
-							<li id="tpl-{tp.slug}">
-								<a class="t-name" href="#tpl-{tp.slug}">{tp.name}</a>
-								<p>{tp.desc}</p>
-								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
-							</li>
-						{/each}
-					</ul>
-				{:else}
-					<p class="t-none">{t('templates.none', { q: find.trim() })}</p>
-				{/each}
-			</div>
-		</details>
-
 		<details id="skills">
 			<summary>
 				<h2>{t('skills.heading')} · {skills.length}</h2>
@@ -765,6 +726,39 @@
 			<ul class="sites">
 				{#each side as c (c.id)}{@render card(c)}{/each}
 			</ul>
+		</details>
+
+		<details id="templates">
+			<summary>
+				<h2>{t('templates.heading')} · {templateCount}</h2>
+				{@render toggle()}
+			</summary>
+			<div class="fold">
+				<p class="lede">{t('templates.lede')}</p>
+				<p class="t-note">{t('templates.stats', { deploys: num(tplDeploys), running: num(tplRunning) })} {t('templates.referral')}</p>
+				<div class="t-find">
+					<label>{t('templates.search')} <input type="search" bind:value={find} autocomplete="off" spellcheck="false" /></label>
+					<ul class="chips">
+						{#each groups as g (g.kind)}
+							<li><a class="chip" href="#tpl-{kindSlug(g.kind)}"><span>{kindName(g.kind)}</span><span>{g.items.length}</span></a></li>
+						{/each}
+					</ul>
+				</div>
+				{#each groups as g (g.kind)}
+					<h3 id="tpl-{kindSlug(g.kind)}">{kindName(g.kind)}</h3>
+					<ul class="table">
+						{#each g.items as tp (tp.slug)}
+							<li id="tpl-{tp.slug}">
+								<a class="t-name" href="#tpl-{tp.slug}">{tp.name}</a>
+								<p>{tp.desc}</p>
+								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="t-none">{t('templates.none', { q: find.trim() })}</p>
+				{/each}
+			</div>
 		</details>
 	</section>
 
@@ -812,7 +806,7 @@
 		   width and squeeze the tabs below the caption floor. */
 		grid-template-columns:
 			minmax(max-content, 28vw) repeat(3, minmax(max-content, 9.4vw))
-			minmax(max-content, 10.4vw) minmax(max-content, 1fr) auto auto;
+			minmax(max-content, 1fr) auto auto;
 		align-items: stretch;
 		height: 3.66vw;
 		background: var(--ink);
@@ -846,8 +840,8 @@
 		border-right: var(--rule) solid var(--bar-rule);
 	}
 	.mail {
-		justify-items: start;
-		padding-left: 3.4vw;
+		justify-items: end;
+		padding-right: 1.31vw;
 		font-size: max(13px, 1.45vw);
 	}
 	.bar a:hover {
@@ -1729,10 +1723,10 @@
 	/* Below 900 the sheet stops scaling and becomes a stack. */
 	@media (max-width: 900px) {
 		.bar {
-			grid-template-columns: repeat(4, minmax(0, 1fr)) 2.75rem;
+			grid-template-columns: repeat(3, minmax(0, 1fr)) 2.75rem;
 			height: auto;
 		}
-		/* Four tabs fill a phone's bar; the language moves to the intro's links. */
+		/* The tabs fill a phone's bar; the language moves to the intro's links. */
 		.lang {
 			display: none;
 		}

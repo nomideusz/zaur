@@ -10,14 +10,12 @@
 	"nav.work": "Products",
 	"nav.clients": "Clients",
 	"nav.packages": "Packages",
-	"nav.templates": "Templates",
 	"nav.language": "Language",
 	"nav.search": "Search",
 
 	"intro.portrait": "Portrait of Bartosz Dymet",
 	"intro.role": "Product engineer · Svelte and TypeScript · Kraków",
-	"intro.pitch": "I've built websites since 1999. Now I make clean, fast products that still have a human heart inside. I run all of it myself: {products} products, {packages} open-source packages and {templates} Railway templates.",
-	"intro.running": "Railway counts {running} projects still running from them.",
+	"intro.pitch": "I've built websites since 1999. Now I make clean, fast products that still have a human heart inside. I run all of it myself: {products} products and {packages} open-source packages.",
 
 	"work.heading": "Products",
 	"work.details": "Details",
@@ -115,7 +113,7 @@
 	"daily.note": "90 days; totals are the last 28 against the 28 before · {source}, through {date}",
 
 	"clients.heading": "Clients",
-	"clients.lede": "An online shop and five business sites I build and run.",
+	"clients.lede": "An online shop and six other sites I build and run.",
 
 	"site.fixtar.desc": "Power-tools shop I built and run for a client: catalogue, checkout, payments, orders.",
 	"site.fixtar.specs.0.k": "Products",
