@@ -307,7 +307,7 @@
 		return [
 			{ label: t('daily.clicks'), days, values: s.days.map((d) => d[1]), now: now.clicks, change: change(now.clicks, before.clicks), fmt: num },
 			{ label: t('daily.impressions'), days, values: s.days.map((d) => d[2]), now: now.impressions, change: change(now.impressions, before.impressions), fmt: compact.format },
-			{ label: t('daily.position'), days, values: s.days.map((d) => d[3]), now: now.position, change: before.position === null ? '—' : t('daily.was', { position: rank(before.position) }), fmt: rank, line: true }
+			{ label: t('daily.position'), days, values: s.days.map((d) => d[3]), now: now.position, change: before.position === null ? '' : t('daily.was', { position: rank(before.position) }), fmt: rank, line: true }
 		];
 	};
 	const version = (id: string) => versions[id] ?? (registryDown ? '—' : '…');
@@ -344,16 +344,13 @@
 		setTimeout(() => settling.disconnect(), 1000);
 	};
 
-	// The other package demonstrating itself: every capture held at its triangles,
-	// and back to the photos. zaur.app/#shapes opens it so.
+	// zaur.app/#shapes, for the demo site's link: every capture held at its triangles.
 	let shapes = $state({ on: false });
-	const flipShapes = async () => {
-		shapes.on = !shapes.on;
-		if (location.hash === '#shapes') {
-			history.replaceState(null, '', location.pathname);
-			await tick();
-			document.querySelector('.sites .geometrize')?.scrollIntoView({ block: 'center' });
-		}
+	const showShapes = async () => {
+		shapes.on = true;
+		history.replaceState(null, '', location.pathname);
+		await tick();
+		document.querySelector('.sites .geometrize')?.scrollIntoView({ block: 'center' });
 	};
 
 	// svelte-search demonstrating itself: the search in the bar, over everything
@@ -397,7 +394,7 @@
 		track();
 		readTicket();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
-		if (location.hash === '#shapes') flipShapes();
+		if (location.hash === '#shapes') showShapes();
 		// A link to a fold or into one (the Templates tab, a shared #tpl-n8n-queue) opens it. The
 		// page is too short to scroll to the fold until it has grown, and nothing
 		// reports the end of its reveal, so the fold opens without one: the scroll
@@ -558,7 +555,7 @@
 	{#if traffic?.[id]}
 		{@render daily(searchRows(traffic[id]), 'Google Search Console', traffic[id].through)}
 	{:else if searching(id)}
-		<p class="meta">{t('search.reading')}</p>
+		<p class="meta reading">{t('search.reading')}</p>
 	{/if}
 {/snippet}
 
@@ -652,9 +649,7 @@
 		<div class="strip"><h2 id="packages-h">{t('packages.heading')} <span class="n">· {pkgs.length}</span></h2></div>
 		<p class="lede">{t('packages.lede')} {t('packages.hub')} <a href={hub}>svelte.zaur.app</a></p>
 
-		<Darkroom locale={intl} {version} {npmOf} {linksOf} usedIn={usedLine}>
-			<button type="button" class="p-keys" aria-pressed={shapes.on} onclick={flipShapes}>{t(shapes.on ? 'packages.geometrize.photos' : 'packages.geometrize.shapes')}</button>
-		</Darkroom>
+		<Darkroom locale={intl} {version} {npmOf} {linksOf} usedIn={usedLine} />
 
 		<BookingMachine locale={intl} language={locale} {site} {version} {npmOf} {linksOf} usedIn={usedLine} />
 
@@ -670,7 +665,7 @@
 							<span>{version(p.id)}</span>
 						</header>
 						<p>{p.desc}</p>
-						<p class="p-try">
+						<p>
 							{#if p.id === 'svelte-search'}
 								<button type="button" class="p-keys" onclick={() => (palette.open = true)}>{t('nav.search')}</button>
 							{:else if p.id === 'svelte-i18n'}
@@ -1221,6 +1216,10 @@
 	}
 	.how .facts {
 		margin: 0.75rem 0 0;
+	}
+	/* The charts' height while they load, so a flagship's body doesn't grow under a reader. */
+	.case .reading {
+		min-height: 7.25rem;
 	}
 
 	/* Linked daily charts: label, ninety days, the number, how it moved. */
@@ -1915,11 +1914,11 @@
 		.p-foot {
 			padding-inline: 1rem;
 		}
-		summary {
+		.folds > details > summary {
 			padding: 0 1rem;
 		}
-		.how > summary {
-			padding: 0;
+		.case .reading {
+			min-height: 12rem;
 		}
 		.fold {
 			padding: 1.5rem 1rem 2.5rem;
@@ -2011,7 +2010,7 @@
 	@media (min-width: 601px) and (max-width: 900px) {
 		.sites > li {
 			display: grid;
-			grid-template-columns: minmax(0, 2fr) minmax(0, 3fr);
+			grid-template-columns: minmax(0, 1fr) minmax(0, 3fr);
 			gap: 0 1.25rem;
 		}
 		.shot {

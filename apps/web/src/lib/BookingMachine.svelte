@@ -130,7 +130,7 @@
 			<div class="pad">
 				<ul class="ledger">
 					{#each ledger.rows as r (r.key)}
-						<li><code>{r.key}</code><span>{r.kind}</span><span>{r.amount}</span></li>
+						<li><code>{r.key}</code><span>{r.kind}</span><span>{pln.format(r.amount / 100)}</span></li>
 					{:else}
 						<li class="none">{t('machine.pay.empty')}</li>
 					{/each}
@@ -383,7 +383,7 @@
 		font-size: max(1.125rem, 1.45vw);
 	}
 	.ledger li {
-		grid-template-columns: minmax(0, 1fr) 3.25rem 4rem;
+		grid-template-columns: minmax(0, 1fr) 3.25rem 5.5rem;
 	}
 	.ledger li > :last-child {
 		text-align: right;

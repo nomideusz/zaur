@@ -4,7 +4,7 @@
 	// a dropped photo fits for real in a worker, loaded on that first request.
 	// Nothing leaves the tab. processAndStore needs sharp, so the files below are
 	// the browser's own encodes, cut to the package's sizes, qualities and keys.
-	import { onMount, type Snippet } from 'svelte';
+	import { onMount } from 'svelte';
 	import { PRESETS, placeholderToSvg, shapeCount, takeShapes, type GeometrizePlaceholder, type GeometrizePreset } from '@nomideusz/svelte-geometrize';
 	import { IMAGE_SIZES, SIZE_QUALITY, generateMediaKey, getStorageKey, validateImageFile } from '@nomideusz/svelte-media';
 	import portrait from '#lib/me.webp';
@@ -23,16 +23,13 @@
 		version,
 		npmOf,
 		linksOf,
-		usedIn,
-		children
+		usedIn
 	}: {
 		locale: string;
 		version: (id: string) => string;
 		npmOf: (id: string) => string | undefined;
 		linksOf: (id: string) => { docs?: string; source?: string };
 		usedIn: (id: string) => UsedList | null;
-		/** The switch that holds every capture on the page at its triangles. */
-		children?: Snippet;
 	} = $props();
 
 	const SHAPES = 100;
@@ -290,7 +287,6 @@
 				<Install cmd="npm i @nomideusz/svelte-geometrize" />
 				{#if usedGeometrize}<p class="used"><UsedIn list={usedGeometrize} /></p>{/if}
 			</div>
-			<div>{@render children?.()}</div>
 		</section>
 
 		<section id="pkg-svelte-media" class={['part', { shut: !opened['svelte-media'] }]}>

@@ -138,7 +138,10 @@
 </div>
 <!-- The class to click is the point; a calendar of your own waits behind this. -->
 <details class="ics" open={!!note}>
-	<summary>{t('packages.calendar.import')}</summary>
+	<summary>
+		{t('packages.calendar.import')}
+		<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16" /><path class="v" d="M12 4v16" /></svg>
+	</summary>
 	<div>
 		<label class="btn">{t('packages.calendar.import')}<input type="file" accept=".ics,.ical,.ifb,text/calendar" onchange={load} /></label>
 		<form onsubmit={subscribe}>
@@ -168,9 +171,34 @@
 		border-top: var(--rule) solid var(--ink);
 		font-size: 0.875rem;
 	}
+	/* The page's own fold: a square plus and minus, not the browser's triangle. */
 	summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
 		font-weight: 700;
 		cursor: pointer;
+		list-style: none;
+	}
+	summary::-webkit-details-marker {
+		display: none;
+	}
+	summary:hover {
+		text-decoration: underline;
+	}
+	svg {
+		flex: none;
+		width: 1.5rem;
+		height: 1.5rem;
+		padding: 0.15rem;
+		border: var(--rule) solid var(--ink);
+		fill: none;
+		stroke: var(--ink);
+		stroke-width: 2.5;
+	}
+	.ics[open] svg .v {
+		display: none;
 	}
 	.ics > div {
 		display: flex;
@@ -181,7 +209,7 @@
 	}
 	@media (pointer: coarse) {
 		summary {
-			padding-block: 0.65rem;
+			min-height: 2.75rem;
 		}
 	}
 	/* The page's .p-keys, which is scoped there. */
