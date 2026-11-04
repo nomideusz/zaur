@@ -34,7 +34,7 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	],
 	[
 		'Work and chat',
-		['affine', 'outline', 'huly', 'plane', 'openproject', 'teable', 'nocodb', 'penpot', 'moodle', 'rocketchat', 'fluxer', 'stalwart', 'stalwart-webmail']
+		['affine', 'outline', 'huly', 'plane', 'openproject', 'teable', 'nocodb', 'penpot', 'moodle', 'rocketchat', 'fluxer', 'stalwart-v1', 'stalwart-webmail']
 	],
 	[
 		'Media and community',
