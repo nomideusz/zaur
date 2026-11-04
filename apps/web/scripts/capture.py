@@ -5,6 +5,7 @@ Windows: 1280x800 at DPR 2, the live window's desktop width, scaled to 1200x750.
 Phone: 390x844 at DPR 2, kept at 780x1688 (<id>-phone.webp).
 Pages: whole pages for sites that cannot be framed, scrolled through in the
 window instead (windows/<id>-page.webp at 1280 wide, <id>-page-phone.webp at 780).
+Clock: a site whose look follows the time of day is shot at a set local hour.
 Each file gets a .webp.json provenance note, as DESIGN.md asks.
 """
 import io, json, re, sys
@@ -28,7 +29,8 @@ SITES = {
 WINDOWS = {
     'szkolyjogi': 'https://szkolyjogi.pl',
     'thebest': 'https://thebest.travel',
-    'kino': 'https://kino.net.pl',
+    # Its home is now the A-Z of towns; a town's page is the product.
+    'kino': 'https://kino.net.pl/tarnow',
     'kompi': 'https://kompi.pl',
     'festivals': 'https://festivals.zaur.app',
     'mail-demo': 'https://demo.zaur.app',
@@ -39,13 +41,17 @@ PAGES = {'fixtar': 'https://fixtar.pl'}
 FRAMES = {
     'szkolyjogi': ['https://szkolyjogi.pl/en/krakow/yoga-shala-krakow', 'https://szkolyjogi.pl/en/krakow/dzisiaj', 'https://szkolyjogi.pl/en/krakow'],
 }
+# Kino lights the next screening you can still catch, and shows nothing once the night's are over.
+CLOCK = {'kino': 16}
 CONSENT = re.compile(r'^\s*(akceptuj|zaakceptuj|zgadzam|accept|allow all|ok|rozumiem)', re.I)
 CAP = 6000  # tallest page kept, in CSS px
 HIDE = '::-webkit-scrollbar{display:none} html{scrollbar-width:none}'
 
-def shoot(browser, url, w, h, full=False):
+def shoot(browser, url, w, h, full=False, hour=None):
     page = browser.new_page(viewport={'width': w, 'height': h}, device_scale_factor=2,
                             is_mobile=w < 500, has_touch=w < 500, bypass_csp=True)
+    if hour is not None:
+        page.clock.install(time=datetime.now().replace(hour=hour, minute=0, second=0, microsecond=0))
     page.goto(url, wait_until='load', timeout=60000)
     page.add_style_tag(content=HIDE)
     for b in page.get_by_role('button').all():
@@ -75,17 +81,19 @@ def page_shot(img, w):
 
 ids = sys.argv[1:] or [*SITES, *WINDOWS]
 day = datetime.now().date().isoformat()
-desk = lambda url, w, h: f'{url} screenshotted with Playwright Chromium at {w}x{h}, DPR 2, scrollbars hidden, consent banner dismissed, on {day}; scaled to 1200x750 webp.'
+desk = lambda url, w, h, clock='': f'{url} screenshotted with Playwright Chromium at {w}x{h}, DPR 2, scrollbars hidden, consent banner dismissed, on {day}{clock}; scaled to 1200x750 webp.'
 with sync_playwright() as p:
     browser = p.chromium.launch()
     for id in ids:
         url = SITES.get(id) or WINDOWS[id]
+        hour = CLOCK.get(id)
+        clock = f', browser clock set to {hour}:00 that day' if hour is not None else ''
         if id in WINDOWS:
-            save(shoot(browser, url, 1280, 800).resize((1200, 750), Image.LANCZOS), id, desk(url, 1280, 800), 'windows')
+            save(shoot(browser, url, 1280, 800, hour=hour).resize((1200, 750), Image.LANCZOS), id, desk(url, 1280, 800, clock), 'windows')
         for n, u in enumerate(FRAMES.get(id) or ([url] if id in SITES else []), 1):
             save(shoot(browser, u, 1440, 900).resize((1200, 750), Image.LANCZOS), f'{id}-{n}', desk(u, 1440, 900))
-        save(shoot(browser, url, 390, 844), f'{id}-phone',
-             f'{url} screenshotted with Playwright Chromium at a 390x844 phone viewport, DPR 2, scrollbars hidden, consent banner dismissed, on {day}; kept at 780x1688 webp.')
+        save(shoot(browser, url, 390, 844, hour=hour), f'{id}-phone',
+             f'{url} screenshotted with Playwright Chromium at a 390x844 phone viewport, DPR 2, scrollbars hidden, consent banner dismissed, on {day}{clock}; kept at 780x1688 webp.')
         if id in PAGES:
             note = lambda w: f'{url} whole page screenshotted with Playwright Chromium at {w} wide, DPR 2, lazy images scrolled in, scrollbars hidden, consent banner dismissed, cut at {CAP}px tall, on {day}'
             save(page_shot(shoot(browser, url, 1280, 800, True), 1280), f'{id}-page', note(1280) + '; scaled to 1280 wide webp.', 'windows')
