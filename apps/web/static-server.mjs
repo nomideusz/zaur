@@ -122,10 +122,14 @@ const server = createServer(async (req, res) => {
     const ext = extname(resolved).toLowerCase();
     const type = TYPES[ext] ?? "application/octet-stream";
     // Only Kit's hashed build output is safe to cache forever; __data.json,
-    // og.png and the rest keep their names across deploys.
-    const cache = url.pathname.startsWith("/_app/immutable/")
-      ? "public, max-age=31536000, immutable"
-      : "no-cache";
+    // og.png and the rest keep their names across deploys. A miss is never kept:
+    // during a deploy a new page can ask the old server for a chunk it doesn't
+    // have yet, and a 404 cached for a year would leave that browser broken.
+    const cache = status === 404
+      ? "no-store"
+      : url.pathname.startsWith("/_app/immutable/")
+        ? "public, max-age=31536000, immutable"
+        : "no-cache";
     const { file, encoding } = await encodedCopy(resolved, req.headers["accept-encoding"]);
     // "no-cache" means revalidate, which takes something to revalidate against.
     const { size, mtimeMs } = await stat(file);
