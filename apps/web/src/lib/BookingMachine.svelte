@@ -94,6 +94,7 @@
 		{/snippet}
 		{@render cell('svelte-calendar', 'cal', calendar)}
 
+		<div class="col settle">
 		{#snippet scheduler()}
 			<div class="pad">
 				<p class="class">
@@ -116,11 +117,13 @@
 					<span aria-hidden="true">{t('machine.refund.policy')}</span>
 					{#each policies as x (x)}<button type="button" aria-pressed={booking.policy === x} onclick={() => { booking.policy = x; requote(); }}>{t(`machine.refund.${x}`)}</button>{/each}
 				</div>
-				<label class="range">
-					<span>{t('machine.refund.cancel', { h: booking.hours })}</span>
-					<input type="range" min="0" max="192" bind:value={booking.hours} oninput={requote} />
-				</label>
-				<p class="result" aria-live="polite">{t('machine.refund.back', { pct: q.refund.refundPercentage, amount: pln.format(q.refund.refundAmount) })}</p>
+				<div class="refund">
+					<label class="range">
+						<span>{t('machine.refund.cancel', { h: booking.hours })}</span>
+						<input type="range" min="0" max="192" bind:value={booking.hours} oninput={requote} />
+					</label>
+					<p class="result" aria-live="polite">{t('machine.refund.back', { pct: q.refund.refundPercentage, amount: pln.format(q.refund.refundAmount) })}</p>
+				</div>
 			</div>
 		{/snippet}
 		{#snippet schedulerGist()}{t('machine.price.total')} {pln.format(q.price.totalAmount)}{/snippet}
@@ -145,7 +148,9 @@
 		{/snippet}
 		{#snippet paymentsGist()}derivePaymentStatus → {q.status}{/snippet}
 		{@render cell('svelte-payments', 'pay', payments, paymentsGist)}
+		</div>
 
+		<div class="col deliver">
 		{#snippet notify()}
 			<div class="pad">
 				<div class="seg" role="group" aria-label={t('machine.mail.label')}>
@@ -165,6 +170,7 @@
 			</div>
 		{/snippet}
 		{@render cell('svelte-qr', 'ticket', qr)}
+		</div>
 
 		<div class="trace">
 			<Tape lines={booking.tape} label={t('machine.tape')} empty={t('machine.tapeEmpty')} />
@@ -204,7 +210,8 @@
 	}
 	.grid {
 		display: grid;
-		grid-template-columns: repeat(12, minmax(0, 1fr));
+		grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.15fr) minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr) auto;
 		border-bottom: var(--rule) solid var(--ink);
 	}
 	.cell {
@@ -225,35 +232,44 @@
 	.cell:target .head:not(.hot) {
 		background: var(--chip);
 	}
+	/* The cells read as the booking runs: left to right, each column downwards. */
+	.col {
+		display: flex;
+		flex-direction: column;
+		min-width: 0;
+	}
 	.cal {
-		grid-column: 1 / 8;
-		grid-row: 1 / span 2;
-		border-right: var(--rule) solid var(--ink);
+		grid-column: 1;
+		grid-row: 1;
 		background: var(--paper);
 	}
-	.price {
-		grid-column: 8 / -1;
+	.settle,
+	.deliver {
+		grid-row: 1 / span 2;
+		border-left: var(--rule) solid var(--ink);
 	}
-	.pay {
-		grid-column: 8 / -1;
+	.settle {
+		grid-column: 2;
+	}
+	.deliver {
+		grid-column: 3;
+	}
+	.pay,
+	.notify {
+		flex: 1;
+	}
+	.pay,
+	.ticket {
 		border-top: var(--rule) solid var(--ink);
 	}
 	.notify,
 	.ticket {
 		background: var(--lilac);
-		border-top: var(--rule) solid var(--ink);
-		border-right: var(--rule) solid var(--ink);
-	}
-	.notify {
-		grid-column: 1 / 5;
-	}
-	.ticket {
-		grid-column: 5 / 10;
 	}
 	.trace {
-		grid-column: 10 / -1;
+		grid-column: 1;
+		grid-row: 2;
 		position: relative;
-		min-height: 20rem;
 		border-top: var(--rule) solid var(--ink);
 		background: var(--ink);
 	}
@@ -261,6 +277,7 @@
 	.trace :global(.tape) {
 		position: absolute;
 		inset: 0;
+		min-height: 0;
 	}
 	.head {
 		display: flex;
@@ -457,6 +474,11 @@
 		flex: 1;
 		grid-template-rows: auto 1fr;
 	}
+	.refund {
+		display: grid;
+		gap: 0.7rem;
+		width: 100%;
+	}
 	/* Holds the code's height before it renders, so nothing below it moves. */
 	.ticket .pad {
 		min-height: 34rem;
@@ -475,31 +497,159 @@
 		min-height: 24rem;
 		border: 0;
 	}
-	/* With room, the code stands beside its controls and the row takes its height;
-	   the email scrolls inside what that leaves it. */
+	/* Everything at once: the machine is one screen under the bar, so the signal is
+	   seen the whole way. Only a long language or a short window makes it taller. */
 	@media (min-width: 1181px) {
+		.machine {
+			display: flex;
+			flex-direction: column;
+			min-height: clamp(36rem, 100svh - 3.66vw, 54rem);
+		}
+		.intro {
+			grid-template-columns: minmax(0, 1.5fr) minmax(0, 2.15fr);
+			gap: 0.1rem 1.39vw;
+			align-items: start;
+			padding-block: 0.5rem 0.55rem;
+		}
+		/* The title and its sample note on the left, so the lede costs two lines at most. */
+		h3 {
+			grid-row: auto;
+			font-size: max(1.75rem, 2.6vw);
+		}
+		.intro p:not(.sample) {
+			grid-area: 1 / 2 / span 2;
+			align-self: center;
+		}
+		.intro p {
+			font-size: 0.9375rem;
+		}
+		.intro .sample {
+			font-size: 0.8125rem;
+		}
+		.grid {
+			flex: 1;
+		}
+		.trace {
+			height: clamp(6rem, 14svh, 11rem);
+		}
+		.head {
+			padding-block: 0.25rem 0.2rem;
+		}
+		h4 {
+			font-size: max(1.0625rem, 1.15vw);
+		}
+		.hint {
+			padding-block: 0.3rem;
+			font-size: 0.8125rem;
+		}
+		.foot {
+			gap: 0.15rem 0.75rem;
+			padding-block: 0.3rem 0.35rem;
+		}
+		.foot :global(.p-install) {
+			font-size: 0.8125rem;
+		}
+		.used {
+			font-size: 0.8125rem;
+			line-height: 1.3;
+		}
+		.pad {
+			gap: 0.45rem;
+			padding-block: 0.5rem;
+		}
+		.class b {
+			font-size: max(1.25rem, 1.7vw);
+		}
+		.class span {
+			font-size: 0.8125rem;
+		}
+		.seg button {
+			height: 1.5rem;
+		}
+		.sum li,
+		.ledger li {
+			padding: 0.1rem 0;
+		}
+		.sum .total {
+			font-size: max(1.0625rem, 1.2vw);
+		}
+		/* A rerun adds lines; the ledger scrolls instead of pushing the column. */
+		.ledger {
+			max-height: 3.25rem;
+			overflow: auto;
+		}
+		.refund {
+			grid-template-columns: minmax(0, 1fr) auto;
+			gap: 0 0.75rem;
+		}
+		.range {
+			grid-area: 1 / 1 / 1 / -1;
+		}
+		.refund .result {
+			grid-area: 1 / 2;
+			pointer-events: none;
+		}
+		.act {
+			min-height: 1.875rem;
+		}
+		.result {
+			font-size: 0.8125rem;
+			line-height: 1.3;
+		}
+		/* Holds the code's height before it renders. */
 		.ticket .pad {
-			min-height: 22rem;
+			min-height: 15rem;
 		}
-		.ticket .pad > :global(.qr) {
-			width: 100%;
+		/* The email as a whole page seen small, scrolling inside what the column leaves. */
+		.mail {
+			position: relative;
+			min-height: 6rem;
+			overflow: hidden;
 		}
-		.mail,
 		.mail iframe {
-			min-height: 16rem;
+			position: absolute;
+			top: 0;
+			left: 0;
+			width: calc(100% / 0.72);
+			height: calc(100% / 0.72);
+			min-height: 0;
+			transform: scale(0.72);
+			transform-origin: 0 0;
+		}
+	}
+	/* A short laptop: the same cells with less air. */
+	@media (min-width: 1181px) and (max-height: 760px) {
+		.pad {
+			gap: 0.3rem;
+			padding-block: 0.35rem;
+		}
+		.foot {
+			padding-block: 0.2rem 0.25rem;
 		}
 	}
 	@media (max-width: 1180px) and (min-width: 901px) {
-		.notify {
-			grid-column: 1 / 8;
-		}
-		.ticket {
-			grid-column: 8 / -1;
-			border-right: 0;
+		.grid {
+			grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
 		}
 		.trace {
+			min-height: 11rem;
+		}
+		.deliver {
 			grid-column: 1 / -1;
-			min-height: 16rem;
+			grid-row: 3;
+			flex-direction: row;
+			border-top: var(--rule) solid var(--ink);
+			border-left: 0;
+		}
+		.notify {
+			flex: 1.35;
+			min-width: 0;
+		}
+		.ticket {
+			flex: 1;
+			min-width: 0;
+			border-top: 0;
+			border-left: var(--rule) solid var(--ink);
 		}
 	}
 	@media (max-width: 900px) {
@@ -512,17 +662,18 @@
 		}
 		.grid {
 			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: none;
+		}
+		.col {
+			display: contents;
 		}
 		.cell,
 		.trace {
 			grid-column: 1;
 			grid-row: auto;
-			border-right: 0;
 		}
-		.cal {
-			border-right: 0;
-		}
-		.price {
+		.price,
+		.notify {
 			border-top: var(--rule) solid var(--ink);
 		}
 		.head,

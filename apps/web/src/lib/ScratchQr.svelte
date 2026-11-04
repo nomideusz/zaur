@@ -204,23 +204,36 @@
 		text-decoration-thickness: 3px;
 		text-underline-offset: 0.2em;
 	}
-	/* The machine's wide row: the code beside its controls, not over them. */
+	/* The machine's narrow column: the code beside its switch, the words under both.
+	   It grows with the window, as a bigger code is easier to scan and to scratch. */
 	@media (min-width: 1181px) {
 		.qr {
-			grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-			column-gap: 1rem;
-			align-content: start;
-			align-items: start;
+			grid-template-columns: auto minmax(0, 1fr);
+			grid-template-rows: auto 1fr;
+			gap: 0.4rem 0.75rem;
+			width: 100%;
+			font-size: 0.8125rem;
+			line-height: 1.3;
 		}
 		.code {
-			grid-row: 1 / span 5;
+			grid-row: 1 / span 2;
+			width: clamp(8.5rem, 21svh, 15rem);
 		}
-		.qr > :not(.code) {
+		.seg,
+		.meta {
 			grid-column: 2;
+		}
+		.meter,
+		.actions {
+			grid-column: 1 / -1;
+			max-width: none;
 		}
 		/* The label takes its own line, so the four levels never split. */
 		.seg span {
 			flex-basis: 100%;
+		}
+		.seg button {
+			height: 1.5rem;
 		}
 	}
 	@media (pointer: coarse) {

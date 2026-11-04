@@ -33,6 +33,17 @@
 	let feed = $state('');
 	let busy = $state(false);
 	let height = $state(540);
+	let boxWidth = $state(0);
+	// Above a phone it stays a real planner, however narrow its column (the widget
+	// would swap to its list under 768px), and its height is what the column leaves.
+	let desktop = $state(false);
+	const HOUR = 64; // the planner's fixed hour, in px
+	const CHROME = 150; // its toolbar and day heads
+	// Five days from today (the widget rolls any week but a full one): the class names
+	// fit whole in a narrow column, and the booked class, under five days off, stands in them.
+	// The sample's evening classes all stand in view, with no scrolling to find the
+	// booked one: as many hours back from 21:00 as fit. An import shows the whole day.
+	const hours = $derived(desktop && !name ? `${21 - Math.min(14, Math.max(4, Math.floor((height - CHROME) / HOUR)))}-21` : '0-24');
 	let events = $derived(shown.length ? JSON.stringify(shown.map((x) => (isBooked(x) ? { ...x, color: '#e75926' } : x))) : '');
 
 	// A yoga studio's week (the names read the same in every language), repeated
@@ -122,19 +133,31 @@
 			([e]) => {
 				if (!e.isIntersecting) return;
 				near.disconnect();
-				if (matchMedia('(max-width: 900px)').matches) height = 440;
 				shown = sample();
 				import('@nomideusz/svelte-calendar/widget');
 			},
 			{ rootMargin: '50% 0px' }
 		);
 		near.observe(box);
-		return () => near.disconnect();
+		const wide = matchMedia('(min-width: 901px)');
+		const fit = () => {
+			desktop = wide.matches;
+			boxWidth = box.clientWidth;
+			height = desktop ? box.clientHeight : 440;
+		};
+		const sized = new ResizeObserver(fit);
+		sized.observe(box);
+		wide.addEventListener('change', fit);
+		return () => {
+			near.disconnect();
+			sized.disconnect();
+			wide.removeEventListener('change', fit);
+		};
 	});
 </script>
 
 <div class="cal" bind:this={box}>
-	{#if events}<day-calendar {events} {locale} view="week-planner" {height} readonly="false" mincolumnwidth="100" oneventclick={pick} oneventmove={move}></day-calendar>{/if}
+	{#if events}<day-calendar {events} {locale} view="week-planner" {height} {hours} mobile={desktop ? 'false' : 'auto'} pills={!desktop || boxWidth >= 900 ? 'true' : 'false'} days={desktop && !name ? '5' : '7'} readonly="false" mincolumnwidth={desktop ? '60' : '100'} oneventclick={pick} oneventmove={move}></day-calendar>{/if}
 </div>
 <!-- The class to click is the point; a calendar of your own waits behind this. -->
 <details class="ics" open={!!note}>
@@ -154,16 +177,25 @@
 </details>
 
 <style>
-	/* Holds the widget's height before it loads, so nothing below it moves. */
+	/* Takes what the column leaves, and holds it before the widget loads: the widget
+	   stands out of the flow, so its height never feeds back into the box. */
 	.cal {
-		min-height: 540px;
+		position: relative;
+		flex: 1;
+		min-height: 15rem;
 	}
-	day-calendar {
+	.cal :global(day-calendar) {
 		display: block;
+		position: absolute;
+		inset: 0;
 	}
 	@media (max-width: 900px) {
 		.cal {
+			flex: none;
 			min-height: 440px;
+		}
+		.cal :global(day-calendar) {
+			position: static;
 		}
 	}
 	.ics {

@@ -28,11 +28,13 @@ const pln = (x: number) => `${x.toFixed(2)} PLN`;
 /** The wall-clock time the calendar shows; toISOString would print UTC. */
 const wall = (d: Date) => new Date(+d - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 
-// The class's next Thursday at 18:00. Read in the browser only: a date baked in
+// The class's next Monday or Thursday at 18:00, never today: at most four days off, so
+// always in the five days the calendar shows. Read in the browser only: a date baked in
 // at build would be stale by the next visit. The fixed date keeps the prerender stable.
-function nextThursday() {
+function nextVinyasa() {
 	const d = new Date();
-	d.setDate(d.getDate() + ((11 - d.getDay()) % 7 || 7));
+	const until = (day: number) => (day - d.getDay() + 7) % 7 || 7;
+	d.setDate(d.getDate() + Math.min(until(1), until(4)));
 	d.setHours(18, 0, 0, 0);
 	return +d;
 }
@@ -148,7 +150,7 @@ export async function run() {
 /** First view: the next Vinyasa, booked once, so the machine is seen working. */
 export function start() {
 	if (booking.tape.length) return;
-	booking.start = nextThursday();
+	booking.start = nextVinyasa();
 	void run();
 }
 
