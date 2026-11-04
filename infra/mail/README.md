@@ -53,7 +53,7 @@ Both were recreated with `stalwart-cli create` (listener mirrors the 465 one wit
 
 ## Version and upgrades
 
-Production runs Stalwart v1.0.2, moved from v0.16.27 on 2026-11-03. The compose lives in Dokploy
+Production runs Stalwart v1.0.3 (v1.0.2 on 2026-11-03, moved from v0.16.27; v1.0.3 on 2026-11-05). The compose lives in Dokploy
 (`mail`). The container must stay named `mail` on `dokploy-network`, because mail2, register and
 the backup script all find it by that name.
 
@@ -68,13 +68,25 @@ before v1.0.2. What the move changed:
 
 - OAuth tokens are not migrated, so everyone signs in again. mail2 sends a rejected session to
   `/login`; IMAP, SMTP and app passwords carry on.
-- Unregistered OAuth client ids are refused. `zaur-mail2-prod` is an `x:OAuthClient` with
-  `firstParty: true`, since mail2 runs the sign-in on its own page. A new mail2 hostname needs its
-  redirect URI added there.
+- Unregistered OAuth client ids are refused. `zaur-mail2-prod` is an `x:OAuthClient`. A new mail2
+  hostname needs its redirect URI added there.
 - New v1.0.2 permissions (`sysEncryption*`, `sysExternalPublicKey*`, `sysSmimeTrustAnchor*`,
   `taskExternalPublicKeyMaintenance`) were granted to the System Administrator role by hand.
 - The search index is rebuilt from the copied mail on first boot with Meilisearch reachable.
 - 3 `x:SpamTrainingSample` objects whose blobs were already missing were not copied.
+
+v1.0.3 removed the `firstParty` field, which the release notes do not say. What that changed:
+
+- An OAuth client with empty `scopes` may only ask for `openid` and `offline_access`, and anything
+  else fails the whole sign-in with `invalid_scope`. `zaur-mail2-prod` now allows `mail`, `contacts`,
+  `calendars`, `files` and `security`. A scope mail2 requests must be listed there first.
+- Tokens are limited to what they requested: without `files` or `security`, Files and Settings →
+  Security disappear from the session's capabilities.
+- Refresh tokens issued as first-party are refused and deleted, so those sessions sign in again once.
+- `GET /api/auth/client?<authorize query>` runs the same checks as a sign-in without a password.
+  Probe it with mail2's scopes after any upgrade.
+- Default roles took the new permissions through one restart with
+  `STALWART_UPDATE_ROLE_PERMISSIONS=true`, since removed from the compose.
 
 The old `captain--stalwart-config` and `captain--stalwart-data` volumes are the v0.16 store as of
 the cutover, and `/root/mail-upgrade/state` is the migration state. Mail received since then exists

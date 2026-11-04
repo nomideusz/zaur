@@ -8,11 +8,16 @@ export interface StalwartOauthDiscovery {
 }
 
 const DISCOVERY_TTL_MS = 60 * 60_000;
+// Stalwart 1.0.3 holds a token to what it asked for, so Files and Settings → Security
+// need their scopes too. Each one must also be allowed on the OAuthClient's `scopes`, or
+// the whole sign-in is refused. Servers that do not know a scope filter it out below.
 const DEFAULT_SCOPES = [
 	'offline_access',
 	'urn:ietf:params:oauth:scope:mail',
 	'urn:ietf:params:oauth:scope:contacts',
-	'urn:ietf:params:oauth:scope:calendars'
+	'urn:ietf:params:oauth:scope:calendars',
+	'urn:ietf:params:oauth:scope:files',
+	'urn:stalwart:oauth:scope:security'
 ] as const;
 
 let cached:
