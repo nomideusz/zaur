@@ -217,11 +217,12 @@
 	}
 	/*
 	 * Every row is the same height and every baseline stays put, drawn either way, ranked
-	 * or not. A line rises less than its row, so however busy a site gets, its peak stays
-	 * clear of the line above, and the first peak clear of the rule over the table.
+	 * or not. A line rises a little past its row, tall enough for day and night to read at
+	 * a glance. Only a reading near the busiest site's peak goes that high, and the ground
+	 * under it hides what it passes. The head leaves the first peak room below the rule.
 	 */
 	thead th {
-		height: 30px;
+		height: 48px;
 		padding: 0 0 2px;
 		font-size: 12px;
 		font-weight: 400;
@@ -331,10 +332,10 @@
 		opacity: 1;
 	}
 	tbody tr {
-		height: 76px;
+		height: 80px;
 	}
 	tbody .plot {
-		--rise: 70px;
+		--rise: 104px;
 		touch-action: pan-y;
 	}
 	/* The last line's zero lies on the rule under it, so a quiet site draws no second rule. */
