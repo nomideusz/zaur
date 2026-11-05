@@ -8,7 +8,6 @@ import { defineConfig } from 'vite';
 const issuer = new URL(process.env.OIDC_ISSUER?.trim() || 'https://webmail.zaur.app').origin as `${string}.${string}`;
 
 export default defineConfig({
-	server: { fs: { allow: ['../../packages/ui'] } },
 	plugins: [
 		tailwindcss(),
 		sveltekit({

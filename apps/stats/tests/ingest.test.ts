@@ -153,11 +153,17 @@ test('the overview, and keeping only what a site keeps', () => {
 	recordHit(db, view('k1111111'), ctx('kompi'));
 	recordHit(db, view('k2222222'), ctx('kompi', { now: NOW - 95 * 86_400_000 }));
 	recordHit(db, view('k3333333'), ctx('zaur', { now: NOW - 400 * 86_400_000 }));
-	const line = overview(db, NOW)('kompi');
+	const all = overview(db, NOW);
+	const line = all('kompi');
 	assert.equal(line.live, 1);
 	assert.equal(line.today, 1);
-	assert.equal(line.trend.length, 30);
-	assert.equal(line.trend.at(-1)!.label, dayOf(NOW));
+	assert.equal(line.count, 1);
+	assert.equal(line.pulse.length, all.filled);
+	assert.equal(line.pulse.at(-1), 1);
+	assert.equal(line.was, 0);
+	// Every line shares one peak, whichever site holds it.
+	assert.equal(all.peak, 1);
+	assert.equal(all('kurcz').pulse.length, all.filled);
 	sweep(db, NOW);
 	const left = (db.prepare('SELECT id FROM views ORDER BY id').all() as { id: string }[]).map((r) => r.id);
 	assert.deepEqual(left, ['k1111111', 'k3333333']);

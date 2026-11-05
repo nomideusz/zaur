@@ -5,12 +5,9 @@ WORKDIR /app
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
-COPY packages/ui/package.json ./packages/ui/
 COPY apps/stats/package.json ./apps/stats/
 RUN pnpm install --frozen-lockfile --filter @zaur/stats...
 
-# The suite's design system: tokens, primitives and fonts.
-COPY packages/ui ./packages/ui
 COPY apps/stats ./apps/stats
 
 RUN pnpm --filter @zaur/stats build

@@ -1,23 +1,69 @@
 <script lang="ts">
 	import './layout.css';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import { resolve } from '$app/paths';
+	import { nf, siteNo } from '#lib/format';
 	import { SITES } from '#lib/sites';
+	import { PERIODS, readDays, readWho, viewHref, type Who } from '#lib/view';
 
 	let { children } = $props();
-	const current = $derived(page.params.site);
+
+	const site = $derived(page.params.site ?? null);
+	const live = $derived(page.route.id?.endsWith('/live') ?? false);
+	const who = $derived(readWho(page.url.searchParams));
+	const days = $derived(readDays(page.url.searchParams));
+	const tagged = $derived(page.url.searchParams.has('tag'));
+	const counts = $derived(page.data.counts as { mine: number; others: number } | undefined);
+
+	const whoes: [Who, string, () => number | undefined][] = [
+		['others', 'Others', () => counts?.others],
+		['mine', 'Mine', () => counts?.mine],
+		['all', 'All', () => undefined]
+	];
+	const whoHref = (w: Who) => viewHref({ site, who: w, days, live, extra: tagged ? { tag: page.url.searchParams.get('tag')! } : undefined });
+	const cur = (on: boolean) => (on ? ('page' as const) : undefined);
+
+	function chooseSite(e: Event) {
+		const value = (e.currentTarget as HTMLSelectElement).value;
+		void goto(viewHref({ site: value || null, who, days, live: live && !!value }));
+	}
+
+	// A site's number opens it, wherever you are.
+	function onkeydown(e: KeyboardEvent) {
+		if (e.metaKey || e.ctrlKey || e.altKey || !/^[0-9]$/.test(e.key)) return;
+		const target = e.target as HTMLElement;
+		if (target.closest('input, select, textarea, [contenteditable]')) return;
+		const to = SITES[e.key === '0' ? 9 : Number(e.key) - 1];
+		if (to) void goto(viewHref({ site: to.id, who, days, live }));
+	}
 </script>
 
+<svelte:window {onkeydown} />
+
 <header>
-	<a class="home" href={resolve('/')} aria-current={page.url.pathname === '/' ? 'page' : undefined}>Stats</a>
-	<nav aria-label="Sites">
+	<a class="mark" href={viewHref({ site: null, who, days })} aria-current={cur(!site)}>Stats</a>
+	<select class="field" aria-label="Site" value={site === 'all' || SITES.some((s) => s.id === site) ? site : ''} onchange={chooseSite}>
+		<option value="">Overview</option>
+		<option value="all">All sites</option>
 		{#each SITES as s (s.id)}
-			<a href={resolve('/s/[site]', { site: s.id })} aria-current={current === s.id ? 'page' : undefined}>{s.name}</a>
+			<option value={s.id}>{siteNo(s.id)} {s.name}</option>
 		{/each}
-		<a href={resolve('/s/[site]', { site: 'all' })} aria-current={current === 'all' ? 'page' : undefined}>All sites</a>
-	</nav>
+	</select>
+	<div class="filters">
+		<nav class="seg" aria-label="Whose visits">
+			{#each whoes as [w, label, n] (w)}
+				<a href={whoHref(w)} aria-current={cur(who === w)}>{label}{#if n() != null}<span class="n count">{nf.format(n()!)}</span>{/if}</a>
+			{/each}
+		</nav>
+		<nav class="seg" aria-label="Period">
+			{#each PERIODS as [d, label] (d)}
+				<a href={viewHref({ site, who, days: d })} aria-current={cur(!live && !tagged && days === d)}>{label}</a>
+			{/each}
+			<a href={viewHref({ site, who, days, live: true })} aria-current={cur(live)}>Live</a>
+		</nav>
+	</div>
 	<form method="POST" action="/auth/logout">
-		<button class="btn-tactile" type="submit">Sign out</button>
+		<button class="btn" type="submit">Sign out</button>
 	</form>
 </header>
 
@@ -26,73 +72,74 @@
 </main>
 
 <footer>
-	Places and networks: <a href="https://db-ip.com" rel="noopener noreferrer">IP Geolocation by DB-IP</a>. Addresses are read to find them and never kept.
+	<span>Places and networks: <a href="https://db-ip.com" rel="noopener noreferrer">IP Geolocation by DB-IP</a>. Addresses are read to find them and never kept.</span>
+	<span class="keys">Press a site's number to open it.</span>
 </footer>
 
 <style>
 	header {
 		display: flex;
 		align-items: center;
-		gap: 16px;
-		max-width: 1280px;
-		margin: 0 auto;
-		padding: 12px 16px;
+		gap: 18px;
+		padding: 9px var(--page-x);
+		border-bottom: 1px solid var(--rule);
 	}
-	.home {
+	.mark {
 		font-size: 15px;
 		font-weight: 700;
-		color: var(--z-ink);
+		font-stretch: 125%;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
 		text-decoration: none;
 	}
-	nav {
+	.filters {
 		display: flex;
-		flex: 1;
-		gap: 2px;
-		min-width: 0;
-		overflow-x: auto;
-		scrollbar-width: none;
+		gap: 12px;
+		margin-left: auto;
 	}
-	nav a {
-		padding: 4px 8px;
-		font-size: 13px;
-		color: var(--z-muted);
-		text-decoration: none;
-		white-space: nowrap;
-		border-radius: 6px;
-	}
-	nav a:hover {
-		background: var(--z-sunken);
-	}
-	nav a[aria-current='page'] {
-		color: var(--z-accent-ink);
-		background: var(--z-accent-soft);
+	.n {
+		margin-left: 6px;
+		font-size: 11px;
+		opacity: 0.85;
 	}
 	main {
-		max-width: 1280px;
-		margin: 0 auto;
-		padding: 4px 16px 24px;
+		padding: 0 var(--page-x);
 	}
 	footer {
-		max-width: 1280px;
-		margin: 0 auto;
-		padding: 0 16px 24px;
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: space-between;
+		gap: 4px 24px;
+		padding: 16px var(--page-x) 24px;
 		font-size: 12px;
-		color: var(--z-soft);
+		color: var(--soft);
 	}
-	footer a {
-		color: inherit;
-		text-decoration: underline;
-	}
-	@media (max-width: 720px) {
+	@media (max-width: 1040px) {
 		header {
 			flex-wrap: wrap;
-			justify-content: space-between;
+			gap: 10px;
 		}
-		nav {
+		.filters {
 			order: 3;
 			flex-basis: 100%;
 			flex-wrap: wrap;
-			overflow: visible;
+			margin-left: 0;
+		}
+		form {
+			margin-left: auto;
+		}
+	}
+	@media (max-width: 720px) {
+		header select {
+			flex: 1;
+			min-width: 0;
+		}
+		.filters {
+			flex-direction: column;
+			gap: 8px;
+		}
+		.keys {
+			display: none;
 		}
 	}
 </style>

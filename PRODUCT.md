@@ -2,7 +2,7 @@
 
 <!-- impeccable:product-schema 1 -->
 
-Scope: the Zaur suite, meaning **Zaur Mail** (`apps/mail2`), **Register** (`apps/register`) and **Zaur Music** (`apps/music`). The apex landing site `apps/web` is a different product with its own `PRODUCT.md` and `DESIGN.md`.
+Scope: the Zaur suite, meaning **Zaur Mail** (`apps/mail2`), **Register** (`apps/register`) and **Zaur Music** (`apps/music`). The apex landing site `apps/web` is a different product with its own `PRODUCT.md` and `DESIGN.md`. Stats (`apps/stats`) also has its own `PRODUCT.md` and its own look.
 
 ## Platform
 
@@ -24,7 +24,7 @@ Success means people use it as their real, everyday mail, not as a curiosity, an
 
 ## Positioning
 
-- **Independence.** It runs on the maker's own server and domains (Stalwart mail server, self-hosted Navidrome, LiveKit for calls). There are no ads and no tracking, and no one reads the mail to sell anything. Nothing third-party is required to use it.
+- **Independence.** It runs on the maker's own server and domains (Stalwart mail server, self-hosted Navidrome, LiveKit for calls). There are no ads and no third-party tracking, and no one reads the mail to sell anything. The apps do report cookieless page counts to the maker's own Stats (`apps/stats`), with nothing that could reveal someone's mail. One named exception sits outside the suite: the landing site zaur.app looks its visitors' addresses up at ipapi.is. Nothing third-party is required to use it.
 - **One workspace.** Mail, calendar, contacts, files, Meet and Music share one Zaur sign-in. Mail2 is the OIDC provider for Music and the other services, and the apps share one design system.
 - **Craft.** It is small and made with care: keyboard-first, fast, with considered details the big suites skip, such as an undo for send and moves, sensible confirmations, and a hue for each folder and label kind.
 

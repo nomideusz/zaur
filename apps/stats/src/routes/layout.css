@@ -1,58 +1,192 @@
 @import 'tailwindcss';
 
-@import '@zaur/ui/tokens.css';
-@import '@zaur/ui/base.css';
+@import '@fontsource-variable/archivo/wdth.css';
+@import '@fontsource-variable/jetbrains-mono/wght.css';
 
+/*
+ * The catalogue: matte black, white hairlines, and colour only in a site's
+ * source strip. Light is the same sleeve printed the other way round.
+ */
+:root {
+	color-scheme: dark;
+	--ground: #0a0a0a;
+	--raised: #151514;
+	--ink: #f4f4f0;
+	--soft: #a6a6a0;
+	--rule: #2c2c2a;
+	--rule-strong: #6a6a64;
+	--quiet-line: #6e6e69;
+	--warn: #e8b400;
+	--src-direct: #f4f4f0;
+	--src-search: #2d6be4;
+	--src-social: #e4322b;
+	--src-ai: #f0b400;
+	--src-rest: #21a366;
+
+	--sans: 'Archivo Variable', Arial, sans-serif;
+	--mono: 'JetBrains Mono Variable', ui-monospace, Consolas, monospace;
+	--page-x: 28px;
+}
+@media (prefers-color-scheme: light) {
+	:root {
+		color-scheme: light;
+		--ground: #f4f4f0;
+		--raised: #ffffff;
+		--ink: #0a0a0a;
+		--soft: #55554f;
+		--rule: #d4d4ce;
+		--rule-strong: #85857f;
+		--quiet-line: #85857f;
+		--warn: #8a6500;
+		--src-direct: #0a0a0a;
+		--src-search: #1f56c9;
+		--src-social: #b81f1a;
+		--src-ai: #c49a00;
+		--src-rest: #12804c;
+	}
+}
+@media (max-width: 720px) {
+	:root {
+		--page-x: 16px;
+	}
+}
+
+html {
+	scrollbar-color: var(--rule-strong) var(--ground);
+}
 body {
-	background: var(--z-canvas);
+	min-height: 100vh;
+	background: var(--ground);
+	color: var(--ink);
+	font: 400 13px/1.35 var(--sans);
+	font-synthesis: none;
+	-webkit-font-smoothing: antialiased;
+}
+::selection {
+	background: var(--ink);
+	color: var(--ground);
+}
+:focus-visible {
+	outline: 2px solid var(--ink);
+	outline-offset: 2px;
+}
+a {
+	color: inherit;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	text-decoration-thickness: 1px;
+}
+a:hover {
+	text-decoration-thickness: 2px;
 }
 
-/* The big figures above a page. */
-.figs {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-	gap: 1px;
-	margin-bottom: 16px;
-	background: var(--z-hairline);
-	border: 1px solid var(--z-hairline);
-	border-radius: 10px;
+/* A segmented control and a plain button: square, hairline, inverted when on. */
+.seg {
+	display: flex;
+	border: 1px solid var(--rule-strong);
+}
+.seg a {
+	display: flex;
+	align-items: center;
+	height: 30px;
+	padding: 0 11px;
+	color: var(--soft);
+	text-decoration: none;
+	white-space: nowrap;
+}
+.seg a:hover {
+	color: var(--ink);
+	background: var(--raised);
+}
+.seg a[aria-current='page'] {
+	background: var(--ink);
+	color: var(--ground);
+	font-weight: 500;
+}
+.seg a:focus-visible {
+	outline-offset: -4px;
+	outline-color: currentColor;
+}
+.field,
+.btn {
+	height: 32px;
+	padding: 0 10px;
+	font: inherit;
+	color: var(--ink);
+	background: transparent;
+	border: 1px solid var(--rule-strong);
+	border-radius: 0;
+}
+.field option {
+	background: var(--ground);
+	color: var(--ink);
+}
+.btn {
+	cursor: pointer;
+}
+.btn:hover {
+	background: var(--raised);
+}
+.count {
+	font-family: var(--mono);
+	font-variant-numeric: tabular-nums;
+}
+/* Words for a screen reader alone. */
+.sr {
+	position: absolute;
+	width: 1px;
+	height: 1px;
 	overflow: hidden;
+	clip-path: inset(50%);
+	white-space: nowrap;
 }
-.figs > div {
-	padding: 12px 14px;
-	background: var(--z-surface);
-}
-.fig {
-	font-family: var(--font-mono);
-	font-size: 24px;
-	line-height: 1.15;
-	color: var(--z-ink);
-}
-.fig-label {
-	display: block;
-	margin-top: 2px;
-	font-size: 12.5px;
-	color: var(--z-soft);
-}
-.band {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
-	gap: 24px 32px;
-	margin: 24px 0;
-}
-.chart {
-	margin-bottom: 8px;
-	padding: 12px 14px;
-	background: var(--z-surface);
-	border: 1px solid var(--z-hairline);
-	border-radius: 10px;
-}
-.chart + .chart {
-	margin-top: 12px;
-}
-h2.section {
-	margin: 24px 0 8px;
+
+/* What a plot says about itself, and the reading under a pointer. */
+.caption {
+	color: var(--soft);
 	font-size: 12px;
-	font-weight: 600;
-	color: var(--z-muted);
+}
+.tip {
+	position: absolute;
+	z-index: 20;
+	padding: 4px 8px;
+	font-size: 12px;
+	white-space: nowrap;
+	color: var(--ink);
+	background: var(--ground);
+	border: 1px solid var(--ink);
+	pointer-events: none;
+}
+.tip b {
+	font-family: var(--mono);
+	font-weight: 500;
+}
+/* To the right of the pointer, or to its left past halfway, so it never leaves the page. */
+.tip.right {
+	transform: translateX(-100%);
+}
+
+@media (max-width: 720px) {
+	.seg {
+		flex: 1;
+	}
+	.seg a {
+		flex: 1;
+		justify-content: center;
+		height: 40px;
+		padding: 0 4px;
+	}
+	.field,
+	.btn {
+		height: 40px;
+		font-size: 16px;
+	}
+	/* A tap's reading runs the width of the screen. */
+	.tip,
+	.tip.right {
+		left: 0 !important;
+		right: 0;
+		transform: none;
+		white-space: normal;
+	}
 }

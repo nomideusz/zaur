@@ -3,11 +3,14 @@
  * is others, mine or all; a tag reads its visits from all time.
  */
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
+import { DAYS, type Who } from '#lib/view';
 import { dayOf, hourOf } from './ingest';
 
-export type Who = 'others' | 'mine' | 'all';
-export const DAYS = [1, 7, 30, 90] as const;
+export { DAYS, type Who };
 export type Rows = [string, number][];
+
+/** Hours in one reading of a site's line, so a line holds about 180 points whatever the period. */
+export const READING_HOURS: Record<number, number> = { 1: 1, 7: 1, 30: 4, 90: 12 };
 
 export interface VisitRow {
 	site: string;
@@ -85,6 +88,14 @@ export function asVisit(r: Record<string, unknown>): VisitRow {
 	};
 }
 
+export interface StackRow {
+	label: string;
+	/** The last day of a line that spans several. */
+	to: string | null;
+	hours: number[];
+	n: number;
+}
+
 export function report(db: DatabaseSync, opts: { site: string; days?: number; who?: Who; tag?: string | null; now?: number }) {
 	const { site, days = 30, who = 'others', tag = null, now = Date.now() } = opts;
 	const { all, one } = reader(db);
@@ -135,6 +146,35 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 		}
 	}
 
+	// One line a day through its 24 hours; a week a line over 90 days, and a tag's
+	// last 30 days with visits. The newest is last, and today's stops at this hour.
+	const cells = all<{ day: string; hour: number; n: number }>(`SELECT day, hour, COUNT(*) AS n FROM views WHERE ${w.sql} GROUP BY 1, 2`, w.params);
+	const byDay = new Map<string, number[]>();
+	for (const c of cells) {
+		const hours = byDay.get(c.day) ?? Array<number>(24).fill(0);
+		if (c.hour >= 0 && c.hour < 24) hours[c.hour] += c.n;
+		byDay.set(c.day, hours);
+	}
+	const blank = () => Array<number>(24).fill(0);
+	const dayList = tag
+		? [...byDay.keys()].sort().slice(-30)
+		: Array.from({ length: days }, (_, i) => addDays(from, i));
+	const stackRows: StackRow[] = [];
+	const perLine = !tag && days === 90 ? 7 : 1;
+	for (let i = 0; i < dayList.length; i += perLine) {
+		const span = dayList.slice(i, i + perLine);
+		const hours = blank();
+		for (const d of span) (byDay.get(d) ?? []).forEach((n, h) => (hours[h] += n));
+		const isToday = span.at(-1) === today;
+		stackRows.push({
+			label: span[0],
+			to: perLine > 1 ? span.at(-1)! : null,
+			hours: isToday && perLine === 1 ? hours.slice(0, hourOf(now) + 1) : hours,
+			n: hours.reduce((a, b) => a + b, 0)
+		});
+	}
+	const stack = { rows: stackRows, peak: Math.max(1, ...stackRows.flatMap((r) => r.hours)) };
+
 	const pages = rows(db, 'path', w, 25).map(([path, n]) => {
 		const onPage: Where = { sql: `${w.sql} AND path = ?`, params: [...w.params, path] };
 		return { path, n, median: median(db, onPage) };
@@ -159,6 +199,7 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 		dark: totals.darkKnown ? Math.round((100 * totals.dark) / totals.darkKnown) : null,
 		business: totals.business,
 		bars,
+		stack,
 		pages,
 		sites: site === 'all' ? rows(db, 'site', w, 20) : [],
 		sources: rows(db, 'source', w, 12),
@@ -218,30 +259,60 @@ export function liveSnapshot(db: DatabaseSync, opts: { site: string; who?: Who; 
 }
 export type Live = ReturnType<typeof liveSnapshot>;
 
-/** One line a site, for the first page. */
-export function overview(db: DatabaseSync, now = Date.now()) {
-	const { all } = reader(db);
+/** One line a site, for the first page, on one scale across them. */
+export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; days?: number } = {}) {
+	const { who = 'others', days = 30 } = opts;
+	const { all, one } = reader(db);
+	const me = who === 'all' ? '1 = 1' : who === 'mine' ? 'me = 1' : 'me = 0';
 	const today = dayOf(now);
-	const trendFrom = addDays(today, -29);
-	const prevFrom = addDays(trendFrom, -30);
-	const perDay = all<{ site: string; day: string; n: number }>(`SELECT site, day, COUNT(*) AS n FROM views WHERE me = 0 AND day >= ? GROUP BY 1, 2`, [prevFrom]);
-	const recent = new Map(all<{ site: string; n: number }>(`SELECT site, COUNT(*) AS n FROM views WHERE me = 0 AND t > ? GROUP BY 1`, [now - 5 * 60_000]).map((r) => [r.site, r.n]));
-	const firsts = new Map(all<{ site: string; day: string }>(`SELECT site, MIN(day) AS day FROM views GROUP BY 1`).map((r) => [r.site, r.day]));
-	const week = addDays(today, -6);
-	const days = Array.from({ length: 30 }, (_, i) => addDays(trendFrom, i));
+	const from = addDays(today, 1 - days);
+	const prevFrom = addDays(from, -days);
+	const weekFrom = addDays(today, -6);
+	const monthFrom = addDays(today, -29);
+	const earliest = [prevFrom, monthFrom].sort()[0];
 
-	return (site: string) => {
-		const mine = perDay.filter((r) => r.site === site);
-		const on = new Map(mine.map((r) => [r.day, r.n]));
-		const sum = (test: (d: string) => boolean) => mine.filter((r) => test(r.day)).reduce((a, r) => a + r.n, 0);
+	const perDay = all<{ site: string; day: string; n: number }>(`SELECT site, day, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? GROUP BY 1, 2`, [earliest]);
+	const recent = new Map(all<{ site: string; n: number }>(`SELECT site, COUNT(*) AS n FROM views WHERE ${me} AND t > ? GROUP BY 1`, [now - 5 * 60_000]).map((r) => [r.site, r.n]));
+	const firsts = new Map(all<{ site: string; day: string }>(`SELECT site, MIN(day) AS day FROM views GROUP BY 1`).map((r) => [r.site, r.day]));
+
+	// The readings of each line, and the one peak they all share.
+	const step = READING_HOURS[days] ?? 4;
+	const perDayReadings = 24 / step;
+	const slots = days * perDayReadings;
+	const filled = (days - 1) * perDayReadings + Math.floor(hourOf(now) / step) + 1;
+	const dayIndex = new Map(Array.from({ length: days }, (_, i) => [addDays(from, i), i] as const));
+	const pulses = new Map<string, number[]>();
+	for (const r of all<{ site: string; day: string; b: number; n: number }>(`SELECT site, day, hour / ${step} AS b, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? GROUP BY 1, 2, 3`, [from])) {
+		const d = dayIndex.get(r.day);
+		if (d === undefined) continue;
+		const line = pulses.get(r.site) ?? Array<number>(filled).fill(0);
+		const i = d * perDayReadings + r.b;
+		if (i < filled) line[i] = r.n;
+		pulses.set(r.site, line);
+	}
+	const peak = Math.max(1, ...[...pulses.values()].flat());
+
+	const sources = new Map<string, Rows>();
+	for (const r of all<{ site: string; source: string; n: number }>(`SELECT site, source, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? AND source <> 'internal' GROUP BY 1, 2`, [from])) {
+		sources.set(r.site, [...(sources.get(r.site) ?? []), [r.source, r.n]]);
+	}
+	const { mine, others } = one<{ mine: number; others: number }>(`SELECT COALESCE(SUM(me = 1), 0) AS mine, COALESCE(SUM(me = 0), 0) AS others FROM views WHERE day >= ?`, [from]);
+	const counts = { mine, others };
+
+	const line = (site: string) => {
+		const own = perDay.filter((r) => r.site === site);
+		const sum = (test: (d: string) => boolean) => own.filter((r) => test(r.day)).reduce((a, r) => a + r.n, 0);
 		const first = firsts.get(site);
 		return {
 			live: recent.get(site) ?? 0,
-			today: on.get(today) ?? 0,
-			week: sum((d) => d >= week),
-			month: sum((d) => d >= trendFrom),
-			was: first && first <= prevFrom ? sum((d) => d < trendFrom) : null,
-			trend: days.map((d) => ({ label: d, n: on.get(d) ?? 0 }))
+			today: sum((d) => d === today),
+			week: sum((d) => d >= weekFrom),
+			month: sum((d) => d >= monthFrom),
+			count: sum((d) => d >= from),
+			was: first && first <= prevFrom ? sum((d) => d >= prevFrom && d < from) : null,
+			pulse: pulses.get(site) ?? Array<number>(filled).fill(0),
+			sources: sources.get(site) ?? []
 		};
 	};
+	return Object.assign(line, { peak, step, slots, filled, from, today, counts });
 }
