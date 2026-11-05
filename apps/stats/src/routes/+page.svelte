@@ -150,7 +150,7 @@
 					</button>
 				</th>
 				<th class="num" scope="col">vs before</th>
-				<th class="num" scope="col">Today</th>
+				{#if data.days !== 1}<th class="num" scope="col">Today</th>{/if}
 				<th class="num" scope="col" title="Pages opened in the last 5 minutes. Opens the live page.">Now</th>
 			</tr>
 		</thead>
@@ -176,7 +176,7 @@
 					</td>
 					<td class="num count strong" data-label={period}>{nf.format(s.count)}</td>
 					<td class="num count soft" data-label="vs before">{change(s.count, s.was)}</td>
-					<td class="num count" data-label="Today">{nf.format(s.today)}</td>
+					{#if data.days !== 1}<td class="num count" data-label="Today">{nf.format(s.today)}</td>{/if}
 					<td class="num count" data-label="Now"><a class:on={s.live} href={viewHref({ ...here, site: s.id, live: true })} aria-label="{s.name}: {s.live} in the last 5 minutes, watch live">{nf.format(s.live)}</a></td>
 				</tr>
 			{/each}
@@ -197,7 +197,7 @@
 				</td>
 				<td class="num count strong" data-label={period}>{nf.format(sum((s) => s.count))}</td>
 				<td class="num count soft" data-label="vs before">{change(sum((s) => s.count), was)}</td>
-				<td class="num count" data-label="Today">{nf.format(sum((s) => s.today))}</td>
+				{#if data.days !== 1}<td class="num count" data-label="Today">{nf.format(sum((s) => s.today))}</td>{/if}
 				<td class="num count" data-label="Now"><a href={viewHref({ site: 'all', who: data.who, days: data.days, live: true })}>{nf.format(sum((s) => s.live))}</a></td>
 			</tr>
 		</tfoot>
