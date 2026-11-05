@@ -9,7 +9,6 @@ import { extname, join, normalize, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { sendFeed } from "./feed.mjs";
 import { sendTraffic } from "./search.mjs";
-import { recordHit, sendStats } from "./stats.mjs";
 
 const PORT = Number(process.env.PORT ?? 4173);
 const ROOT = resolve(fileURLToPath(new URL("./dist", import.meta.url)));
@@ -83,12 +82,10 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    if (req.method === "POST" && url.pathname === "/api/hit") {
-      await recordHit(req, res);
-      return;
-    }
+    // Visits are counted and read at stats.zaur.app now.
     if (req.method === "GET" && url.pathname === "/stats") {
-      await sendStats(url, res);
+      res.writeHead(301, { location: "https://stats.zaur.app/s/zaur" });
+      res.end();
       return;
     }
 

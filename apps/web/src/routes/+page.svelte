@@ -18,7 +18,6 @@
 	import { decodeTicket, ticketHash, type Ticket } from '#lib/ticket';
 	import Daily, { linked } from '#lib/Daily.svelte';
 	import { indexed, search as match, tokensOf, type Entry } from '#lib/find';
-	import { track } from '#lib/visit';
 	import { i18n, t, list, pairs } from '#lib/i18n';
 	import { routing, languages, short } from '#lib/i18n-routing';
 	import me from '#lib/me.webp';
@@ -390,7 +389,6 @@
 
 	onMount(watchOpened);
 	onMount(() => {
-		track();
 		readTicket();
 		if (location.hash === '#keys' && !keys.on) flipKeys();
 		if (location.hash === '#shapes') showShapes();
