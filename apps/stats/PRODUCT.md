@@ -34,7 +34,7 @@ Success means the owner can answer "what happened on my sites?" here, without a 
 ## Operating Context
 
 - **`/` is the overview:** one row per site, ranked by traffic, with its line through the period on one shared scale, where its visits came from, its change, today and the last 5 minutes. Totals sit at the foot.
-- **`/s/<site>` is the report,** and `/s/all` covers everything. Its Summary holds a stack of days through their hours, figures, and lists of sources, pages, tagged links, referrers, places, networks, opened links, languages, systems and screens. Its Visits tab holds the latest visits.
+- **`/s/<site>` is the report,** and `/s/all` covers everything. Its Summary holds a stack of days through their hours, or a column a day, figures, and lists of sources, pages, tagged links, referrers, places, networks, opened links, languages, systems and screens. Its Visits tab holds the latest visits.
 - **`/s/<site>/live` streams** the last hour and day.
 - **Sites report through a tag.** A site joins by adding a line to `SITES` in `src/lib/sites.ts` and putting the tag on its pages.
 

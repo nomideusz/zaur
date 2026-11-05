@@ -250,9 +250,9 @@ The site select and Sign out move to 16px on a phone.
 
 The page has no container. Header, main and footer run the full window, inset by the page margin (28px, 16px at 720px and under), with rules running the same width. Spacing is set by hand to fit each row rather than drawn from a modular scale; the steps in the frontmatter are the ones that recur.
 
-**Overview.** A table: site column 272px, plot column taking what is left, four figure columns of 90px. Rows are 65px, and each line rises 112px, so it stands up behind the row above and the lines interlock. The first row is 112px, to give its line that room, and the last is 75px, to keep its line clear of the rule under it. Rows are ranked by count, and totals and the legend close the table above a strong hairline.
+**Overview.** A table: site column 272px, plot column taking what is left, four figure columns of 90px. Rows are 65px, and each line rises 112px, so it stands up behind the row above and the lines interlock. The first row is 112px, to give its line that room, and the last is 75px, to keep its line clear of the rule under it. Rows are ranked by count, and totals and the legend close the table above a strong hairline. By day, every row is 65px with a hairline under it, its columns rise 54px and stay in their own row, and the dates sit under the plot's column head.
 
-**Report.** Number, name and period; the Summary and Visits tabs, which swap everything below them; then the stack of days at left and credits in a 300px column at right, 32px apart. Lists follow in three columns with 28px and 40px gaps. The visit log stays behind its tab.
+**Report.** Number, name and period; the Summary and Visits tabs, which swap everything below them; then the stack of days, or the day columns, at left and credits in a 300px column at right, 32px apart. Lists follow in three columns with 28px and 40px gaps. The visit log stays behind its tab.
 
 **Live.** Number, name and connection status; four totals between rules; the two lines with a 340px Pages column at right, 40px apart; the latest visits underneath.
 
@@ -276,7 +276,7 @@ The favicon draws three stacked lines in the sleeve's dark colours, whichever th
 ## Components
 
 ### Segmented Control
-Square, hairlined and inverted when on. It carries Others, Mine and All with their counts, the periods with Live, and the report's tabs.
+Square, hairlined and inverted when on. It carries Others, Mine and All with their counts, the periods with Live, the chart (Pulse, and By day or By hour for Today), and the report's tabs. The chart control shows only where a period is drawn: not on Live, the visit log or a tag's report.
 - **Shape:** a one-pixel strong hairline around links 30px high (40px on a phone, sharing the width equally), square corners.
 - **Default:** soft ink on nothing.
 - **Hover:** ink on the raised wash.
@@ -296,7 +296,7 @@ Plain, with the same frame as the segments, and at desk widths the same height o
 - **Selection:** ink behind ground text.
 
 ### Top Bar
-The wordmark, the site select, the two segmented controls pushed right, and Sign out, over a hairline. The select lists every site with its catalogue number.
+The wordmark, the site select, the segmented controls pushed right, and Sign out, over a hairline. The select lists every site with its catalogue number.
 
 ### Catalogue Number
 A site's number is its place in `SITES`, two digits with a leading zero. It doesn't change as the ranking does, so the overview's numbers run out of order. Pressing a site's digit opens it from any page, keeping the period, the view of whose visits and Live; digits 1 to 9 open the first nine and 0 opens the tenth. A site past the tenth has no key. The key does nothing while focus is in a field, and a line in the footer explains it on wider screens.
@@ -313,6 +313,15 @@ The signature, drawn for each site, each day and each Live plot.
 
 ### Pulse Stack
 A site's days, one ridge line each through 24 hours, oldest at the back, with dates at left and a mono hours axis under them. Lines rise 92px and sit 40px apart for up to a week, 28px up to a fortnight and 13px beyond that; at 90 days each line is a week. All lines share one peak. Under a pointer or a tap, the nearest line goes to 2.4px without dimming the others. A table for screen readers carries the same totals.
+
+### Day Columns
+The other way to draw a period, for reading one day against another: one flat ink column a day, or one an hour for Today, from a single baseline. The choice lives in the URL as `?chart=days`, and every link but Live keeps it.
+- **Column:** at most 24px wide, 2px apart (1px past 45 columns), square at both ends, and at least 2px tall if it counted anything. A slot with nothing in it stays empty.
+- **Report:** a linear scale from zero with clean ticks in Figure Small, hairline grid behind the columns, a strong hairline for the baseline, and the tallest column's figure above it. 300px tall (220px on a phone). A table for screen readers carries every column.
+- **Overview:** one row of columns a site, with no scale of its own, on the square-root scale the Stated Scale Rule gives everything drawn between sites.
+- **Dates:** Figure Small, centred under their column: the weekday and date for 7 days, every Monday for 30, every second Monday for 90, every fourth on a phone, and every six hours for Today.
+- **Reading still counting:** a 1px dashed outline in the quiet line colour with no fill, so a day in progress never reads as a bad day.
+- **Pointer or tap:** anywhere in a column's slot shows its reading in a tip. That column keeps its ink and the others drop to the quiet line colour.
 
 ### Source Strip and Legend
 Blocks of the source code, 96px wide and 10px tall with 2px gaps, each as wide as its share and never narrower than 2px. Each block names itself on hover with its group and share, and a screen reader gets the same words. A site with no arrivals from outside shows an empty hairline frame. Moves within the site aren't arrivals, and in the Came from list they take a hollow chip. The overview's foot carries the legend.

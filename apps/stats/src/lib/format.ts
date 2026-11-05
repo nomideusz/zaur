@@ -14,6 +14,8 @@ export const siteNo = (id: string) => String(SITES.findIndex((s) => s.id === id)
 export const dayLabel = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', weekday: 'short', day: 'numeric', month: 'short' });
 export const shortDay = (day: string) => new Date(`${day}T12:00:00Z`).toLocaleDateString('en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short' });
 export const hourLabel = (h: number) => `${String(h).padStart(2, '0')}:00`;
+/** Date arithmetic for the browser: days are strings, read at noon UTC so a date stays whole. */
+export const addDayStr = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 /** The change between two periods, or nothing worth saying. */
 export function change(now: number, was: number | null): string {
 	if (was == null) return '—';

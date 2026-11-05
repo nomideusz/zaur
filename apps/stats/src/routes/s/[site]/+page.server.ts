@@ -3,7 +3,7 @@ import type { PageServerLoad } from './$types';
 import { getDb } from '#lib/server/db';
 import { report } from '#lib/server/report';
 import { siteById, siteUrl } from '#lib/sites';
-import { readDays, readWho } from '#lib/view';
+import { readChart, readDays, readWho } from '#lib/view';
 
 export const load: PageServerLoad = async ({ params, url, depends }) => {
 	depends('stats:data');
@@ -17,6 +17,7 @@ export const load: PageServerLoad = async ({ params, url, depends }) => {
 		origin: site ? siteUrl(site) : null,
 		detail: site ? site.detail !== false : true,
 		visits: q.get('view') === 'visits',
+		chart: readChart(q),
 		counts: { mine: r.mineCount, others: r.othersCount }
 	};
 };

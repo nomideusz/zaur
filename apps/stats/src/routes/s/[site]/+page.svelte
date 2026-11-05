@@ -3,6 +3,7 @@
 	import { reloading } from '#lib/reloading.svelte';
 	import { groupOf, SOURCES } from '#lib/sources';
 	import { viewHref } from '#lib/view';
+	import DayColumns from '#lib/components/DayColumns.svelte';
 	import PulseStack from '#lib/components/PulseStack.svelte';
 	import RowList from '#lib/components/RowList.svelte';
 	import SourceStrip from '#lib/components/SourceStrip.svelte';
@@ -15,7 +16,7 @@
 	const delta = $derived(r.was == null ? null : r.was === 0 ? (r.views ? 'first visits' : null) : `${change(r.views, r.was)} vs ${nf.format(r.was)} before`);
 	const pages = $derived(r.pages.map((p): [string, number] => [p.path, p.n]));
 	const medians = $derived(new Map(r.pages.map((p) => [p.path, p.median])));
-	const here = $derived({ site: r.site, who: r.who, days: r.days });
+	const here = $derived({ site: r.site, who: r.who, days: r.days, chart: data.chart });
 	const tagQuery = $derived<Record<string, string>>(r.tag ? { tag: r.tag } : {});
 	const tagHref = (tag: string) => viewHref({ ...here, days: 30, extra: { tag } });
 	const tagRows = $derived(r.tags.map((t): [string, number] => [t.k, t.n]));
@@ -43,7 +44,12 @@
 {:else}
 	<div class="head">
 		{#if r.views}
-			<PulseStack rows={r.stack.rows} peak={r.stack.peak} />
+			<!-- A tag's days are only those with visits, so they don't make an even row of columns. -->
+			{#if data.chart === 'days' && !r.tag}
+				<DayColumns bars={r.bars} days={r.days} from={r.from} />
+			{:else}
+				<PulseStack rows={r.stack.rows} peak={r.stack.peak} />
+			{/if}
 		{:else}
 			<p class="nothing">{emptyWord}{#if r.who === 'mine' && data.origin}{' '}Open <a href="{data.origin}/?stats=me" target="_blank" rel="noopener noreferrer">{data.name}/?stats=me</a> to count this browser as yours.{/if}</p>
 		{/if}

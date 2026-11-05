@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { nf, siteNo } from '#lib/format';
 	import { SITES } from '#lib/sites';
-	import { PERIODS, readDays, readWho, viewHref, type Who } from '#lib/view';
+	import { PERIODS, readChart, readDays, readWho, viewHref, type Who } from '#lib/view';
 
 	let { children } = $props();
 
@@ -12,20 +12,23 @@
 	const live = $derived(page.route.id?.endsWith('/live') ?? false);
 	const who = $derived(readWho(page.url.searchParams));
 	const days = $derived(readDays(page.url.searchParams));
+	const chart = $derived(readChart(page.url.searchParams));
 	const tagged = $derived(page.url.searchParams.has('tag'));
 	const counts = $derived(page.data.counts as { mine: number; others: number } | undefined);
+	// Only a period's chart has two ways to be drawn: not Live, the visit log or a tag's scattered days.
+	const chartable = $derived(!live && !tagged && !!page.route.id && page.url.searchParams.get('view') !== 'visits');
 
 	const whoes: [Who, string, () => number | undefined][] = [
 		['others', 'Others', () => counts?.others],
 		['mine', 'Mine', () => counts?.mine],
 		['all', 'All', () => undefined]
 	];
-	const whoHref = (w: Who) => viewHref({ site, who: w, days, live, extra: tagged ? { tag: page.url.searchParams.get('tag')! } : undefined });
+	const whoHref = (w: Who) => viewHref({ site, who: w, days, chart, live, extra: tagged ? { tag: page.url.searchParams.get('tag')! } : undefined });
 	const cur = (on: boolean) => (on ? ('page' as const) : undefined);
 
 	function chooseSite(e: Event) {
 		const value = (e.currentTarget as HTMLSelectElement).value;
-		void goto(viewHref({ site: value || null, who, days, live: live && !!value }));
+		void goto(viewHref({ site: value || null, who, days, chart, live: live && !!value }));
 	}
 
 	// A site's number opens it, wherever you are.
@@ -34,14 +37,14 @@
 		const target = e.target as HTMLElement;
 		if (target.closest('input, select, textarea, [contenteditable]')) return;
 		const to = SITES[e.key === '0' ? 9 : Number(e.key) - 1];
-		if (to) void goto(viewHref({ site: to.id, who, days, live }));
+		if (to) void goto(viewHref({ site: to.id, who, days, chart, live }));
 	}
 </script>
 
 <svelte:window {onkeydown} />
 
 <header>
-	<a class="mark" href={viewHref({ site: null, who, days })} aria-current={cur(!site)}>Stats</a>
+	<a class="mark" href={viewHref({ site: null, who, days, chart })} aria-current={cur(!site)}>Stats</a>
 	<select class="field" aria-label="Site" value={site === 'all' || SITES.some((s) => s.id === site) ? site : ''} onchange={chooseSite}>
 		<option value="">Overview</option>
 		<option value="all">All sites</option>
@@ -57,10 +60,16 @@
 		</nav>
 		<nav class="seg" aria-label="Period">
 			{#each PERIODS as [d, label] (d)}
-				<a href={viewHref({ site, who, days: d })} aria-current={cur(!live && !tagged && days === d)}>{label}</a>
+				<a href={viewHref({ site, who, days: d, chart })} aria-current={cur(!live && !tagged && days === d)}>{label}</a>
 			{/each}
 			<a href={viewHref({ site, who, days, live: true })} aria-current={cur(live)}>Live</a>
 		</nav>
+		{#if chartable}
+			<nav class="seg" aria-label="Chart">
+				<a href={viewHref({ site, who, days, chart: 'pulse' })} aria-current={cur(chart === 'pulse')}>Pulse</a>
+				<a href={viewHref({ site, who, days, chart: 'days' })} aria-current={cur(chart === 'days')}>{days === 1 ? 'By hour' : 'By day'}</a>
+			</nav>
+		{/if}
 	</div>
 	<form method="POST" action="/auth/logout">
 		<button class="btn" type="submit">Sign out</button>

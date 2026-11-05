@@ -1,11 +1,13 @@
 <script lang="ts">
-	import { change, dayLabel, hourLabel, nf, opened } from '#lib/format';
+	import { addDayStr, change, dayLabel, hourLabel, nf, opened } from '#lib/format';
 	import { reloading } from '#lib/reloading.svelte';
 	import { SOURCE_GROUPS } from '#lib/sources';
 	import { periodName, viewHref } from '#lib/view';
+	import ColumnAxis from '#lib/components/ColumnAxis.svelte';
+	import ColumnBars from '#lib/components/ColumnBars.svelte';
 	import Ridge from '#lib/components/Ridge.svelte';
 	import SourceStrip from '#lib/components/SourceStrip.svelte';
-	import { addDayStr, perWord } from './overview';
+	import { perWord } from './overview';
 
 	let { data } = $props();
 	reloading();
@@ -13,24 +15,29 @@
 	const sum = (pick: (s: (typeof data.sites)[number]) => number) => data.sites.reduce((a, s) => a + pick(s), 0);
 	const was = $derived(data.sites.every((s) => s.was != null) ? sum((s) => s.was ?? 0) : null);
 	const period = $derived(periodName(data.days));
-	const plotHeading = $derived(data.days === 1 ? 'Today, hour by hour, one scale for every site' : `${period} through the day, one scale for every site`);
+	const columns = $derived(data.chart === 'days');
+	const plotHeading = $derived(data.days === 1 ? 'Today, hour by hour, one scale for every site' : columns ? `${period}, day by day, one scale for every site` : `${period} through the day, one scale for every site`);
+	const here = $derived({ who: data.who, days: data.days, chart: data.chart });
 
 	// The reading under the pointer, placed on the board rather than in the row, so
 	// the next row's line can't cover it.
 	let board = $state<HTMLElement>();
-	let tip = $state<{ x: number; y: number; right: boolean; label: string; n: number } | null>(null);
+	let tip = $state<{ x: number; y: number; right: boolean; label: string; n: number; site: string; i: number } | null>(null);
 
 	function readingLabel(i: number) {
+		if (columns && data.days > 1) return dayLabel(addDayStr(data.from, i));
 		const perDay = 24 / data.step;
 		const day = addDayStr(data.from, Math.floor(i / perDay));
 		const hour = (i % perDay) * data.step;
 		return data.step === 1 ? `${dayLabel(day)}, ${hourLabel(hour)}` : `${dayLabel(day)}, ${hourLabel(hour)}–${hourLabel(hour + data.step)}`;
 	}
-	function read(e: PointerEvent, values: number[]) {
+	function read(e: PointerEvent, s: (typeof data.sites)[number]) {
+		const values = columns ? s.columns : s.pulse;
 		const cell = e.currentTarget as HTMLElement;
 		const box = cell.getBoundingClientRect();
 		const outer = board!.getBoundingClientRect();
-		const i = Math.round(((e.clientX - box.left) / box.width) * (data.slots - 1));
+		const share = (e.clientX - box.left) / box.width;
+		const i = columns ? Math.floor(share * data.columnSlots) : Math.round(share * (data.slots - 1));
 		if (i < 0 || i >= values.length) {
 			tip = null;
 			return;
@@ -40,7 +47,9 @@
 			y: (matchMedia('(max-width: 720px)').matches ? box.bottom : box.top) - outer.top,
 			right: e.clientX - outer.left > outer.width / 2,
 			label: readingLabel(i),
-			n: values[i]
+			n: values[i],
+			site: s.id,
+			i
 		};
 	}
 	const clear = (e: PointerEvent) => {
@@ -59,11 +68,14 @@
 <h1 class="sr">Overview of every site</h1>
 
 <div class="board" bind:this={board}>
-	<table>
+	<table class:columns>
 		<thead>
 			<tr>
 				<th class="site" scope="col">No. · Site · came from</th>
-				<th class="plot" scope="col">{plotHeading}</th>
+				<th class="plot" scope="col">
+					{plotHeading}
+					{#if columns}<div class="dates"><ColumnAxis days={data.days} from={data.from} slots={data.columnSlots} /></div>{/if}
+				</th>
 				<th class="num" scope="col">{period}</th>
 				<th class="num" scope="col">vs before</th>
 				<th class="num" scope="col">Today</th>
@@ -74,25 +86,31 @@
 			{#each data.sites as s (s.id)}
 				<tr>
 					<th class="site" scope="row">
-						<a href={viewHref({ site: s.id, who: data.who, days: data.days })}>
+						<a href={viewHref({ ...here, site: s.id })}>
 							<span class="no count">{String(s.no).padStart(2, '0')}</span>
 							<span class="name">{s.name}</span>
 						</a>
 						<span class="sources"><SourceStrip rows={s.sources} /></span>
 					</th>
-					<td class="plot" onpointermove={(e) => read(e, s.pulse)} onpointerdown={(e) => read(e, s.pulse)} onpointerleave={(e) => { if (e.pointerType !== 'touch') tip = null; }}>
-						<Ridge values={s.pulse} slots={data.slots} peak={data.peak} label={ariaFor(s)} />
+					<td class="plot" onpointermove={(e) => read(e, s)} onpointerdown={(e) => read(e, s)} onpointerleave={(e) => { if (e.pointerType !== 'touch') tip = null; }}>
+						{#if columns}
+							<div class="row-bars" role="img" aria-label={ariaFor(s)}>
+								<ColumnBars values={s.columns} slots={data.columnSlots} peak={data.columnPeak} held={tip?.site === s.id ? tip.i : null} />
+							</div>
+						{:else}
+							<Ridge values={s.pulse} slots={data.slots} peak={data.peak} label={ariaFor(s)} />
+						{/if}
 					</td>
 					<td class="num count strong" data-label={period}>{nf.format(s.count)}</td>
 					<td class="num count soft" data-label="vs before">{change(s.count, s.was)}</td>
 					<td class="num count" data-label="Today">{nf.format(s.today)}</td>
-					<td class="num count" data-label="Now"><a class:on={s.live} href={viewHref({ site: s.id, who: data.who, days: data.days, live: true })} aria-label="{s.name}: {s.live} in the last 5 minutes, watch live">{nf.format(s.live)}</a></td>
+					<td class="num count" data-label="Now"><a class:on={s.live} href={viewHref({ ...here, site: s.id, live: true })} aria-label="{s.name}: {s.live} in the last 5 minutes, watch live">{nf.format(s.live)}</a></td>
 				</tr>
 			{/each}
 		</tbody>
 		<tfoot>
 			<tr>
-				<th class="site" scope="row"><a class="name" href={viewHref({ site: 'all', who: data.who, days: data.days })}>All sites</a></th>
+				<th class="site" scope="row"><a class="name" href={viewHref({ ...here, site: 'all' })}>All sites</a></th>
 				<td class="plot">
 					<ul class="legend">
 						{#each SOURCE_GROUPS as g (g.id)}
@@ -111,7 +129,11 @@
 		<div class="tip" class:right={tip.right} style:left="{tip.x}px" style:top="{tip.y}px"><b>{nf.format(tip.n)}</b> {opened(tip.n)} · {tip.label}</div>
 	{/if}
 </div>
-<p class="caption scale">Tallest reading: {nf.format(data.peak)} {opened(data.peak)} in {perWord(data.step)}. A line's height is the square root of its count, so quiet sites keep their shape. A dotted end is the reading still counting.</p>
+{#if columns}
+	<p class="caption scale">Tallest column: {nf.format(data.columnPeak)} {opened(data.columnPeak)} in {data.days === 1 ? 'an hour' : 'a day'}. A column's height is the square root of its count, so quiet sites keep their shape. A dashed outline is the {data.days === 1 ? 'hour' : 'day'} still counting.</p>
+{:else}
+	<p class="caption scale">Tallest reading: {nf.format(data.peak)} {opened(data.peak)} in {perWord(data.step)}. A line's height is the square root of its count, so quiet sites keep their shape. A dotted end is the reading still counting.</p>
+{/if}
 
 <style>
 	.board {
@@ -254,6 +276,30 @@
 		margin: 0;
 		padding-top: 4px;
 	}
+	/* Columns keep to their own row: nothing rises behind its neighbour, and a rule is each one's baseline. */
+	.dates {
+		margin-top: 6px;
+	}
+	.columns tbody tr,
+	.columns tbody tr:first-child,
+	.columns tbody tr:last-child {
+		--lift: 0px;
+		height: 65px;
+		border-bottom: 1px solid var(--rule);
+	}
+	.columns tbody .site {
+		padding-top: 8px;
+	}
+	.columns tbody .num {
+		padding-bottom: 8px;
+	}
+	.row-bars {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 54px;
+	}
 
 	@media (max-width: 1040px) {
 		.site {
@@ -321,6 +367,25 @@
 		tfoot .plot {
 			height: auto;
 			padding: 10px 0;
+		}
+		.columns tbody tr,
+		.columns tbody tr:first-child,
+		.columns tbody tr:last-child {
+			height: auto;
+			border-bottom: 0;
+		}
+		.columns tbody .plot {
+			margin-top: 8px;
+		}
+		.columns tbody .num {
+			padding-bottom: 0;
+		}
+		.columns td.strong {
+			padding: 0;
+		}
+		.row-bars {
+			height: 100%;
+			border-bottom: 1px solid var(--rule);
 		}
 		.tip {
 			margin-top: 2px;

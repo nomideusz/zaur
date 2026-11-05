@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { axisTicks, columnTicks } from '#lib/columns';
 import { linePaths, pixelPath } from '#lib/pulse';
 import { openDb } from '#lib/server/db';
 import { dayOf, recordHit } from '#lib/server/ingest';
 import { overview, report } from '#lib/server/report';
 import { siteById } from '#lib/sites';
 import { groupRows } from '#lib/sources';
-import { readDays, readWho, viewHref } from '#lib/view';
+import { readChart, readDays, readWho, viewHref } from '#lib/view';
 
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 const NOW = Date.parse('2026-11-05T12:00:00Z'); // 13:00 in Warsaw
@@ -83,6 +84,49 @@ test('a line draws what it was given, and an empty one draws nothing', () => {
 	assert.equal(pixelPath([1], 200, 100, 1), '');
 });
 
+test('an overview counts a column a day, and today alone by its hours', () => {
+	const db = openDb(':memory:');
+	recordHit(db, hit('e1111111'), ctx(NOW));
+	recordHit(db, hit('e2222222'), ctx(NOW));
+	recordHit(db, hit('e3333333'), ctx(NOW - 48 * HOUR));
+	const week = overview(db, NOW, { days: 7 });
+	assert.equal(week.columnSlots, 7);
+	assert.equal(week.columnPeak, 2);
+	assert.deepEqual(week('kompi').columns, [0, 0, 0, 0, 1, 0, 2]);
+	assert.deepEqual(week('yoga').columns, [0, 0, 0, 0, 0, 0, 0]);
+	const today = overview(db, NOW, { days: 1 });
+	assert.equal(today.columnSlots, 24);
+	assert.equal(today('kompi').columns.length, 14);
+	assert.equal(today('kompi').columns.at(-1), 2);
+});
+
+test('a scale of columns runs from zero to a clean number at or above the peak', () => {
+	assert.deepEqual(axisTicks(0), [0, 1]);
+	assert.deepEqual(axisTicks(1), [0, 1]);
+	assert.deepEqual(axisTicks(3), [0, 1, 2, 3]);
+	assert.deepEqual(axisTicks(7), [0, 2, 4, 6, 8]);
+	assert.deepEqual(axisTicks(120), [0, 50, 100, 150]);
+	assert.deepEqual(axisTicks(1000), [0, 500, 1000]);
+	for (const peak of [1, 4, 9, 11, 37, 99, 101, 999, 12_345]) {
+		const ticks = axisTicks(peak);
+		assert.ok(ticks.at(-1)! >= peak, `${peak} fits under its scale`);
+		assert.ok(ticks.length <= 5, `${peak} has few ticks`);
+		assert.ok(ticks.every(Number.isInteger), `${peak} has whole ticks`);
+	}
+});
+
+test('columns are dated by the hour, the day or the Monday', () => {
+	assert.deepEqual(columnTicks(1, '2026-11-05').map((t) => t.label), ['00:00', '06:00', '12:00', '18:00']);
+	const week = columnTicks(7, '2026-10-30');
+	assert.equal(week.length, 7);
+	assert.deepEqual([week[0].over, week[0].label], ['Fri', '30 Oct']);
+	assert.deepEqual(columnTicks(30, '2026-10-07').map((t) => t.label), ['12 Oct', '19 Oct', '26 Oct', '2 Nov']);
+	const quarter = columnTicks(90, '2026-08-08');
+	assert.equal(quarter[0].label, '10 Aug');
+	assert.ok(quarter.length <= 7);
+	assert.ok(quarter.some((t) => t.minor));
+});
+
 test('a source strip leaves out moves within the site and keeps its order', () => {
 	const groups = groupRows([['internal', 50], ['mail', 2], ['tagged', 3], ['search', 5], ['direct', 1]]);
 	assert.deepEqual(groups.map((g) => [g.id, g.n]), [['direct', 1], ['search', 5], ['rest', 5]]);
@@ -97,4 +141,9 @@ test('a view is read and linked the same way', () => {
 	assert.equal(viewHref({ site: 'yoga', who: 'mine', days: 7 }), '/s/yoga?who=mine&days=7');
 	assert.equal(viewHref({ site: null, who: 'others', days: 7, live: true }), '/s/all/live');
 	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 30, extra: { view: 'visits' } }), '/s/yoga?view=visits');
+	assert.equal(readChart(new URLSearchParams('chart=days')), 'days');
+	assert.equal(readChart(new URLSearchParams('chart=pie')), 'pulse');
+	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 30, chart: 'pulse' }), '/s/yoga');
+	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 7, chart: 'days' }), '/s/yoga?days=7&chart=days');
+	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 7, chart: 'days', live: true }), '/s/yoga/live');
 });

@@ -292,6 +292,18 @@ export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; 
 	}
 	const peak = Math.max(1, ...[...pulses.values()].flat());
 
+	// The same counts as columns: one a day, on a peak of their own. Today alone is its hours.
+	const dailies = new Map<string, number[]>();
+	for (const r of perDay) {
+		const d = dayIndex.get(r.day);
+		if (d === undefined) continue;
+		const row = dailies.get(r.site) ?? Array<number>(days).fill(0);
+		row[d] = r.n;
+		dailies.set(r.site, row);
+	}
+	const columnSlots = days === 1 ? slots : days;
+	const columnPeak = days === 1 ? peak : Math.max(1, ...[...dailies.values()].flat());
+
 	const sources = new Map<string, Rows>();
 	for (const r of all<{ site: string; source: string; n: number }>(`SELECT site, source, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? AND source <> 'internal' GROUP BY 1, 2`, [from])) {
 		sources.set(r.site, [...(sources.get(r.site) ?? []), [r.source, r.n]]);
@@ -311,8 +323,9 @@ export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; 
 			count: sum((d) => d >= from),
 			was: first && first <= prevFrom ? sum((d) => d >= prevFrom && d < from) : null,
 			pulse: pulses.get(site) ?? Array<number>(filled).fill(0),
+			columns: days === 1 ? (pulses.get(site) ?? Array<number>(filled).fill(0)) : (dailies.get(site) ?? Array<number>(days).fill(0)),
 			sources: sources.get(site) ?? []
 		};
 	};
-	return Object.assign(line, { peak, step, slots, filled, from, today, counts });
+	return Object.assign(line, { peak, step, slots, filled, from, today, counts, columnSlots, columnPeak });
 }

@@ -20,11 +20,16 @@ export const readDays = (q: Query): number => {
 	return (DAYS as readonly number[]).includes(asked) ? asked : 30;
 };
 
+/** How a period is drawn: the lines through the hours, or a column for each day. */
+export type Chart = 'pulse' | 'days';
+export const readChart = (q: Query): Chart => (q.get('chart') === 'days' ? 'days' : 'pulse');
+
 /** `site` null is the overview. There is no live overview, so its Live goes to all sites. */
-export function viewHref(v: { site: string | null; who: Who; days: number; live?: boolean; extra?: Record<string, string> }): string {
+export function viewHref(v: { site: string | null; who: Who; days: number; chart?: Chart; live?: boolean; extra?: Record<string, string> }): string {
 	const q = new URLSearchParams();
 	if (v.who !== 'others') q.set('who', v.who);
 	if (!v.live && v.days !== 30) q.set('days', String(v.days));
+	if (!v.live && v.chart === 'days') q.set('chart', 'days');
 	for (const [k, value] of Object.entries(v.extra ?? {})) q.set(k, value);
 	const path = v.live ? `/s/${v.site ?? 'all'}/live` : v.site ? `/s/${v.site}` : '/';
 	return q.size ? `${path}?${q}` : path;
