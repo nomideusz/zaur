@@ -57,7 +57,7 @@ app.use((req, res, next) => {
       "style-src 'self'",
       "font-src 'self'",
       "img-src 'self' data:",
-      `connect-src 'self'${tracewayOrigin ? ' ' + tracewayOrigin : ''}`,
+      `connect-src 'self' https://stats.zaur.app${tracewayOrigin ? ' ' + tracewayOrigin : ''}`,
       `form-action 'self' ${siteConfig.webmailLoginUrl}`,
       // zaur.app shows the portal live; nothing else may frame it.
       'frame-ancestors https://zaur.app',

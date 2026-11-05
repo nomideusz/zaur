@@ -29,7 +29,7 @@ export default defineConfig({
 					'img-src': ['self', 'data:', 'blob:', 'https://i.ytimg.com', 'https://cdn-images.dzcdn.net', 'https://e-cdns-images.dzcdn.net'],
 					'font-src': ['self'],
 					'media-src': ['self', 'blob:'],
-					'connect-src': ['self'],
+					'connect-src': ['self', 'https://stats.zaur.app'],
 					'frame-ancestors': ['none'],
 					'base-uri': ['self'],
 					'form-action': ['self', issuer],

@@ -47,6 +47,7 @@ export default defineConfig({
 					// error reports, is added at runtime from PUBLIC_TRACEWAY_DSN (hooks.server.ts).
 					'connect-src': [
 						'self',
+						'https://stats.zaur.app',
 						'https://*.livekit.cloud',
 						'wss://*.livekit.cloud',
 						'https://*.turn.livekit.cloud',
