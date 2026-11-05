@@ -250,7 +250,7 @@ The site select and Sign out move to 16px on a phone.
 
 The page has no container. Header, main and footer run the full window, inset by the page margin (28px, 16px at 720px and under), with rules running the same width. Spacing is set by hand to fit each row rather than drawn from a modular scale; the steps in the frontmatter are the ones that recur.
 
-**Overview.** A table: site column 272px, plot column taking what is left, four figure columns of 90px. Every row is 65px, and each line rises 112px, so it stands up behind the row above and the lines interlock. The head is 56px with its words at the bottom, right over the first name, and the first line rises past them into the empty head of the plot's column. The last line's zero lies on the strong hairline under it, so a quiet site draws no second rule. Rows are ranked by count until the owner sets an order. Totals, the dates and the legend close the table.
+**Overview.** A table: site column 272px, plot column taking what is left, four figure columns of 90px. Every row is 76px and each line rises 70px, always less than its row, so however busy a site gets, its peak stays clear of the line above, and the first peak clear of the rule over the table. The head is 30px with its words at the bottom, right over the first name. The last line's zero lies on the strong hairline under it, so a quiet site draws no second rule. Rows are ranked by count until the owner sets an order. Totals, the dates and the legend close the table.
 
 **Report.** One line of number, name, period and link to the site, with the Summary and Visits tabs, which swap everything below them, at its right. Then the Chart Frame at left and credits in a 300px column at right, 32px apart. Chapters follow, 32px apart. The visit log stays behind its tab.
 
@@ -330,7 +330,7 @@ A site's days, one ridge line each through 24 hours, oldest at the back, with da
 The other way to draw a period, for reading one day against another. It is the ridge line again, stepping once a day (once an hour for Today) and flat across each slot, with the ground beneath it. The choice lives in the URL as `?chart=days`, and every link but Live keeps it.
 - **Stems:** one-pixel upright hairlines from the baseline to the lower of two neighbours, which is what makes a day countable. The first slot's left edge is a stem too, so a row never reads as a box.
 - **Report:** a linear scale with always five ticks in Figure Small, from zero to a clean top at or above the tallest day, so the rules stay put whatever the counts. Hairlines for the ticks, and the tallest day's figure above it. A table for screen readers carries every slot.
-- **Overview:** the same stepping line in the same place as the Pulse line, on the same 112px rise and square-root scale. Switching changes the marks and nothing else.
+- **Overview:** the same stepping line in the same place as the Pulse line, on the same 70px rise and square-root scale. Switching changes the marks and nothing else.
 - **Dates:** Figure Small, centred under their slot: the weekday and date for 7 days, every Monday for 30, every second Monday for 90, every fourth on a phone, and every six hours for Today. They also sit under the overview's Pulse lines.
 - **Reading still counting:** the dotted tail, as on a ridge line.
 - **Pointer or tap:** anywhere in a slot shows its reading in a tip and fills that one column solid in ink from the baseline, the only solid column on the page. On the overview the row's line also goes to 2.4px and the others drop to the quiet line colour.

@@ -213,6 +213,16 @@ a:hover {
 	touch-action: pan-y;
 	border-bottom: 1px solid var(--rule-strong);
 }
+/* The baseline again, over the ground a line carries, which would otherwise hide it. */
+.chart-plot::after {
+	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: -1px;
+	height: 1px;
+	background: var(--rule-strong);
+}
 .chart-axis {
 	height: 15px;
 	margin: 6px 0 0 var(--gutter);

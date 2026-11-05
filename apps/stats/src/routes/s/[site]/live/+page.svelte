@@ -218,6 +218,16 @@
 		overflow: hidden;
 		border-bottom: 1px solid var(--rule-strong);
 	}
+	/* The rule again, over the ground the line carries, for when a reading lets the plot overflow. */
+	.plot::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		height: 1px;
+		background: var(--rule-strong);
+	}
 	.plot.short {
 		height: 96px;
 		--rise: 96px;

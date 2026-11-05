@@ -217,11 +217,11 @@
 	}
 	/*
 	 * Every row is the same height and every baseline stays put, drawn either way, ranked
-	 * or not. The head sits right over the first name, and the first line rises past it,
-	 * into the room the head leaves in the plot's column.
+	 * or not. A line rises less than its row, so however busy a site gets, its peak stays
+	 * clear of the line above, and the first peak clear of the rule over the table.
 	 */
 	thead th {
-		height: 56px;
+		height: 30px;
 		padding: 0 0 2px;
 		font-size: 12px;
 		font-weight: 400;
@@ -271,8 +271,8 @@
 	}
 	tbody .site,
 	tfoot .site {
-		padding: 0 16px 7px 0;
-		vertical-align: bottom;
+		padding: 16px 16px 0 0;
+		vertical-align: top;
 		font-weight: 400;
 	}
 	.site a {
@@ -331,15 +331,25 @@
 		opacity: 1;
 	}
 	tbody tr {
-		height: 65px;
+		height: 76px;
 	}
 	tbody .plot {
-		--rise: 112px;
+		--rise: 70px;
 		touch-action: pan-y;
 	}
 	/* The last line's zero lies on the rule under it, so a quiet site draws no second rule. */
 	tbody tr:last-child {
 		--lift: -1px;
+	}
+	/* Over the ground the line carries, which would otherwise hide the rule. */
+	tbody tr:last-child .plot::after {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: -1px;
+		height: 1px;
+		background: var(--rule-strong);
 	}
 	.plot {
 		position: relative;
@@ -373,8 +383,8 @@
 	}
 	tbody .num,
 	tfoot .num {
-		padding: 0 0 23px;
-		vertical-align: bottom;
+		padding: 17px 0 0;
+		vertical-align: top;
 		font-size: 14px;
 	}
 	.num a {
@@ -455,6 +465,9 @@
 		tbody,
 		tfoot {
 			display: block;
+		}
+		tbody tr:last-child .plot::after {
+			content: none;
 		}
 		tbody tr,
 		tbody tr:last-child,
