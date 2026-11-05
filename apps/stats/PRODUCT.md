@@ -33,8 +33,8 @@ Success means the owner can answer "what happened on my sites?" here, without a 
 
 ## Operating Context
 
-- **`/` is the overview:** one row per site, ranked by traffic, with its line through the period on one shared scale, where its visits came from, its change, today and the last 5 minutes. Totals sit at the foot.
-- **`/s/<site>` is the report,** and `/s/all` covers everything. Its Summary holds a stack of days through their hours, or a column a day, figures, and lists of sources, pages, tagged links, referrers, places, networks, opened links, languages, systems and screens. Its Visits tab holds the latest visits.
+- **`/` is the overview:** one row per site, ranked by traffic or in the owner's own order, with its line through the period on one shared scale, where its visits came from, its change, today and the last 5 minutes. Totals sit at the foot.
+- **`/s/<site>` is the report,** and `/s/all` covers everything. Its Summary holds a stack of days through their hours, or a line stepping once a day, figures, and chapters of lists: arrivals (sources, referrers, tagged links), pages (most opened, clicked, read), location (places, networks, languages) and devices (systems, screens). Its Visits tab holds the latest visits.
 - **`/s/<site>/live` streams** the last hour and day.
 - **Sites report through a tag.** A site joins by adding a line to `SITES` in `src/lib/sites.ts` and putting the tag on its pages.
 
@@ -48,6 +48,7 @@ Success means the owner can answer "what happened on my sites?" here, without a 
 - **Secrets in addresses:** paths that hold a secret or belong to an owner's panel are skipped by the tag (`data-skip`) and again by the server (`skip`). `mask` keeps a page but hides what it names, such as Music's albums and playlists.
 - **Signed-in apps report less:** Mail, Music and Register run with `detail: false`, because a click's label or link could be somebody's mail. They serve their own copy of `s.js`, so a compromise of Stats can't run code on their origins.
 - **The one third-party exception:** zaur.app alone sends addresses to ipapi.is (`lookup` in `sites.ts`). Every other site stays on the offline databases.
+- **The owner's arrangement:** the overview's order, and whether it's ranked, is the one thing kept about the owner rather than the visits, in a `prefs` row against their address.
 - **Terminology:**
   - *Pages opened* is the count; it does not claim to count people.
   - *Arrivals from outside* are views that weren't a move within the site, direct visits included.

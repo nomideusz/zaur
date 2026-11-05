@@ -5,6 +5,7 @@
 	import { pixelPath } from '#lib/pulse';
 	import type { Live } from '#lib/types';
 	import Ridge from '#lib/components/Ridge.svelte';
+	import RowList from '#lib/components/RowList.svelte';
 	import VisitTable from '#lib/components/VisitTable.svelte';
 
 	let { data } = $props();
@@ -29,7 +30,8 @@
 	const minutePeak = $derived(Math.max(1, ...minutes));
 	const hourPeak = $derived(Math.max(1, ...hours));
 	const lastHour = $derived(sum(minutes));
-	const pagePeak = $derived(Math.max(1, ...(snap?.pages.map((p) => p.n) ?? [])));
+	const pageRows = $derived((snap?.pages ?? []).map((p): [string, number] => [`${p.site} ${p.path}`, p.n]));
+	const pageOf = (k: string) => snap!.pages.find((p) => `${p.site} ${p.path}` === k)!;
 	const hourStart = $derived(new Date((snap?.at ?? 0) - 23 * 3_600_000).toLocaleTimeString('en-GB', { timeZone: 'Europe/Warsaw', hour: '2-digit', hourCycle: 'h23' }));
 
 	// A new visit at the top of the log sends one pulse along the line. A minute
@@ -73,21 +75,21 @@
 	{#if data.site !== 'all'}<span class="no count">{siteNo(data.site)}</span>{/if}
 	<h1>{data.name}</h1>
 	<p class="state" role="status" class:bad={!connected && snap}>
-		<i></i>{#if connected}Live, up to date{:else if snap}Disconnected, reconnecting{:else}Connecting{/if}
+		<i></i>{#if connected}Live{:else if snap}Reconnecting{:else}Connecting{/if}
 	</p>
 </div>
 
 <dl class="figures">
 	<div><dt>Last 5 minutes</dt><dd class="count">{snap ? nf.format(sum(minutes.slice(-5))) : '—'}</dd></div>
-	<div><dt>30 minutes</dt><dd class="count">{snap ? nf.format(sum(minutes.slice(-30))) : '—'}</dd></div>
-	<div><dt>An hour</dt><dd class="count">{snap ? nf.format(lastHour) : '—'}</dd></div>
-	<div><dt>24 hours</dt><dd class="count">{snap ? nf.format(sum(hours)) : '—'}</dd></div>
+	<div><dt>Last 30 minutes</dt><dd class="count">{snap ? nf.format(sum(minutes.slice(-30))) : '—'}</dd></div>
+	<div><dt>Last hour</dt><dd class="count">{snap ? nf.format(lastHour) : '—'}</dd></div>
+	<div><dt>Last 24 hours</dt><dd class="count">{snap ? nf.format(sum(hours)) : '—'}</dd></div>
 </dl>
 
 <div class="work">
 <div class="lines" class:waiting={!snap}>
 	<section>
-		<h2>The last hour, minute by minute</h2>
+		<div class="plot-head"><h2>Last hour</h2><span class="caption still">still counting</span></div>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="plot" bind:clientWidth={plotW} bind:clientHeight={plotH} onpointermove={(e) => read(e, 'minute')} onpointerdown={(e) => read(e, 'minute')} onpointerleave={(e) => { if (e.pointerType !== 'touch') tip = null; }}>
 			<Ridge linear rolling values={minutes} slots={60} peak={minutePeak} label="Last hour: {nf.format(lastHour)} {opened(lastHour)}" />
@@ -97,7 +99,7 @@
 		<div class="axis caption"><span>an hour ago</span><span>at most {nf.format(minutePeak)} a minute</span><span>now</span></div>
 	</section>
 	<section>
-		<h2>The last 24 hours</h2>
+		<div class="plot-head"><h2>Last 24 hours</h2></div>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div class="plot short" onpointermove={(e) => read(e, 'hour')} onpointerdown={(e) => read(e, 'hour')} onpointerleave={(e) => { if (e.pointerType !== 'touch') tip = null; }}>
 			<Ridge linear rolling values={hours} slots={24} peak={hourPeak} label="Last 24 hours: {nf.format(sum(hours))} {opened(sum(hours))}" />
@@ -105,32 +107,26 @@
 		</div>
 		<div class="axis caption"><span class="count">{snap ? `${hourStart}:00` : ''}</span><span>at most {nf.format(hourPeak)} an hour</span><span>now</span></div>
 	</section>
-	<p class="caption dotted">Heights are the counts themselves. A dotted end is the reading still counting.</p>
 </div>
 
 {#if snap}
-		<section class="pages">
-			<h2>Pages · 24 hours</h2>
-			{#each snap.pages as p (p.site + p.path)}
-				<div class="row">
-					<a href={pageHref(p.site, p.path)} title={p.path} target="_blank" rel="noopener noreferrer">
-						{#if data.site === 'all'}<small>{siteName(p.site)} </small>{/if}{p.path}
-					</a>
-					<span class="n count">{nf.format(p.n)}<small>{secs(p.median)}</small></span>
-					<span class="bar"><i style:width="{(100 * p.n) / pagePeak}%"></i></span>
-				</div>
-			{:else}
-				<p class="none">No visits in the last 24 hours.</p>
-			{/each}
-		</section>
+	<section class="pages">
+		<RowList title="Pages, last 24 hours" rows={pageRows} detailHead="in view" empty="No visits in the last 24 hours.">
+			{#snippet name(k)}
+				{@const p = pageOf(k)}
+				<a href={pageHref(p.site, p.path)} title={p.path} target="_blank" rel="noopener noreferrer">{#if data.site === 'all'}<small>{siteName(p.site)} </small>{/if}{p.path}</a>
+			{/snippet}
+			{#snippet detail(k)}{secs(pageOf(k).median)}{/snippet}
+		</RowList>
+	</section>
 {/if}
 </div>
 
 {#if snap}
-		<section class="latest">
-			<h2>Latest</h2>
-			<VisitTable visits={snap.recent} live showSite={data.site === 'all'} empty="Nothing has come in yet. New visits appear here as they land." />
-		</section>
+	<section class="latest">
+		<h2>Latest</h2>
+		<VisitTable visits={snap.recent} live showSite={data.site === 'all'} empty="No visits yet." />
+	</section>
 {/if}
 
 <style>
@@ -191,9 +187,18 @@
 		font-variant-numeric: normal;
 	}
 	h2 {
-		margin: 0 0 6px;
+		margin: 0;
 		font-size: 13px;
 		font-weight: 600;
+	}
+	.plot-head {
+		display: flex;
+		justify-content: space-between;
+		align-items: baseline;
+		margin-bottom: 6px;
+	}
+	.latest h2 {
+		margin-bottom: 6px;
 	}
 	.lines {
 		display: grid;
@@ -207,6 +212,8 @@
 		position: relative;
 		height: 150px;
 		--rise: 150px;
+		/* A line's zero lies on the rule under it, not a pixel above. */
+		--lift: -1px;
 		touch-action: pan-y;
 		overflow: hidden;
 		border-bottom: 1px solid var(--rule-strong);
@@ -221,9 +228,6 @@
 	}
 	.tip {
 		top: 0;
-	}
-	.dotted {
-		margin: -12px 0 0;
 	}
 	.axis span {
 		white-space: nowrap;
@@ -282,58 +286,20 @@
 		margin-bottom: 0;
 		min-width: 0;
 	}
-	.pages h2 {
-		padding-bottom: 6px;
-		border-bottom: 1px solid var(--rule-strong);
+	.pages :global(a) {
+		text-decoration: none;
+	}
+	.pages :global(a:hover) {
+		text-decoration: underline;
+	}
+	.pages small {
+		font-size: 11px;
+		color: var(--soft);
 	}
 	@media (max-width: 1040px) {
 		.work {
 			grid-template-columns: minmax(0, 1fr);
 		}
-	}
-	.row {
-		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
-		column-gap: 12px;
-		align-items: baseline;
-		padding-top: 5px;
-	}
-	.row a {
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		text-decoration: none;
-	}
-	.row a:hover {
-		text-decoration: underline;
-	}
-	.n {
-		font-size: 12px;
-		white-space: nowrap;
-	}
-	.n small {
-		display: inline-block;
-		min-width: 62px;
-		text-align: right;
-	}
-	.bar {
-		grid-column: 1 / -1;
-		height: 1px;
-		margin-top: 5px;
-		background: var(--rule);
-	}
-	.bar i {
-		display: block;
-		height: 1px;
-		background: var(--quiet-line);
-	}
-	small {
-		font-size: 11px;
-		color: var(--soft);
-	}
-	.none {
-		margin: 8px 0 0;
-		color: var(--soft);
 	}
 	@media (max-width: 720px) {
 		.no,

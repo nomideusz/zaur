@@ -32,7 +32,7 @@
 						<td class="time count">{live ? clock(v.t) : when(v.t)}{#if v.me}<span class="yours">Mine</span>{/if}</td>
 						{#if showSite}<td class="on-site"><a href="/s/{v.site}">{siteName(v.site)}</a></td>{/if}
 						<td class="path"><a href={pageHref(v.site, v.path, v.host)} title={v.path} target="_blank" rel="noopener noreferrer">{v.path}</a></td>
-						<td class="from">
+						<td class="from" class:within={v.source === 'internal' && !v.tag}>
 							{#if v.tag}<i class="chip"></i>{/if}{#if v.tag && tagHref}<a href={tagHref(v.tag)}>{v.tag}</a>{:else if v.tag}{v.tag}{:else}{from(v)}{/if}
 							{#if v.hash}{' '}<small>{v.hash}</small>{/if}
 						</td>
@@ -117,6 +117,10 @@
 	.from {
 		width: 14%;
 		overflow-wrap: anywhere;
+	}
+	/* A move within the site says nothing about where anyone came from. */
+	.within {
+		color: var(--soft);
 	}
 	.dev {
 		min-width: 170px;

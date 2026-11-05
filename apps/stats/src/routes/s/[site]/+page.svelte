@@ -3,6 +3,7 @@
 	import { reloading } from '#lib/reloading.svelte';
 	import { groupOf, SOURCES } from '#lib/sources';
 	import { viewHref } from '#lib/view';
+	import Chapter from '#lib/components/Chapter.svelte';
 	import DayColumns from '#lib/components/DayColumns.svelte';
 	import PulseStack from '#lib/components/PulseStack.svelte';
 	import RowList from '#lib/components/RowList.svelte';
@@ -30,21 +31,21 @@
 <div class="title">
 	{#if r.site !== 'all'}<span class="no count">{siteNo(r.site)}</span>{/if}
 	<h1>{data.name}</h1>
-	<p>{whoWord} · {period}{#if r.tag} · <a href={viewHref({ ...here, days: 30 })}>Clear the tag</a>{/if}</p>
-	{#if data.origin}<a class="out" href={data.origin} target="_blank" rel="noopener noreferrer">Open the site</a>{/if}
+	<p>
+		{whoWord} · {period}{#if r.tag}{' '}· <a href={viewHref({ ...here, days: 30 })}>Clear the tag</a>{/if}{#if data.origin}{' '}· <a href={data.origin} target="_blank" rel="noopener noreferrer">Open the site</a>{/if}
+	</p>
+	<nav class="seg tabs" aria-label="Report">
+		<a href={viewHref({ ...here, extra: tagQuery })} aria-current={data.visits ? undefined : 'page'}>Summary</a>
+		<a href={viewHref({ ...here, extra: { ...tagQuery, view: 'visits' } })} aria-current={data.visits ? 'page' : undefined}>Visits{#if r.views}<span class="n count">{r.views > r.recent.length ? `${r.recent.length} of ${nf.format(r.views)}` : nf.format(r.views)}</span>{/if}</a>
+	</nav>
 </div>
-
-<nav class="seg tabs" aria-label="Report">
-	<a href={viewHref({ ...here, extra: tagQuery })} aria-current={data.visits ? undefined : 'page'}>Summary</a>
-	<a href={viewHref({ ...here, extra: { ...tagQuery, view: 'visits' } })} aria-current={data.visits ? 'page' : undefined}>Visits{#if r.views}<span class="n count">{r.views > r.recent.length ? `${r.recent.length} of ${nf.format(r.views)}` : nf.format(r.views)}</span>{/if}</a>
-</nav>
 
 {#if data.visits}
 	<VisitTable visits={r.recent} showSite={r.site === 'all'} {tagHref} empty={emptyWord} />
 {:else}
 	<div class="head">
 		{#if r.views}
-			<!-- A tag's days are only those with visits, so they don't make an even row of columns. -->
+			<!-- A tag's days are only those with visits, so they don't make an even row of days. -->
 			{#if data.chart === 'days' && !r.tag}
 				<DayColumns bars={r.bars} days={r.days} from={r.from} />
 			{:else}
@@ -64,50 +65,72 @@
 		</dl>
 	</div>
 
+	{#snippet tagged(limit: number, fill: number)}
+		<RowList title="Tagged links" note={tagRows.length ? 'all time, latest first' : undefined} rows={tagRows} {limit} {fill} empty="None yet. Hand out {data.origin ?? 'a site'}/?r=company">
+			{#snippet name(tag)}<a href={tagHref(tag)}>{tag}</a>{/snippet}
+		</RowList>
+	{/snippet}
+
 	{#if r.views}
 		<div class="band">
 			{#if r.site === 'all'}
-				<RowList title="Sites" rows={r.sites} total={r.views}>
-					{#snippet name(id)}<a href={viewHref({ ...here, site: id })}>{siteNo(id)} {siteName(id)}</a>{/snippet}
-				</RowList>
+				<Chapter title="Sites" lengths={[r.sites.length]} flow={3}>
+					{#snippet children(limit)}
+						<RowList title="Pages opened" rows={r.sites} total={r.views} shares {limit} flow={3}>
+							{#snippet name(id)}<a href={viewHref({ ...here, site: id })}>{siteNo(id)} {siteName(id)}</a>{/snippet}
+						</RowList>
+					{/snippet}
+				</Chapter>
 			{/if}
-			<RowList title="Came from" rows={r.sources} total={r.views}>
-				{#snippet name(k)}
-					{@const g = groupOf(k)}
-					<i class="chip" class:within={!g} style:background={g ? `var(--src-${g})` : undefined}></i>{SOURCES[k] ?? k}
+			<Chapter title="Arrivals" lengths={data.detail ? [r.sources.length, r.refs.length, tagRows.length] : [r.sources.length, r.refs.length]}>
+				{#snippet children(limit, fill)}
+					<RowList title="Came from" rows={r.sources} total={r.views} shares {limit} {fill}>
+						{#snippet name(k)}
+							{@const g = groupOf(k)}
+							<i class="chip" class:within={!g} style:background={g ? `var(--src-${g})` : undefined}></i>{SOURCES[k] ?? k}
+						{/snippet}
+					</RowList>
+					<RowList title="Referrers" rows={r.refs} total={r.views} {limit} {fill} />
+					{#if data.detail}{@render tagged(limit, fill)}{/if}
 				{/snippet}
-			</RowList>
-			<RowList title="Pages" rows={pages} total={r.views}>
-				{#snippet name(path)}{path} <small>{secs(medians.get(path))}</small>{/snippet}
-			</RowList>
-			{#if data.detail}
-				<RowList title="Tagged links" note={tagRows.length ? 'all time, latest first' : undefined} rows={tagRows} empty="None yet. Hand out {data.origin ?? 'a site'}/?r=company">
-					{#snippet name(tag)}<a href={tagHref(tag)}>{tag}</a>{/snippet}
-				</RowList>
-			{/if}
-			<RowList title="Referrers" rows={r.refs} total={r.views} />
-			<RowList title="Places" rows={r.places} total={r.views} />
-			<RowList title="Networks" rows={r.networks} total={r.views} note={r.business ? `${nf.format(r.business)} from a company` : undefined} />
-			{#if data.detail}
-				<RowList title="Opened" rows={r.opened} total={r.views} />
-				<RowList title="Read · 3s or more" rows={r.read} total={r.views} />
-			{/if}
-			<RowList title="Languages" rows={r.langs} total={r.views} />
-			<RowList title="Systems" rows={r.systems} total={r.views} />
-			<RowList title="Screens" rows={r.screens} total={r.views} note={r.dark == null ? undefined : `${r.dark}% in dark mode`} />
+			</Chapter>
+			<Chapter title="Pages" lengths={data.detail ? [pages.length, r.opened.length, r.read.length] : [pages.length]} flow={data.detail ? 1 : 3}>
+				{#snippet children(limit, fill)}
+					<RowList title="Opened most" rows={pages} total={r.views} {limit} {fill} detailHead="in view" flow={data.detail ? 1 : 3}>
+						{#snippet detail(path)}{secs(medians.get(path))}{/snippet}
+					</RowList>
+					{#if data.detail}
+						<RowList title="Clicked" rows={r.opened} total={r.views} {limit} {fill} />
+						<RowList title="Read, 3s or more" rows={r.read} total={r.views} {limit} {fill} />
+					{/if}
+				{/snippet}
+			</Chapter>
+			<Chapter title="Location" lengths={[r.places.length, r.networks.length, r.langs.length]}>
+				{#snippet children(limit, fill)}
+					<RowList title="Places" rows={r.places} total={r.views} {limit} {fill} />
+					<RowList title="Networks" rows={r.networks} total={r.views} {limit} {fill} note={r.business ? `${nf.format(r.business)} from a company` : undefined} />
+					<RowList title="Languages" rows={r.langs} total={r.views} {limit} {fill} />
+				{/snippet}
+			</Chapter>
+			<Chapter title="Devices" lengths={[r.systems.length, r.screens.length]}>
+				{#snippet children(limit, fill)}
+					<RowList title="Systems" rows={r.systems} total={r.views} {limit} {fill} />
+					<RowList title="Screens" rows={r.screens} total={r.views} {limit} {fill} note={r.dark == null ? undefined : `${r.dark}% in dark mode`} />
+				{/snippet}
+			</Chapter>
 		</div>
 	{:else if tagRows.length}
 		<div class="band">
-			<RowList title="Tagged links" note="all time, latest first" rows={tagRows}>
-				{#snippet name(tag)}<a href={tagHref(tag)}>{tag}</a>{/snippet}
-			</RowList>
+			<Chapter title="Arrivals" lengths={[tagRows.length]}>
+				{#snippet children(limit, fill)}{@render tagged(limit, fill)}{/snippet}
+			</Chapter>
 		</div>
 	{/if}
 {/if}
 
-{#if data.origin}
+{#if data.origin && r.who === 'mine'}
 	<p class="mark">
-		Counted as yours: anything from an address this page was opened on, and any browser that has opened
+		Counted as yours: addresses this page was opened from, and browsers that have opened
 		<a href="{data.origin}/?stats=me" target="_blank" rel="noopener noreferrer">{data.name}/?stats=me</a>.
 	</p>
 {/if}
@@ -137,17 +160,19 @@
 		margin: 0;
 		color: var(--soft);
 	}
-	.out {
+	.tabs {
 		margin-left: auto;
+		align-self: center;
 	}
 	.head {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) 300px;
 		gap: 32px;
 		align-items: start;
-		margin-bottom: 24px;
+		margin-bottom: 36px;
 	}
 	.nothing {
+		min-height: 449px;
 		margin: 0;
 		padding: 48px 0;
 		font-size: 15px;
@@ -192,19 +217,10 @@
 	.from {
 		align-items: center !important;
 	}
-	.tabs {
-		display: inline-flex;
-		margin-bottom: 18px;
-	}
 	.n {
 		margin-left: 8px;
 		font-size: 11px;
 		opacity: 0.85;
-	}
-	.band {
-		display: grid;
-		grid-template-columns: repeat(3, minmax(0, 1fr));
-		gap: 28px 40px;
 	}
 	.chip {
 		display: inline-block;
@@ -215,14 +231,10 @@
 	.chip.within {
 		border: 1px solid var(--rule-strong);
 	}
-	small {
-		font-size: 12px;
-		color: var(--soft);
-	}
-	.band a {
+	.band :global(a) {
 		text-decoration: none;
 	}
-	.band a:hover {
+	.band :global(a:hover) {
 		text-decoration: underline;
 	}
 	.mark {
@@ -234,8 +246,8 @@
 		.head {
 			grid-template-columns: minmax(0, 1fr);
 		}
-		.band {
-			grid-template-columns: repeat(2, minmax(0, 1fr));
+		.nothing {
+			min-height: 0;
 		}
 	}
 	@media (max-width: 720px) {
@@ -247,14 +259,13 @@
 		.lead dd {
 			font-size: 26px;
 		}
-		.out {
-			margin-left: 0;
+		.title p {
+			flex-basis: 100%;
 		}
 		.tabs {
 			display: flex;
-		}
-		.band {
-			grid-template-columns: minmax(0, 1fr);
+			flex-basis: 100%;
+			margin: 8px 0 0;
 		}
 	}
 </style>

@@ -18,7 +18,7 @@ colors:
   ground-light: "#f4f4f0"
   raised-light: "#ffffff"
   ink-light: "#0a0a0a"
-  soft-light: "#6a6a64"
+  soft-light: "#55554f"
   rule-light: "#d4d4ce"
   rule-strong-light: "#85857f"
   quiet-line-light: "#85857f"
@@ -171,8 +171,8 @@ The page is dense and quiet. Body type is 13px, a page runs the full width of th
 - Matte ground, one-colour hairline plots, and square corners throughout.
 - Colour used as a code for where visits came from, never as decoration.
 - Archivo for words, JetBrains Mono for figures, and wide tracked caps for the wordmark alone.
-- Catalogue numbers that stay with a site and open it from the keyboard.
-- Every plot's caption or axis says how to read its height.
+- Catalogue numbers that stay with a site, and keys shown beside each entry in the site menu.
+- A plot explains itself with a legend of a few words, never with a sentence.
 - One authored motion, on the Live minute line.
 
 ## Colors
@@ -198,7 +198,7 @@ The source code, in its fixed order.
 ### Neutral
 - **Matte Ground** (#0a0a0a dark, #f4f4f0 light): the page, the reading tip, and the fill under every plotted line.
 - **Raised Black** (#151514 dark, #ffffff light): a hover wash on a control or a visit row. It is never a resting surface.
-- **Soft Ink** (#a6a6a0 dark, #6a6a64 light): labels, column heads, captions, catalogue numbers and the inactive side of a control. 8.09:1 on the ground in dark, 6.81:1 in light.
+- **Soft Ink** (#a6a6a0 dark, #55554f light): labels, column heads, captions, catalogue numbers, the counts after a list's first row and the inactive side of a control.
 - **Hairline** (#2c2c2a dark, #d4d4ce light): the rule between rows and the track of a list's measure.
 - **Strong Hairline** (#6a6a64 dark, #85857f light): control borders, the rule under a section head, and the rule above totals.
 - **Quiet Line** (#6e6e69 dark, #85857f light): a line with no visits, a dotted tail, lines dimmed by hovering a neighbour, and a list's measure. It never carries text.
@@ -250,15 +250,15 @@ The site select and Sign out move to 16px on a phone.
 
 The page has no container. Header, main and footer run the full window, inset by the page margin (28px, 16px at 720px and under), with rules running the same width. Spacing is set by hand to fit each row rather than drawn from a modular scale; the steps in the frontmatter are the ones that recur.
 
-**Overview.** A table: site column 272px, plot column taking what is left, four figure columns of 90px. Rows are 65px, and each line rises 112px, so it stands up behind the row above and the lines interlock. The first row is 112px, to give its line that room, and the last is 75px, to keep its line clear of the rule under it. Rows are ranked by count, and totals and the legend close the table above a strong hairline. By day, every row is 65px with a hairline under it, its columns rise 54px and stay in their own row, and the dates sit under the plot's column head.
+**Overview.** A table: site column 272px, plot column taking what is left, four figure columns of 90px. Every row is 65px, and each line rises 112px, so it stands up behind the row above and the lines interlock. The head is 56px with its words at the bottom, right over the first name, and the first line rises past them into the empty head of the plot's column. The last line's zero lies on the strong hairline under it, so a quiet site draws no second rule. Rows are ranked by count until the owner sets an order. Totals, the dates and the legend close the table.
 
-**Report.** Number, name and period; the Summary and Visits tabs, which swap everything below them; then the stack of days, or the day columns, at left and credits in a 300px column at right, 32px apart. Lists follow in three columns with 28px and 40px gaps. The visit log stays behind its tab.
+**Report.** One line of number, name, period and link to the site, with the Summary and Visits tabs, which swap everything below them, at its right. Then the Chart Frame at left and credits in a 300px column at right, 32px apart. Chapters follow, 32px apart. The visit log stays behind its tab.
 
 **Live.** Number, name and connection status; four totals between rules; the two lines with a 340px Pages column at right, 40px apart; the latest visits underneath.
 
-**Up to 1040px.** The header wraps, with its segments on their own line. The overview's site column narrows to 200px and figures to 64px. Report and Live go to one column, and lists to two.
+**Up to 1040px.** The header wraps, with its segments on their own line. The overview's site column narrows to 200px and figures to 64px. Report and Live go to one column, and a chapter's lists to two.
 
-**Up to 720px.** Controls grow to 40px and fill the width. Each overview row becomes a short block: number, name, strip and period count on one line, the line across the screen at 58px, the other figures under it with their labels. Report lists go to one column. Live's totals go to two columns, its lines to 120px and 80px. The visit log becomes a short stack per visit, without network, device or section details, and the keyboard hint in the footer goes.
+**Up to 720px.** Controls grow to 40px and fill the width. Each overview row becomes a short block: number, name, strip and period count on one line, the line across the screen at 58px, the other figures under it with their labels. Report lists go to one column. Live's totals go to two columns, its lines to 120px and 80px. The visit log becomes a short stack per visit, without network, device or section details. The site menu drops its keys, and rows can't be dragged: the order is set at a desk and followed here.
 
 ## Elevation & Depth
 
@@ -287,8 +287,8 @@ Square, hairlined and inverted when on. It carries Others, Mine and All with the
 ### Field and Button
 Plain, with the same frame as the segments, and at desk widths the same height once a segment's border is counted.
 - **Shape:** one-pixel strong hairline, square corners, 32px high (40px on a phone), 10px side padding.
-- **Colour:** ink on a transparent ground. The button takes the raised wash on hover.
-- **Use:** the site select, and Sign out. Options are native, with the ground and ink set on them.
+- **Colour:** ink on a transparent ground. A button takes the raised wash on hover.
+- **Use:** the site menu's button, and Sign out.
 
 ### Links and Focus
 - **Link:** underlined at one pixel, 3px under the text, thickening to two pixels on hover. Inside tables and lists a link has no underline until it is hovered.
@@ -296,10 +296,19 @@ Plain, with the same frame as the segments, and at desk widths the same height o
 - **Selection:** ink behind ground text.
 
 ### Top Bar
-The wordmark, the site select, the segmented controls pushed right, and Sign out, over a hairline. The select lists every site with its catalogue number.
+The wordmark, the site menu, the segmented controls pushed right, and Sign out, over a hairline.
+
+### Site Menu
+A 190px button naming where you are, over a list of real links: Overview and All sites above a hairline, then every site in the owner's order. It is a ground box with a one-pixel ink border, like the reading tip. Rows are 30px (44px on a phone), and the arrow keys, Home, End and Escape work inside it.
+
+### Keys
+Shortcuts are never explained in a sentence. Each sits beside its entry in the site menu, drawn as a key: an 18px square in Figure Small with a strong hairline, soft ink, hidden where there is no keyboard to press. O opens the overview, A all sites, digits 1 to 9 the first nine sites and 0 the tenth. They keep the period, the view of whose visits and Live, and do nothing while focus is in a field.
 
 ### Catalogue Number
-A site's number is its place in `SITES`, two digits with a leading zero. It doesn't change as the ranking does, so the overview's numbers run out of order. Pressing a site's digit opens it from any page, keeping the period, the view of whose visits and Live; digits 1 to 9 open the first nine and 0 opens the tenth. A site past the tenth has no key. The key does nothing while focus is in a field, and a line in the footer explains it on wider screens.
+A site's number is its place in `SITES`, two digits with a leading zero. It doesn't change as the order does, so the overview's numbers run out of order. A site past the tenth has no key.
+
+### Site Order
+The overview is ranked by the period's count, or in the owner's own order. The two column heads choose between them: "No. Site" for the own order and the period for the ranking, which carries a small arrow. The chosen head is in ink. On a row's hover or focus, a grip appears in the page's margin, where it moves nothing. Dragging it, or pressing the arrow keys on it, moves the row and switches to the own order. A moving row's line goes to 2.4px and every other drops to the quiet line colour. The order is stored against the owner's address, so a desk and a phone agree, and the menu follows it. The ranking keeps the own order for later.
 
 ### Ridge Line
 The signature, drawn for each site, each day and each Live plot.
@@ -307,39 +316,45 @@ The signature, drawn for each site, each day and each Live plot.
 - **Fill:** the ground, down to the baseline, which is what stacks the lines.
 - **Overview hover or focus:** the row's line goes to 2.4px and every other line drops to the quiet line colour, over 150ms, or at once under reduced motion. A pointer or a tap also shows the reading in a tip.
 - **Live pointer or tap:** shows the reading in a tip, and the line keeps its weight.
-- **Reading still counting:** a thin dotted tail (1px, 2 on 3 off, quiet line colour) from the last whole reading, to the current one and down to the baseline. It isn't part of the solid line, so a new hour never reads as a fall. Each plot's caption explains it.
+- **Reading still counting:** a thin dotted tail (1px, 2 on 3 off, quiet line colour) from the last whole reading, to the current one and down to the baseline. It isn't part of the solid line, so a new hour never reads as a fall. Each plot's legend carries a sample of it.
 
-**The Stated Scale Rule.** Between sites, a line's height is the square root of its count on one shared peak, so quiet sites keep their shape. A single site's own lines, in the report stack and on Live, are linear. The overview's and the stack's captions say so and give the tallest reading. Each Live line has its own peak, printed under it as "at most" so many a minute or an hour.
+**The Stated Scale Rule.** Between sites, a line's height is the square root of its count on one shared peak, so quiet sites keep their shape. A single site's own lines, in the report stack and on Live, are linear. Linear goes unsaid. The overview's legend says "√ scale" and gives the tallest reading, with the reason on hover. The stack's legend gives its tallest reading, and each Live line has its own peak, printed under it as "at most" so many a minute or an hour.
+
+### Chart Frame
+A report's chart, drawn either way: 400px high (300px on a phone), a 72px gutter (58px) for dates or the scale, a strong hairline for the baseline, a 15px axis under it (30px), then the legend. Nothing in it moves with the period, the drawing or the counts, so neither do the lists below. The scrollbar's gutter is always reserved, so a page's width doesn't change with its length.
 
 ### Pulse Stack
-A site's days, one ridge line each through 24 hours, oldest at the back, with dates at left and a mono hours axis under them. Lines rise 92px and sit 40px apart for up to a week, 28px up to a fortnight and 13px beyond that; at 90 days each line is a week. All lines share one peak. Under a pointer or a tap, the nearest line goes to 2.4px without dimming the others. A table for screen readers carries the same totals.
+A site's days, one ridge line each through 24 hours, oldest at the back, with dates at left and a mono hours axis under them. The lines share the frame's height, so they only sit closer or further apart: each rises 30% of the frame for up to 14 lines and 23% beyond that, and a single line takes all of it. At 90 days each line is a week. All lines share one peak. Under a pointer or a tap, the nearest line goes to 2.4px without dimming the others. A table for screen readers carries the same totals.
 
 ### Day Columns
-The other way to draw a period, for reading one day against another: one flat ink column a day, or one an hour for Today, from a single baseline. The choice lives in the URL as `?chart=days`, and every link but Live keeps it.
-- **Column:** at most 24px wide, 2px apart (1px past 45 columns), square at both ends, and at least 2px tall if it counted anything. A slot with nothing in it stays empty.
-- **Report:** a linear scale from zero with clean ticks in Figure Small, hairline grid behind the columns, a strong hairline for the baseline, and the tallest column's figure above it. 300px tall (220px on a phone). A table for screen readers carries every column.
-- **Overview:** one row of columns a site, with no scale of its own, on the square-root scale the Stated Scale Rule gives everything drawn between sites.
-- **Dates:** Figure Small, centred under their column: the weekday and date for 7 days, every Monday for 30, every second Monday for 90, every fourth on a phone, and every six hours for Today.
-- **Reading still counting:** a 1px dashed outline in the quiet line colour with no fill, so a day in progress never reads as a bad day.
-- **Pointer or tap:** anywhere in a column's slot shows its reading in a tip. That column keeps its ink and the others drop to the quiet line colour.
+The other way to draw a period, for reading one day against another. It is the ridge line again, stepping once a day (once an hour for Today) and flat across each slot, with the ground beneath it. The choice lives in the URL as `?chart=days`, and every link but Live keeps it.
+- **Stems:** one-pixel upright hairlines from the baseline to the lower of two neighbours, which is what makes a day countable. The first slot's left edge is a stem too, so a row never reads as a box.
+- **Report:** a linear scale with always five ticks in Figure Small, from zero to a clean top at or above the tallest day, so the rules stay put whatever the counts. Hairlines for the ticks, and the tallest day's figure above it. A table for screen readers carries every slot.
+- **Overview:** the same stepping line in the same place as the Pulse line, on the same 112px rise and square-root scale. Switching changes the marks and nothing else.
+- **Dates:** Figure Small, centred under their slot: the weekday and date for 7 days, every Monday for 30, every second Monday for 90, every fourth on a phone, and every six hours for Today. They also sit under the overview's Pulse lines.
+- **Reading still counting:** the dotted tail, as on a ridge line.
+- **Pointer or tap:** anywhere in a slot shows its reading in a tip and fills that one column solid in ink from the baseline, the only solid column on the page. On the overview the row's line also goes to 2.4px and the others drop to the quiet line colour.
 
 ### Source Strip and Legend
-Blocks of the source code, 96px wide and 10px tall with 2px gaps, each as wide as its share and never narrower than 2px. Each block names itself on hover with its group and share, and a screen reader gets the same words. A site with no arrivals from outside shows an empty hairline frame. Moves within the site aren't arrivals, and in the Came from list they take a hollow chip. The overview's foot carries the legend.
+Blocks of the source code, 96px wide and 10px tall with 2px gaps, each as wide as its share and never narrower than 2px. Each block names itself on hover with its group and share, and a screen reader gets the same words. A site with no arrivals from outside shows an empty hairline frame. Moves within the site aren't arrivals, and in the Came from list they take a hollow chip. The overview's foot carries the legend, beside the sample of a reading still counting and the scale.
 
 ### Credits
 A report's figures as a film's credits: label at left, figure at right, rows split by hairlines. Pages opened leads at Figure Lead over a strong hairline, with its change beneath the label, and the source strip closes the list.
 
+### Chapter
+One question a report answers, in Title type, with the lists that answer it side by side: Arrivals, Pages, Location and Devices, and Sites first on All sites. Every list shows six rows, and a shorter one runs on in empty ruled rows, so the rows of a chapter stay level and leave no gaps. "Show all" at the chapter's right opens all of its lists at once. A chapter with one list runs it through three columns, filling across, with a head over each.
+
 ### Ranked List
-A section head over a strong hairline, then rows of words, a count and a share. Under each row runs a one-pixel measure, quiet line on hairline, scaled to the longest row, which also serves as the row's rule. Long words end in an ellipsis.
+A caption over a strong hairline, then rows of words and a count. The first row is the answer, a step larger at 15px with its count in ink, unless the list runs through several columns. The counts after it are Figure List in soft ink, so the eye runs down the words. Shares are a column only where they are the point, Came from and Sites; elsewhere a count names its share on hover. A list's extra figure, such as a page's time in view, gets its own right-aligned column with its own head, never a place inside the words. Under each row runs a one-pixel measure, quiet line on hairline, scaled to the longest row, which also serves as the row's rule. Long words end in an ellipsis.
 
 ### Visit Log
-A table with soft heads over a strong hairline and hairlines between visits, with the raised wash on hover at desk widths. Mine is marked in words under the time. Secondary details are 12px soft ink, separated by mid-dots.
+A table with soft heads over a strong hairline and hairlines between visits, with the raised wash on hover at desk widths. Mine is marked in words under the time. Secondary details are 12px soft ink, separated by mid-dots, and a move within the site is soft ink too, since it says nothing about where anyone came from.
 
 ### Reading Tip
 The reading under a pointer or a tap, in Caption with the count in mono at 500. It is a ground box with a one-pixel ink border, and it stays out of the way of the pointer by flipping left past halfway. On a phone it runs the width of the screen under the plot and hides no line.
 
 ### Live Status
-A 9px square and a line of words: "Live, up to date", "Connecting", or, in Lost Line Amber, "Disconnected, reconnecting". It is announced as a status. While connecting, the two lines are shown at half opacity.
+A 9px square and one word: "Live", "Connecting", or, in Lost Line Amber, "Reconnecting". It is announced as a status. While connecting, the two lines are shown at half opacity.
 
 ### Live Beat
 The one authored motion. When a new visit reaches the top of the log, a stretch of ink at 2.6px travels the minute line once, over 1400ms on `cubic-bezier(0.16, 1, 0.3, 1)`, and fades at the end. A minute turning changes the totals but doesn't fire it. It is hidden under reduced motion.
@@ -349,13 +364,15 @@ The one authored motion. When a new visit reaches the top of the log, a stretch 
 ### Do:
 - **Do** take every colour from the tokens on `:root`, so light stays the same sleeve printed the other way round.
 - **Do** keep the five source groups in their fixed order, with the words of the legend close by or the labelled Came from list beside them.
-- **Do** print a plot's tallest reading in its caption or axis, and say there how its height is scaled.
+- **Do** print a plot's tallest reading in its legend or axis, and mark it when its height isn't linear.
+- **Do** explain a plot with a short legend, and leave out anything the reader can see.
 - **Do** use the square root only between sites on one shared peak, and linear heights for a single site's own lines.
 - **Do** draw a reading still counting as the dotted tail, not as part of the solid line.
 - **Do** add a new site at the end of `SITES`, so existing numbers stay where they are.
 - **Do** separate things with one-pixel rules, in the two strengths.
 - **Do** set a figure that stands alone in JetBrains Mono.
 - **Do** keep text at 4.5:1 or better in both themes.
+- **Do** keep every rule in place when the drawing, the period or the counts change.
 
 ### Don't:
 - **Don't** import `@zaur/ui` or the suite's tokens here, or load a font from another host.
@@ -365,4 +382,5 @@ The one authored motion. When a new visit reaches the top of the log, a stretch 
 - **Don't** use the raised wash as a resting surface or build a card from it.
 - **Don't** add a second authored motion. Quick state feedback on a line is fine; anything that travels or plays is not.
 - **Don't** number sites by rank.
+- **Don't** explain a control or a chart in a sentence, or put a hint far from what it describes.
 - **Don't** set anything but the wordmark in wide tracked capitals.

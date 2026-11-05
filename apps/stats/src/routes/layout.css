@@ -53,6 +53,8 @@
 
 html {
 	scrollbar-color: var(--rule-strong) var(--ground);
+	/* A page tall enough to scroll keeps every rule where a short one has it. */
+	scrollbar-gutter: stable;
 }
 body {
 	min-height: 100vh;
@@ -141,10 +143,91 @@ a:hover {
 	white-space: nowrap;
 }
 
+/* A key to press, drawn as the key. */
+.key {
+	display: inline-flex;
+	flex: none;
+	align-items: center;
+	justify-content: center;
+	width: 18px;
+	height: 18px;
+	font-family: var(--mono);
+	font-size: 11px;
+	font-weight: 400;
+	line-height: 1;
+	color: var(--soft);
+	border: 1px solid var(--rule-strong);
+}
+
 /* What a plot says about itself, and the reading under a pointer. */
 .caption {
 	color: var(--soft);
 	font-size: 12px;
+}
+.legend {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px 18px;
+	margin: 0;
+	padding: 0;
+	font-size: 12px;
+	color: var(--soft);
+	list-style: none;
+}
+.legend b {
+	font-family: var(--mono);
+	font-weight: 400;
+	color: var(--ink);
+}
+/* The sample of a reading still counting, in the line's own dots. */
+.still::before {
+	content: '';
+	display: inline-block;
+	width: 17px;
+	height: 1px;
+	margin-right: 6px;
+	vertical-align: middle;
+	background: repeating-linear-gradient(90deg, var(--quiet-line) 0 2px, transparent 2px 5px);
+}
+
+/*
+ * A report's chart, drawn either way: one frame, one baseline and one axis, so the
+ * rules stay put when the drawing, the period or the counts change.
+ */
+.chart {
+	--chart-h: 400px;
+	--gutter: 72px;
+	position: relative;
+	margin: 0;
+	min-width: 0;
+}
+.chart-frame {
+	display: grid;
+	grid-template-columns: var(--gutter) minmax(0, 1fr);
+	height: var(--chart-h);
+	padding-top: 18px;
+}
+.chart-plot {
+	position: relative;
+	min-width: 0;
+	touch-action: pan-y;
+	border-bottom: 1px solid var(--rule-strong);
+}
+.chart-axis {
+	height: 15px;
+	margin: 6px 0 0 var(--gutter);
+}
+.chart .legend {
+	margin: 8px 0 0 var(--gutter);
+}
+@media (max-width: 720px) {
+	.chart {
+		--chart-h: 300px;
+		--gutter: 58px;
+	}
+	.chart-axis {
+		height: 30px;
+	}
 }
 .tip {
 	position: absolute;

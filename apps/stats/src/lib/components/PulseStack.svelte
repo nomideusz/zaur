@@ -8,12 +8,13 @@
 
 	let { rows, peak }: { rows: StackRow[]; peak: number } = $props();
 
-	const RISE = 92;
-	const gap = $derived(rows.length <= 1 ? 0 : rows.length <= 7 ? 40 : rows.length <= 14 ? 28 : 13);
-	const height = $derived(RISE + gap * Math.max(0, rows.length - 1));
+	// How much of the frame one line rises: the frame stays the same height however
+	// many lines share it, so lines only ever sit closer or further apart.
+	const rise = $derived(rows.length <= 1 ? 1 : rows.length <= 14 ? 0.3 : 0.23);
+	const placeOf = (i: number) => (rows.length > 1 ? i / (rows.length - 1) : 0);
 	const paths = $derived(rows.map((r) => linePaths(r.hours, 24, peak, true)));
 	// A date beside about every fourth line, and always the newest.
-	const every = $derived(gap >= 28 ? 1 : 7);
+	const every = $derived(rows.length <= 14 ? 1 : 7);
 	const nameOf = (r: StackRow) => (r.to ? `${shortDay(r.label)} – ${shortDay(r.to)}` : dayLabel(r.label));
 	// Only the start of a week fits beside its line; the reading names the whole span.
 	const shortName = (r: StackRow) => (r.to ? shortDay(r.label) : dayLabel(r.label));
@@ -22,32 +23,33 @@
 	function read(e: PointerEvent) {
 		const plot = e.currentTarget as HTMLElement;
 		const box = plot.getBoundingClientRect();
-		const y = e.clientY - box.top;
-		const row = gap ? Math.max(0, Math.min(rows.length - 1, Math.round((y - RISE) / gap))) : 0;
+		const top = rise * box.height;
+		const gap = rows.length > 1 ? (box.height - top) / (rows.length - 1) : 0;
+		const row = gap ? Math.max(0, Math.min(rows.length - 1, Math.round((e.clientY - box.top - top) / gap))) : 0;
 		const hour = Math.max(0, Math.min(23, Math.round(((e.clientX - box.left) / box.width) * 23)));
-		at = { row, hour, x: e.clientX - box.left, y: RISE + gap * row, right: e.clientX - box.left > box.width / 2 };
+		at = { row, hour, x: e.clientX - box.left, y: top + gap * row, right: e.clientX - box.left > box.width / 2 };
 	}
 	const held = $derived(at ? rows[at.row] : null);
 	const clear = (e: PointerEvent) => {
-		if (!(e.target as Element).closest('figure .plot')) at = null;
+		if (!(e.target as Element).closest('.chart-plot')) at = null;
 	};
 </script>
 
 <svelte:window onpointerdown={clear} />
 
-<figure>
-	<div class="frame">
-		<div class="dates" aria-hidden="true" style:height="{height}px">
+<figure class="chart" style:--r="{rise * 100}%">
+	<div class="chart-frame">
+		<div class="dates" aria-hidden="true">
 			{#each rows as r, i (r.label)}
 				{#if i === rows.length - 1 || (rows.length - 1 - i) % every === 0}
-					<span style:top="{RISE + gap * i}px">{shortName(r)}</span>
+					<span style:--f={placeOf(i)}>{shortName(r)}</span>
 				{/if}
 			{/each}
 		</div>
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div class="plot" style:height="{height}px" onpointermove={read} onpointerdown={read} onpointerleave={(e) => { if (e.pointerType !== 'touch') at = null; }}>
+		<div class="chart-plot" onpointermove={read} onpointerdown={read} onpointerleave={(e) => { if (e.pointerType !== 'touch') at = null; }}>
 			{#each rows as r, i (r.label)}
-				<svg viewBox="0 0 {BOX_W} {BOX_H}" preserveAspectRatio="none" aria-hidden="true" style:top="{gap * i}px" style:height="{RISE}px">
+				<svg viewBox="0 0 {BOX_W} {BOX_H}" preserveAspectRatio="none" aria-hidden="true" style:--f={placeOf(i)}>
 					<path class="area" d={paths[i].area} />
 					<path class="line" class:flat={!r.n} class:held={at?.row === i} d={paths[i].line} vector-effect="non-scaling-stroke" />
 					{#if paths[i].tail}<path class="tail" d={paths[i].tail} vector-effect="non-scaling-stroke" />{/if}
@@ -60,7 +62,7 @@
 			{/if}
 		</div>
 	</div>
-	<div class="hours" aria-hidden="true">
+	<div class="chart-axis hours" aria-hidden="true">
 		<span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
 	</div>
 	<table class="sr">
@@ -71,42 +73,39 @@
 			{/each}
 		</tbody>
 	</table>
-	<figcaption class="caption">
-		Warsaw time.{rows[0]?.to ? ' Each line is a week, its hours added together.' : ''} Tallest reading: {nf.format(peak)} {opened(peak)} in {rows[0]?.to ? 'one hour of a week' : 'an hour'}. Heights are the counts themselves, on one scale for these lines. A dotted end is the hour still counting.
+	<figcaption>
+		<ul class="legend">
+			<li>Warsaw time</li>
+			{#if rows[0]?.to}<li>one line a week</li>{/if}
+			<li>tallest <b>{nf.format(peak)}</b> in an hour</li>
+			<li class="still">this hour, still counting</li>
+		</ul>
 	</figcaption>
 </figure>
 
 <style>
-	figure {
-		position: relative;
-		margin: 0;
-		min-width: 0;
-	}
-	.frame {
-		display: grid;
-		grid-template-columns: 76px minmax(0, 1fr);
-	}
 	.dates {
 		position: relative;
 	}
+	/* A date sits on its line's baseline. */
 	.dates span {
 		position: absolute;
 		left: 0;
+		top: calc(var(--r) + (100% - var(--r)) * var(--f));
 		transform: translateY(-100%);
 		font-size: 12px;
 		line-height: 1;
 		white-space: nowrap;
 		color: var(--soft);
 	}
-	.plot {
-		position: relative;
-		touch-action: pan-y;
-	}
+	/* The box a little taller than the rise, so a line's zero falls on its baseline. */
 	svg {
 		position: absolute;
 		left: 0;
+		top: calc((100% - var(--r)) * var(--f));
 		display: block;
 		width: 100%;
+		height: calc(var(--r) * 100 / 99);
 		overflow: visible;
 		pointer-events: none;
 	}
@@ -137,24 +136,14 @@
 	.hours {
 		display: flex;
 		justify-content: space-between;
-		margin: 6px 0 0 76px;
 		font-family: var(--mono);
 		font-size: 11px;
+		line-height: 15px;
 		color: var(--soft);
 	}
-	figcaption {
-		margin: 8px 0 0 76px;
-	}
 	@media (max-width: 720px) {
-		.frame {
-			grid-template-columns: 58px minmax(0, 1fr);
-		}
 		.dates span {
 			font-size: 11px;
-		}
-		.hours,
-		figcaption {
-			margin-left: 58px;
 		}
 		/* A tap's reading sits under the plot, over the hours, and hides no line. */
 		.tip {

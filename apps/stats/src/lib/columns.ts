@@ -1,12 +1,15 @@
 /** The scale and the dates under a chart of columns: one a day, or one an hour for today alone. */
 import { addDayStr, hourLabel, shortDay } from './format';
 
-/** Clean whole numbers from zero to at or above the peak, at most five of them. */
+/**
+ * Always five ticks, from zero to the first clean top at or above the peak, so the
+ * rules of a scale stay where they are whatever the counts are.
+ */
 export function axisTicks(peak: number): number[] {
-	const top = Math.max(1, peak);
-	const power = 10 ** Math.floor(Math.log10(top));
-	const step = [1, 2, 5, 10, 20, 50, 100].map((m) => (m * power) / 10).find((s) => s >= 1 && Math.ceil(top / s) <= 4)!;
-	return Array.from({ length: Math.ceil(top / step) + 1 }, (_, i) => i * step);
+	const quarter = Math.max(1, peak) / 4;
+	const power = 10 ** Math.floor(Math.log10(quarter));
+	const step = [1, 1.5, 2, 2.5, 3, 4, 5, 7.5, 10].map((m) => m * power).find((s) => s >= quarter && Number.isInteger(s)) ?? Math.ceil(quarter);
+	return [0, 1, 2, 3, 4].map((i) => i * step);
 }
 
 export interface ColumnTick {

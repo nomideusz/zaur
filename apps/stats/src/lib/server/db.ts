@@ -58,6 +58,11 @@ export function openDb(path: string): DatabaseSync {
 			hash TEXT PRIMARY KEY,
 			seen INTEGER NOT NULL
 		);
+		CREATE TABLE IF NOT EXISTS prefs (
+			email TEXT PRIMARY KEY,
+			site_order TEXT,
+			ranked INTEGER NOT NULL DEFAULT 1
+		);
 	`);
 	return db;
 }

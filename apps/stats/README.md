@@ -4,7 +4,7 @@ One dashboard for every site, at **stats.zaur.app**: one sign-in, one small beac
 
 - `static/s.js` is the tracker. No cookie, and no id that outlives a page.
 - `POST /api/hit` takes its beacons. The site is read from the request's `Origin`, and an origin that isn't in `src/lib/sites.ts` is dropped.
-- `/` stacks every site's line on one scale, `/s/<site>` is a report (`/s/all` for everything, `?view=visits` for its visit log), and `/s/<site>/live` streams the last hour and day. Whose visits and the period are `?who=` and `?days=` on all of them, `?chart=days` draws the overview and reports as a column a day, and a site's number key opens it.
+- `/` stacks every site's line on one scale, `/s/<site>` is a report (`/s/all` for everything, `?view=visits` for its visit log), and `/s/<site>/live` streams the last hour and day. Whose visits and the period are `?who=` and `?days=` on all of them, `?chart=days` draws the overview and reports as a line stepping once a day. O opens the overview, A all sites and a site's number key that site. Rows on the overview can be dragged into your own order, kept in the `prefs` table.
 - The look is its own, in `DESIGN.md`, and doesn't use `@zaur/ui`. Fonts are self-hosted through `@fontsource-variable`.
 - Signing in goes through Zaur (mail2 is the OIDC issuer), and only addresses in `STATS_ADMINS` get in.
 

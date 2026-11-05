@@ -33,6 +33,31 @@ export function linePaths(values: number[], slots: number, peak: number, linear 
 	return { line: `M${whole.join('L')}`, tail: `M${whole.at(-1)}L${all.at(-1)}V${BOX_H}`, area };
 }
 
+/**
+ * The same counts as one line that steps once a slot, flat across each, so one day
+ * reads against another. The last reading is still counting, so it is the tail.
+ * `stems` are the upright rules between neighbours, as high as the lower of the two.
+ */
+export function stepPaths(values: number[], slots: number, peak: number, linear = false): { line: string; tail: string; area: string; stems: string } {
+	if (!values.length) return { line: '', tail: '', area: '', stems: '' };
+	const base = BOX_H - 1;
+	const x = (i: number) => ((i / slots) * BOX_W).toFixed(1);
+	const y = (n: number) => (base - heightOf(n, peak, linear) * (BOX_H - 3)).toFixed(1);
+	const last = values.length - 1;
+	const whole = values.slice(0, last).map((n, i) => `V${y(n)}H${x(i + 1)}`).join('');
+	const line = last ? `M0 ${y(values[0])}${whole}` : '';
+	const tail = `M${x(last)} ${last ? y(values[last - 1]) : base}V${y(values[last])}H${x(last + 1)}V${base}`;
+	const area = `M0 ${BOX_H}V${base}${values.map((n, i) => `V${y(n)}H${x(i + 1)}`).join('')}V${BOX_H}Z`;
+	const stems = [`M0 ${base}V${y(values[0])}`, ...values.slice(1).map((n, i) => `M${x(i + 1)} ${base}V${y(Math.min(n, values[i]))}`)].join('');
+	return { line, tail, area, stems };
+}
+
+/** The box a slot's reading stands in, for the one column a pointer holds. */
+export function columnBox(i: number, n: number, slots: number, peak: number, linear = false) {
+	const top = BOX_H - 1 - heightOf(n, peak, linear) * (BOX_H - 3);
+	return { x: (i / slots) * BOX_W, y: top, width: BOX_W / slots, height: BOX_H - 1 - top };
+}
+
 /** The same line in real pixels, for a stroke that must keep its length as it travels. */
 export function pixelPath(values: number[], width: number, height: number, peak: number): string {
 	if (values.length < 2 || !width || !height) return '';
