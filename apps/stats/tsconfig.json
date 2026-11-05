@@ -1,0 +1,21 @@
+{
+	"extends": "$app/tsconfig",
+	"compilerOptions": {
+		"strict": true,
+		"sourceMap": true,
+		"types": ["$app/types", "node"],
+		"paths": {
+			"#lib/*": ["./src/lib/*"]
+		}
+	},
+	"include": [
+		".svelte-kit/ambient.d.ts",
+		".svelte-kit/non-ambient.d.ts",
+		".svelte-kit/types/**/$types.d.ts",
+		"vite.config.ts",
+		"src/**/*.ts",
+		"src/**/*.svelte",
+		"tests/**/*.ts"
+	],
+	"exclude": ["node_modules/**", ".svelte-kit/output/**", ".svelte-kit/generated/**"]
+}

@@ -201,6 +201,49 @@ importers:
         specifier: ^4.3.3
         version: 4.3.3
 
+  apps/stats:
+    dependencies:
+      mmdb-lib:
+        specifier: ^3.0.4
+        version: 3.0.4
+    devDependencies:
+      '@sveltejs/adapter-node':
+        specifier: ^6.0.0
+        version: 6.0.0(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))
+      '@sveltejs/kit':
+        specifier: ^3.0.1
+        version: 3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
+      '@sveltejs/vite-plugin-svelte':
+        specifier: ^7.3.1
+        version: 7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
+      '@tailwindcss/vite':
+        specifier: ^4.3.3
+        version: 4.3.3(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
+      '@types/node':
+        specifier: ^25.9.1
+        version: 25.9.1
+      '@zaur/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+      svelte:
+        specifier: ^5.57.2
+        version: 5.57.2
+      svelte-check:
+        specifier: ^4.7.6
+        version: 4.7.7(picomatch@4.0.7)(svelte@5.57.2)(typescript@6.0.3)
+      tailwindcss:
+        specifier: ^4.3.3
+        version: 4.3.3
+      tsx:
+        specifier: ^4.23.13
+        version: 4.23.13
+      typescript:
+        specifier: ^6.0.2
+        version: 6.0.3
+      vite:
+        specifier: ^8.3.4
+        version: 8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)
+
   apps/web:
     dependencies:
       '@nomideusz/svelte-calendar':
@@ -3274,6 +3317,10 @@ packages:
     engines: {node: '>=10'}
     hasBin: true
 
+  mmdb-lib@3.0.4:
+    resolution: {integrity: sha512-tWy4b2UQaJjRhW/VGpy7ypMMgS7JfPezMsmVW7/utlWm6vv1JgsxXkmjuv/SjN6tsG8YrKHfJ00zHhrOCQDhjg==}
+    engines: {node: '>=10', npm: '>=6'}
+
   modify-values@1.0.1:
     resolution: {integrity: sha512-xV2bxeN6F7oYjZWTe/YPAy6MN2M+sL4u/Rlm2AHCIVGfo2p1yGmBHQ6vHehl4bRTZBdHu3TSkWdYgkwpYzAGSw==}
     engines: {node: '>=0.10.0'}
@@ -5500,6 +5547,10 @@ snapshots:
     dependencies:
       '@sveltejs/kit': 3.0.1(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
 
+  '@sveltejs/adapter-node@6.0.0(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))':
+    dependencies:
+      '@sveltejs/kit': 3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
+
   '@sveltejs/adapter-static@4.0.0(@sveltejs/kit@3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))':
     dependencies:
       '@sveltejs/kit': 3.1.0(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.3.1(svelte@5.57.2)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0)))(svelte@5.57.2)(typescript@6.0.3)(vite@8.3.4(@types/node@25.9.1)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.13)(yaml@2.9.0))
@@ -7407,6 +7458,8 @@ snapshots:
   mitt@3.0.1: {}
 
   mkdirp@1.0.4: {}
+
+  mmdb-lib@3.0.4: {}
 
   modify-values@1.0.1: {}
 
