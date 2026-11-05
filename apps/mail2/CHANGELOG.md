@@ -2,6 +2,10 @@
 
 Each version's section becomes its GitHub release. See "Releases" in the README.
 
+## 2.1.2
+
+- App passwords and API keys can be created again on Stalwart 1.0.3, which refused them with "You are not authorized to grant permissions". A new one gets what your sign-in holds (mail, contacts, calendars and files), and cannot change your password or manage credentials. Existing ones keep working
+
 ## 2.1.1
 
 - Works with Stalwart 1.0.3, which removed the First-party setting from OAuth clients and holds tokens to the scopes they ask for. Mail now also asks for files and security, so Files and the security settings keep working

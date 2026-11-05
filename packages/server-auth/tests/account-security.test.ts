@@ -165,6 +165,81 @@ test('API keys cannot manage credentials; app passwords inherit', () => {
 	assert.equal((apiKey as any).permissions.sysAccountPasswordUpdate, true);
 });
 
+const FORBIDDEN = {
+	notCreated: {
+		credential: { type: 'forbidden', description: 'You are not authorized to grant permissions: interactAi' }
+	}
+};
+
+test('a scoped sign-in names what it holds, without managing credentials', async () => {
+	const client = fakeClient(([name, args]) => {
+		const record = (args.create as any).credential;
+		return record.permissions['@type'] === 'Replace'
+			? [name, { created: { credential: { id: 'c1', secret: 'app_secret' } } }]
+			: [name, FORBIDDEN];
+	});
+	client.fetchAccountPermissions = async () => [
+		'authenticate',
+		'emailSend',
+		'imapFetch',
+		'sysSpamTrainingSampleGet',
+		'sysAccountPasswordUpdate',
+		'sysAppPasswordCreate',
+		'sysApiKeyDestroy',
+		'sysOAuthGrantGet'
+	];
+	for (const kind of ['AppPassword', 'ApiKey'] as const) {
+		client.calls.length = 0;
+		const credential = await createCredential(client, kind, { description: 'Phone' });
+		assert.deepEqual(credential, { id: 'c1', secret: 'app_secret' });
+		assert.equal(client.calls.length, 2);
+		assert.deepEqual((client.calls[1]?.[1].create as any).credential.permissions, {
+			'@type': 'Replace',
+			permissions: {
+				authenticate: true,
+				emailSend: true,
+				imapFetch: true,
+				sysSpamTrainingSampleGet: true
+			}
+		});
+	}
+});
+
+test('a server that cannot say what the sign-in holds keeps its refusal', async () => {
+	const without = fakeClient(([name]) => [name, FORBIDDEN]);
+	const silent = fakeClient(([name]) => [name, FORBIDDEN]);
+	silent.fetchAccountPermissions = async () => null;
+	for (const client of [without, silent]) {
+		await assert.rejects(
+			createCredential(client, 'AppPassword', { description: 'Phone' }),
+			/not authorized to grant/
+		);
+		assert.equal(client.calls.length, 1);
+	}
+});
+
+test('other refusals are not retried, and a second refusal is reported', async () => {
+	const invalid = fakeClient(([name]) => [
+		name,
+		{ notCreated: { credential: { type: 'invalidProperties', description: 'Bad name' } } }
+	]);
+	let asked = false;
+	invalid.fetchAccountPermissions = async () => {
+		asked = true;
+		return ['authenticate'];
+	};
+	await assert.rejects(createCredential(invalid, 'AppPassword', { description: 'x' }), /Bad name/);
+	assert.equal(asked, false);
+
+	const refused = fakeClient(([name]) => [name, FORBIDDEN]);
+	refused.fetchAccountPermissions = async () => ['authenticate'];
+	await assert.rejects(
+		createCredential(refused, 'AppPassword', { description: 'x' }),
+		/not authorized to grant/
+	);
+	assert.equal(refused.calls.length, 2);
+});
+
 test('one-time secrets are read from the creation response only', () => {
 	assert.deepEqual(
 		extractOneTimeCredential({ created: { c: { id: 'id-1', secret: 'shown-once' } } }, 'c'),

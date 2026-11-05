@@ -82,6 +82,8 @@ v1.0.3 removed the `firstParty` field, which the release notes do not say. What 
   `calendars`, `files` and `security`. A scope mail2 requests must be listed there first.
 - Tokens are limited to what they requested: without `files` or `security`, Files and Settings →
   Security disappear from the session's capabilities.
+- Such a token cannot grant `Inherit` or `Disable` credential permissions, which start from the whole
+  account. On that refusal mail2 reads `GET /api/account` and creates the credential with `Replace`.
 - Refresh tokens issued as first-party are refused and deleted, so those sessions sign in again once.
 - `GET /api/auth/client?<authorize query>` runs the same checks as a sign-in without a password.
   Probe it with mail2's scopes after any upgrade.

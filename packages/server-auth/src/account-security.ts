@@ -27,6 +27,8 @@ export type CredentialType = 'AppPassword' | 'ApiKey';
 /** The only thing this module needs from a JMAP client. */
 export interface ManagementClient {
 	request(methodCalls: JMAPMethodCall[], using?: string[]): Promise<JMAPResponse>;
+	/** What this sign-in may do, on servers that say. Null when they do not. */
+	fetchAccountPermissions?(): Promise<string[] | null>;
 }
 
 export interface CredentialSummary {
@@ -96,6 +98,28 @@ export function credentialPermissions(type: CredentialType) {
 				permissions: Object.fromEntries(API_KEY_DISABLED_PERMISSIONS.map((name) => [name, true]))
 			}
 		: { '@type': 'Inherit' as const };
+}
+
+const CREDENTIAL_MANAGEMENT = /^sys(AccountPassword|AppPassword|ApiKey|OAuthGrant)/;
+
+/**
+ * For a sign-in limited to the scopes it asked for (Stalwart 1.0.3 and later).
+ * Inherit and Disable both start from the whole account, which Stalwart refuses
+ * to let such a sign-in grant, so name what it holds instead. Either kind of
+ * credential then leaves out managing credentials: nothing a mail app needs.
+ */
+export function scopedCredentialPermissions(allowed: readonly string[]) {
+	return {
+		'@type': 'Replace' as const,
+		permissions: Object.fromEntries(
+			allowed.filter((name) => !CREDENTIAL_MANAGEMENT.test(name)).map((name) => [name, true])
+		)
+	};
+}
+
+function refusedAsForbidden(data: Record<string, unknown>): boolean {
+	const failure = (data.notCreated as Record<string, { type?: unknown }> | undefined)?.credential;
+	return failure?.type === 'forbidden';
 }
 
 /** Only the `created` map of a `set` response may carry a secret. */
@@ -286,10 +310,19 @@ export async function createCredential(
 		allowedIps: Object.fromEntries((input.allowedIps ?? []).map((ip) => [ip, true]))
 	};
 	if (input.expiresAt) record.expiresAt = input.expiresAt;
-	const data = methodData(
-		await request(client, [[`x:${type}/set`, { create: { credential: record } }, 'create']]),
-		'create'
-	);
+	const create = async () =>
+		methodData(
+			await request(client, [[`x:${type}/set`, { create: { credential: record } }, 'create']]),
+			'create'
+		);
+	let data = await create();
+	if (refusedAsForbidden(data)) {
+		const allowed = await client.fetchAccountPermissions?.();
+		if (allowed?.length) {
+			record.permissions = scopedCredentialPermissions(allowed);
+			data = await create();
+		}
+	}
 	assertSetSucceeded(data, 'created');
 	const credential = extractOneTimeCredential(data, 'credential');
 	if (!credential) throw new Error('Stalwart did not return the credential secret');

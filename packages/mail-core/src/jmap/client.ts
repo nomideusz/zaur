@@ -558,6 +558,21 @@ export class JMAPClient {
 		this.session = null;
 	}
 
+	/** Stalwart's list of what this sign-in may do. Null on any other server. */
+	async fetchAccountPermissions(): Promise<string[] | null> {
+		if (this.proxyMode) return null;
+		try {
+			const response = await this.authenticatedFetch(`${this.serverUrl}/api/account`);
+			if (!response.ok) return null;
+			const body = (await response.json()) as { permissions?: unknown };
+			return Array.isArray(body.permissions)
+				? body.permissions.filter((name): name is string => typeof name === 'string')
+				: null;
+		} catch {
+			return null;
+		}
+	}
+
 	async downloadBlob(blobId: string, name: string, type: string): Promise<Response> {
 		if (this.proxyMode) {
 			const params = new URLSearchParams({ blobId, name, type });
