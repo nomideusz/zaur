@@ -58,7 +58,14 @@ export const SITES: Site[] = [
 		mask: [[/^\/(album|artist|playlist)\/[^/]+/, '/$1/…']],
 		detail: false
 	},
-	{ id: 'register', name: 'Zaur Register', hosts: ['register.zaur.app'], skip: /^\/admin/, detail: false }
+	{ id: 'register', name: 'Zaur Register', hosts: ['register.zaur.app'], skip: /^\/admin/, detail: false },
+	{
+		id: 'radiobartek',
+		name: 'radiobartek.com',
+		hosts: ['radiobartek.com', 'www.radiobartek.com'],
+		// SUB/WAVE's operator pages: the admin panel and its first-run setup.
+		skip: /^\/(admin|setup|onboarding)(\/|$)/
+	}
 ];
 
 export const siteById = (id: string) => SITES.find((s) => s.id === id);

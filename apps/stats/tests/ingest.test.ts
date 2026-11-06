@@ -18,6 +18,7 @@ test('a beacon counts for the site its origin names, and only a listed one', () 
 	assert.equal(siteForHost('sobo.szkolyjogi.pl')?.id, 'yoga');
 	assert.equal(siteForHost('panel.szkolyjogi.pl'), undefined);
 	assert.equal(siteForHost('festivals.zaur.app')?.id, 'festivals');
+	assert.equal(siteForHost('radiobartek.com')?.id, 'radiobartek');
 	assert.equal(siteForHost('stats.zaur.app'), undefined);
 	assert.equal(siteForHost('evil.example'), undefined);
 });
@@ -29,6 +30,8 @@ test('a page whose address holds a secret is never kept, and a named one is mask
 	assert.equal(cleanPath(site('thebest'), '/bookings/REF9'), null);
 	assert.equal(cleanPath(site('mail'), '/meet/secret-room'), null);
 	assert.equal(cleanPath(site('music'), '/album/42'), '/album/…');
+	assert.equal(cleanPath(site('radiobartek'), '/admin/settings'), null);
+	assert.equal(cleanPath(site('radiobartek'), '/shows'), '/shows');
 
 	const db = openDb(':memory:');
 	assert.equal(recordHit(db, view('aaaaaaaa', { path: '/pass/abc123' }), ctx('yoga')), false);
