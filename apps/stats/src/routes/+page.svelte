@@ -342,20 +342,10 @@
 		--rise: 104px;
 		touch-action: pan-y;
 	}
-	/* The last line's zero lies on the rule under it, so a quiet site draws no second rule. */
+	/* The last row leaves the rule under it as much room as a name has above it. */
 	tbody tr:last-child {
-		--lift: -1px;
-		height: 52px;
-	}
-	/* Over the ground the line carries, which would otherwise hide the rule. */
-	tbody tr:last-child .plot::after {
-		content: '';
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: -1px;
-		height: 1px;
-		background: var(--rule-strong);
+		--lift: 16px;
+		height: 68px;
 	}
 	.plot {
 		position: relative;
@@ -476,9 +466,6 @@
 		tbody,
 		tfoot {
 			display: block;
-		}
-		tbody tr:last-child .plot::after {
-			content: none;
 		}
 		tbody tr,
 		tbody tr:last-child,
