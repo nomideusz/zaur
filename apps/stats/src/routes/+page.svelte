@@ -217,12 +217,14 @@
 	}
 	/*
 	 * Every row is the same height and every baseline stays put, drawn either way, ranked
-	 * or not. A line rises a little past its row, tall enough for day and night to read at
-	 * a glance. Only a reading near the busiest site's peak goes that high, and the ground
-	 * under it hides what it passes. The head leaves the first peak room below the rule.
+	 * or not. A line's zero and the row's figures sit on the source strip's baseline, so a
+	 * row reads as one line. A line rises well past its row, tall enough for day and night
+	 * to read at a glance. Only a reading near the busiest site's peak goes that high, and
+	 * the ground under it hides what it passes. The head leaves the first peak room below
+	 * the rule.
 	 */
 	thead th {
-		height: 48px;
+		height: 76px;
 		padding: 0 0 2px;
 		font-size: 12px;
 		font-weight: 400;
@@ -331,7 +333,9 @@
 	.moving .grip {
 		opacity: 1;
 	}
+	/* The strip's baseline is 51px down a row; the line's zero is 1px up its box. */
 	tbody tr {
+		--lift: 28px;
 		height: 80px;
 	}
 	tbody .plot {
@@ -341,6 +345,7 @@
 	/* The last line's zero lies on the rule under it, so a quiet site draws no second rule. */
 	tbody tr:last-child {
 		--lift: -1px;
+		height: 52px;
 	}
 	/* Over the ground the line carries, which would otherwise hide the rule. */
 	tbody tr:last-child .plot::after {
@@ -387,6 +392,11 @@
 		padding: 17px 0 0;
 		vertical-align: top;
 		font-size: 14px;
+	}
+	/* No line box under the figures, so the last row can end on their baseline. */
+	tbody .num {
+		padding-top: 46px;
+		line-height: 0;
 	}
 	.num a {
 		text-decoration: none;
@@ -524,6 +534,7 @@
 			padding: 6px 0 0;
 			text-align: left;
 			font-size: 13px;
+			line-height: inherit;
 		}
 		td.num::before {
 			content: attr(data-label) ' ';
