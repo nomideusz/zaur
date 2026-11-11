@@ -182,7 +182,7 @@ test('messageCount counts the thread as this folder view holds it', () => {
 
 test('attachmentUrl: encodes names that would otherwise break the query', () => {
 	const url = attachmentUrl('B123', 'Q2 report (final) & notes.pdf', 'application/pdf');
-	assert.match(url, /^\/api\/download\?/);
+	assert.match(url, /^\/z\/download\?/);
 	const params = new URLSearchParams(url.slice(url.indexOf('?') + 1));
 	assert.equal(params.get('blobId'), 'B123');
 	assert.equal(params.get('name'), 'Q2 report (final) & notes.pdf');

@@ -47,7 +47,7 @@ export function jmapServerUrl(): string {
 }
 
 /**
- * How /login turns what was typed into a session (JMAP_AUTH):
+ * How /signin turns what was typed into a session (JMAP_AUTH):
  * - `stalwart` (default): Stalwart's credential flow when STALWART_OAUTH_* is
  *   set (tokens in the session, 2FA prompt), else HTTP Basic with Stalwart's
  *   `password$code` 2FA convention.

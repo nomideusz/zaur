@@ -286,14 +286,14 @@ export const thread = query(
 				...mapEmailDetail(email, ''),
 				mailboxIds: Object.keys(email.mailboxIds ?? {}).filter((id) => email.mailboxIds?.[id])
 			}))
-			// Inline images come through /api/jmap/download, which has to be told whose they are.
+			// Inline images come through /z/jmap/download, which has to be told whose they are.
 			.map((detail) =>
 				account && detail.bodyHtml
 					? {
 							...detail,
 							bodyHtml: detail.bodyHtml.replaceAll(
-								'/api/jmap/download?',
-								`/api/jmap/download?account=${encodeURIComponent(account)}&`
+								'/z/jmap/download?',
+								`/z/jmap/download?account=${encodeURIComponent(account)}&`
 							)
 						}
 					: detail

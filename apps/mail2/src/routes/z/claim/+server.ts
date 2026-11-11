@@ -6,7 +6,7 @@ import type { HandoffPayload } from '@zaur/server-auth/internal-auth';
 import { getClientAddress } from '#lib/server/login';
 
 /* Second half of the signup handoff: the one-time token from
- * /api/internal/handoff becomes the session cookie, then on to `next` (the
+ * /z/internal/handoff becomes the session cookie, then on to `next` (the
  * OIDC authorize URL when signup began in another app) or the inbox. A used
  * or expired token is just a sign-in, with a welcome. */
 export const GET: RequestHandler = ({ url, cookies, request }) => {
@@ -15,7 +15,7 @@ export const GET: RequestHandler = ({ url, cookies, request }) => {
 	const token = url.searchParams.get('token') ?? '';
 	const payload = token ? consumeOneTimeCode<HandoffPayload>(getStoreDb(), token) : null;
 	const data = payload ? (unsealSession(payload.sealed) as SessionData | null) : null;
-	if (!data) redirect(303, '/login?welcome=1');
+	if (!data) redirect(303, '/signin?welcome=1');
 
 	writeSession(cookies, data, { remember: false });
 	recordSessionDevice(

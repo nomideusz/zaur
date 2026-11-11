@@ -6,7 +6,7 @@ import type { PageServerLoad } from './$types';
 
 /** The link from the reset email: check the token before offering the form. */
 export const load: PageServerLoad = async ({ url, request }) => {
-	if (!isPasswordResetEnabled()) redirect(303, '/login');
+	if (!isPasswordResetEnabled()) redirect(303, '/signin');
 	const email = url.searchParams.get('email')?.trim() ?? '';
 	const token = url.searchParams.get('token')?.trim() ?? '';
 	if (!email || !token) return { email, token, problem: 'This reset link is incomplete.' };

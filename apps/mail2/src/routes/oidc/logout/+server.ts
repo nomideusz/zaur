@@ -29,7 +29,7 @@ const endSession: RequestHandler = ({ url, cookies, request }) => {
 	);
 	const query = new URLSearchParams({ signed_out: '1' });
 	if (target) query.set('return_to', target);
-	redirect(303, `/login?${query}`);
+	redirect(303, `/signin?${query}`);
 };
 
 export const GET = endSession;

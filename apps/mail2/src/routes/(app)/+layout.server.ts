@@ -25,7 +25,7 @@ function loginUrl(url: URL, expired = false): string {
 	if (url.pathname !== '/' || url.search !== '') params.set('next', url.pathname + url.search);
 	if (expired) params.set('expired', '1');
 	const query = params.toString();
-	return query ? `/login?${query}` : '/login';
+	return query ? `/signin?${query}` : '/signin';
 }
 
 export const load: LayoutServerLoad = async ({ cookies, url, untrack }) => {

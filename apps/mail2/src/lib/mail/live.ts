@@ -54,7 +54,7 @@ const POLL_MS = 20_000;
  *
  * The README has always said "JMAP is live, so there is nothing to refresh by
  * hand" — this is the part that makes that true. Stalwart pushes RFC 8620
- * `StateChange` events through `/api/events`; all this has to do is say *what*
+ * `StateChange` events through `/z/events`; all this has to do is say *what*
  * changed, and the page re-runs the remote queries that cover it.
  *
  * It is much smaller than webmail 1.0's `PushListener` because there is no
@@ -133,7 +133,7 @@ export class LiveUpdates {
 		if (!this.#onChange) return;
 		this.#clearReconnect();
 
-		const source = new EventSource('/api/events');
+		const source = new EventSource('/z/events');
 		this.#source = source;
 		this.#resetStaleTimer();
 
@@ -189,7 +189,7 @@ export class LiveUpdates {
 	async #reloadIfSignedOut() {
 		const abort = new AbortController();
 		try {
-			const { status } = await fetch('/api/events', { signal: abort.signal });
+			const { status } = await fetch('/z/events', { signal: abort.signal });
 			if (status !== 401) return;
 			const last = Number(sessionStorage.getItem(RELOADED_AT_KEY)) || 0;
 			if (Date.now() - last < 60_000) return;

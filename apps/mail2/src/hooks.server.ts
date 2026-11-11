@@ -2,6 +2,7 @@ import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit/hooks'
 import { building, dev } from '$app/env';
 import { SESSION_RECORD_MAX_AGE_MS, startStoreMaintenance } from '@zaur/server-auth';
 import { legacyRedirect } from '#lib/legacy-links';
+import { hostRedirect } from '#lib/server/hosts';
 import { DEMO_JMAP_URL } from '#lib/server/demo';
 import { pushWatcher } from '#lib/server/push-watcher';
 import { reportError } from '#lib/server/report';
@@ -50,7 +51,8 @@ function crossSiteForm({ request, url }: Parameters<Handle>[0]['event']): boolea
 }
 
 // Uptime probe (liveness only: the process is serving requests), webmail 1.0's
-// URLs, then the headers CSP does not cover. CSP itself is `csp` in vite.config.ts.
+// URLs, the host a page or /oidc belongs on (#lib/server/hosts), then the
+// headers CSP does not cover. CSP itself is `csp` in vite.config.ts.
 // The 1.0 redirects are 302s so that pointing the domain back at webmail undoes them.
 export const handle: Handle = async ({ event, resolve }) => {
 	if (event.url.pathname === '/health') {
@@ -58,6 +60,9 @@ export const handle: Handle = async ({ event, resolve }) => {
 	}
 	const legacy = event.request.method === 'GET' ? legacyRedirect(event.url, process.env.PUBLIC_REGISTER_URL?.trim()) : null;
 	if (legacy) return new Response(null, { status: 302, headers: { location: legacy } });
+	// After the 1.0 URLs, which would be Stalwart's paths on the other host.
+	const moved = hostRedirect(event.url, event.request);
+	if (moved) return new Response(null, { status: 302, headers: { location: moved } });
 	if (crossSiteForm(event)) {
 		return new Response(`Cross-site ${event.request.method} form submissions are forbidden`, { status: 403 });
 	}

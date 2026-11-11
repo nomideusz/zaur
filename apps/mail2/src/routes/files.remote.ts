@@ -1,7 +1,7 @@
 /**
  * Files: the account's file storage over JMAP FileNode, the same tree Stalwart
  * serves over WebDAV. One folder at a time; the bytes go up through
- * /api/upload and come down through /api/download, like attachments.
+ * /z/upload and come down through /z/download, like attachments.
  *
  * What others share with you lives in their accounts. Every other account the
  * session offers with FileNode is looked into, and whatever in it has no
@@ -23,6 +23,7 @@ import {
 	type JMAPClient
 } from '@zaur/mail-core';
 import { connect, refuse, requireAccount } from '#lib/server/account';
+import { publicOrigin } from '#lib/server/hosts';
 import { treeOrder } from '#lib/mail/folders';
 import { pickPrincipal } from '#lib/share';
 
@@ -207,7 +208,7 @@ export const createFileFolder = command(
 );
 
 /**
- * File an uploaded blob (see /api/upload) into a folder. The blob is always
+ * File an uploaded blob (see /z/upload) into a folder. The blob is always
  * uploaded to your own account, also for a folder someone shared: 1.0 did the
  * same, and Stalwart checks the blob against who you are, not where it lands.
  */
@@ -328,7 +329,7 @@ export const shareFile = command(
 			const body = [
 				`${sharer} shared the ${kind} “${target.name}” with you (${access === 'write' ? 'edit' : 'view'} access).`,
 				'',
-				`Open it in Files: ${getRequestEvent().url.origin}/files`
+				`Open it in Files: ${publicOrigin(getRequestEvent().url)}/files`
 			].join('\n');
 			await client
 				.sendEmail([person.email], `${sharer} shared “${target.name}” with you`, body, { format: 'plain' })

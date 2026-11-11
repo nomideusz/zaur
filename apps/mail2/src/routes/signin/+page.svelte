@@ -72,7 +72,7 @@
 		if ((document.getElementById('login-remember') as HTMLInputElement | null)?.checked) params.set('remember', '1');
 		if (data.addingTo) params.set('mode', 'add');
 		const query = params.toString();
-		location.assign(query ? `/login/passkey?${query}` : '/login/passkey');
+		location.assign(query ? `/signin/passkey?${query}` : '/signin/passkey');
 	}
 
 	// When Stalwart asks for a 2FA code, put the cursor in the code field.

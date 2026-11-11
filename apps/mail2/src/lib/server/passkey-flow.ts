@@ -3,9 +3,9 @@
  * accepts a passkey ceremony run on its own origin (the relying party is the
  * host of its public URL), so mail cannot run it on its own pages.
  *
- * /login/passkey starts an authorization-code request and keeps what it needs
+ * /signin/passkey starts an authorization-code request and keeps what it needs
  * to finish (state, PKCE verifier, where to go next) in a short-lived sealed
- * cookie. Stalwart sends the browser back to /api/auth/oauth/callback, which
+ * cookie. Stalwart sends the browser back to /z/oauth/callback, which
  * checks the state, exchanges the code and opens the session.
  */
 import type { Cookies } from '@sveltejs/kit';
@@ -13,7 +13,7 @@ import { isStalwartOauthEnabled, sealSession, stalwartSupportsPasskeys, unsealSe
 import { jmapAuthMode } from '#lib/server/login';
 
 const COOKIE = 'zaur_passkey_flow';
-const PATH = '/api/auth/oauth';
+const PATH = '/z/oauth';
 /** Stalwart keeps a passkey challenge for five minutes; leave room for the consent step. */
 const MAX_AGE_S = 10 * 60;
 
@@ -76,5 +76,5 @@ export function loginWithOutcome(outcome: PasskeyOutcome, next: string | null, a
 	const params = new URLSearchParams({ passkey: outcome });
 	if (next && next !== '/') params.set('next', next);
 	if (adding) params.set('mode', 'add');
-	return `/login?${params}`;
+	return `/signin?${params}`;
 }

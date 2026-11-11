@@ -29,7 +29,7 @@ test('email frame: a mail never loads from the app itself, asked or not', () => 
 		assert.doesNotMatch(policy, /'self'/);
 		assert.match(policy, /default-src 'none'/);
 		// The app appears once, as the exact path that serves inline (cid:) images.
-		assert.deepEqual(policy.match(/https:\/\/webmail\.zaur\.app[^\s;]*/g), [`${origin}/api/jmap/download`]);
+		assert.deepEqual(policy.match(/https:\/\/webmail\.zaur\.app[^\s;]*/g), [`${origin}/z/jmap/download`]);
 		assert.doesNotMatch(policy, /media-src|font-src|connect-src|frame-src/);
 	}
 });

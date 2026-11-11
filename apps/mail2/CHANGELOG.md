@@ -2,6 +2,12 @@
 
 Each version's section becomes its GitHub release. See "Releases" in the README.
 
+## 2.3.0
+
+- Mail can share a host with Stalwart (as on `mail.zaur.app`). Its own paths that clashed with Stalwart's moved: sign-in is `/signin`, and the app's endpoints are under `/z/` (`/login`, `/api/…` and `/auth/claim|return` before). The old paths still work on a host of Mail's own
+- Passkey sign-in now comes back to `https://<host>/z/oauth/callback`: add it as a redirect URI of Mail's OAuth client before updating. Password sign-in is unchanged
+- New optional `CANONICAL_ORIGIN` (page loads on any other host go there) and `OIDC_ISSUER` (where other apps sign in through Mail; `/oidc/*` elsewhere goes there). Unset, nothing changes
+
 ## 2.2.0
 
 - Sign in with a passkey, on Stalwart 1.1 and later. The button sends you to the mail server's own sign-in page, where the passkey is asked for, and back signed in. Add the host Mail runs on as a redirect URI of its OAuth client (`https://<host>/api/auth/oauth/callback`)

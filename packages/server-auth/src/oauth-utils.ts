@@ -14,7 +14,7 @@ export function createPkceChallenge(verifier: string): string {
  * on the same host.
  */
 export function browserRedirectUri(requestOrigin: string): string {
-	return `${new URL(requestOrigin).origin}/api/auth/oauth/callback`;
+	return `${new URL(requestOrigin).origin}/z/oauth/callback`;
 }
 
 /** An authorization-code request (RFC 6749 §4.1.1) with PKCE S256. */

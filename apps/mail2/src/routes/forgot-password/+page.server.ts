@@ -7,7 +7,7 @@ import type { PageServerLoad } from './$types';
  * pointing at the invitation address, which is where the link will go.
  */
 export const load: PageServerLoad = ({ url }) => {
-	if (!isPasswordResetEnabled()) redirect(303, '/login');
+	if (!isPasswordResetEnabled()) redirect(303, '/signin');
 	const recovery = url.searchParams.get('recovery')?.trim() ?? '';
 	return { email: recovery || url.searchParams.get('email')?.trim() || '', viaRecovery: Boolean(recovery) };
 };

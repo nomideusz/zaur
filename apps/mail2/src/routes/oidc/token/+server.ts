@@ -1,6 +1,7 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { getStoreDb } from '@zaur/server-auth';
 import { consumeAuthCode, secretsEqual, signIdToken, verifyPkceS256 } from '@zaur/server-auth/oidc';
+import { oidcIssuer } from '#lib/server/hosts';
 import { findOidcClient, oidcClients, oidcKeypair } from '#lib/server/oidc';
 
 const NO_STORE = { 'Cache-Control': 'no-store', Pragma: 'no-cache' };
@@ -47,7 +48,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	const iat = Math.floor(Date.now() / 1000);
 	const { sub, ...claims } = data.claims;
 	const idToken = signIdToken(oidcKeypair(), {
-		iss: url.origin,
+		iss: oidcIssuer(url),
 		sub,
 		aud: clientId,
 		iat,
@@ -58,7 +59,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	// Self-contained, so /oidc/userinfo needs no token store: the same claims, typ at+jwt.
 	const accessToken = signIdToken(
 		oidcKeypair(),
-		{ iss: url.origin, sub, aud: clientId, client_id: clientId, iat, nbf: iat, exp: iat + TOKEN_TTL_S, ...claims },
+		{ iss: oidcIssuer(url), sub, aud: clientId, client_id: clientId, iat, nbf: iat, exp: iat + TOKEN_TTL_S, ...claims },
 		'at+jwt'
 	);
 	return json(

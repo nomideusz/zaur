@@ -76,7 +76,7 @@
 			</li>
 		{/each}
 		<li>
-			<a href="/login?mode=add" class="flex min-h-[52px] items-center gap-3 px-4 py-2 hover:bg-[var(--z-hover)] active:bg-[var(--z-hover)]">
+			<a href="/signin?mode=add" class="flex min-h-[52px] items-center gap-3 px-4 py-2 hover:bg-[var(--z-hover)] active:bg-[var(--z-hover)]">
 				<span class="grid size-8 shrink-0 place-items-center rounded-full border border-dashed border-[var(--z-line)] text-[var(--z-muted)]" aria-hidden="true">
 					<svg class="size-3.5" viewBox="0 0 16 16" fill="none">
 						<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />

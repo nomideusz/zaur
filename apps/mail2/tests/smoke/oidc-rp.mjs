@@ -25,7 +25,7 @@ const q = new URLSearchParams({ client_id: 'bartube', redirect_uri: 'http://loca
 // Signed out → login with next back here.
 let r = await get(`/oidc/authorize?${q}`);
 assert.equal(r.status, 302);
-assert.match(r.headers.get('location'), /^\/login\?next=%2Foidc%2Fauthorize/);
+assert.match(r.headers.get('location'), /^\/signin\?next=%2Foidc%2Fauthorize/);
 console.log('signed-out authorize →', r.headers.get('location').slice(0, 60));
 
 // Bad redirect_uri: hard 400, never a redirect.
@@ -69,8 +69,8 @@ assert.equal((await token({ grant_type: 'authorization_code', code, redirect_uri
 // Signup handoff, signed like register does.
 const body = JSON.stringify({ email: 'smoke@zaur.app', password: 'whatever', next: '/oidc/authorize?' + q });
 const ts = String(Date.now()), nonce = randomBytes(16).toString('base64url');
-const sign = (secret) => createHmac('sha256', secret).update(`${ts}.${nonce}.POST./api/internal/handoff.${createHash('sha256').update(body).digest('hex')}`).digest('hex');
-const handoff = (sig) => fetch(B + '/api/internal/handoff', { method: 'POST', body, headers: { 'content-type': 'application/json', 'x-zaur-timestamp': ts, 'x-zaur-nonce': nonce, 'x-zaur-signature': sig } });
+const sign = (secret) => createHmac('sha256', secret).update(`${ts}.${nonce}.POST./z/internal/handoff.${createHash('sha256').update(body).digest('hex')}`).digest('hex');
+const handoff = (sig) => fetch(B + '/z/internal/handoff', { method: 'POST', body, headers: { 'content-type': 'application/json', 'x-zaur-timestamp': ts, 'x-zaur-nonce': nonce, 'x-zaur-signature': sig } });
 assert.equal((await handoff(sign('wrong'))).status, 401);
 r = await handoff(sign('smoke-secret'));
 const h2 = await r.json();
@@ -86,14 +86,14 @@ r = await get(r.headers.get('location'), { cookie: claimed.split(';')[0] });
 assert.match(r.headers.get('location'), /^http:\/\/localhost:9999\/cb\?code=/);
 // Claim tokens are one-time.
 r = await fetch(h2.claimUrl, { redirect: 'manual' });
-assert.equal(r.headers.get('location'), '/login?welcome=1');
+assert.equal(r.headers.get('location'), '/signin?welcome=1');
 
 // RP-initiated logout (of the claimed session, not the seeded one).
 r = await get('/oidc/logout?' + new URLSearchParams({ post_logout_redirect_uri: 'http://localhost:9999/', state: 'bye' }), { cookie: claimed.split(';')[0] });
 assert.equal(r.status, 303);
 console.log('logout →', r.headers.get('location'));
 r = await get('/oidc/logout?' + new URLSearchParams({ post_logout_redirect_uri: 'https://evil.test/' }));
-assert.equal(r.headers.get('location'), '/login?signed_out=1');
-r = await get('/auth/return?to=' + encodeURIComponent('https://evil.test/'));
+assert.equal(r.headers.get('location'), '/signin?signed_out=1');
+r = await get('/z/return?to=' + encodeURIComponent('https://evil.test/'));
 assert.equal(r.headers.get('location'), '/');
 console.log('all OK');

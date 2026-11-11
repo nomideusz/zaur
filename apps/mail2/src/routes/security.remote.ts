@@ -261,7 +261,7 @@ export const changePassword = form(
 
 		// Stalwart revokes every token the account held. Sign this session back
 		// in with the new password so the page you are on keeps working; if that
-		// fails, the next request lands on /login, which is the honest fallback.
+		// fails, the next request lands on /signin, which is the honest fallback.
 		try {
 			const again = await checkCredentials({
 				account,

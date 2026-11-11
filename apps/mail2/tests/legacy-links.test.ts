@@ -27,11 +27,11 @@ test('legacy links: settings, search pages and /register', () => {
 	assert.equal(go('/calendar/search'), '/calendar');
 	assert.equal(go('/files/search?q=x'), '/files');
 	assert.equal(go('/register?invite=abc', 'https://register.zaur.app'), 'https://register.zaur.app/?invite=abc');
-	assert.equal(go('/register'), '/login');
+	assert.equal(go('/register'), '/signin');
 });
 
 test('legacy links: mail2 URLs pass through', () => {
-	for (const path of ['/', '/?thread=T1', '/settings', '/contacts', '/calendar', '/meet/zaur-abc', '/login', '/mailbox']) {
+	for (const path of ['/', '/?thread=T1', '/settings', '/contacts', '/calendar', '/meet/zaur-abc', '/signin', '/mailbox']) {
 		assert.equal(go(path), null, path);
 	}
 });

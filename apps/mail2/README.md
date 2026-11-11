@@ -14,14 +14,14 @@ parts (no design of its own yet).
 - [x] Offline drafts: a draft the server can't take yet is kept on the device,
   saved to Drafts on reconnect, and reopened in the dock after a reload §
 - [x] Draft persistence (Drafts mailbox) + compose attachments
-- [x] Own login (`/login` + sign out) — Stalwart OAuth credential flow in prod,
+- [x] Own login (`/signin` + sign out) — Stalwart OAuth credential flow in prod,
   password fallback in dev; 1.0 session sharing still works as a fallback
 - [x] Settings page (`/settings`) + bulk selection actions
 - [x] Phone and tablet layouts (ADR-0005 put the phone pass after the cutover;
   it turned out to be mostly CSS, so it landed early)
-- [x] Live updates — JMAP push (`/api/events`), with polling as the net †
+- [x] Live updates — JMAP push (`/z/events`), with polling as the net †
 - [x] Search via remote functions (`from:` / `subject:` / `has:attachment` / …) †
-- [x] Attachment downloads (`/api/download`) †
+- [x] Attachment downloads (`/z/download`) †
 - [x] Server-side rules (JMAP Sieve) †
 - [x] Settings that follow the account rather than the browser
 - [x] Design system v2 applied — channel hues, identity tones on avatars, the ZA/UR
@@ -68,8 +68,8 @@ service, a live Stalwart event stream.
 
 ## Sign-in
 
-Mail 2.0 has its own login at `/login` — no webmail detour. The gate lives in
-`src/routes/(app)/+layout.server.ts`: no session → redirect to `/login`
+Mail 2.0 has its own login at `/signin` — no webmail detour. The gate lives in
+`src/routes/(app)/+layout.server.ts`: no session → redirect to `/signin`
 (preserving the target path as `?next=`).
 
 The credential flow reuses webmail 1.0's exactly, via the shared
@@ -101,7 +101,7 @@ The credential flow reuses webmail 1.0's exactly, via the shared
 
 ### Passkeys
 
-Stalwart 1.1 added passkeys, and "Sign in with a passkey" on `/login` uses
+Stalwart 1.1 added passkeys, and "Sign in with a passkey" on `/signin` uses
 them. They cannot be asked for on mail's own pages: Stalwart's relying party
 is the host of its public URL (`mail.zaur.app`) and it accepts a passkey
 sign-in only from exactly that origin. A browser on `webmail.zaur.app` cannot
@@ -111,12 +111,12 @@ checks the origin inside the signed client data.
 So the button runs an ordinary authorization-code request instead
 (`#lib/server/passkey-flow`):
 
-- `/login/passkey` builds the request with PKCE and a state, seals both (with
+- `/signin/passkey` builds the request with PKCE and a state, seals both (with
   `next`, "keep me signed in" and add-account mode) into a ten-minute,
-  httpOnly cookie on `/api/auth/oauth`, and sends the browser to Stalwart's
+  httpOnly cookie on `/z/oauth`, and sends the browser to Stalwart's
   sign-in page (its `authorization_endpoint`), which has the passkey button and
   autofill.
-- Stalwart sends it back to `/api/auth/oauth/callback` **on the host it left
+- Stalwart sends it back to `/z/oauth/callback` **on the host it left
   from** (`getStalwartBrowserRedirectUri`). Every host mail is served on must
   be a redirect URI of the OAuthClient. `STALWART_OAUTH_REDIRECT_URI` is not
   used here: it names the server-side flow's never-visited URI, which in
@@ -124,7 +124,7 @@ So the button runs an ordinary authorization-code request instead
 - The callback reads the cookie once, checks the state, exchanges the code and
   opens the session like a password sign-in, keyed by the username the JMAP
   session reports. A cancel, an expired or replayed flow and a refused code
-  each come back to `/login?passkey=…` with their own message.
+  each come back to `/signin?passkey=…` with their own message.
 - Stalwart asks for consent once per account and client. Anyone who has
   signed in with a password already has that grant, so they go straight back.
 - The button only shows when Stalwart hands out passkey options
@@ -148,18 +148,18 @@ The rest of what 1.0 did around sign-in, so mail2 can take over its hostname:
   comes from this server, so the person's own address rides along, signed with
   `REGISTER_INTERNAL_SECRET`. The token is checked before the form is shown.
 - **Signup handoff**: after creating an account, register signs a POST to
-  `/api/internal/handoff` with the new credentials; mail2 builds the session
-  as `/login` would and parks it behind a one-time `/auth/claim?token=` URL.
+  `/z/internal/handoff` with the new credentials; mail2 builds the session
+  as `/signin` would and parks it behind a one-time `/z/claim?token=` URL.
   The browser follows it and arrives signed in. An old or used link is a
-  sign-in with a welcome (`/login?welcome=1`).
+  sign-in with a welcome (`/signin?welcome=1`).
 - **OIDC provider** for our own apps (`/oidc/authorize|token|userinfo|jwks|logout`,
   `/.well-known/openid-configuration`, clients from `OIDC_PROVIDER_CLIENTS`):
   code flow with PKCE, RS256 id_tokens whose claims pass Stalwart's userinfo
   through, plus name and roles from register. The protocol core is shared
   with 1.0 (`@zaur/server-auth/oidc`), and so is the signing key: it lives in
   the session store, so the JWKS does not change at the cutover. Signing out
-  of Bartube lands on `/login?signed_out=1`, whose sign-in returns there via
-  `/auth/return`. `/oidc/token` is the one form POST exempt from the
+  of Bartube lands on `/signin?signed_out=1`, whose sign-in returns there via
+  `/z/return`. `/oidc/token` is the one form POST exempt from the
   cross-site check: `csrf.trustedOrigins: ['*']` turns Kit's off and
   `hooks.server.ts` does the same check with that one exception.
 - **Headers**: a nonce-based CSP (`csp` in `vite.config.ts`),
@@ -177,7 +177,7 @@ apps must point at **one shared session store**: the session cookie holds an
 id that each app looks up in a SQLite file (`<cwd>/.data/store.sqlite` —
 per-app by default). Copy `.env.example` to `.env` — it points mail2's
 `STORE_DB_PATH` at webmail's store. With nothing set, mail2 signs in through
-its own `/login` page (password fallback) and needs nothing from webmail.
+its own `/signin` page (password fallback) and needs nothing from webmail.
 
 In production the two apps run on sibling subdomains, which requires setting in
 **both** apps' env:
@@ -252,7 +252,7 @@ the pre-deploy quality gate. Since 2026-09-26 it serves `webmail.zaur.app` as
 well as `mail2.zaur.app`; the 1.0 webmail service is stopped, with auto-deploy
 off and no domains (see *Taking over webmail.zaur.app* below).
 
-The container signs in through **its own** `/login` (Stalwart OAuth credential
+The container signs in through **its own** `/signin` (Stalwart OAuth credential
 flow). It keeps the store mount 1.0 used: `STORE_DB_PATH` defaults to
 `/app/.data/store.sqlite`, and that directory also holds the OIDC signing key,
 so the JWKS that Music, Photos and Bartube trust stays the same across
@@ -324,6 +324,61 @@ and start that service. What 1.0 left behind is handled here:
 Not carried over:
 - 1.0's other settings, since mail2's are its own;
 - the Android shell's FCM push, which had no subscribers on 2026-09-25.
+
+### One host with Stalwart (mail.zaur.app)
+
+Mail is moving to `mail.zaur.app`, the host Stalwart already serves. Traefik
+splits it by path: Stalwart keeps the paths it answers, mail gets the rest.
+Two reasons to share one host: `mail.zaur.app` is the address people expect,
+and it is the origin of Stalwart's passkeys, so a passkey sign-in can
+eventually run on mail's own page.
+
+Stalwart's first path segments are `jmap`, `dav`, `.well-known`, `auth`,
+`scim`, `api`, `mail`, `calendar/rsvp`, `form`, `login`, `device`, `healthz`,
+`live`, `ready`, `metrics` and `robots.txt`. It also serves its web apps at
+`/account` and `/admin`, and the hosted sign-in page's assets at `/ui-<hash>.css|js`.
+Mail's own routes clashed on three of them, so they moved:
+
+| Was | Now |
+|-----|-----|
+| `/login`, `/login/passkey` | `/signin`, `/signin/passkey` |
+| `/api/auth/oauth/callback` | `/z/oauth/callback` |
+| `/api/{download,events,internal/handoff,jmap/download,upload}` | `/z/…` |
+| `/auth/claim`, `/auth/return` | `/z/claim`, `/z/return` |
+
+The old paths still work wherever mail is reached on its own host
+(`webmail.zaur.app`). `reroute` in `src/hooks.ts` maps them to the new routes
+(`#lib/paths`) and leaves `event.url` alone, so register's signed handoff to
+`/api/internal/handoff` still verifies. Inline images in a draft kept by a
+browser may still point at `/api/jmap/download`, and sending accepts both
+paths. The service worker leaves navigations to Stalwart's paths alone.
+
+Two settings (`#lib/server/hosts`), both unset by default, meaning every
+host serves everything:
+- `CANONICAL_ORIGIN=https://mail.zaur.app`: a page load on any other host is
+  sent there, under its new path. Fetches, `EventSource` and POSTs are not,
+  because CORS would refuse them. Claim URLs and the Files share email use
+  this origin.
+- `OIDC_ISSUER=https://webmail.zaur.app`: the issuer is in every token
+  Bartube, Photos, Music and Stats hold and in their discovery URL, so it does
+  not move. `/oidc/*` on another host goes there, and tokens say `iss` = this.
+  On `mail.zaur.app` Traefik sends `/.well-known` to Stalwart, which is its
+  own OAuth issuer.
+
+A sign-in from another app therefore crosses hosts. Take Music as an example:
+1. It goes to `webmail…/oidc/authorize`.
+2. Without a session there, that sends it to `/signin`, which the canonical
+   redirect turns into `mail…/signin`.
+3. After sign-in it returns to `mail…/oidc/authorize`.
+4. That sends it back to `webmail…`, where the session cookie
+   (`SESSION_COOKIE_DOMAIN=.zaur.app`) is already valid.
+
+Passkey sign-in sends the browser back to `https://<host>/z/oauth/callback`, so
+before deploying this, add that URI for every host to the OAuthClient's
+redirect URIs. Password sign-in is unaffected. Its redirect URI is never
+visited: it is `STALWART_OAUTH_REDIRECT_URI` when set, and otherwise still
+`/api/auth/oauth/callback` on the request's host, which every existing
+OAuthClient already lists.
 
 ## SvelteKit 3 (pre-release)
 
@@ -409,8 +464,8 @@ mockup affordances across from the Hobday prototype; they are gone:
 | Top-bar search | an input with no handler at all — the slot is wired now, see [Search](#search) |
 | Profile "Keyboard shortcuts" | inert menu item — the list is back as a sheet the `?` key opens, see [Keys](#keys) |
 
-Attachment chips stay, and they are downloads again: `/api/download` streams
-the blob through the server, mirroring `/api/upload`, because Stalwart's
+Attachment chips stay, and they are downloads again: `/z/download` streams
+the blob through the server, mirroring `/z/upload`, because Stalwart's
 `downloadUrl` wants credentials that stay there. The filename goes out in both
 the RFC 5987 `filename*` form and a stripped plain one, so a name with an em
 dash in it survives.
@@ -999,7 +1054,7 @@ Things that bit:
 
 **Images in the text.** An image pasted, dropped or picked into the text stays there: Trix previews
 it at once, `compose.uploadInlineImage` uploads it (Trix's progress bar shows started/done), and the
-attachment's `url` becomes `/api/jmap/download?blobId…&inline=1`. Name and size captions are
+attachment's `url` becomes `/z/jmap/download?blobId…&inline=1`. Name and size captions are
 switched off (`Trix.config.attachments.preview.caption`); a caption the writer types is kept.
 Several images in a row become a Trix gallery. On send and save the server
 (`#lib/server/inline-images.ts`) flattens each `<figure>` to a plain `<img src="cid:BLOBID">` on
@@ -1077,7 +1132,7 @@ nothing. There was no push, no polling and no manual refresh, so new mail only
 appeared if you switched folders or reloaded. The claim describes the protocol,
 not what was built on it. It is true now:
 
-- **`/api/events`** proxies Stalwart's `eventSourceUrl` (RFC 8620 §7.3). It has
+- **`/z/events`** proxies Stalwart's `eventSourceUrl` (RFC 8620 §7.3). It has
   to be proxied: the stream needs the account's credentials, `EventSource` has
   no header API, and the tokens should never reach the browser anyway. A stream
   is also not remote-function state — `query`/`command` are request/response,
@@ -1280,7 +1335,7 @@ with them: `<img src="/oidc/logout">` was a sign-out on open. So:
   space, `//host`, `\\host`, `?x` and the empty string are all requests
   somewhere. What the parser cannot read is treated as the app's.
 - The one app address a body may hold is an inline image,
-  `/api/jmap/download` with a `blobId`, an `image/*` type and `inline=1`, as
+  `/z/jmap/download` with a `blobId`, an `image/*` type and `inline=1`, as
   the mapper writes it in place of `cid:`. `inlineImageSrc` rebuilds it from
   those parts, so nothing else rides along.
 - The frame's CSP never says `'self'`, for the same reason.
@@ -1290,7 +1345,7 @@ with them: `<img src="/oidc/logout">` was a sign-out on open. So:
   endpoint test is a list of today's `+server.ts` directories (`/api`, `/oidc`,
   `/auth`): a new one has to be added to `APP_ENDPOINT`. The real guard is
   that an endpoint does not act on a bare GET. Two have to answer one, because
-  other apps send the browser there: `/oidc/logout` and `/auth/claim`. They act
+  other apps send the browser there: `/oidc/logout` and `/z/claim`. They act
   only when the request is a navigation (`isNavigation` in
   `@zaur/server-auth/oidc` reads `Sec-Fetch-Dest`), so an `<img>`, a `fetch` or
   a frame pointed at them gets a 400. A browser too old to send the header is
@@ -1605,7 +1660,7 @@ The parts that are easy to get wrong, and are tested:
   session cannot carry a code from request to request, and the page says so.
 - **Changing the password revokes every token the account holds.** The
   session is signed back in with the new password in the same request; if that
-  fails, the next request lands on `/login`, which is the honest fallback.
+  fails, the next request lands on `/signin`, which is the honest fallback.
 - **One-time secrets come from `created` only.** `extractOneTimeCredential`
   refuses to read a secret from anywhere else in a response, so a listing can
   never leak one. API keys are minted with a permission set that cannot manage
@@ -1835,7 +1890,7 @@ Keys: `m` mic, `v` camera, `h` hand, `p` people. Env: `LIVEKIT_URL`,
 - **Search** is `FileNode/query` `{ text }` over every account, 50 hits each,
   debounced as you type; a hit of yours links to the folder it is in.
 - **Uploads go up to the server's `maxSizeUpload`**, read from the session (50 MB
-  on Stalwart). `/api/upload` spools the body to a temporary file and hands
+  on Stalwart). `/z/upload` spools the body to a temporary file and hands
   Stalwart a file-backed Blob, so a big file never sits in memory — compose's
   attachments ride the same endpoint. The image's `BODY_SIZE_LIMIT` (50M) is the
   other half of the cap: raise both together. Past that means `Blob/upload`
@@ -2027,7 +2082,7 @@ and turning it off clears a badge already on the icon.
 
 `@zaur/server-auth` always kept several accounts per session; mail2 now uses it.
 
-- **Add**: the account menu's *Add account* opens `/login?mode=add`, which skips
+- **Add**: the account menu's *Add account* opens `/signin?mode=add`, which skips
   the signed-in redirect and signs in with `addAccount` (it joins the session
   and becomes active) instead of `writeSession` (a fresh session of one).
 - **Switch**: `switchAccount` in `session.remote.ts`, then a **full reload**. The
@@ -2080,7 +2135,7 @@ sign-in, so it also works across domains — anyone in the same Stalwart directo
   attach its own account's blobs. Someone else's draft opens in the reader, not
   in your compose.
 - **Downloads** carry `&account=`: attachments through `attachmentUrl`, inline
-  images by rewriting the thread's `/api/jmap/download?` URLs on the server.
+  images by rewriting the thread's `/z/jmap/download?` URLs on the server.
 - Not done: new-mail notifications for a shared mailbox (the push watcher
   watches your own account), and AI categories there (someone else's mail is
   not yours to label).
@@ -2274,9 +2329,9 @@ Two smaller notes:
   wherever a password crosses the wire: `_`-prefixed fields are never echoed
   back, and a form still works without JavaScript.
 - **Three things are plain endpoints instead**, because remote functions are
-  request/response over JSON and these are none of those: `/api/upload` and
-  `/api/download` move bytes (a command cannot carry a `File`), and
-  `/api/events` holds a stream open for hours. All three proxy Stalwart because
+  request/response over JSON and these are none of those: `/z/upload` and
+  `/z/download` move bytes (a command cannot carry a `File`), and
+  `/z/events` holds a stream open for hours. All three proxy Stalwart because
   the credentials they need stay on the server.
 - The offline outbox is a lightweight IndexedDB queue (`#lib/compose/outbox`)
   that looks after itself. The compose store tries it again every 20 s for as

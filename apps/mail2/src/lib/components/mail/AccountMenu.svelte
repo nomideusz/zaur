@@ -82,7 +82,7 @@
 							</span>
 						</Menu.Item>
 					{/each}
-					<Menu.Item value="add-account" class="z-menu-item" onSelect={() => goto('/login?mode=add')}>
+					<Menu.Item value="add-account" class="z-menu-item" onSelect={() => goto('/signin?mode=add')}>
 						Add account
 					</Menu.Item>
 

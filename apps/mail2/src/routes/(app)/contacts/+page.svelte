@@ -22,7 +22,7 @@
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
-		if (who.ready && !who.current) goto('/login', { replaceState: true });
+		if (who.ready && !who.current) goto('/signin', { replaceState: true });
 	});
 
 	// Push: a card saved on the phone shows up here without a reload.

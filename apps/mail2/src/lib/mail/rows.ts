@@ -139,7 +139,7 @@ export function formatBytes(size: number): string {
 export function attachmentUrl(blobId: string, name: string, type: string, account?: string | null): string {
 	const params = new URLSearchParams({ blobId, name, type });
 	if (account) params.set('account', account);
-	return `/api/download?${params}`;
+	return `/z/download?${params}`;
 }
 
 export type PreviewKind = 'image' | 'pdf' | 'video' | 'audio' | 'text';

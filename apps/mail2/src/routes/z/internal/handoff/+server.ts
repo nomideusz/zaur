@@ -7,13 +7,14 @@ import {
 	verifyInternalSignature,
 	type HandoffPayload
 } from '@zaur/server-auth/internal-auth';
+import { publicOrigin } from '#lib/server/hosts';
 import { attemptLogin } from '#lib/server/login';
 
 /*
  * Signup handoff. Register calls this (signed with the shared secret) right
  * after creating the account, so the new person lands in mail signed in
  * instead of typing the password again. The session is built exactly like
- * /login's and parked behind a one-time claim URL (/auth/claim) that the
+ * /signin's and parked behind a one-time claim URL (/z/claim) that the
  * browser follows. The password is not kept: only the sealed session is.
  */
 export const POST: RequestHandler = async ({ request, url }) => {
@@ -55,7 +56,7 @@ export const POST: RequestHandler = async ({ request, url }) => {
 	const payload: HandoffPayload = { sealed: sealSession(result.sessionData), next: safeNextPath(parsed.next) };
 	const token = createOneTimeCode(getStoreDb(), payload, HANDOFF_TTL_MS);
 	return json(
-		{ claimUrl: `${url.origin}/auth/claim?token=${encodeURIComponent(token)}` },
+		{ claimUrl: `${publicOrigin(url)}/z/claim?token=${encodeURIComponent(token)}` },
 		{ headers: { 'Cache-Control': 'no-store' } }
 	);
 };

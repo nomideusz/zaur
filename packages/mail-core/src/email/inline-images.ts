@@ -105,7 +105,7 @@ export function inlineImageDownloadUrl(part: InlineImagePart): string {
 		type: part.type,
 		inline: '1'
 	});
-	return `/api/jmap/download?${params.toString()}`;
+	return `/z/jmap/download?${params.toString()}`;
 }
 
 /** Rewrite same-origin download URLs back to `cid:` for outbound HTML. */
@@ -120,7 +120,7 @@ export function rewriteInlineDownloadUrlsToCid(
 	);
 
 	return html.replace(
-		/(<img\b[^>]*?\ssrc\s*=\s*(["']))(\/api\/jmap\/download\?[^"']+)(\2)/gi,
+		/(<img\b[^>]*?\ssrc\s*=\s*(["']))(\/(?:z|api)\/jmap\/download\?[^"']+)(\2)/gi,
 		(match, prefix: string, quote: string, url: string) => {
 			try {
 				const blobId = new URL(url, 'https://webmail.local').searchParams.get('blobId');

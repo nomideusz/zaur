@@ -1,6 +1,6 @@
 /**
  * Images written into a message (rich compose) are shown from
- * /api/jmap/download while it is being written; on the wire they are inline
+ * /z/jmap/download while it is being written; on the wire they are inline
  * parts the HTML points at by `cid:`. The Content-ID is the blob id, as in
  * webmail 1.0, and mail2's reader resolves it back for a reopened draft.
  *
@@ -14,7 +14,8 @@ import type { EmailAttachmentInput } from '@zaur/mail-core';
 
 const MAX_WIDTH = 600;
 const MAX_IMAGES = 30;
-const SRC = /^\/api\/jmap\/download\?/;
+// `/api/…` is the old path: a draft kept in a browser may still have it.
+const SRC = /^\/(?:z|api)\/jmap\/download\?/;
 
 const attr = (tag: string, name: string) => new RegExp(`\\s${name}="([^"]*)"`, 'i').exec(tag)?.[1];
 const unescape = (value: string) => value.replaceAll('&amp;', '&');
@@ -53,7 +54,7 @@ export function inlineImages(html: string): { html: string; parts: EmailAttachme
 			return shown && `<div>${shown}${caption ? `<br>${caption}` : ''}</div>`;
 		})
 		// Outside a figure (HTML that never went through the editor): same treatment.
-		.replace(/<img\b[^>]*\ssrc="\/api\/jmap\/download\?[^"]*"[^>]*>/gi, image);
+		.replace(/<img\b[^>]*\ssrc="\/(?:z|api)\/jmap\/download\?[^"]*"[^>]*>/gi, image);
 
 	return { html: out, parts: [...parts.values()] };
 }

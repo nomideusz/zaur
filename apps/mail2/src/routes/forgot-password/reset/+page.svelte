@@ -9,7 +9,7 @@
 
 	const pending = $derived(resetPassword.pending > 0);
 	const result = $derived(resetPassword.result);
-	const signIn = $derived(`/login?email=${encodeURIComponent(data.email)}`);
+	const signIn = $derived(`/signin?email=${encodeURIComponent(data.email)}`);
 </script>
 
 <svelte:head>
@@ -82,6 +82,6 @@
 	{/if}
 
 	{#snippet below()}
-		<a href="/login" class="z-link">Back to sign in</a>
+		<a href="/signin" class="z-link">Back to sign in</a>
 	{/snippet}
 </AuthCard>

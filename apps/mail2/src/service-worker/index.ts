@@ -41,8 +41,13 @@ self.addEventListener('activate', (event) => {
 	);
 });
 
+// On mail.zaur.app these are Stalwart's pages (its sign-in, account and admin
+// apps), not ours: the browser loads them as if this worker were not here.
+const STALWART = /^\/(login|auth|api|account|admin|device|form|jmap|dav|scim|mail|calendar\/rsvp|\.well-known)(\/|$)/;
+
 self.addEventListener('fetch', (event) => {
 	if (event.request.mode !== 'navigate') return;
+	if (STALWART.test(new URL(event.request.url).pathname)) return;
 	event.respondWith(
 		(async () => {
 			try {

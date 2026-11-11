@@ -5,7 +5,7 @@ import { findOidcClient, oidcClients, resolveOidcClaims } from '#lib/server/oidc
 
 /*
  * Authorization code flow with mandatory PKCE (S256). Not signed in, or the
- * session's tokens are past refreshing: through /login and back here.
+ * session's tokens are past refreshing: through /signin and back here.
  */
 export const GET: RequestHandler = async ({ url, cookies }) => {
 	if (!oidcClients().length) error(404, 'Not found');
@@ -28,7 +28,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	const codeChallenge = params.get('code_challenge');
 	if (!codeChallenge || params.get('code_challenge_method') !== 'S256') back({ error: 'invalid_request' });
 
-	const toLogin = `/login?next=${encodeURIComponent(`${url.pathname}${url.search}`)}`;
+	const toLogin = `/signin?next=${encodeURIComponent(`${url.pathname}${url.search}`)}`;
 	const account = readSession(cookies);
 	if (!account) redirect(302, toLogin);
 	let claims;

@@ -50,7 +50,7 @@ export function legacyRedirect(url: URL, registerUrl?: string | null): string | 
 
 	if (path === '/register') {
 		const target = registerUrl ? URL.parse(registerUrl) : null;
-		if (!target) return '/login';
+		if (!target) return '/signin';
 		url.searchParams.forEach((value, key) => target.searchParams.set(key, value));
 		return target.href;
 	}

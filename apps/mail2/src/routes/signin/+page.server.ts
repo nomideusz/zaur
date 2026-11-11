@@ -37,7 +37,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 	const returnTo = signedOut
 		? postLogoutTarget(url.searchParams.get('return_to'), null, allOidcRedirectUris())
 		: null;
-	const next = rawNext ? safeNext(rawNext) : returnTo ? `/auth/return?to=${encodeURIComponent(returnTo)}` : '/';
+	const next = rawNext ? safeNext(rawNext) : returnTo ? `/z/return?to=${encodeURIComponent(returnTo)}` : '/';
 	// Also where a sign-in lands: the form's success re-runs this load, and its
 	// redirect beats the page's own goto — so it must know about `return_to` too.
 	if (active && !adding) redirect(303, next);

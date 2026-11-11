@@ -62,9 +62,9 @@ export function attachmentFromServer(part: {
 	};
 }
 
-/** Send a file's bytes to the account (via /api/upload) and get its blob back. */
+/** Send a file's bytes to the account (via /z/upload) and get its blob back. */
 export async function uploadFile(file: File): Promise<OutgoingAttachment> {
-	const response = await fetch('/api/upload', {
+	const response = await fetch('/z/upload', {
 		method: 'POST',
 		headers: { 'Content-Type': file.type || 'application/octet-stream' },
 		body: file

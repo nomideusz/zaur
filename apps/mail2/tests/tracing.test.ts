@@ -9,7 +9,7 @@ const span = (name: string, attributes: Record<string, unknown>, traceId = 't1')
 test('shapeSpans: the root is the endpoint, with status, route and no query string', () => {
 	const shape = shapeSpans();
 	const resolve = span('sveltekit.resolve', { 'http.route': 'unknown', 'http.response.status_code': 200 });
-	const redirect = span('sveltekit.load', { 'http.route': '/(app)', 'sveltekit.load.result.location': '/login?next=%2Fsettings' });
+	const redirect = span('sveltekit.load', { 'http.route': '/(app)', 'sveltekit.load.result.location': '/signin?next=%2Fsettings' });
 	const root = span('sveltekit.handle.root', {
 		'http.route': 'unknown',
 		'http.method': 'GET',
@@ -28,7 +28,7 @@ test('shapeSpans: the root is the endpoint, with status, route and no query stri
 	});
 	// Children keep their own attributes, minus anything Traceway reads as an endpoint.
 	assert.deepEqual((resolve as any).attributes, {});
-	assert.deepEqual((redirect as any).attributes, { 'sveltekit.load.result.location': '/login' });
+	assert.deepEqual((redirect as any).attributes, { 'sveltekit.load.result.location': '/signin' });
 });
 
 test('shapeSpans: an unmatched route drops http.route so a 404 folds into UNMATCHED', () => {

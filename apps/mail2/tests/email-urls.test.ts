@@ -65,7 +65,7 @@ test('mail urls: a srcset is as bad as its worst candidate', () => {
 });
 
 test('mail urls: only the inline-image address is let through, rebuilt', () => {
-	const inline = '/api/jmap/download?blobId=b1&name=logo.svg&type=image%2Fsvg%2Bxml&inline=1';
+	const inline = '/z/jmap/download?blobId=b1&name=logo.svg&type=image%2Fsvg%2Bxml&inline=1';
 	assert.equal(inlineImageSrc(inline, APP), inline);
 	// A shared mailbox's images say whose they are; nothing else rides along.
 	const shared = inline.replace('?', '?account=acc-team&');
@@ -73,12 +73,12 @@ test('mail urls: only the inline-image address is let through, rebuilt', () => {
 	assert.equal(inlineImageSrc(`${inline}&download=1&x=/oidc/logout#x`, APP), inline);
 	for (const url of [
 		'/oidc/logout',
-		'/api/download?blobId=b1&name=a.png&type=image/png&inline=1',
-		'/api/jmap/download/../../oidc/logout?blobId=b1&type=image/png&inline=1',
-		'/api/jmap/download?blobId=b1&type=text/html&inline=1',
-		'/api/jmap/download?type=image/png&inline=1',
-		'/api/jmap/download?blobId=b1&type=image/png',
-		'https://example.com/api/jmap/download?blobId=b1&type=image/png&inline=1'
+		'/z/download?blobId=b1&name=a.png&type=image/png&inline=1',
+		'/z/jmap/download/../../oidc/logout?blobId=b1&type=image/png&inline=1',
+		'/z/jmap/download?blobId=b1&type=text/html&inline=1',
+		'/z/jmap/download?type=image/png&inline=1',
+		'/z/jmap/download?blobId=b1&type=image/png',
+		'https://example.com/z/jmap/download?blobId=b1&type=image/png&inline=1'
 	]) {
 		assert.equal(inlineImageSrc(url, APP), null, url);
 	}
@@ -100,7 +100,7 @@ test('mail urls: links keep other sites, and this app only in full and only its 
 		'https://webmail.zaur.app/%6fidc/logout',
 		'https://webmail.zaur.app/OIDC/logout?post_logout_redirect_uri=x',
 		'https://webmail.zaur.app\\auth\\claim?token=x',
-		'https://webmail.zaur.app/api/events',
+		'https://webmail.zaur.app/z/events',
 		'https://webmail.zaur.app/%ff'
 	]) {
 		assert.equal(linkAllowed(href, APP), false, href);
@@ -108,13 +108,13 @@ test('mail urls: links keep other sites, and this app only in full and only its 
 });
 
 test('compose editor: a draft brings in no picture but an inline image of ours, and nothing else that fetches', () => {
-	const inline = '/api/jmap/download?blobId=b1&name=cat.png&type=image%2Fpng&inline=1';
+	const inline = '/z/jmap/download?blobId=b1&name=cat.png&type=image%2Fpng&inline=1';
 	const img = (src: string) => editorAttribute('img', 'src', src, APP);
 	assert.equal(img(inline), inline);
 	assert.equal(img(`${inline}&x=/oidc/logout`), inline);
 	assert.equal(img('data:image/png;base64,AAAA'), 'data:image/png;base64,AAAA');
 	// null: the <img> does not survive (prepareEditorHtml removes one left without a src).
-	for (const src of ['/oidc/logout', '', '?x', 'https://leak.example.com/pixel.png', '//leak.example.com/p.png', '/api/download?blobId=b1', 'https://music.zaur.app/auth/logout', 'cid:gone']) {
+	for (const src of ['/oidc/logout', '', '?x', 'https://leak.example.com/pixel.png', '//leak.example.com/p.png', '/z/download?blobId=b1', 'https://music.zaur.app/auth/logout', 'cid:gone']) {
 		assert.equal(img(src), null, JSON.stringify(src));
 	}
 	assert.equal(editorAttribute('video', 'src', inline, APP), null);

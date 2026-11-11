@@ -186,7 +186,7 @@
 
 	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
-		if (signedOut) goto('/login', { replace: true });
+		if (signedOut) goto('/signin', { replace: true });
 	});
 
 	/**

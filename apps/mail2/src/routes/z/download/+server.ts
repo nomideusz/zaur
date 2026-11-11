@@ -7,7 +7,7 @@ import { reportError } from '#lib/server/report';
  * Attachment download, proxied.
  *
  * Stalwart's `downloadUrl` needs the account's credentials, which never leave
- * the server, so the bytes come through here — the mirror of `/api/upload`.
+ * the server, so the bytes come through here — the mirror of `/z/upload`.
  * A file transfer is not remote-function state either.
  *
  * The blob is streamed rather than buffered: an attachment can be tens of

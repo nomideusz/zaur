@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { inlineImages } from '../src/lib/server/inline-images.ts';
 
-const url = '/api/jmap/download?blobId=B1&amp;name=cat.png&amp;type=image%2Fpng&amp;inline=1';
+const url = '/z/jmap/download?blobId=B1&amp;name=cat.png&amp;type=image%2Fpng&amp;inline=1';
 const figure = (inner: string) =>
 	`<figure data-trix-attachment="{&quot;url&quot;:&quot;x&quot;}" class="attachment attachment--preview">${inner}</figure>`;
 
@@ -23,7 +23,7 @@ test('inline images: a written caption stays, the same image twice is one part',
 
 test('inline images: still uploading, foreign, or not an image → dropped; other HTML untouched', () => {
 	const pending = figure('<img src="data:image/png;base64,AAAA">');
-	const pdf = `<img src="/api/jmap/download?blobId=B2&amp;type=application%2Fpdf">`;
+	const pdf = `<img src="/z/jmap/download?blobId=B2&amp;type=application%2Fpdf">`;
 	const remote = '<img src="https://example.com/a.png">';
 	const { html, parts } = inlineImages(`<p>a</p>${pending}${pdf}${remote}`);
 	assert.equal(html, `<p>a</p>${remote}`);

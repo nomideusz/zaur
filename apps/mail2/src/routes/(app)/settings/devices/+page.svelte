@@ -37,7 +37,7 @@
 		try {
 			const result = await revokeSession({ id: item.id });
 			if (result.current) {
-				await goto('/login', { replaceState: true });
+				await goto('/signin', { replaceState: true });
 				return;
 			}
 			status = { text: result.revoked ? 'Device signed out' : 'That device was already signed out' };

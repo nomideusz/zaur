@@ -362,7 +362,7 @@
 					</label>
 					<p id="meet-name-hint" class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-soft)]">
 						Others see this in the call. You don't need an account.
-						<a class="text-[var(--z-accent)] hover:underline" href="/login?next={encodeURIComponent(`/meet/${room}`)}">Sign in</a> to join as yourself.
+						<a class="text-[var(--z-accent)] hover:underline" href="/signin?next={encodeURIComponent(`/meet/${room}`)}">Sign in</a> to join as yourself.
 					</p>
 				</div>
 			{/if}

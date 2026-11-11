@@ -62,7 +62,7 @@
 	const session = $derived(who.current ?? null);
 
 	$effect(() => {
-		if (who.ready && !who.current) goto('/login', { replaceState: true });
+		if (who.ready && !who.current) goto('/signin', { replaceState: true });
 	});
 
 	/* ── Where we are looking ─────────────────────────────────────────── */

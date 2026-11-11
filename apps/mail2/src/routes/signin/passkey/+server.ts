@@ -8,7 +8,7 @@ import type { RequestHandler } from './$types';
 /**
  * "Sign in with a passkey": off to Stalwart's sign-in page, which runs the
  * passkey ceremony on its own origin and sends the browser back to
- * /api/auth/oauth/callback. See #lib/server/passkey-flow.
+ * /z/oauth/callback. See #lib/server/passkey-flow.
  */
 export const GET: RequestHandler = async ({ cookies, url }) => {
 	const next = safeNext(url.searchParams.get('next'));

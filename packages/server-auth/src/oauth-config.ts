@@ -85,6 +85,11 @@ export function getStalwartOauthIssuer(): string {
 	return normalizeOrigin(issuer);
 }
 
+/**
+ * The password flow's redirect URI: Stalwart checks it against the client but
+ * no browser ever visits it, so it keeps the path every existing OAuthClient
+ * already lists (mail's callback is now /z/oauth/callback, see browserRedirectUri).
+ */
 export function getStalwartOauthRedirectUri(requestOrigin: string): string {
 	const configured = process.env.STALWART_OAUTH_REDIRECT_URI?.trim();
 	return configured || `${normalizeOrigin(requestOrigin)}/api/auth/oauth/callback`;

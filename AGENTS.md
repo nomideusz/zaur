@@ -14,7 +14,7 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
 | App | Dev command | Default port | Notes |
 |-----|-------------|--------------|-------|
 | `@zaur/web` (landing) | `pnpm dev:web` | 5173 | Fully standalone; no backend needed |
-| `@zaur/mail2` | `pnpm dev:mail2` | 5175 | Mail 2.0 rebuild ([ADR-0005](docs/decisions/0005-mail-2.0.md)); remote functions + light tokens; own `/login` (Stalwart OAuth in prod, password fallback in dev) via `@zaur/server-auth`; 1.0 session sharing remains as a fallback |
+| `@zaur/mail2` | `pnpm dev:mail2` | 5175 | Mail 2.0 rebuild ([ADR-0005](docs/decisions/0005-mail-2.0.md)); remote functions + light tokens; own `/signin` (Stalwart OAuth in prod, password fallback in dev) via `@zaur/server-auth`; 1.0 session sharing remains as a fallback |
 | `@zaur/music` | `pnpm dev:music` | 5176 | Zaur Music PWA over Navidrome (music.zaur.app); Zaur sign-in as an OIDC client of mail2, one Navidrome user per address; "Add from YouTube" runs yt-dlp + ffmpeg into `<MUSIC_DIR>/YouTube`. See `apps/music/.env.example` |
 | `@zaur/register` | `pnpm dev:register` | 3000 | Express; needs Stalwart admin creds for real signups. Styled with the suite's design system: `src/app.css` imports `@zaur/ui`'s `tokens.css`/`base.css` by path, built to the committed `public/app.css` by `pnpm --filter @zaur/register build:css` (no build step in Docker, so rebuild and commit after touching either side) |
 

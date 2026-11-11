@@ -55,6 +55,6 @@
 	{/if}
 
 	{#snippet below()}
-		<a href="/login" class="z-link">Back to sign in</a>
+		<a href="/signin" class="z-link">Back to sign in</a>
 	{/snippet}
 </AuthCard>

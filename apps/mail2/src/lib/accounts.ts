@@ -14,8 +14,8 @@ import { messageOf } from './errors';
 /**
  * One channel a tab, for telling and for hearing: a channel never hears what
  * it said itself. A second one made to announce was heard by the tab's own
- * listener, whose reload of the address in the bar beat the move to `/login`
- * — and came back from the server as `/login?next=` the thread just left.
+ * listener, whose reload of the address in the bar beat the move to `/signin`
+ * — and came back from the server as `/signin?next=` the thread just left.
  */
 let channel: BroadcastChannel | null = null;
 function tabChannel(): BroadcastChannel | null {
@@ -48,7 +48,7 @@ export async function signOutOf(key: string): Promise<void> {
 	await compose.flush();
 	const { signedIn } = await signOutAccount({ key });
 	announce();
-	location.assign(signedIn ? '/' : '/login');
+	location.assign(signedIn ? '/' : '/signin');
 }
 
 /**
@@ -59,7 +59,7 @@ export async function signOutOf(key: string): Promise<void> {
 export function signOutAll(): void {
 	void compose.flush().then(() => logout()).then(() => {
 		announce();
-		location.assign('/login');
+		location.assign('/signin');
 	});
 }
 

@@ -38,7 +38,7 @@ export function classifySrcset(value: string, appOrigin: string): UrlKind {
 }
 
 /** Where inline (`cid:`) images are served from; mail-core's mapper writes it into the body. */
-export const INLINE_IMAGE_PATH = '/api/jmap/download';
+export const INLINE_IMAGE_PATH = '/z/jmap/download';
 
 /**
  * The one address of the app's a message body may hold: an inline image, as
@@ -106,9 +106,10 @@ export function editorAttribute(tag: string, name: string, value: string, appOri
 	return value;
 }
 
-// ponytail: today's `+server.ts` directories; a new one needs adding here. The
-// real guard is the endpoint not acting on a bare GET.
-const APP_ENDPOINT = /^\/+(api|oidc|auth)(\/|$)/i;
+// ponytail: today's `+server.ts` directories, and the old paths that still
+// reach them (#lib/paths); a new one needs adding here. The real guard is the
+// endpoint not acting on a bare GET.
+const APP_ENDPOINT = /^\/+(z|oidc|signin\/passkey|api|auth|login\/passkey)(\/|$)/i;
 
 /**
  * Whether a link in a message keeps its address. Other sites do. This app only
