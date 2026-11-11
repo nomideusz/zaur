@@ -53,7 +53,8 @@ Both were recreated with `stalwart-cli create` (listener mirrors the 465 one wit
 
 ## Version and upgrades
 
-Production runs Stalwart v1.0.3 (v1.0.2 on 2026-11-03, moved from v0.16.27; v1.0.3 on 2026-11-05). The compose lives in Dokploy
+Production runs Stalwart v1.1.0 (v1.0.2 on 2026-11-03, moved from v0.16.27; v1.0.3 on 2026-11-05;
+v1.1.0 on 2026-11-11). The compose lives in Dokploy
 (`mail`). The container must stay named `mail` on `dokploy-network`, because mail2, register and
 the backup script all find it by that name.
 
@@ -96,6 +97,17 @@ only in v1, so going back means `stalwart-migrate rollback` into a new store, no
 the old compose. The one-shot `mail-upgrade-cleanup.timer` on contabo removes all of them on
 2026-11-10, after checking that `mail` is healthy on the v1 volumes. To keep them longer:
 `systemctl disable --now mail-upgrade-cleanup.timer`.
+
+v1.1.0 added passkeys. The default roles took the new `sysPasskey*` permissions through one
+restart with `STALWART_UPDATE_ROLE_PERMISSIONS=true`, since removed. The OAuth password sign-in, the
+`/api/auth` request shapes and the OAuth client checks did not change, and the sign-in probe passed
+for both mail2 hostnames. The cache swap types lost `Redis` (now `InMemory`) and the blob
+`FileSystem` tier; production has swap `Disabled`, so nothing needed changing. Passkey sign-in on
+Stalwart's own login page uses the public URL's host (`mail.zaur.app`) as the relying party ID.
+
+The old v0.16 volumes and `/root/mail-upgrade` were removed by the cleanup timer on 2026-11-10.
+The compose as it was before the v1.1.0 bump is saved on contabo at `/root/mail-compose-v1.0.3.yml`
+(mode 600, holds the recovery admin password).
 
 `http.x-forwarded-missing` is set to debug level (`EventTracingLevel`). The listener trusts
 Traefik's header, and mail2 and register call `http://mail:8080` directly without one, which logged
