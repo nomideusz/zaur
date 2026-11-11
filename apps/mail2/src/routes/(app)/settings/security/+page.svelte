@@ -12,6 +12,7 @@
 		confirmTotp,
 		disableTotp,
 		saveRecoveryEmail,
+		removePasskeyCommand,
 		type TotpSetup
 	} from '../../../security.remote';
 
@@ -47,6 +48,25 @@
 		} finally {
 			busy = false;
 		}
+	}
+
+	let removing = $state<string | null>(null);
+	async function removePasskey(id: string, name: string) {
+		removing = id;
+		status = null;
+		try {
+			await removePasskeyCommand({ id });
+			status = { text: `Removed ${name || 'the passkey'}.` };
+		} catch (cause) {
+			status = { text: messageOf(cause, 'Could not remove the passkey'), error: true };
+		} finally {
+			removing = null;
+		}
+	}
+	const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
+	function added(at: string | null): string {
+		const date = at ? new Date(at) : null;
+		return date && !Number.isNaN(date.getTime()) ? `Added ${dateFormat.format(date)}` : '';
 	}
 
 	const blurb = 'text-[12.5px] leading-[1.6] text-[var(--z-muted)]';
@@ -183,6 +203,55 @@
 			<p class="z-card-foot">Confirm your password above first.</p>
 		{/if}
 	</section>
+
+	{#if overview.passkeys}
+		<section class="z-card">
+			<div class="z-card-head justify-between">
+				<h2>Passkeys</h2>
+				<span class="z-chip z-chip-filled" style={overview.passkeys.length ? channelStyle(CHANNELS.confirmed) : undefined}>
+					{overview.passkeys.length || 'None'}
+				</span>
+			</div>
+			<div class="z-card-body">
+				<p class={blurb}>
+					Sign in with your fingerprint, face or device PIN instead of your password. Passkeys are kept by the mail
+					server, so adding one happens on its own account page, which asks for your password once.
+				</p>
+				{#if overview.passkeys.length}
+					<ul class="mt-3 divide-y divide-[var(--z-hairline)] rounded-[8px] border border-[var(--z-hairline)]">
+						{#each overview.passkeys as passkey (passkey.id)}
+							<li class="flex items-center gap-3 px-3 py-2">
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-[13px] text-[var(--z-strong)]">{passkey.description || 'Passkey'}</p>
+									{#if added(passkey.createdAt)}
+										<p class="z-mono text-[10.5px] text-[var(--z-soft)]">{added(passkey.createdAt)}</p>
+									{/if}
+								</div>
+								<button
+									type="button"
+									class="btn-tactile btn-danger !h-[28px]"
+									disabled={locked || removing !== null}
+									onclick={() => removePasskey(passkey.id, passkey.description)}
+								>
+									{removing === passkey.id ? 'Removing…' : 'Remove'}
+								</button>
+							</li>
+						{/each}
+					</ul>
+				{/if}
+				{#if overview.addPasskeyUrl}
+					<a href={overview.addPasskeyUrl} target="_blank" rel="noopener" class="btn-tactile mt-3 inline-flex">
+						Add a passkey
+						<span aria-hidden="true">↗</span>
+					</a>
+				{/if}
+			</div>
+			<p class="z-card-foot">
+				{#if locked && overview.passkeys.length}Confirm your password above to remove one.{:else}Once added, use
+					“Sign in with a passkey” on the sign-in page.{/if}
+			</p>
+		</section>
+	{/if}
 
 	{#if overview.recovery.available}
 		<section class="z-card">

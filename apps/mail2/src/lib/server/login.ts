@@ -14,6 +14,7 @@
 import { createHash } from 'node:crypto';
 import {
 	authenticateStalwartCredentials,
+	completeStalwartAuthorization,
 	checkRateLimitRow,
 	getStoreDb,
 	isPasswordLoginEnabled,
@@ -203,4 +204,52 @@ export async function attemptLogin(input: {
 /** Only same-app relative paths may be used as a post-login redirect target. */
 export function safeNext(raw: string | null | undefined): string {
 	return safeNextPath(raw) ?? '/';
+}
+
+/**
+ * The end of a sign-in on Stalwart's own page (passkeys): exchange the code
+ * it returned, then open the session like a password sign-in. The address is
+ * not known in advance, so the session is keyed by the server's username.
+ */
+export async function attemptAuthorizationLogin(input: {
+	code: string;
+	codeVerifier: string;
+	redirectUri: string;
+}): Promise<LoginAttempt> {
+	let serverUrl: string;
+	try {
+		serverUrl = jmapServerUrl();
+	} catch (error) {
+		console.error('[Mail2 Login]', error);
+		return { status: 'unavailable' };
+	}
+	let tokens;
+	try {
+		tokens = await completeStalwartAuthorization(input);
+	} catch (error) {
+		// An expired or replayed code: the sign-in has to start again.
+		reportError(error, { where: 'login: Stalwart authorization code' });
+		return { status: 'invalid_credentials' };
+	}
+	const sessionData: SessionData = createTokenSession({
+		serverUrl,
+		username: '',
+		accessToken: tokens.accessToken,
+		refreshToken: tokens.refreshToken,
+		accessTokenExpiresAt: tokens.accessTokenExpiresAt,
+		scope: tokens.scope
+	});
+	try {
+		const client = await createConnectedClient(sessionData);
+		sessionData.username = client.getUsername().trim().toLowerCase();
+		if (!sessionData.username) return { status: 'unavailable' };
+		const identities = await client.getIdentities();
+		const primary = findIdentityEmail(identities, sessionData.username) ?? identities[0];
+		sessionData.displayName = primary?.name || primary?.email || sessionData.username;
+	} catch (error) {
+		if (classifyJmapError(error) === 'invalid_credentials') return { status: 'invalid_credentials' };
+		reportError(error, { where: 'login: JMAP session check (authorization code)' });
+		return { status: 'unavailable' };
+	}
+	return { status: 'ok', sessionData };
 }

@@ -99,6 +99,43 @@ The credential flow reuses webmail 1.0's exactly, via the shared
 - Account **creation** stays with the register service (real mailboxes on
   Stalwart); the login page links to it via `PUBLIC_REGISTER_URL`.
 
+### Passkeys
+
+Stalwart 1.1 added passkeys, and "Sign in with a passkey" on `/login` uses
+them. They cannot be asked for on mail's own pages: Stalwart's relying party
+is the host of its public URL (`mail.zaur.app`) and it accepts a passkey
+sign-in only from exactly that origin. A browser on `webmail.zaur.app` cannot
+produce one Stalwart accepts, related-origin requests included, since Stalwart
+checks the origin inside the signed client data.
+
+So the button runs an ordinary authorization-code request instead
+(`#lib/server/passkey-flow`):
+
+- `/login/passkey` builds the request with PKCE and a state, seals both (with
+  `next`, "keep me signed in" and add-account mode) into a ten-minute,
+  httpOnly cookie on `/api/auth/oauth`, and sends the browser to Stalwart's
+  sign-in page (its `authorization_endpoint`), which has the passkey button and
+  autofill.
+- Stalwart sends it back to `/api/auth/oauth/callback` **on the host it left
+  from** (`getStalwartBrowserRedirectUri`). Every host mail is served on must
+  be a redirect URI of the OAuthClient. `STALWART_OAUTH_REDIRECT_URI` is not
+  used here: it names the server-side flow's never-visited URI, which in
+  production is `mail2.zaur.app` while people sign in on `webmail.zaur.app`.
+- The callback reads the cookie once, checks the state, exchanges the code and
+  opens the session like a password sign-in, keyed by the username the JMAP
+  session reports. A cancel, an expired or replayed flow and a refused code
+  each come back to `/login?passkey=…` with their own message.
+- Stalwart asks for consent once per account and client. Anyone who has
+  signed in with a password already has that grant, so they go straight back.
+- The button only shows when Stalwart hands out passkey options
+  (`stalwartSupportsPasskeys`, a `{"type":"passkeyOptions"}` POST to
+  `/api/auth`, cached ten minutes), so older servers never see it.
+
+Adding a passkey is a WebAuthn ceremony too, with the same origin rule, so it
+happens on Stalwart's account page (`/account/Account/x:Passkey` on the mail
+server), which Password & sign-in links to. That page lists and removes the
+account's `x:Passkey` objects itself, removal behind *Confirm it's you*.
+
 Because both apps share the store/cookie/secret, a webmail 1.0 login still
 lands you in mail2 and vice versa — sharing is now a feature, not a
 dependency. Signing out in either app revokes the shared session record.

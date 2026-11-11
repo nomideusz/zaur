@@ -21,9 +21,11 @@ import {
 	generateTotpSecret,
 	buildOtpAuthUrl,
 	getAccountSecurityOverview,
+	getStalwartOauthIssuer,
 	getStoreDb,
 	listAccountSessions,
 	putTotpSetup,
+	removePasskey,
 	revokeAccountSession,
 	revokeCredential,
 	revokeOtherAccountSessions,
@@ -31,7 +33,8 @@ import {
 	unsealSession,
 	verifyTotpCode,
 	type CredentialSummary,
-	type CredentialType
+	type CredentialType,
+	type PasskeySummary
 } from '@zaur/server-auth';
 import { connect, requireSession } from '#lib/server/account';
 import { getClientAddress } from '#lib/server/login';
@@ -73,6 +76,10 @@ export interface SecurityOverview {
 	totpEnabled: boolean;
 	appPasswords: CredentialSummary[];
 	apiKeys: CredentialSummary[];
+	/** Null when the server has no passkeys (before Stalwart 1.1). */
+	passkeys: PasskeySummary[] | null;
+	/** The mail server's own page for adding one: only it may run the passkey ceremony. */
+	addPasskeyUrl: string | null;
 	sessions: SessionDTO[];
 	recovery: { available: boolean; email: string | null };
 	/** Set when Stalwart could not be asked; the local parts still render. */
@@ -120,6 +127,15 @@ function rateLimited(kind: 'identity' | 'mutation'): FormOutcome | null {
 		: { ok: false, error: `Too many attempts. Try again in ${limit.retryAfterSec}s.` };
 }
 
+/** Stalwart's account portal, on the passkey list (Account → Credentials → Passkeys). */
+function addPasskeyUrl(): string | null {
+	try {
+		return new URL('/account/Account/x:Passkey', getStalwartOauthIssuer()).toString();
+	} catch {
+		return null;
+	}
+}
+
 /* ── Read ───────────────────────────────────────────────────────────────── */
 
 export const securityOverview = query(async (): Promise<SecurityOverview> => {
@@ -136,12 +152,13 @@ export const securityOverview = query(async (): Promise<SecurityOverview> => {
 	let totpEnabled = false;
 	let appPasswords: CredentialSummary[] = [];
 	let apiKeys: CredentialSummary[] = [];
+	let passkeys: PasskeySummary[] | null = null;
 	let serverError: string | null = null;
 	try {
 		const client = await connect(account);
 		// Only Stalwart has these (#lib/features); elsewhere the page is just the devices.
 		if (featuresOf(client).security) {
-			({ totpEnabled, appPasswords, apiKeys } = await getAccountSecurityOverview(client));
+			({ totpEnabled, appPasswords, apiKeys, passkeys } = await getAccountSecurityOverview(client));
 		}
 	} catch (cause) {
 		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
@@ -167,6 +184,8 @@ export const securityOverview = query(async (): Promise<SecurityOverview> => {
 		totpEnabled,
 		appPasswords,
 		apiKeys,
+		passkeys,
+		addPasskeyUrl: passkeys && isOauthAccount(account) ? addPasskeyUrl() : null,
 		sessions: listAccountSessions(cookies),
 		recovery: { available: recoveryAvailable, email: recoveryEmail },
 		serverError
@@ -395,6 +414,22 @@ export const revokeCredentialCommand = command(
 		try {
 			const client = await connect();
 			await revokeCredential(client, kind, id);
+		} catch (cause) {
+			if (cause instanceof AccountSecurityError) error(400, cause.userMessage);
+			throw cause;
+		}
+		void securityOverview().refresh();
+		return { ok: true };
+	}
+);
+
+export const removePasskeyCommand = command(
+	v.object({ id: v.pipe(v.string(), v.minLength(1), v.maxLength(200)) }),
+	async ({ id }): Promise<{ ok: true }> => {
+		requireStepUp();
+		try {
+			const client = await connect();
+			await removePasskey(client, id);
 		} catch (cause) {
 			if (cause instanceof AccountSecurityError) error(400, cause.userMessage);
 			throw cause;

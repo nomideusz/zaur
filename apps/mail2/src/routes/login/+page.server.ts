@@ -3,6 +3,7 @@ import { DEMO_JMAP_URL } from '#lib/server/demo';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import { jmapAuthMode, safeNext } from '#lib/server/login';
 import { isPasswordResetEnabled } from '#lib/server/recovery';
+import { passkeySignInAvailable, type PasskeyOutcome } from '#lib/server/passkey-flow';
 import { postLogoutTarget } from '@zaur/server-auth/oidc';
 import { allOidcRedirectUris, findOidcClient, findOidcClientByOrigin } from '#lib/server/oidc';
 import type { PageServerLoad } from './$types';
@@ -24,7 +25,7 @@ import type { PageServerLoad } from './$types';
  * `?mode=add` is the exception: signed in already, adding another account to
  * this browser's session (the account menu's "Add account").
  */
-export const load: PageServerLoad = ({ cookies, url }) => {
+export const load: PageServerLoad = async ({ cookies, url }) => {
 	// The demo has no sign-in: the gate signs every visitor in to the sample mailbox.
 	if (DEMO_JMAP_URL) redirect(303, '/');
 	const session = readSessionFull(cookies);
@@ -58,6 +59,14 @@ export const load: PageServerLoad = ({ cookies, url }) => {
 		authMode: jmapAuthMode(),
 		// Filled in from a password reset or a sign-up that just finished.
 		email: url.searchParams.get('email')?.trim() ?? '',
-		addingTo: adding ? active!.username : null
+		addingTo: adding ? active!.username : null,
+		/** Offer "Sign in with a passkey" (Stalwart 1.1+, on its own sign-in page). */
+		passkeys: await passkeySignInAvailable(),
+		/** How a passkey sign-in that came back without a session ended. */
+		passkeyOutcome: passkeyOutcome(url.searchParams.get('passkey'))
 	};
 };
+
+function passkeyOutcome(raw: string | null): PasskeyOutcome | null {
+	return raw === 'cancelled' || raw === 'expired' || raw === 'failed' || raw === 'unavailable' ? raw : null;
+}

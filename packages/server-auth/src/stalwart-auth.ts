@@ -7,7 +7,7 @@ import {
 	getStalwartOauthScopes
 } from './oauth-config';
 import { exchangeOauthCode, type OauthTokens } from './oauth-token';
-import { createPkceChallenge } from './oauth-utils';
+import { browserRedirectUri, buildAuthorizationUrl, createPkceChallenge } from './oauth-utils';
 import {
 	createStalwartAuthPayload,
 	describeStalwartAuthResponse,
@@ -87,10 +87,109 @@ export async function authenticateStalwartCredentials(input: {
 		codeVerifier: verifier,
 		redirectUri
 	});
+	warnIfMailScopeMissing(tokens);
+	return { status: 'authenticated', tokens };
+}
+
+function warnIfMailScopeMissing(tokens: OauthTokens): void {
 	if (tokens.scope && !tokens.scope.split(/\s+/).includes(MAIL_SCOPE)) {
 		log.warn('stalwart_oauth_scope_not_echoed', {
 			grantedScopes: tokens.scope.split(/\s+/).filter(Boolean).slice(0, 20)
 		});
 	}
-	return { status: 'authenticated', tokens };
+}
+
+/*
+ * Signing in on Stalwart's own page, for what the credential flow above cannot
+ * do: passkeys. A WebAuthn sign-in must run in the browser on the issuer's
+ * exact origin (Stalwart's relying party is the host of its public URL), so
+ * the browser goes to the authorization endpoint and comes back with a code.
+ */
+
+/**
+ * Where Stalwart's page sends the browser back to: the host it left from.
+ * Every host mail is served on must be a redirect URI of the OAuthClient.
+ * Deliberately not STALWART_OAUTH_REDIRECT_URI, which only names the
+ * server-side flow's (never visited) URI and may be another host.
+ */
+export const getStalwartBrowserRedirectUri = browserRedirectUri;
+
+export interface StalwartAuthorization {
+	/** Stalwart's authorization endpoint with the whole request in its query. */
+	url: string;
+	state: string;
+	codeVerifier: string;
+	redirectUri: string;
+}
+
+export async function beginStalwartAuthorization(input: {
+	requestOrigin: string;
+}): Promise<StalwartAuthorization> {
+	let discovery;
+	try {
+		discovery = await getStalwartOauthDiscovery();
+	} catch {
+		throw new StalwartAuthError();
+	}
+	const scopes = getStalwartOauthScopes(discovery);
+	if (!scopes.includes(MAIL_SCOPE)) throw new StalwartAuthError();
+	const codeVerifier = randomBytes(48).toString('base64url');
+	const state = randomBytes(24).toString('base64url');
+	const redirectUri = getStalwartBrowserRedirectUri(input.requestOrigin);
+	const url = buildAuthorizationUrl({
+		authorizationEndpoint: discovery.authorization_endpoint,
+		clientId: getStalwartOauthClientId(),
+		redirectUri,
+		scopes,
+		state,
+		codeVerifier
+	});
+	return { url, state, codeVerifier, redirectUri };
+}
+
+/** The code Stalwart's page returned, exchanged server-side with the flow's verifier. */
+export async function completeStalwartAuthorization(input: {
+	code: string;
+	codeVerifier: string;
+	redirectUri: string;
+}): Promise<OauthTokens> {
+	const tokens = await exchangeOauthCode(input);
+	warnIfMailScopeMissing(tokens);
+	return tokens;
+}
+
+const PASSKEY_PROBE_TTL_MS = 10 * 60_000;
+let passkeyProbe: { issuer: string; supported: boolean; at: number } | null = null;
+
+/**
+ * Whether Stalwart's sign-in page offers passkeys (v1.1 and later): it hands
+ * out passkey options, where older servers refuse the request type. Cached
+ * for ten minutes either way; unreachable counts as no.
+ */
+export async function stalwartSupportsPasskeys(): Promise<boolean> {
+	let issuer: string;
+	try {
+		issuer = getStalwartOauthIssuer();
+	} catch {
+		return false;
+	}
+	const now = Date.now();
+	if (passkeyProbe?.issuer === issuer && now - passkeyProbe.at < PASSKEY_PROBE_TTL_MS) {
+		return passkeyProbe.supported;
+	}
+	let supported = false;
+	try {
+		const response = await fetch(new URL('/api/auth', issuer), {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+			body: JSON.stringify({ type: 'passkeyOptions' }),
+			signal: AbortSignal.timeout(5000)
+		});
+		const body = (await response.json().catch(() => null)) as { type?: unknown } | null;
+		supported = response.ok && body?.type === 'passkeyOptions';
+	} catch {
+		supported = false;
+	}
+	passkeyProbe = { issuer, supported, at: now };
+	return supported;
 }

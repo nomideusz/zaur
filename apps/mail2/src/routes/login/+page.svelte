@@ -48,6 +48,33 @@
 		else goto(data.next, { replaceState: true });
 	});
 
+	/** Where a passkey sign-in ended up when it came back without a session. */
+	const passkeyAlert = $derived(
+		data.passkeyOutcome === 'cancelled'
+			? { title: 'Passkey sign-in cancelled', hint: 'Nothing changed. Try again, or use your password.' }
+			: data.passkeyOutcome === 'expired'
+				? { title: 'That sign-in took too long', hint: 'Start the passkey sign-in again.' }
+				: data.passkeyOutcome === 'unavailable'
+					? { title: 'Passkey sign-in is unavailable right now', hint: 'Use your password for now.' }
+					: data.passkeyOutcome === 'failed'
+						? { title: 'Passkey sign-in did not finish', hint: 'Try again, or use your password.' }
+						: null
+	);
+
+	/**
+	 * Passkeys run on the mail server's own sign-in page (it alone may ask for
+	 * them), which sends the browser back here signed in. Carries "Keep me
+	 * signed in" and the add-account mode along.
+	 */
+	function signInWithPasskey() {
+		const params = new URLSearchParams();
+		if (data.next && data.next !== '/') params.set('next', data.next);
+		if ((document.getElementById('login-remember') as HTMLInputElement | null)?.checked) params.set('remember', '1');
+		if (data.addingTo) params.set('mode', 'add');
+		const query = params.toString();
+		location.assign(query ? `/login/passkey?${query}` : '/login/passkey');
+	}
+
 	// When Stalwart asks for a 2FA code, put the cursor in the code field.
 	$effect(() => {
 		if (needsTotp) document.getElementById('login-totp')?.focus();
@@ -71,7 +98,9 @@
 		</p>
 	{/if}
 
-	{#if data.signedOut}
+	{#if passkeyAlert}
+		<AuthAlert tone={data.passkeyOutcome === 'cancelled' ? 'ok' : 'error'} title={passkeyAlert.title} hint={passkeyAlert.hint} />
+	{:else if data.signedOut}
 		<AuthAlert
 			tone="ok"
 			title="Signed out everywhere"
@@ -171,7 +200,7 @@
 		<label
 			class="mt-2.5 flex h-[38px] cursor-pointer items-center gap-2.5 rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-[11px]"
 		>
-			<input {...login.fields.remember.as('checkbox')} disabled={pending} class="z-check disabled:opacity-60" />
+			<input {...login.fields.remember.as('checkbox')} id="login-remember" disabled={pending} class="z-check disabled:opacity-60" />
 			<span class="flex-1 text-[13.5px] text-[var(--z-strong)]">Keep me signed in</span>
 			<span class="z-mono text-[10px] text-[var(--z-soft)] max-[359px]:hidden">30 days</span>
 		</label>
@@ -186,6 +215,22 @@
 			{/if}
 			<kbd class="z-kbd z-kbd-inverse" aria-hidden="true">↵</kbd>
 		</button>
+		{#if data.passkeys && !needsTotp}
+			<div class="mt-3 flex items-center gap-2.5" aria-hidden="true">
+				<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
+				<span class="z-caption">or</span>
+				<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
+			</div>
+			<button type="button" disabled={pending} onclick={signInWithPasskey} class="btn-tactile mt-3 h-[40px] w-full !text-[13.5px]">
+				<svg class="size-[15px] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<circle cx="6" cy="5" r="2.6" stroke="currentColor" stroke-width="1.3" />
+					<path d="M1.8 13.5c.4-2.4 2.1-3.8 4.2-3.8 1 0 1.9.3 2.6.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+					<circle cx="12" cy="8.2" r="1.7" stroke="currentColor" stroke-width="1.3" />
+					<path d="M12 9.9v4.1l-.9-.8M12 12.2h1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+				Sign in with a passkey
+			</button>
+		{/if}
 		{#if data.addingTo}
 			<a href="/" class="btn-tactile mt-2 h-[38px] w-full !text-[13.5px]">Cancel</a>
 		{:else if data.resetEnabled}

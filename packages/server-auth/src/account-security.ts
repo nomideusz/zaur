@@ -39,10 +39,18 @@ export interface CredentialSummary {
 	allowedIps: string[];
 }
 
+export interface PasskeySummary {
+	id: string;
+	description: string;
+	createdAt: string | null;
+}
+
 export interface AccountSecurityOverview {
 	totpEnabled: boolean;
 	appPasswords: CredentialSummary[];
 	apiKeys: CredentialSummary[];
+	/** Null when the server has no passkeys (before Stalwart 1.1) or will not list them. */
+	passkeys: PasskeySummary[] | null;
 }
 
 /** Thrown when Stalwart gave a reason the person can act on. */
@@ -232,15 +240,64 @@ export async function isTotpEnabled(client: ManagementClient): Promise<boolean> 
 	return Boolean(record?.otpAuth?.otpUrl);
 }
 
+/**
+ * The account's passkeys (`x:Passkey`, Stalwart 1.1). Registering one is a
+ * WebAuthn ceremony that only works on the server's own origin, so this module
+ * lists and removes them but never creates one. Null when the server does not
+ * know the object or refuses to list it: the rest of the page still works.
+ */
+export async function listPasskeys(client: ManagementClient): Promise<PasskeySummary[] | null> {
+	let response: JMAPResponse;
+	try {
+		response = await request(client, [
+			['x:Passkey/query', { filter: {} }, 'query'],
+			[
+				'x:Passkey/get',
+				{
+					'#ids': { resultOf: 'query', name: 'x:Passkey/query', path: '/ids' },
+					properties: ['id', 'description', 'createdAt']
+				},
+				'get'
+			]
+		]);
+	} catch (cause) {
+		if (cause instanceof Error && cause.message === 'Unauthorized') throw cause;
+		return null;
+	}
+	const get = response.methodResponses.find((item) => item[2] === 'get');
+	if (!get || get[0] === 'error') return null;
+	const list = Array.isArray(get[1]?.list) ? (get[1].list as Record<string, unknown>[]) : [];
+	return list.flatMap((record) =>
+		typeof record.id === 'string'
+			? [
+					{
+						id: record.id,
+						description: typeof record.description === 'string' ? record.description : '',
+						createdAt: typeof record.createdAt === 'string' ? record.createdAt : null
+					}
+				]
+			: []
+	);
+}
+
+export async function removePasskey(client: ManagementClient, id: string): Promise<void> {
+	const data = methodData(
+		await request(client, [['x:Passkey/set', { destroy: [id] }, 'destroy']]),
+		'destroy'
+	);
+	assertSetSucceeded(data, 'destroyed');
+}
+
 export async function getAccountSecurityOverview(
 	client: ManagementClient
 ): Promise<AccountSecurityOverview> {
-	const [totpEnabled, appPasswords, apiKeys] = await Promise.all([
+	const [totpEnabled, appPasswords, apiKeys, passkeys] = await Promise.all([
 		isTotpEnabled(client),
 		listCredentials(client, 'AppPassword'),
-		listCredentials(client, 'ApiKey')
+		listCredentials(client, 'ApiKey'),
+		listPasskeys(client)
 	]);
-	return { totpEnabled, appPasswords, apiKeys };
+	return { totpEnabled, appPasswords, apiKeys, passkeys };
 }
 
 function passwordPatch(currentPassword: string, totp?: string) {

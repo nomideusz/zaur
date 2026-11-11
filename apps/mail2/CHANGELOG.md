@@ -2,6 +2,11 @@
 
 Each version's section becomes its GitHub release. See "Releases" in the README.
 
+## 2.2.0
+
+- Sign in with a passkey, on Stalwart 1.1 and later. The button sends you to the mail server's own sign-in page, where the passkey is asked for, and back signed in. Add the host Mail runs on as a redirect URI of its OAuth client (`https://<host>/api/auth/oauth/callback`)
+- Password & sign-in lists your passkeys and removes them, and links to the mail server's account page to add one
+
 ## 2.1.2
 
 - App passwords and API keys can be created again on Stalwart 1.0.3, which refused them with "You are not authorized to grant permissions". A new one gets what your sign-in holds (mail, contacts, calendars and files), and cannot change your password or manage credentials. Existing ones keep working

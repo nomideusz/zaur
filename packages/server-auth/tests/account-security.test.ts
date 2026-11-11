@@ -12,6 +12,8 @@ import {
 	extractOneTimeCredential,
 	getAccountSecurityOverview,
 	listCredentials,
+	listPasskeys,
+	removePasskey,
 	revokeCredential,
 	setFailureMessage,
 	type ManagementClient
@@ -256,4 +258,31 @@ test('setFailureMessage prefers the description and falls back to the type', () 
 		'Gone'
 	);
 	assert.equal(setFailureMessage({ updated: { singleton: null } }), null);
+});
+
+test('passkeys are listed by name and date, and destroyed by id', async () => {
+	const client = fakeClient(([name]) => {
+		if (name === 'x:Passkey/query') return [name, { ids: ['p1'] }];
+		if (name === 'x:Passkey/get')
+			return [name, { list: [{ id: 'p1', description: 'MacBook', createdAt: '2026-11-11T09:00:00Z' }] }];
+		if (name === 'x:Passkey/set') return [name, { destroyed: ['p1'] }];
+		throw new Error(`unexpected ${name}`);
+	});
+	assert.deepEqual(await listPasskeys(client), [
+		{ id: 'p1', description: 'MacBook', createdAt: '2026-11-11T09:00:00Z' }
+	]);
+	await removePasskey(client, 'p1');
+	assert.deepEqual(client.calls.at(-1), ['x:Passkey/set', { destroy: ['p1'] }, 'destroy']);
+});
+
+test('a server without passkeys reads as null and leaves the rest of the overview alone', async () => {
+	const client = fakeClient(([name]) => {
+		if (name.startsWith('x:Passkey/')) return ['error', { type: 'unknownMethod' }];
+		if (name === 'x:AccountPassword/get')
+			return [name, { list: [{ id: 'singleton', otpAuth: { otpUrl: null } }] }];
+		return name.endsWith('/query') ? [name, { ids: [] }] : [name, { list: [] }];
+	});
+	const overview = await getAccountSecurityOverview(client);
+	assert.equal(overview.passkeys, null);
+	assert.deepEqual(overview.appPasswords, []);
 });
