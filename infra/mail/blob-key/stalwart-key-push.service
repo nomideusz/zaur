@@ -1,0 +1,8 @@
+[Unit]
+Description=Push the Stalwart blob key into contabo's RAM if it is missing there
+After=network-online.target tailscaled.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/stalwart-key-push

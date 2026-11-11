@@ -1,0 +1,42 @@
+#!/bin/sh
+# stalwart-key-receive: contabo end of the Stalwart blob-key push (radio and hp hold the key).
+#
+# Runs ONLY as the forced command of the push keys in /root/.ssh/authorized_keys:
+#   status  -> prints present | missing | mismatch
+#   put     -> reads the key on stdin, checks it against /etc/stalwart-key.sha256 and
+#              stores it in RAM at /run/stalwart-key/blob.key (never on disk)
+# The key itself never touches this server's disk; only its sha256 does.
+set -eu
+DIR=/run/stalwart-key
+KEY=$DIR/blob.key
+SUM=$(cat /etc/stalwart-key.sha256)
+STALWART_GID=2000
+
+matches() { [ -s "$1" ] && [ "$(sha256sum < "$1" | cut -d' ' -f1)" = "$SUM" ]; }
+
+case "${SSH_ORIGINAL_COMMAND:-}" in
+status)
+	if matches "$KEY"; then echo present
+	elif [ -e "$KEY" ]; then echo mismatch
+	else echo missing
+	fi
+	;;
+put)
+	[ "$(findmnt -n -o FSTYPE -T /run)" = tmpfs ] || { echo "refusing: /run is not in RAM" >&2; exit 1; }
+	install -d -m 0750 -o root -g "$STALWART_GID" "$DIR"
+	tmp=$(mktemp -p "$DIR" .incoming.XXXXXX)
+	trap 'rm -f "$tmp"' EXIT
+	head -c 256 > "$tmp"
+	matches "$tmp" || { echo "refusing: that is not the expected key" >&2; exit 1; }
+	chown root:"$STALWART_GID" "$tmp"
+	chmod 0440 "$tmp"
+	mv -f "$tmp" "$KEY"
+	trap - EXIT
+	logger -t stalwart-key "key stored in RAM, pushed from ${SSH_CLIENT%% *}"
+	echo stored
+	;;
+*)
+	echo "usage: status | put" >&2
+	exit 2
+	;;
+esac

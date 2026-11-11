@@ -1,0 +1,31 @@
+#!/bin/sh
+# stalwart-key-push: keeps contabo's Stalwart blob key in its RAM.
+#
+# Runs every minute (stalwart-key-push.timer) on radio and on hp, which each hold a copy
+# of the key in /etc/stalwart-key/blob.key. Contabo never stores the key on disk and has no
+# way to fetch it: after a reboot its copy is gone until one of these pushes it back.
+# Contabo's end is /usr/local/sbin/stalwart-key-receive (forced ssh command).
+set -u
+D=/etc/stalwart-key
+CONTABO=100.75.184.0 # tailnet address
+ssh_contabo() {
+	ssh -i "$D/push_ed25519" -o IdentitiesOnly=yes -o BatchMode=yes -o ConnectTimeout=10 \
+		-o StrictHostKeyChecking=yes -o UserKnownHostsFile="$D/known_hosts" "root@$CONTABO" "$@"
+}
+
+state=$(ssh_contabo status 2>/dev/null) || exit 0 # contabo or the tailnet is down: next minute
+case "$state" in
+present) exit 0 ;;
+missing | mismatch)
+	if out=$(ssh_contabo put < "$D/blob.key" 2>&1); then
+		logger -t stalwart-key "contabo had no key ($state): pushed, $out"
+	else
+		logger -p user.err -t stalwart-key "contabo had no key ($state): push FAILED: $out"
+		exit 1
+	fi
+	;;
+*)
+	logger -p user.err -t stalwart-key "unexpected status from contabo: $state"
+	exit 1
+	;;
+esac

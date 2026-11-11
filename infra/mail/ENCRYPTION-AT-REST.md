@@ -1,5 +1,9 @@
 # Stalwart mail — encryption at rest
 
+> **LIVE since 2026-11-11:** Stalwart 1.1's own blob encryption, with the key pushed into contabo's RAM
+> from radio and hp (no manual unlock), is in [`blob-key/README.md`](blob-key/README.md).
+> The LUKS runbook below is the older alternative.
+
 **Status: NOT enabled.** The full setup below was built and validated end-to-end on
 2026-07-05 (lock/unlock cycle proven, real users authenticated on the encrypted
 volume), then **reverted** to plaintext at the user's request. This doc is the
