@@ -41,6 +41,10 @@ export function hostRedirect(url: URL, request: Request): string | null {
 	const page =
 		request.headers.get('sec-fetch-mode') === 'navigate' || (request.headers.get('accept') ?? '').includes('text/html');
 	if (!page) return null;
+	// An Android WebView: the Capacitor shell's installed builds have
+	// webmail.zaur.app baked in and would open another host in the system
+	// browser. Webmail still serves everything, so they stay.
+	if ((request.headers.get('user-agent') ?? '').includes('; wv)')) return null;
 	// The old paths are Stalwart's on the canonical host.
 	return `${canonical}${movedPath(path) ?? path}${url.search}`;
 }

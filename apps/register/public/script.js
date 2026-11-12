@@ -289,7 +289,7 @@ function hideCreatePanels() {
 }
 
 function configureFormForPasswordManagers() {
-  const loginUrl = window.ZaurSite?.loginUrl(window.ZAUR_SITE) || 'https://webmail.zaur.app/login';
+  const loginUrl = window.ZaurSite?.loginUrl(window.ZAUR_SITE) || 'https://mail.zaur.app/signin';
   registerForm.action = loginUrl;
   registerForm.method = 'post';
 }

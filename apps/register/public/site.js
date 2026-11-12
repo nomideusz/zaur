@@ -1,5 +1,5 @@
 (function () {
-  const FALLBACK_LOGIN = 'https://webmail.zaur.app/login';
+  const FALLBACK_LOGIN = 'https://mail.zaur.app/signin';
 
   function loginUrl(cfg) {
     return cfg?.webmailLoginUrl || FALLBACK_LOGIN;

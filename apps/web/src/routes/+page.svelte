@@ -103,11 +103,11 @@
 		{
 			id: 'zaur',
 			name: 'Zaur',
-			href: 'https://webmail.zaur.app',
+			href: 'https://mail.zaur.app',
 			site: 'zaur.app',
 			source: 'https://github.com/nomideusz/zaur',
 			also: 'https://register.zaur.app',
-			demos: [{ id: 'mail-demo', href: 'https://demo.zaur.app', label: 'webmail.zaur.app' }],
+			demos: [{ id: 'mail-demo', href: 'https://demo.zaur.app', label: 'mail.zaur.app' }],
 			uses: ['svelte-calendar']
 		},
 		{

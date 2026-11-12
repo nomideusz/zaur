@@ -12,21 +12,24 @@ Stalwart runs as a **deployed binary**, not application source in this repo. Thi
 
 ## Related URLs
 
-- **JMAP API:** `https://mail.zaur.app`
+- **JMAP API and webmail:** `https://mail.zaur.app`
 - **Registration:** `https://register.zaur.app`
-- **Webmail:** `https://webmail.zaur.app`
+- **Old webmail host:** `https://webmail.zaur.app` redirects to mail.zaur.app. It stays the OIDC issuer for the suite's other apps.
 
-## CapRover nginx (root redirect)
+## One host, split by path (Traefik)
 
-The CapRover **`mail`** app has a custom nginx snippet so browsers hitting `https://mail.zaur.app/` go to webmail. Mail API paths are unchanged.
+Since 2026-11-12, `mail.zaur.app` is shared by Stalwart and Mail (mail2). In
+contabo's `/etc/dokploy/traefik/dynamic/migrated.yml`, router
+`mig-mail-admin-websecure` (priority 200) sends Stalwart its own paths:
+`/jmap`, `/dav`, `/.well-known`, `/auth`, `/api`, `/scim`, `/login`, `/device`,
+`/form`, `/mail`, `/account`, `/admin`, `/calendar/rsvp`, the health and
+metrics paths, `/robots.txt` and `/ui-<hash>.css|js`. It also sends all of
+`autoconfig.` and `autodiscover.`. `mig-mail-webmail-websecure` (priority 100)
+sends everything else to mail2. A new first path segment in a Stalwart release
+needs adding there. To undo the split, restore `/root/migrated.yml.pre-mail-split-2026-11-12`.
+See the mail2 README, "One host with Stalwart".
 
-```nginx
-location = / {
-    return 302 https://webmail.zaur.app/;
-}
-```
-
-Configured in CapRover → **mail** → **HTTP Settings** → **Edit Default Nginx Config** (insert before the catch-all `location /`). After edits on the VPS, restart captain: `docker service update --force captain-captain`.
+(The old CapRover nginx redirect of `/` to webmail is gone.)
 
 ## Managing Stalwart config
 

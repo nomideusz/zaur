@@ -7,7 +7,7 @@ const crypto = require('crypto');
 const { getSiteConfig } = require('./site-config');
 const { reportError } = require('./report');
 
-const HANDOFF_PATH = '/api/internal/handoff';
+const HANDOFF_PATH = '/z/internal/handoff';
 
 function signedHeaders(secret, method, path, body, now = Date.now()) {
   const timestamp = String(now);

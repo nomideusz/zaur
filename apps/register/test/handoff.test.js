@@ -16,10 +16,10 @@ function verify(secret, headers, method, path, body) {
 test('signedHeaders produce a verifiable signature', () => {
   const { signedHeaders } = require('../lib/webmail-handoff');
   const body = '{"email":"x@y.z"}';
-  const h = signedHeaders('s3cret', 'POST', '/api/internal/handoff', body, 1700000000000);
+  const h = signedHeaders('s3cret', 'POST', '/z/internal/handoff', body, 1700000000000);
   assert.equal(h['x-zaur-timestamp'], '1700000000000');
-  assert.equal(verify('s3cret', h, 'POST', '/api/internal/handoff', body), true);
-  assert.equal(verify('s3cret', h, 'POST', '/api/internal/handoff', body + 'x'), false);
+  assert.equal(verify('s3cret', h, 'POST', '/z/internal/handoff', body), true);
+  assert.equal(verify('s3cret', h, 'POST', '/z/internal/handoff', body + 'x'), false);
 });
 
 test('requestHandoff returns the claim URL, or null when webmail fails', async () => {

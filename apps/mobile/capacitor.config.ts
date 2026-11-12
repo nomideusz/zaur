@@ -9,12 +9,13 @@ const config: CapacitorConfig = {
 	appName: 'Zaur Mail',
 	webDir: 'www',
 	server: {
-		// webmail.zaur.app is the SvelteKit app; mail.zaur.app is Stalwart itself.
-		url: 'https://webmail.zaur.app',
-		// Signup lives on register.zaur.app; keep it in the WebView so the login
-		// page's "Get your address" link and webmail's /register redirect don't
-		// pop out to the system browser. Login never leaves webmail.zaur.app
-		// (server-side token exchange), so mail.zaur.app is deliberately absent.
+		// Mail (the SvelteKit app) on the host it shares with Stalwart (mail2 README,
+		// "One host with Stalwart"); webmail.zaur.app only redirects here now.
+		url: 'https://mail.zaur.app',
+		// Signup lives on register.zaur.app; keep it in the WebView so the sign-in
+		// page's "Get your address" link and mail's /register redirect don't pop
+		// out to the system browser. Stalwart's sign-in page (passkeys) is on this
+		// same host, so it stays in the WebView too.
 		// iOS: mirror this list in WKAppBoundDomains when the ios/ project lands.
 		allowNavigation: ['register.zaur.app'],
 		errorPath: 'offline.html'

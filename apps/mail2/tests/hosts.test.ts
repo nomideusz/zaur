@@ -44,6 +44,10 @@ test('hosts: pages move to the canonical host, under their new paths', () => {
 	const events = 'https://webmail.zaur.app/api/events';
 	assert.equal(hostRedirect(new URL(events), new Request(events, { headers: { accept: 'text/event-stream' } })), null);
 	assert.equal(page('https://webmail.zaur.app/z/internal/handoff', 'POST'), null);
+	const shell = new Request('https://webmail.zaur.app/', {
+		headers: { 'sec-fetch-mode': 'navigate', 'user-agent': 'Mozilla/5.0 (Linux; Android 14; Pixel 8 Build/AP2A; wv) AppleWebKit/537.36' }
+	});
+	assert.equal(hostRedirect(new URL(shell.url), shell), null);
 });
 
 test('hosts: /oidc and discovery stay on (or go to) the issuer', () => {

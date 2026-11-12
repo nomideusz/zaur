@@ -11,7 +11,7 @@ const { breachCount, BREACHED } = require('./pwned');
 const TOKENS_FILE =
   process.env.PASSWORD_RESET_TOKENS_PATH || '/app/data/password_reset_tokens.json';
 const DEFAULT_EXPIRES_SEC = Number.parseInt(process.env.PASSWORD_RESET_EXPIRES_SEC || '3600', 10);
-const WEBMAIL_URL = (process.env.WEBMAIL_URL || 'https://webmail.zaur.app').replace(/\/$/, '');
+const WEBMAIL_URL = (process.env.WEBMAIL_URL || 'https://mail.zaur.app').replace(/\/$/, '');
 const REGISTER_URL = (process.env.REGISTER_PUBLIC_URL || 'https://register.zaur.app').replace(
   /\/$/,
   '',

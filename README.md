@@ -5,7 +5,7 @@ Monorepo for the Zaur suite — Mail, Meet and Music.
 > The pixel-dinosaur app (`dino` / `dino-archive` / `music`) was extracted to
 > its own repo at `../dino`.
 
-The suite lives across subdomains: **Mail** (`register.zaur.app` + `webmail.zaur.app`),
+The suite lives across subdomains: **Mail** (`register.zaur.app` + `mail.zaur.app`),
 **Meet** (LiveKit Cloud, joined from webmail `/meet/{group}`) and **Music** (`music.zaur.app`).
 The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 
@@ -14,7 +14,7 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 | App | Package | URL | Deploy |
 |-----|---------|-----|--------|
 | **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app/?r=readme-zaur) | CapRover |
-| **Webmail** | `@zaur/mail2` | [webmail.zaur.app](https://webmail.zaur.app) (also mail2.zaur.app) | Dokploy |
+| **Webmail** | `@zaur/mail2` | [mail.zaur.app](https://mail.zaur.app) (webmail.zaur.app and mail2.zaur.app redirect) | Dokploy |
 | **Music** | `@zaur/music` | [music.zaur.app](https://music.zaur.app) | Dokploy |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | Dokploy |
 | **Native Mail** (planned) | `apps/mobile` | iOS + Android | App Store + Google Play |
@@ -50,7 +50,7 @@ pnpm install
 
 ```sh
 pnpm dev:web           # http://localhost:5173 (landing site)
-pnpm dev:mail2         # http://localhost:5175 (webmail.zaur.app)
+pnpm dev:mail2         # http://localhost:5175 (mail.zaur.app)
 pnpm dev:music         # http://localhost:5176 (Zaur Music, over Navidrome)
 pnpm dev:register       # http://localhost:3000
 ```
@@ -68,7 +68,7 @@ pnpm test:mail2
 ```
 apps/
   web/           SvelteKit static landing site (zaur.app)
-  mail2/         SvelteKit JMAP client, serves webmail.zaur.app (see docs/decisions/0005-mail-2.0.md)
+  mail2/         SvelteKit JMAP client, serves mail.zaur.app (see docs/decisions/0005-mail-2.0.md)
   music/         Zaur Music PWA over Navidrome, with Add from YouTube
   register/      Stalwart account registration portal
   mobile/        Planned KMP core + native SwiftUI and Compose clients

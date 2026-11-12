@@ -6,6 +6,7 @@ import {
 	deletePushSubscription,
 	getPushSubscription,
 	getStoreDb,
+	listPushSubscriptions,
 	putPushSubscription,
 	setPushSubscriptionMuted
 } from '@zaur/server-auth';
@@ -29,11 +30,24 @@ export const subscribePush = command(subscription, async (input) => {
 	const { session } = requireSession();
 	if (!pushPublicKey()) error(503, 'Notifications are not configured on this server');
 	if (!isAllowedPushEndpoint(input.endpoint)) error(400, 'Unsupported push service');
-	putPushSubscription(getStoreDb(), {
-		id: pushSubscriptionId(input.endpoint),
+	const db = getStoreDb();
+	const id = pushSubscriptionId(input.endpoint);
+	putPushSubscription(db, {
+		id,
 		sessionId: session.id,
 		subscription: JSON.stringify({ endpoint: input.endpoint, keys: input.keys })
 	});
+	// A session is one browser, so any other row of it is that browser's old
+	// subscription: from webmail.zaur.app before mail moved to mail.zaur.app
+	// (the cookie spans both), or an endpoint the push service has replaced.
+	// Left in place, every new message would notify twice. Its mutes carry over.
+	const others = listPushSubscriptions(db).filter((row) => row.sessionId === session.id && row.id !== id);
+	if (others.length) {
+		if (!getPushSubscription(db, id)?.mutedAccounts.length && others[0].mutedAccounts.length) {
+			setPushSubscriptionMuted(db, id, others[0].mutedAccounts);
+		}
+		for (const row of others) deletePushSubscription(db, row.id);
+	}
 	pushWatcher.sync();
 });
 

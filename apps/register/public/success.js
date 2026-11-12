@@ -40,7 +40,7 @@ async function init() {
     if (recoveryEmail) loginParams.set('recovery', recoveryEmail);
     // handoffUrl signs the user in directly (one-time, 10 min); fall back to the login form.
     const handoffUrl = sessionStorage.getItem('handoffUrl');
-    const loginUrl = handoffUrl || `${webmailUrl}/login?${loginParams.toString()}`;
+    const loginUrl = handoffUrl || `${webmailUrl}/signin?${loginParams.toString()}`;
     webmailBtn.href = loginUrl;
     skipBtn.href = loginUrl;
 
@@ -82,7 +82,7 @@ async function init() {
   } catch (err) {
     console.error('Failed to load register config:', err);
     statusEl.textContent = 'Open mail below to sign in with your new address and password.';
-    const fallback = window.ZaurSite?.loginUrl(window.ZAUR_SITE) || 'https://webmail.zaur.app/login';
+    const fallback = window.ZaurSite?.loginUrl(window.ZAUR_SITE) || 'https://mail.zaur.app/signin';
     webmailBtn.href = fallback;
     skipBtn.href = fallback;
   }

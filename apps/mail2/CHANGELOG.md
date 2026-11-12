@@ -2,6 +2,11 @@
 
 Each version's section becomes its GitHub release. See "Releases" in the README.
 
+## 2.3.1
+
+- A browser that turns notifications on again (say on a new host for Mail) replaces its earlier subscription instead of being notified twice. Its muted accounts carry over
+- With `CANONICAL_ORIGIN` set, Android WebViews are not redirected, so installed builds of the Android shell keep working on the old host
+
 ## 2.3.0
 
 - Mail can share a host with Stalwart (as on `mail.zaur.app`). Its own paths that clashed with Stalwart's moved: sign-in is `/signin`, and the app's endpoints are under `/z/` (`/login`, `/api/…` and `/auth/claim|return` before). The old paths still work on a host of Mail's own

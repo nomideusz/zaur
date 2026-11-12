@@ -412,7 +412,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       handoffUrl,
       passkeySetupEnabled: false,
       passkeySetup: null,
-      webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
+      webmailUrl: process.env.WEBMAIL_URL || 'https://mail.zaur.app',
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });
   } catch (err) {
@@ -645,7 +645,7 @@ app.get('/api/recovery/verify', (req, res) => {
   } catch (err) {
     reportError(err, { where: 'Recovery email verification failed' });
   }
-  const target = new URL('/settings/security', siteConfig.webmailUrl || 'https://webmail.zaur.app');
+  const target = new URL('/settings/security', siteConfig.webmailUrl || 'https://mail.zaur.app');
   target.searchParams.set('recovery', result.valid ? 'verified' : 'invalid');
   return res.redirect(303, target.toString());
 });

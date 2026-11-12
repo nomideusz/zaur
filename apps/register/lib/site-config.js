@@ -3,10 +3,10 @@ function normalizeUrl(url) {
 }
 
 function getSiteConfig() {
-  const webmailUrl = normalizeUrl(process.env.WEBMAIL_URL || 'https://webmail.zaur.app');
+  const webmailUrl = normalizeUrl(process.env.WEBMAIL_URL || 'https://mail.zaur.app');
   return {
     webmailUrl,
-    webmailLoginUrl: `${webmailUrl}/login`,
+    webmailLoginUrl: `${webmailUrl}/signin`,
     mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     registerUrl: normalizeUrl(
       process.env.REGISTER_PUBLIC_URL || 'https://register.zaur.app',

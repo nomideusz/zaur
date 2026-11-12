@@ -327,8 +327,9 @@ Not carried over:
 
 ### One host with Stalwart (mail.zaur.app)
 
-Mail is moving to `mail.zaur.app`, the host Stalwart already serves. Traefik
-splits it by path: Stalwart keeps the paths it answers, mail gets the rest.
+Since 2026-11-12 mail is at `mail.zaur.app`, the host Stalwart already serves,
+and `webmail.zaur.app` redirects there. Traefik splits the host by path
+(`migrated.yml` on contabo): Stalwart keeps the paths it answers, mail gets the rest.
 Two reasons to share one host: `mail.zaur.app` is the address people expect,
 and it is the origin of Stalwart's passkeys, so a passkey sign-in can
 eventually run on mail's own page.
@@ -364,6 +365,17 @@ host serves everything:
   not move. `/oidc/*` on another host goes there, and tokens say `iss` = this.
   On `mail.zaur.app` Traefik sends `/.well-known` to Stalwart, which is its
   own OAuth issuer.
+
+Two exceptions to the redirect:
+- **Android WebViews** (`; wv)` in the user agent) are not redirected. The
+  Capacitor shell's installed builds have `webmail.zaur.app` baked in, and
+  they would open another host in the system browser.
+- **Notifications** need the browser to subscribe again on the new origin,
+  because the permission and the service worker belong to an origin. Until it
+  does, the old `webmail.zaur.app` worker keeps delivering, and its clicks land
+  here through the redirect. When the browser subscribes on the new origin,
+  `subscribePush` drops the session's other row, so it is never notified twice.
+  The mutes carry over.
 
 A sign-in from another app therefore crosses hosts. Take Music as an example:
 1. It goes to `webmail…/oidc/authorize`.
