@@ -92,13 +92,15 @@ export type { OauthTokens } from './oauth-token';
 export { createPkceChallenge } from './oauth-utils';
 export {
 	authenticateStalwartCredentials,
+	authenticateStalwartPasskey,
 	beginStalwartAuthorization,
 	completeStalwartAuthorization,
 	getStalwartBrowserRedirectUri,
+	getStalwartPasskeyOptions,
 	stalwartSupportsPasskeys,
 	StalwartAuthError
 } from './stalwart-auth';
-export type { CredentialAuthResult, StalwartAuthorization } from './stalwart-auth';
+export type { CredentialAuthResult, PasskeyAuthResult, StalwartAuthorization } from './stalwart-auth';
 export {
 	AccountSecurityError,
 	MANAGEMENT_USING,
@@ -112,6 +114,8 @@ export {
 	isTotpEnabled,
 	listCredentials,
 	listPasskeys,
+	addPasskey,
+	passkeyRegistrationOptions,
 	removePasskey,
 	revokeCredential,
 	setFailureMessage

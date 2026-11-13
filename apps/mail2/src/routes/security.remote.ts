@@ -5,7 +5,9 @@
  *
  * Forms rather than commands wherever a password crosses the wire: a form
  * field whose name starts with `_` is never echoed back to the page, and a
- * form still works without JavaScript. Commands are for id-shaped actions.
+ * form still works without JavaScript. Commands are for id-shaped actions,
+ * and for adding a passkey, which needs JavaScript anyway (the password goes
+ * along with the request for the ceremony's options, and is not kept).
  */
 import * as v from 'valibot';
 import { error } from '@sveltejs/kit';
@@ -25,6 +27,8 @@ import {
 	getStoreDb,
 	listAccountSessions,
 	putTotpSetup,
+	addPasskey,
+	passkeyRegistrationOptions,
 	removePasskey,
 	revokeAccountSession,
 	revokeCredential,
@@ -38,6 +42,7 @@ import {
 } from '@zaur/server-auth';
 import { connect, requireSession } from '#lib/server/account';
 import { getClientAddress } from '#lib/server/login';
+import { passkeyCeremonyHere } from '#lib/server/passkey-flow';
 import {
 	checkCredentials,
 	checkSecurityRateLimit,
@@ -78,7 +83,9 @@ export interface SecurityOverview {
 	apiKeys: CredentialSummary[];
 	/** Null when the server has no passkeys (before Stalwart 1.1). */
 	passkeys: PasskeySummary[] | null;
-	/** The mail server's own page for adding one: only it may run the passkey ceremony. */
+	/** Mail is on the mail server's own origin: a passkey can be added right here. */
+	addPasskeyHere: boolean;
+	/** Elsewhere, the mail server's own page for adding one (only its origin may run the ceremony). */
 	addPasskeyUrl: string | null;
 	sessions: SessionDTO[];
 	recovery: { available: boolean; email: string | null };
@@ -185,6 +192,7 @@ export const securityOverview = query(async (): Promise<SecurityOverview> => {
 		appPasswords,
 		apiKeys,
 		passkeys,
+		addPasskeyHere: Boolean(passkeys) && isOauthAccount(account) && passkeyCeremonyHere(getRequestEvent().url.origin),
 		addPasskeyUrl: passkeys && isOauthAccount(account) ? addPasskeyUrl() : null,
 		sessions: listAccountSessions(cookies),
 		recovery: { available: recoveryAvailable, email: recoveryEmail },
@@ -422,6 +430,60 @@ export const revokeCredentialCommand = command(
 		return { ok: true };
 	}
 );
+
+/**
+ * Step one of adding a passkey here: Stalwart checks the password (and the
+ * code, with two-factor on) and hands out the options for the browser's
+ * ceremony. Step two is `savePasskey`, with what the browser made.
+ */
+export const beginPasskeyRegistration = command(
+	v.object({ password, totp }),
+	async ({ password: currentPassword, totp: code }): Promise<Record<string, unknown>> => {
+		const { account } = requireSession();
+		if (!isOauthAccount(account) || !passkeyCeremonyHere(getRequestEvent().url.origin)) {
+			error(400, 'Add passkeys on the mail server’s account page');
+		}
+		const limited = rateLimited('identity');
+		if (limited && !limited.ok) error(429, limited.error);
+		try {
+			return await passkeyRegistrationOptions(await connect(account), { currentPassword, totp: code });
+		} catch (cause) {
+			if (cause instanceof AccountSecurityError) error(400, passkeyMessage(cause.userMessage));
+			throw cause;
+		}
+	}
+);
+
+const base64url = v.pipe(v.string(), v.minLength(1), v.maxLength(16_000), v.regex(/^[A-Za-z0-9_-]+$/));
+
+export const savePasskey = command(
+	v.object({
+		clientDataJson: base64url,
+		attestationObject: base64url,
+		description: v.pipe(v.string(), v.trim(), v.minLength(1, 'Give the passkey a name'), v.maxLength(64))
+	}),
+	async (input): Promise<{ ok: true }> => {
+		const { account } = requireSession();
+		const limited = rateLimited('mutation');
+		if (limited && !limited.ok) error(429, limited.error);
+		try {
+			await addPasskey(await connect(account), input);
+		} catch (cause) {
+			if (cause instanceof AccountSecurityError) error(400, passkeyMessage(cause.userMessage));
+			throw cause;
+		}
+		void securityOverview().refresh();
+		return { ok: true };
+	}
+);
+
+/** Stalwart's reasons, in the words the rest of the page uses. */
+function passkeyMessage(message: string): string {
+	if (/current secret is incorrect/i.test(message)) return 'That password is not right.';
+	if (/otp code is required/i.test(message)) return 'Enter the code from your authenticator app too.';
+	if (/challenge expired/i.test(message)) return 'That took too long. Try again.';
+	return message;
+}
 
 export const removePasskeyCommand = command(
 	v.object({ id: v.pipe(v.string(), v.minLength(1), v.maxLength(200)) }),

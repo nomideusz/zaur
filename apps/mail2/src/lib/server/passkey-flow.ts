@@ -1,7 +1,12 @@
 /**
- * Passkey sign-in, which happens on Stalwart's own sign-in page: Stalwart only
- * accepts a passkey ceremony run on its own origin (the relying party is the
- * host of its public URL), so mail cannot run it on its own pages.
+ * Passkey sign-in. Stalwart only accepts a passkey ceremony run on its own
+ * origin (the relying party is the host of its public URL), so how it goes
+ * depends on where mail is served:
+ *
+ * - On that same origin (mail.zaur.app, split with Stalwart by path), the
+ *   sign-in page runs the ceremony itself and posts the assertion to the
+ *   `passkeyLogin` command (login.remote.ts): see `passkeyCeremonyHere`.
+ * - Anywhere else, the browser goes to Stalwart's own sign-in page, below.
  *
  * /signin/passkey starts an authorization-code request and keeps what it needs
  * to finish (state, PKCE verifier, where to go next) in a short-lived sealed
@@ -9,7 +14,13 @@
  * checks the state, exchanges the code and opens the session.
  */
 import type { Cookies } from '@sveltejs/kit';
-import { isStalwartOauthEnabled, sealSession, stalwartSupportsPasskeys, unsealSession } from '@zaur/server-auth';
+import {
+	getStalwartOauthIssuer,
+	isStalwartOauthEnabled,
+	sealSession,
+	stalwartSupportsPasskeys,
+	unsealSession
+} from '@zaur/server-auth';
 import { jmapAuthMode } from '#lib/server/login';
 
 const COOKIE = 'zaur_passkey_flow';
@@ -31,6 +42,19 @@ export interface PasskeyFlow {
 /** Whether to offer the passkey button: Stalwart sign-in, on a server that has passkeys. */
 export async function passkeySignInAvailable(): Promise<boolean> {
 	return jmapAuthMode() === 'stalwart' && isStalwartOauthEnabled() && (await stalwartSupportsPasskeys());
+}
+
+/**
+ * Whether a page on `origin` may run the passkey ceremony itself: only on the
+ * mail server's own origin, which a sign-in assertion must name exactly
+ * (adding one would also work on a subdomain; this keeps one rule for both).
+ */
+export function passkeyCeremonyHere(origin: string): boolean {
+	try {
+		return new URL(getStalwartOauthIssuer()).origin === origin;
+	} catch {
+		return false;
+	}
 }
 
 export function savePasskeyFlow(cookies: Cookies, flow: PasskeyFlow): void {

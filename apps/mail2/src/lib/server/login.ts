@@ -14,18 +14,21 @@
 import { createHash } from 'node:crypto';
 import {
 	authenticateStalwartCredentials,
+	authenticateStalwartPasskey,
 	completeStalwartAuthorization,
 	checkRateLimitRow,
 	getStoreDb,
 	isPasswordLoginEnabled,
 	isStalwartOauthEnabled,
 	StalwartAuthError,
+	type OauthTokens,
 	type SessionData
 } from '@zaur/server-auth';
 import {
 	classifyJmapError,
 	createTokenSession,
-	findIdentityEmail
+	findIdentityEmail,
+	type PasskeyAssertion
 } from '@zaur/mail-core';
 import { safeNextPath } from '@zaur/server-auth/internal-auth';
 import { createConnectedClient } from '#lib/server/jmap';
@@ -216,13 +219,6 @@ export async function attemptAuthorizationLogin(input: {
 	codeVerifier: string;
 	redirectUri: string;
 }): Promise<LoginAttempt> {
-	let serverUrl: string;
-	try {
-		serverUrl = jmapServerUrl();
-	} catch (error) {
-		console.error('[Mail2 Login]', error);
-		return { status: 'unavailable' };
-	}
 	let tokens;
 	try {
 		tokens = await completeStalwartAuthorization(input);
@@ -230,6 +226,42 @@ export async function attemptAuthorizationLogin(input: {
 		// An expired or replayed code: the sign-in has to start again.
 		reportError(error, { where: 'login: Stalwart authorization code' });
 		return { status: 'invalid_credentials' };
+	}
+	return openTokenSession(tokens, 'authorization code');
+}
+
+/**
+ * A passkey sign-in the page ran itself (on the mail server's own origin):
+ * Stalwart checks the assertion and hands back a code, exchanged here.
+ * `unknown`: no account holds that passkey any more.
+ */
+export async function attemptPasskeyLogin(input: {
+	credential: PasskeyAssertion;
+	requestOrigin: string;
+}): Promise<LoginAttempt | { status: 'unknown' }> {
+	let result;
+	try {
+		result = await authenticateStalwartPasskey(input);
+	} catch (error) {
+		reportError(error, { where: 'login: Stalwart passkey flow' });
+		return { status: error instanceof StalwartAuthError ? 'unavailable' : 'error' };
+	}
+	if (result.status === 'unknown') return { status: 'unknown' };
+	if (result.status === 'failure') return { status: 'invalid_credentials' };
+	return openTokenSession(result.tokens, 'passkey');
+}
+
+/**
+ * Open a session from tokens whose address is not known in advance: keyed
+ * by the server's username, named after the account's identity.
+ */
+async function openTokenSession(tokens: OauthTokens, how: string): Promise<LoginAttempt> {
+	let serverUrl: string;
+	try {
+		serverUrl = jmapServerUrl();
+	} catch (error) {
+		console.error('[Mail2 Login]', error);
+		return { status: 'unavailable' };
 	}
 	const sessionData: SessionData = createTokenSession({
 		serverUrl,
@@ -248,7 +280,7 @@ export async function attemptAuthorizationLogin(input: {
 		sessionData.displayName = primary?.name || primary?.email || sessionData.username;
 	} catch (error) {
 		if (classifyJmapError(error) === 'invalid_credentials') return { status: 'invalid_credentials' };
-		reportError(error, { where: 'login: JMAP session check (authorization code)' });
+		reportError(error, { where: `login: JMAP session check (${how})` });
 		return { status: 'unavailable' };
 	}
 	return { status: 'ok', sessionData };

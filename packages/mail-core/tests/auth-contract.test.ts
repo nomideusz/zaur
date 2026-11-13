@@ -1,6 +1,13 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { createStalwartAuthPayload, parseStalwartAuthResponse } from '../src/auth/contract.ts';
+import {
+	createStalwartAuthPayload,
+	createStalwartPasskeyPayload,
+	parsePasskeyAssertion,
+	parsePasskeyOptions,
+	parseStalwartAuthResponse,
+	parseStalwartPasskeyResponse
+} from '../src/auth/contract.ts';
 
 const INPUT = {
 	accountName: 'a@example.org',
@@ -71,4 +78,59 @@ test('outcomes this flow cannot act on are a contract mismatch', () => {
 test('a second factor and a wrong password still read as before', () => {
 	assert.deepEqual(parseStalwartAuthResponse({ type: 'mfaRequired' }), { type: 'mfaRequired' });
 	assert.deepEqual(parseStalwartAuthResponse({ type: 'failure' }), { type: 'failure' });
+});
+
+const ASSERTION = {
+	id: 'cred-1',
+	rawId: 'Y3JlZC0x',
+	type: 'public-key',
+	authenticatorAttachment: 'platform',
+	clientExtensionResults: {},
+	response: { clientDataJSON: 'eyJ0eXBlIjoid2ViYXV0aG4uZ2V0In0', authenticatorData: 'AAAA', signature: 'c2ln', userHandle: 'AAAAAQ' }
+};
+
+test('a passkey assertion keeps only what Stalwart reads, and only base64url', () => {
+	assert.deepEqual(parsePasskeyAssertion(ASSERTION), {
+		rawId: 'Y3JlZC0x',
+		type: 'public-key',
+		response: { clientDataJSON: ASSERTION.response.clientDataJSON, authenticatorData: 'AAAA', signature: 'c2ln', userHandle: 'AAAAAQ' }
+	});
+	assert.equal(parsePasskeyAssertion({ ...ASSERTION, response: { ...ASSERTION.response, userHandle: null } })?.response.userHandle, null);
+	assert.equal(parsePasskeyAssertion({ ...ASSERTION, rawId: 'a b' }), null);
+	assert.equal(parsePasskeyAssertion({ ...ASSERTION, response: { ...ASSERTION.response, signature: '' } }), null);
+	assert.equal(parsePasskeyAssertion({ ...ASSERTION, response: { ...ASSERTION.response, userHandle: 'x/y' } }), null);
+	assert.equal(parsePasskeyAssertion({ rawId: 'AAAA' }), null);
+	assert.equal(parsePasskeyAssertion('nope'), null);
+});
+
+test('the passkey payload carries the same authorization query, with consent', () => {
+	const credential = parsePasskeyAssertion(ASSERTION)!;
+	const payload = createStalwartPasskeyPayload({ ...INPUT, credential });
+	assert.equal(payload.type, 'authCodePasskey');
+	assert.equal(payload.consent, true);
+	assert.equal(payload.credential, credential);
+	assert.equal(payload.query, createStalwartAuthPayload(INPUT).query);
+});
+
+test('passkey responses: the code from the redirect, or why not', () => {
+	assert.deepEqual(
+		parseStalwartPasskeyResponse({ type: 'authenticated', location: 'https://mail.example.org/cb?code=C1&state=s' }),
+		{ type: 'authenticated', clientCode: 'C1' }
+	);
+	for (const type of ['passkeyUnknown', 'expired', 'failure'] as const) {
+		assert.deepEqual(parseStalwartPasskeyResponse({ type }), { type });
+	}
+	assert.equal(parseStalwartPasskeyResponse({ type: 'authenticated', location: 'https://x/cb' }), null);
+	assert.equal(parseStalwartPasskeyResponse({ type: 'consentRequired', token: 't' }), null);
+	assert.equal(parseStalwartPasskeyResponse(null), null);
+});
+
+test('passkey options: a base64url challenge and an rpId', () => {
+	assert.deepEqual(parsePasskeyOptions({ type: 'passkeyOptions', challenge: 'abc_-1', rpId: 'mail.example.org', timeout: 60000 }), {
+		challenge: 'abc_-1',
+		rpId: 'mail.example.org',
+		timeout: 60000
+	});
+	assert.equal(parsePasskeyOptions({ type: 'passkeyOptions', challenge: 'a+b', rpId: 'x' }), null);
+	assert.equal(parsePasskeyOptions({ type: 'failure' }), null);
 });

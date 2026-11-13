@@ -10,8 +10,13 @@ import { exchangeOauthCode, type OauthTokens } from './oauth-token';
 import { browserRedirectUri, buildAuthorizationUrl, createPkceChallenge } from './oauth-utils';
 import {
 	createStalwartAuthPayload,
+	createStalwartPasskeyPayload,
 	describeStalwartAuthResponse,
-	parseStalwartAuthResponse
+	parsePasskeyOptions,
+	parseStalwartAuthResponse,
+	parseStalwartPasskeyResponse,
+	type PasskeyAssertion,
+	type PasskeySignInOptions
 } from '@zaur/mail-core/auth/contract';
 import { MAIL_SCOPE } from '@zaur/mail-core/auth/stalwart';
 import { log } from './log';
@@ -87,6 +92,89 @@ export async function authenticateStalwartCredentials(input: {
 		codeVerifier: verifier,
 		redirectUri
 	});
+	warnIfMailScopeMissing(tokens);
+	return { status: 'authenticated', tokens };
+}
+
+export type PasskeyAuthResult =
+	| { status: 'authenticated'; tokens: OauthTokens }
+	/** No account holds this passkey (removed, or made for another server). */
+	| { status: 'unknown' }
+	| { status: 'failure' };
+
+/** A fresh sign-in challenge from Stalwart 1.1 (good for five minutes, used once). */
+export async function getStalwartPasskeyOptions(): Promise<PasskeySignInOptions> {
+	let response: Response;
+	try {
+		response = await fetch(new URL('/api/auth', getStalwartOauthIssuer()), {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+			body: JSON.stringify({ type: 'passkeyOptions' }),
+			signal: AbortSignal.timeout(10_000)
+		});
+	} catch {
+		throw new StalwartAuthError();
+	}
+	const options = response.ok ? parsePasskeyOptions(await response.json().catch(() => null)) : null;
+	if (!options) throw new StalwartAuthError();
+	return options;
+}
+
+/**
+ * A passkey sign-in run in the browser on the issuer's own origin (Stalwart
+ * checks the assertion's origin, not where this request comes from), finished
+ * like the password flow: PKCE'd here, the code exchanged here.
+ */
+export async function authenticateStalwartPasskey(input: {
+	credential: PasskeyAssertion;
+	requestOrigin: string;
+}): Promise<PasskeyAuthResult> {
+	const verifier = randomBytes(48).toString('base64url');
+	const redirectUri = getStalwartOauthRedirectUri(input.requestOrigin);
+	let scopes: string[];
+	try {
+		scopes = getStalwartOauthScopes(await getStalwartOauthDiscovery());
+	} catch {
+		throw new StalwartAuthError();
+	}
+	if (!scopes.includes(MAIL_SCOPE)) throw new StalwartAuthError();
+
+	let response: Response;
+	try {
+		response = await fetch(new URL('/api/auth', getStalwartOauthIssuer()), {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+			body: JSON.stringify(
+				createStalwartPasskeyPayload({
+					credential: input.credential,
+					clientId: getStalwartOauthClientId(),
+					redirectUri,
+					scope: scopes.join(' '),
+					codeChallenge: createPkceChallenge(verifier)
+				})
+			),
+			signal: AbortSignal.timeout(10_000)
+		});
+	} catch {
+		throw new StalwartAuthError();
+	}
+	if (response.status === 401) return { status: 'failure' };
+	// A malformed assertion is refused as a bad request: the person's to retry.
+	if (response.status === 400) return { status: 'failure' };
+	if (!response.ok) throw new StalwartAuthError();
+	const rawBody: unknown = await response.json().catch(() => null);
+	const body = parseStalwartPasskeyResponse(rawBody);
+	if (!body) {
+		log.warn('stalwart_passkey_contract_mismatch', {
+			status: response.status,
+			...describeStalwartAuthResponse(rawBody)
+		});
+		throw new StalwartAuthError();
+	}
+	if (body.type === 'passkeyUnknown') return { status: 'unknown' };
+	if (body.type !== 'authenticated') return { status: 'failure' };
+
+	const tokens = await exchangeOauthCode({ code: body.clientCode, codeVerifier: verifier, redirectUri });
 	warnIfMailScopeMissing(tokens);
 	return { status: 'authenticated', tokens };
 }
@@ -185,8 +273,7 @@ export async function stalwartSupportsPasskeys(): Promise<boolean> {
 			body: JSON.stringify({ type: 'passkeyOptions' }),
 			signal: AbortSignal.timeout(5000)
 		});
-		const body = (await response.json().catch(() => null)) as { type?: unknown } | null;
-		supported = response.ok && body?.type === 'passkeyOptions';
+		supported = response.ok && parsePasskeyOptions(await response.json().catch(() => null)) !== null;
 	} catch {
 		supported = false;
 	}

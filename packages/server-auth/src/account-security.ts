@@ -241,10 +241,11 @@ export async function isTotpEnabled(client: ManagementClient): Promise<boolean> 
 }
 
 /**
- * The account's passkeys (`x:Passkey`, Stalwart 1.1). Registering one is a
- * WebAuthn ceremony that only works on the server's own origin, so this module
- * lists and removes them but never creates one. Null when the server does not
- * know the object or refuses to list it: the rest of the page still works.
+ * The account's passkeys (`x:Passkey`, Stalwart 1.1). Null when the server
+ * does not know the object or refuses to list it: the rest of the page still
+ * works. Adding one is a WebAuthn ceremony the browser runs between
+ * `passkeyRegistrationOptions` and `addPasskey`, and only on the server's own
+ * origin (or a subdomain of it).
  */
 export async function listPasskeys(client: ManagementClient): Promise<PasskeySummary[] | null> {
 	let response: JMAPResponse;
@@ -278,6 +279,72 @@ export async function listPasskeys(client: ManagementClient): Promise<PasskeySum
 				]
 			: []
 	);
+}
+
+/**
+ * WebAuthn creation options for a new passkey (`x:Passkey/registrationOptions`):
+ * the JSON form, binary fields base64url. Stalwart asks for the password, and
+ * the current code once TOTP is on, before it hands out the challenge.
+ */
+export async function passkeyRegistrationOptions(
+	client: ManagementClient,
+	input: { currentPassword: string; totp?: string }
+): Promise<Record<string, unknown>> {
+	const code = input.totp?.replace(/\s+/g, '');
+	const response = await request(client, [
+		[
+			'x:Passkey/registrationOptions',
+			{ currentSecret: input.currentPassword, ...(code ? { otpCode: code } : {}) },
+			'options'
+		]
+	]);
+	// A wrong password or a missing code comes back as `forbidden`, with a
+	// description written for the person: show it rather than "not allowed".
+	const call = response.methodResponses.find((item) => item[2] === 'options');
+	const description = call?.[0] === 'error' ? call[1]?.description : undefined;
+	if (call?.[0] === 'error' && call[1]?.type === 'forbidden' && typeof description === 'string' && description.trim()) {
+		throw new AccountSecurityError(description.trim());
+	}
+	const data = methodData(response, 'options');
+	const publicKey = data.publicKey;
+	if (!publicKey || typeof publicKey !== 'object') {
+		log.warn('stalwart_passkey_options_contract_mismatch', {});
+		throw new Error('Stalwart did not return passkey options');
+	}
+	return publicKey as Record<string, unknown>;
+}
+
+/** Store the passkey the browser just made (its attestation, base64url) under a name. */
+export async function addPasskey(
+	client: ManagementClient,
+	input: { clientDataJson: string; attestationObject: string; description: string }
+): Promise<{ id: string }> {
+	const data = methodData(
+		await request(client, [
+			[
+				'x:Passkey/set',
+				{
+					create: {
+						passkey: {
+							description: input.description,
+							registration: {
+								clientDataJson: input.clientDataJson,
+								attestationObject: input.attestationObject
+							}
+						}
+					}
+				},
+				'create'
+			]
+		]),
+		'create'
+	);
+	const created = (data.created as Record<string, { id?: unknown }> | undefined)?.passkey;
+	if (created && typeof created.id === 'string') return { id: created.id };
+	const reason = setFailureMessage(data);
+	log.warn('stalwart_account_security_rejected', { operation: 'created', reason });
+	if (reason) throw new AccountSecurityError(reason);
+	throw new Error('Stalwart rejected the passkey');
 }
 
 export async function removePasskey(client: ManagementClient, id: string): Promise<void> {

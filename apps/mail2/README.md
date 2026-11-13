@@ -102,14 +102,32 @@ The credential flow reuses webmail 1.0's exactly, via the shared
 ### Passkeys
 
 Stalwart 1.1 added passkeys, and "Sign in with a passkey" on `/signin` uses
-them. They cannot be asked for on mail's own pages: Stalwart's relying party
-is the host of its public URL (`mail.zaur.app`) and it accepts a passkey
-sign-in only from exactly that origin. A browser on `webmail.zaur.app` cannot
-produce one Stalwart accepts, related-origin requests included, since Stalwart
-checks the origin inside the signed client data.
+them. Stalwart's relying party is the host of its public URL (`mail.zaur.app`)
+and it accepts a passkey sign-in only from exactly that origin: it checks the
+origin inside the signed client data, so related-origin requests do not help.
+How the button works therefore depends on where mail is served
+(`passkeyCeremonyHere` in `#lib/server/passkey-flow`).
 
-So the button runs an ordinary authorization-code request instead
-(`#lib/server/passkey-flow`):
+**On the mail server's own origin** (production: mail and Stalwart share
+`mail.zaur.app`, see below), the page runs the ceremony itself (`#lib/passkey`):
+
+- `passkeySignInOptions` (login.remote.ts) asks Stalwart for a challenge
+  (`{"type":"passkeyOptions"}` to `/api/auth`) and the browser asks for a
+  passkey with it, user verification required.
+- The address field also offers passkeys in its autofill
+  (`autocomplete="username webauthn"`, conditional mediation). That wait is
+  renewed before the five-minute challenge expires and called off while the
+  button's own prompt is open.
+- `passkeyLogin` checks the assertion's shape, rate-limits per address (10 per
+  15 minutes), and posts it to Stalwart as `authCodePasskey` with a PKCE'd
+  authorization request, exactly like the password flow: the code is exchanged
+  server-side, and the session is keyed by the username the JMAP session
+  reports. A passkey no account holds any more (`passkeyUnknown`) gets its own
+  message, and the browser is told to stop offering it
+  (`PublicKeyCredential.signalUnknownCredential`, where supported).
+
+**Anywhere else** (another host, the Android shell on `webmail.zaur.app`, dev),
+the button runs an ordinary authorization-code request instead:
 
 - `/signin/passkey` builds the request with PKCE and a state, seals both (with
   `next`, "keep me signed in" and add-account mode) into a ten-minute,
@@ -120,21 +138,26 @@ So the button runs an ordinary authorization-code request instead
   from** (`getStalwartBrowserRedirectUri`). Every host mail is served on must
   be a redirect URI of the OAuthClient. `STALWART_OAUTH_REDIRECT_URI` is not
   used here: it names the server-side flow's never-visited URI, which in
-  production is `mail2.zaur.app` while people sign in on `webmail.zaur.app`.
+  production is `mail2.zaur.app`.
 - The callback reads the cookie once, checks the state, exchanges the code and
-  opens the session like a password sign-in, keyed by the username the JMAP
-  session reports. A cancel, an expired or replayed flow and a refused code
-  each come back to `/signin?passkey=…` with their own message.
+  opens the session like a password sign-in. A cancel, an expired or replayed
+  flow and a refused code each come back to `/signin?passkey=…` with their own
+  message.
 - Stalwart asks for consent once per account and client. Anyone who has
   signed in with a password already has that grant, so they go straight back.
-- The button only shows when Stalwart hands out passkey options
-  (`stalwartSupportsPasskeys`, a `{"type":"passkeyOptions"}` POST to
-  `/api/auth`, cached ten minutes), so older servers never see it.
 
-Adding a passkey is a WebAuthn ceremony too, with the same origin rule, so it
-happens on Stalwart's account page (`/account/Account/x:Passkey` on the mail
-server), which Password & sign-in links to. That page lists and removes the
-account's `x:Passkey` objects itself, removal behind *Confirm it's you*.
+Either way the button only shows when Stalwart hands out passkey options
+(`stalwartSupportsPasskeys`, cached ten minutes), so older servers never see it.
+
+Adding a passkey is a WebAuthn ceremony too, with the same origin rule (a
+subdomain would also do). On the mail server's origin, Password & sign-in adds
+one itself: `beginPasskeyRegistration` (security.remote.ts) sends the password,
+and the code with two-factor on, to `x:Passkey/registrationOptions`, the
+browser creates the passkey, and `savePasskey` stores its attestation with
+`x:Passkey/set` under a name (the browser and system by default, 64
+characters at most). Elsewhere the card links to Stalwart's account page
+(`/account/Account/x:Passkey`). The card lists the account's `x:Passkey`
+objects and removes them behind *Confirm it's you* in both cases.
 
 Because both apps share the store/cookie/secret, a webmail 1.0 login still
 lands you in mail2 and vice versa — sharing is now a feature, not a
@@ -331,8 +354,8 @@ Since 2026-11-12 mail is at `mail.zaur.app`, the host Stalwart already serves,
 and `webmail.zaur.app` redirects there. Traefik splits the host by path
 (`migrated.yml` on contabo): Stalwart keeps the paths it answers, mail gets the rest.
 Two reasons to share one host: `mail.zaur.app` is the address people expect,
-and it is the origin of Stalwart's passkeys, so a passkey sign-in can
-eventually run on mail's own page.
+and it is the origin of Stalwart's passkeys, so passkeys are signed in with
+and added on mail's own pages (see Passkeys above).
 
 Stalwart's first path segments are `jmap`, `dav`, `.well-known`, `auth`,
 `scim`, `api`, `mail`, `calendar/rsvp`, `form`, `login`, `device`, `healthz`,

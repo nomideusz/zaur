@@ -13,6 +13,8 @@ import {
 	getAccountSecurityOverview,
 	listCredentials,
 	listPasskeys,
+	addPasskey,
+	passkeyRegistrationOptions,
 	removePasskey,
 	revokeCredential,
 	setFailureMessage,
@@ -285,4 +287,47 @@ test('a server without passkeys reads as null and leaves the rest of the overvie
 	const overview = await getAccountSecurityOverview(client);
 	assert.equal(overview.passkeys, null);
 	assert.deepEqual(overview.appPasswords, []);
+});
+
+test('adding a passkey: options behind the password (and code), then the attestation under a name', async () => {
+	const publicKey = { challenge: 'Y2g', rp: { id: 'mail.example.org', name: 'mail.example.org' } };
+	const client = fakeClient(([name, args]) => {
+		if (name === 'x:Passkey/registrationOptions') return [name, { accountId: 'a', publicKey }];
+		if (name === 'x:Passkey/set') {
+			const create = (args as { create: Record<string, unknown> }).create;
+			return [name, { created: { passkey: { id: 'p9' } }, _create: create }];
+		}
+		return ['error', { type: 'unknownMethod' }];
+	});
+	assert.deepEqual(await passkeyRegistrationOptions(client, { currentPassword: 'pw', totp: '123 456' }), publicKey);
+	assert.deepEqual(client.calls.at(-1), [
+		'x:Passkey/registrationOptions',
+		{ currentSecret: 'pw', otpCode: '123456' },
+		'options'
+	]);
+	await passkeyRegistrationOptions(client, { currentPassword: 'pw' });
+	assert.deepEqual(client.calls.at(-1)?.[1], { currentSecret: 'pw' });
+
+	assert.deepEqual(await addPasskey(client, { clientDataJson: 'cd', attestationObject: 'ao', description: 'Laptop' }), { id: 'p9' });
+	assert.deepEqual(client.calls.at(-1), [
+		'x:Passkey/set',
+		{ create: { passkey: { description: 'Laptop', registration: { clientDataJson: 'cd', attestationObject: 'ao' } } } },
+		'create'
+	]);
+});
+
+test('a refused passkey says why, in Stalwart\'s words', async () => {
+	const wrong = fakeClient(() => ['error', { type: 'forbidden', description: 'Current secret is incorrect.' }]);
+	await assert.rejects(
+		passkeyRegistrationOptions(wrong, { currentPassword: 'x' }),
+		(error: unknown) => error instanceof AccountSecurityError && error.userMessage === 'Current secret is incorrect.'
+	);
+	const taken = fakeClient(() => [
+		'x:Passkey/set',
+		{ notCreated: { passkey: { type: 'alreadyExists', description: 'This passkey is already registered.' } } }
+	]);
+	await assert.rejects(
+		addPasskey(taken, { clientDataJson: 'cd', attestationObject: 'ao', description: 'Phone' }),
+		(error: unknown) => error instanceof AccountSecurityError && error.userMessage === 'This passkey is already registered.'
+	);
 });

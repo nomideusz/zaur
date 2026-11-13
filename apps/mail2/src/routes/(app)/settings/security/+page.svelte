@@ -13,8 +13,11 @@
 		disableTotp,
 		saveRecoveryEmail,
 		removePasskeyCommand,
+		beginPasskeyRegistration,
+		savePasskey,
 		type TotpSetup
 	} from '../../../security.remote';
+	import { createPasskey, deviceName, passkeysSupported, wasDismissed } from '#lib/passkey';
 
 	const who = whoami();
 	const overviewResource = $derived(who.current ? securityOverview() : undefined);
@@ -63,6 +66,40 @@
 			removing = null;
 		}
 	}
+
+	/** Adding a passkey here (mail on the mail server's own origin): password, then the device's prompt. */
+	let adding = $state<{ password: string; code: string; name: string } | null>(null);
+	let creating = $state(false);
+	function startAdding() {
+		status = null;
+		adding = { password: '', code: '', name: deviceName() };
+	}
+	async function createHere(event: SubmitEvent) {
+		event.preventDefault();
+		if (!adding || creating) return;
+		const { password, code, name } = adding;
+		creating = true;
+		status = null;
+		try {
+			const options = await beginPasskeyRegistration({ password, totp: code || undefined });
+			const made = await createPasskey(options);
+			await savePasskey({ ...made, description: name.trim() || deviceName() });
+			adding = null;
+			status = { text: `Added ${name.trim() || 'the passkey'}. Use “Sign in with a passkey” next time.` };
+		} catch (cause) {
+			if (wasDismissed(cause)) return;
+			status = {
+				text:
+					cause instanceof DOMException && cause.name === 'InvalidStateError'
+						? 'This device already holds a passkey for your account.'
+						: messageOf(cause, 'The passkey could not be added'),
+				error: true
+			};
+		} finally {
+			creating = false;
+		}
+	}
+
 	const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium' });
 	function added(at: string | null): string {
 		const date = at ? new Date(at) : null;
@@ -214,8 +251,13 @@
 			</div>
 			<div class="z-card-body">
 				<p class={blurb}>
-					Sign in with your fingerprint, face or device PIN instead of your password. Passkeys are kept by the mail
-					server, so adding one happens on its own account page, which asks for your password once.
+					Sign in with your fingerprint, face or device PIN instead of your password.
+					{#if overview.addPasskeyHere}
+						Adding one asks for your password once, then for your device's prompt.
+					{:else}
+						Passkeys are kept by the mail server, so adding one happens on its own account page, which asks for your
+						password once.
+					{/if}
 				</p>
 				{#if overview.passkeys.length}
 					<ul class="mt-3 divide-y divide-[var(--z-hairline)] rounded-[8px] border border-[var(--z-hairline)]">
@@ -239,7 +281,59 @@
 						{/each}
 					</ul>
 				{/if}
-				{#if overview.addPasskeyUrl}
+				{#if overview.addPasskeyHere && passkeysSupported()}
+					{#if adding}
+						<form onsubmit={createHere} class="mt-3 flex flex-col gap-3 rounded-[8px] border border-[var(--z-hairline)] p-3">
+							<label class="block">
+								<span class={fieldLabel}>Current password</span>
+								<!-- svelte-ignore a11y_autofocus -->
+								<input
+									type="password"
+									bind:value={adding.password}
+									autocomplete="current-password"
+									required
+									autofocus
+									disabled={creating}
+									class="z-field mt-1 w-full max-md:text-base"
+								/>
+							</label>
+							{#if overview.totpEnabled}
+								<label class="block max-w-[200px]">
+									<span class={fieldLabel}>Authentication code</span>
+									<input
+										type="text"
+										bind:value={adding.code}
+										inputmode="numeric"
+										autocomplete="one-time-code"
+										placeholder="123456"
+										required
+										disabled={creating}
+										class={codeField}
+									/>
+								</label>
+							{/if}
+							<label class="block">
+								<span class={fieldLabel}>Name</span>
+								<input
+									type="text"
+									bind:value={adding.name}
+									maxlength="64"
+									required
+									disabled={creating}
+									class="z-field mt-1 w-full max-md:text-base"
+								/>
+							</label>
+							<div class="flex gap-2">
+								<button type="submit" class="btn-tactile btn-primary" disabled={creating}>
+									{creating ? 'Follow your device…' : 'Create passkey'}
+								</button>
+								<button type="button" class="btn-tactile" disabled={creating} onclick={() => (adding = null)}>Cancel</button>
+							</div>
+						</form>
+					{:else}
+						<button type="button" class="btn-tactile mt-3 inline-flex" onclick={startAdding}>Add a passkey</button>
+					{/if}
+				{:else if overview.addPasskeyUrl}
 					<a href={overview.addPasskeyUrl} target="_blank" rel="noopener" class="btn-tactile mt-3 inline-flex">
 						Add a passkey
 						<span aria-hidden="true">↗</span>

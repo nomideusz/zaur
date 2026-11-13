@@ -2,6 +2,11 @@
 
 Each version's section becomes its GitHub release. See "Releases" in the README.
 
+## 2.4.0
+
+- When Mail is served on the mail server's own origin (as on `mail.zaur.app`), passkeys work on Mail's own pages: "Sign in with a passkey" asks for one right on the sign-in page, the address field offers your passkeys in its autofill, and Password & sign-in adds a passkey itself (your password, then your device's prompt). Elsewhere it still goes through the mail server's pages
+- A passkey that is no longer on any account says so, and supporting browsers stop offering it
+
 ## 2.3.1
 
 - A browser that turns notifications on again (say on a new host for Mail) replaces its earlier subscription instead of being notified twice. Its muted accounts carry over

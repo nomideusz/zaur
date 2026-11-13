@@ -1,9 +1,18 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
 	import AuthAlert from '#lib/components/auth/AuthAlert.svelte';
 	import { addressKind, appName, mailDomain } from '#lib/brand';
 	import AuthCard from '#lib/components/auth/AuthCard.svelte';
-	import { login } from '../login.remote';
+	import { login, passkeyLogin, passkeySignInOptions } from '../login.remote';
+	import {
+		autofillSupported,
+		forgetUnknownPasskey,
+		getAssertion,
+		passkeysSupported,
+		wasDismissed,
+		type AssertionJSON
+	} from '#lib/passkey';
 	import type { PageProps } from './$types';
 
 	let { data }: PageProps = $props();
@@ -48,31 +57,140 @@
 		else goto(data.next, { replaceState: true });
 	});
 
-	/** Where a passkey sign-in ended up when it came back without a session. */
-	const passkeyAlert = $derived(
-		data.passkeyOutcome === 'cancelled'
-			? { title: 'Passkey sign-in cancelled', hint: 'Nothing changed. Try again, or use your password.' }
-			: data.passkeyOutcome === 'expired'
-				? { title: 'That sign-in took too long', hint: 'Start the passkey sign-in again.' }
-				: data.passkeyOutcome === 'unavailable'
-					? { title: 'Passkey sign-in is unavailable right now', hint: 'Use your password for now.' }
-					: data.passkeyOutcome === 'failed'
-						? { title: 'Passkey sign-in did not finish', hint: 'Try again, or use your password.' }
-						: null
-	);
+	/** How a passkey sign-in ended without a session: from the page itself, or back from Stalwart's. */
+	type PasskeyNote = 'cancelled' | 'expired' | 'failed' | 'unavailable' | 'unknown' | 'limited';
+	let passkeyNote = $state<PasskeyNote | null>(null);
+	let retryAfter = $state(0);
+	const passkeyAlert = $derived.by(() => {
+		switch (passkeyNote ?? data.passkeyOutcome) {
+			case 'cancelled':
+				return { title: 'Passkey sign-in cancelled', hint: 'Nothing changed. Try again, or use your password.' };
+			case 'expired':
+				return { title: 'That sign-in took too long', hint: 'Start the passkey sign-in again.' };
+			case 'unavailable':
+				return { title: 'Passkey sign-in is unavailable right now', hint: 'Use your password for now.' };
+			case 'failed':
+				return { title: 'Passkey sign-in did not finish', hint: 'Try again, or use your password.' };
+			case 'unknown':
+				return {
+					title: 'That passkey is no longer on your account',
+					hint: 'Sign in with your password. You can add a new passkey in Settings → Security.'
+				};
+			case 'limited':
+				return { title: 'Too many attempts', hint: `Try again in ${retryAfter}s.` };
+			default:
+				return null;
+		}
+	});
+	const passkeyTone = $derived((passkeyNote ?? data.passkeyOutcome) === 'cancelled' ? 'ok' : 'error');
+
+	let passkeyBusy = $state(false);
+	const keepSignedIn = () => (document.getElementById('login-remember') as HTMLInputElement | null)?.checked === true;
 
 	/**
-	 * Passkeys run on the mail server's own sign-in page (it alone may ask for
-	 * them), which sends the browser back here signed in. Carries "Keep me
-	 * signed in" and the add-account mode along.
+	 * Off to the mail server's own sign-in page, which sends the browser back
+	 * here signed in: where this page may not run the ceremony itself. Carries
+	 * "Keep me signed in" and the add-account mode along.
 	 */
-	function signInWithPasskey() {
+	function signInOnServerPage() {
 		const params = new URLSearchParams();
 		if (data.next && data.next !== '/') params.set('next', data.next);
-		if ((document.getElementById('login-remember') as HTMLInputElement | null)?.checked) params.set('remember', '1');
+		if (keepSignedIn()) params.set('remember', '1');
 		if (data.addingTo) params.set('mode', 'add');
 		const query = params.toString();
 		location.assign(query ? `/signin/passkey?${query}` : '/signin/passkey');
+	}
+
+	/** Hand the assertion to the server, which has Stalwart check it and opens the session. */
+	async function finishPasskey(assertion: AssertionJSON, rpId: string) {
+		passkeyBusy = true;
+		passkeyNote = null;
+		let result;
+		try {
+			result = await passkeyLogin({ credential: assertion, remember: keepSignedIn(), adding: Boolean(data.addingTo) });
+		} catch {
+			result = { ok: false as const, reason: 'unavailable' as const };
+		}
+		if (result.ok) {
+			// A full load: a new account starts clean, and `next` may be a server route (/oidc/authorize).
+			location.assign(data.addingTo ? '/' : data.next);
+			return;
+		}
+		passkeyBusy = false;
+		if (result.reason === 'unknown') forgetUnknownPasskey(rpId, assertion.id);
+		retryAfter = result.retryAfterSec ?? 0;
+		passkeyNote = result.reason;
+		void startAutofill();
+	}
+
+	/*
+	 * Passkeys in the address field's autofill, where the browser offers them
+	 * (data.passkeyHere: mail is on the mail server's own origin). The wait is
+	 * renewed before Stalwart's challenge expires, and called off for the
+	 * button's prompt (a browser runs one passkey request at a time).
+	 */
+	let autofill: AbortController | null = null;
+	let renew: ReturnType<typeof setTimeout> | undefined;
+	function stopAutofill() {
+		clearTimeout(renew);
+		autofill?.abort();
+		autofill = null;
+	}
+	async function startAutofill() {
+		stopAutofill();
+		if (!data.passkeyHere || !(await autofillSupported())) return;
+		const mine = new AbortController();
+		autofill = mine;
+		let options;
+		try {
+			options = await passkeySignInOptions();
+		} catch {
+			return;
+		}
+		if (!options || autofill !== mine) return;
+		renew = setTimeout(startAutofill, Math.max(options.timeout - 30_000, 5_000));
+		let assertion;
+		try {
+			assertion = await getAssertion(options, { mediation: 'conditional', signal: mine.signal });
+		} catch {
+			return; // Called off, or the browser gave up: the button still works.
+		}
+		if (autofill !== mine) return;
+		stopAutofill();
+		await finishPasskey(assertion, options.rpId);
+	}
+	onMount(() => {
+		void startAutofill();
+		return stopAutofill;
+	});
+
+	async function signInWithPasskey() {
+		if (!data.passkeyHere || !passkeysSupported()) return signInOnServerPage();
+		stopAutofill();
+		passkeyBusy = true;
+		passkeyNote = null;
+		let options;
+		try {
+			options = await passkeySignInOptions();
+		} catch {
+			options = undefined;
+		}
+		if (options === null) return signInOnServerPage();
+		if (!options) {
+			passkeyBusy = false;
+			passkeyNote = 'unavailable';
+			return;
+		}
+		let assertion;
+		try {
+			assertion = await getAssertion(options);
+		} catch (cause) {
+			passkeyBusy = false;
+			if (!wasDismissed(cause)) passkeyNote = 'failed';
+			void startAutofill();
+			return;
+		}
+		await finishPasskey(assertion, options.rpId);
 	}
 
 	// When Stalwart asks for a 2FA code, put the cursor in the code field.
@@ -99,7 +217,7 @@
 	{/if}
 
 	{#if passkeyAlert}
-		<AuthAlert tone={data.passkeyOutcome === 'cancelled' ? 'ok' : 'error'} title={passkeyAlert.title} hint={passkeyAlert.hint} />
+		<AuthAlert tone={passkeyTone} title={passkeyAlert.title} hint={passkeyAlert.hint} />
 	{:else if data.signedOut}
 		<AuthAlert
 			tone="ok"
@@ -139,7 +257,7 @@
 					id="login-email"
 					autofocus={!data.email}
 					required
-					autocomplete="username"
+					autocomplete={data.passkeyHere ? 'username webauthn' : 'username'}
 					autocapitalize="none"
 					autocorrect="off"
 					spellcheck="false"
@@ -221,14 +339,14 @@
 				<span class="z-caption">or</span>
 				<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
 			</div>
-			<button type="button" disabled={pending} onclick={signInWithPasskey} class="btn-tactile mt-3 h-[40px] w-full !text-[13.5px]">
+			<button type="button" disabled={pending || passkeyBusy} onclick={signInWithPasskey} class="btn-tactile mt-3 h-[40px] w-full !text-[13.5px]">
 				<svg class="size-[15px] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<circle cx="6" cy="5" r="2.6" stroke="currentColor" stroke-width="1.3" />
 					<path d="M1.8 13.5c.4-2.4 2.1-3.8 4.2-3.8 1 0 1.9.3 2.6.9" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
 					<circle cx="12" cy="8.2" r="1.7" stroke="currentColor" stroke-width="1.3" />
 					<path d="M12 9.9v4.1l-.9-.8M12 12.2h1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
 				</svg>
-				Sign in with a passkey
+				{passkeyBusy ? 'Waiting for your passkey…' : 'Sign in with a passkey'}
 			</button>
 		{/if}
 		{#if data.addingTo}

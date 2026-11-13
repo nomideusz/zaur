@@ -3,7 +3,7 @@ import { DEMO_JMAP_URL } from '#lib/server/demo';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import { jmapAuthMode, safeNext } from '#lib/server/login';
 import { isPasswordResetEnabled } from '#lib/server/recovery';
-import { passkeySignInAvailable, type PasskeyOutcome } from '#lib/server/passkey-flow';
+import { passkeyCeremonyHere, passkeySignInAvailable, type PasskeyOutcome } from '#lib/server/passkey-flow';
 import { postLogoutTarget } from '@zaur/server-auth/oidc';
 import { allOidcRedirectUris, findOidcClient, findOidcClientByOrigin } from '#lib/server/oidc';
 import type { PageServerLoad } from './$types';
@@ -46,6 +46,7 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 		? findOidcClient(new URL(rawNext, url).searchParams.get('client_id'))?.name
 		: undefined;
 	const returnName = returnTo ? (findOidcClientByOrigin(returnTo)?.name ?? 'the app') : null;
+	const passkeys = await passkeySignInAvailable();
 	return {
 		next,
 		continueTo,
@@ -60,8 +61,10 @@ export const load: PageServerLoad = async ({ cookies, url }) => {
 		// Filled in from a password reset or a sign-up that just finished.
 		email: url.searchParams.get('email')?.trim() ?? '',
 		addingTo: adding ? active!.username : null,
-		/** Offer "Sign in with a passkey" (Stalwart 1.1+, on its own sign-in page). */
-		passkeys: await passkeySignInAvailable(),
+		/** Offer "Sign in with a passkey" (Stalwart 1.1+). */
+		passkeys,
+		/** On the mail server's own origin: the page runs the ceremony (and autofill) itself. */
+		passkeyHere: passkeys && passkeyCeremonyHere(url.origin),
 		/** How a passkey sign-in that came back without a session ended. */
 		passkeyOutcome: passkeyOutcome(url.searchParams.get('passkey'))
 	};
