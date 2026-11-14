@@ -1,48 +1,83 @@
 @import 'tailwindcss';
 
 @import '@fontsource-variable/archivo/wdth.css';
-@import '@fontsource-variable/jetbrains-mono/wght.css';
+
+/* The pick's hand: Caveat 500 cut down to the words it writes, "tallest" and a count. OFL. */
+@font-face {
+	font-family: 'Caveat Pick';
+	src: url('../lib/fonts/Caveat-Pick.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+/* Ioskeley Mono, Latin subsets as in @zaur/ui. OFL, see lib/fonts. */
+@font-face {
+	font-family: 'Ioskeley Mono';
+	src: url('../lib/fonts/IoskeleyMono-Regular.woff2') format('woff2');
+	font-weight: 400;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Ioskeley Mono';
+	src: url('../lib/fonts/IoskeleyMono-Medium.woff2') format('woff2');
+	font-weight: 500;
+	font-display: swap;
+}
+@font-face {
+	font-family: 'Ioskeley Mono';
+	src: url('../lib/fonts/IoskeleyMono-SemiBold.woff2') format('woff2');
+	font-weight: 600;
+	font-display: swap;
+}
 
 /*
- * The catalogue: matte black, white hairlines, and colour only in a site's
- * source strip. Light is the same sleeve printed the other way round.
+ * The helicorder drum. Dark is the smoked record: soot on paper, each trace a pen
+ * scratched through to the paper under it. Light is the inked record: black pen on
+ * off-white recording paper. Colour stays in a site's source strip, never in a pen,
+ * so a trace never reads as a source.
  */
 :root {
 	color-scheme: dark;
-	--ground: #0a0a0a;
-	--raised: #151514;
-	--ink: #f4f4f0;
-	--soft: #a6a6a0;
-	--rule: #2c2c2a;
-	--rule-strong: #6a6a64;
-	--quiet-line: #6e6e69;
+	--ground: #141210;
+	--raised: #1f1c19;
+	--ink: #ece6da;
+	--soft: #a59d90;
+	--rule: #2e2a26;
+	--rule-strong: #6b645a;
+	--quiet-line: #6f685e;
+	--pencil: #d3cbbc;
 	--warn: #e8b400;
-	--src-direct: #f4f4f0;
-	--src-search: #2d6be4;
-	--src-social: #e4322b;
-	--src-ai: #f0b400;
-	--src-rest: #21a366;
+	--src-direct: #ece6da;
+	--src-search: #5b8be8;
+	--src-social: #e5483e;
+	--src-ai: #e7b52e;
+	--src-rest: #3db374;
+	/* Soot: a fine pale grain where the smoke lies thin. */
+	--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .93 0 0 0 0 .9 0 0 0 0 .85 0 0 0 .55 -.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 
 	--sans: 'Archivo Variable', Arial, sans-serif;
-	--mono: 'JetBrains Mono Variable', ui-monospace, Consolas, monospace;
+	--mono: 'Ioskeley Mono', ui-monospace, Consolas, monospace;
+	--hand: 'Caveat Pick', cursive;
 	--page-x: 28px;
 }
 @media (prefers-color-scheme: light) {
 	:root {
 		color-scheme: light;
-		--ground: #f4f4f0;
-		--raised: #ffffff;
-		--ink: #0a0a0a;
-		--soft: #55554f;
-		--rule: #d4d4ce;
-		--rule-strong: #85857f;
-		--quiet-line: #85857f;
-		--warn: #8a6500;
-		--src-direct: #0a0a0a;
-		--src-search: #1f56c9;
-		--src-social: #b81f1a;
-		--src-ai: #c49a00;
-		--src-rest: #12804c;
+		--ground: #e9e5dc;
+		--raised: #f3f0e9;
+		--ink: #0b0b0b;
+		--soft: #4f4a42;
+		--rule: #cbc6ba;
+		--rule-strong: #87817a;
+		--quiet-line: #7d776c;
+		--pencil: #4a463f;
+		--warn: #765500;
+		--src-direct: #0b0b0b;
+		--src-search: #3167c9;
+		--src-social: #c62828;
+		--src-ai: #9c7300;
+		--src-rest: #2b7a4b;
+		/* Paper: dark fibres, fainter still. */
+		--grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .25 0 0 0 0 .22 0 0 0 0 .18 0 0 0 .55 -.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
 	}
 }
 @media (max-width: 720px) {
@@ -60,9 +95,41 @@ body {
 	min-height: 100vh;
 	background: var(--ground);
 	color: var(--ink);
-	font: 400 13px/1.35 var(--sans);
+	font: 400 13px/1.35 var(--mono);
 	font-synthesis: none;
 	-webkit-font-smoothing: antialiased;
+}
+/*
+ * The station's lettering: a condensed grotesque for what a record is of, a site's
+ * name in its own case and a chapter's head in capitals. Everything read off the
+ * drum is in the typewriter mono of the body.
+ */
+h1,
+h2,
+.name {
+	font-family: var(--sans);
+	font-stretch: 80%;
+}
+/*
+ * The record's own grain, laid over everything, the traces' ground included, so a
+ * trace hiding the one behind it never shows as a flat patch.
+ */
+body::after {
+	content: '';
+	position: fixed;
+	inset: 0;
+	z-index: 100;
+	background: var(--grain);
+	pointer-events: none;
+}
+h1 {
+	font-weight: 700 !important;
+	letter-spacing: -0.005em !important;
+}
+h2 {
+	font-weight: 700 !important;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
 }
 ::selection {
 	background: var(--ink);
@@ -196,7 +263,7 @@ a:hover {
  */
 .chart {
 	--chart-h: 400px;
-	--gutter: 72px;
+	--gutter: 84px;
 	position: relative;
 	margin: 0;
 	min-width: 0;
@@ -233,7 +300,7 @@ a:hover {
 @media (max-width: 720px) {
 	.chart {
 		--chart-h: 300px;
-		--gutter: 58px;
+		--gutter: 72px;
 	}
 	.chart-axis {
 		height: 30px;

@@ -4,6 +4,7 @@
 	// stood out stands up out of the stack. The numbers are also a table.
 	import { dayLabel, hourLabel, nf, shortDay, visitsWord } from '#lib/format';
 	import { BOX_H, BOX_W, linePaths } from '#lib/pulse';
+	import Pick from './Pick.svelte';
 	import type { StackRow } from '#lib/server/report';
 
 	let { rows, peak }: { rows: StackRow[]; peak: number } = $props();
@@ -18,6 +19,16 @@
 	const nameOf = (r: StackRow) => (r.to ? `${shortDay(r.label)} – ${shortDay(r.to)}` : dayLabel(r.label));
 	// Only the start of a week fits beside its line; the reading names the whole span.
 	const shortName = (r: StackRow) => (r.to ? shortDay(r.label) : dayLabel(r.label));
+
+	// The tallest hour on the drum; the first, where two tie. Its line's box starts
+	// where the row is placed and the peak stands 2 of its 100 units down.
+	const tallest = $derived.by(() => {
+		let best: { row: number; hour: number; n: number } | null = null;
+		rows.forEach((r, row) => r.hours.forEach((n, hour) => {
+			if (n > 0 && (!best || n > best.n)) best = { row, hour, n };
+		}));
+		return best as { row: number; hour: number; n: number } | null;
+	});
 
 	let at = $state<{ row: number; hour: number; x: number; y: number; right: boolean } | null>(null);
 	function read(e: PointerEvent) {
@@ -55,6 +66,9 @@
 					{#if paths[i].tail}<path class="tail" d={paths[i].tail} vector-effect="non-scaling-stroke" />{/if}
 				</svg>
 			{/each}
+			{#if tallest}
+				<Pick n={tallest.n} x={(tallest.hour / 23) * 100} at="top: calc((100% - var(--r)) * {placeOf(tallest.row)} + var(--r) * 2 / 99)" up />
+			{/if}
 			{#if at && held}
 				<div class="tip" class:right={at.right} style:left="{at.x}px" style:top="{at.y}px">
 					<b>{nf.format(held.hours[at.hour] ?? 0)}</b> {visitsWord(held.hours[at.hour] ?? 0)} · {nameOf(held)}, {hourLabel(at.hour)} · <b>{nf.format(held.n)}</b> {held.to ? 'that week' : 'that day'}

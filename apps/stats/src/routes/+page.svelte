@@ -7,6 +7,7 @@
 	import { SOURCE_GROUPS } from '#lib/sources';
 	import { periodName, viewHref } from '#lib/view';
 	import ColumnAxis from '#lib/components/ColumnAxis.svelte';
+	import Pick from '#lib/components/Pick.svelte';
 	import Ridge from '#lib/components/Ridge.svelte';
 	import SourceStrip from '#lib/components/SourceStrip.svelte';
 	import { perWord } from './overview';
@@ -126,6 +127,23 @@
 	const clear = (e: PointerEvent) => {
 		if (!(e.target as Element).closest('td.plot')) tip = null;
 	};
+	// The helicorder's time marks under every trace: hours on a day, days on a week or
+	// a month, weeks on a quarter.
+	const ticks = $derived(data.days === 1 ? 24 : data.days > 31 ? Math.round(data.days / 7) : data.days);
+	// The tallest reading on the drum, picked by hand where it is, as an observer would.
+	const pick = $derived.by(() => {
+		let best: { site: string; i: number; n: number } | null = null;
+		for (const s of rows) {
+			const values = columns ? s.columns : s.pulse;
+			values.forEach((n, i) => {
+				if (n > 0 && (!best || n > best.n)) best = { site: s.id, i, n };
+			});
+		}
+		if (!best) return null;
+		const { site, i, n } = best as { site: string; i: number; n: number };
+		const x = columns ? ((i + 0.5) / data.columnSlots) * 100 : data.slots > 1 ? (i / (data.slots - 1)) * 100 : 100;
+		return { site, n, x };
+	});
 	const ariaFor = (s: SiteRow) => {
 		const top = Math.max(...s.pulse);
 		return top ? `${s.name}: ${nf.format(s.count)} ${visitsWord(s.count)}, at most ${nf.format(top)} in one reading` : `${s.name}: no visits in this period`;
@@ -161,7 +179,7 @@
 				{@render head('live', 'Now', 'Rank by pages opened in the last 5 minutes. A figure opens the live page.')}
 			</tr>
 		</thead>
-		<tbody bind:this={body} class:dragging>
+		<tbody bind:this={body} class:dragging style:--ticks={ticks}>
 			{#each rows as s (s.id)}
 				<tr class:moving={dragging === s.id}>
 					<th class="site" scope="row">
@@ -175,6 +193,9 @@
 						<span class="sources"><SourceStrip rows={s.sources} /></span>
 					</th>
 					<td class="plot" onpointermove={(e) => read(e, s)} onpointerdown={(e) => read(e, s)} onpointerleave={(e) => { if (e.pointerType !== 'touch') tip = null; }}>
+						{#if pick?.site === s.id}
+							<Pick n={pick.n} x={pick.x} at="bottom: calc(var(--lift) + var(--rise) - 1px)" />
+						{/if}
 						{#if columns}
 							<Ridge steps stems values={s.columns} slots={data.columnSlots} peak={data.columnPeak} label={ariaFor(s)} held={tip?.site === s.id ? tip.i : null} />
 						{:else}
@@ -303,8 +324,8 @@
 		color: var(--soft);
 	}
 	.name {
-		font-size: 15px;
-		font-weight: 500;
+		font-size: 16px;
+		font-weight: 600;
 	}
 	.sources {
 		display: block;
@@ -360,6 +381,17 @@
 	.plot {
 		position: relative;
 		padding: 0;
+	}
+	/* Time marks hanging under the trace's zero, which the trace's own ground hides above it. */
+	tbody .plot::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: calc(var(--lift) - 4px);
+		height: 5px;
+		background: linear-gradient(90deg, var(--rule-strong) 1px, transparent 1px) 0 0 / calc(100% / var(--ticks)) 100% repeat-x;
+		border-right: 1px solid var(--rule-strong);
 	}
 	tbody tr:is(:hover, :focus-within) {
 		--line-weight: 2.4px;
@@ -535,7 +567,7 @@
 		}
 		td.num::before {
 			content: attr(data-label) ' ';
-			font: 400 12px var(--sans);
+			font: 400 12px var(--mono);
 			color: var(--soft);
 		}
 		/* The period's count sits beside the name, at the end of the first line. */

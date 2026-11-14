@@ -93,13 +93,30 @@
 		padding: 9px var(--page-x);
 		border-bottom: 1px solid var(--rule);
 	}
+	/* The station stamp: rubber, inked a little unevenly, set down not quite square. */
 	.mark {
-		font-size: 15px;
-		font-weight: 700;
-		font-stretch: 125%;
-		letter-spacing: 0.14em;
+		padding: 2px 8px 1px;
+		font-family: var(--sans);
+		font-size: 19px;
+		font-weight: 800;
+		font-stretch: 70%;
+		line-height: 1;
+		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		text-decoration: none;
+		border: 2px solid currentColor;
+		transform: rotate(-3deg);
+		-webkit-mask: var(--worn) 0 0 / 120px 60px;
+		mask: var(--worn) 0 0 / 120px 60px;
+		--worn: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cfilter id='w'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.7' numOctaves='2' seed='7'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -7 5.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23w)'/%3E%3C/svg%3E");
+	}
+	.mark:hover,
+	.mark:focus-visible {
+		transform: rotate(-1deg);
+	}
+	.mark:focus-visible {
+		-webkit-mask: none;
+		mask: none;
 	}
 	.filters {
 		display: flex;

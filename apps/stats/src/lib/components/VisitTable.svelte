@@ -217,7 +217,7 @@
 	.yours {
 		display: block;
 		margin-top: 2px;
-		font: 400 12px var(--sans);
+		font: 400 12px var(--mono);
 		color: var(--ink);
 	}
 	.path {
@@ -298,7 +298,7 @@
 		}
 		td.num::before {
 			content: attr(data-label) ' ';
-			font: 400 12px var(--sans);
+			font: 400 12px var(--mono);
 			color: var(--soft);
 		}
 		.wide,
