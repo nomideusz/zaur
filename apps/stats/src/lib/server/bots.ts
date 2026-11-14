@@ -9,6 +9,7 @@
  */
 import type { DatabaseSync } from 'node:sqlite';
 import type { BotReason } from '#lib/bots';
+import { siteById } from '#lib/sites';
 import zones from './zones.json';
 
 export interface BotFacts {
@@ -23,6 +24,8 @@ export interface BotFacts {
 	w: number | null;
 	h: number | null;
 	secs: number | null;
+	site?: string;
+	path?: string;
 }
 
 // Clouds a person rarely browses from. Not Cloudflare or Akamai, which carry
@@ -108,9 +111,14 @@ export function botReason(v: BotFacts): BotReason | null {
 	if (v.me) return null;
 	// Every clock a person sets is a place's; UTC is a server's.
 	if (v.tz && UTC.has(v.tz)) return 'utc';
+	// An address the site never had.
+	if (v.site && v.path && siteById(v.site)?.nopage?.test(v.path)) return 'nopage';
+	const full = !!v.screen && v.screen === `${v.w}x${v.h}`;
 	// A cloud's own address, with a clock that isn't the audience's: a link
 	// scanner (Microsoft's Safe Links opens each link four times) or a crawler.
-	if (v.org && CLOUDS.test(v.org) && v.tz && !v.tz.startsWith('Europe/')) return 'cloud';
+	// A browser in a cloud whose window fills its screen to the pixel has no person
+	// at it, whatever its clock (Google's at mail's sign-in, on Rome's).
+	if (v.org && CLOUDS.test(v.org) && ((v.tz && !v.tz.startsWith('Europe/')) || (full && v.device === 'desktop'))) return 'cloud';
 	// A clock no one in the address's country keeps is someone on a VPN, or a
 	// residential proxy. The person stays and the end beacon comes; the proxy
 	// opens the page and is gone (kurcz.pl's US "Comcast" visitors on Asian
@@ -123,11 +131,15 @@ export function botReason(v: BotFacts): BotReason | null {
 	// a device emulated: a developer's DevTools, or a scraper dressed as a phone. Only
 	// the scraper keeps a clock from elsewhere (kino's HostPapa "iPhone SE" in Dallas
 	// on India's clock, a second's stay).
-	if (v.device === 'desktop' && v.screen && v.screen === `${v.w}x${v.h}` && Number.parseInt(v.screen) < 600 && clockFits(v.tz, v.country, v.t) === false) return 'emulated';
+	if (v.device === 'desktop' && full && Number.parseInt(v.screen!) < 600 && clockFits(v.tz, v.country, v.t) === false) return 'emulated';
+	// No toolbar, no taskbar, no status bar, and gone before the page could end: a
+	// browser drawn on no screen. Someone full screen stays and says so; Safari on an
+	// iPhone is left out, as a web app added to the home screen fills it too.
+	if (full && v.secs == null && !(v.device === 'phone' && v.browser === 'Safari')) return 'fullwindow';
 	return null;
 }
 
-const FACTS = 'me, t, tz, country, org, device, browser, screen, w, h, secs';
+const FACTS = 'me, t, tz, country, org, device, browser, screen, w, h, secs, site, path';
 
 /** Judges one view again, after what it holds has changed. */
 export function rejudge(db: DatabaseSync, site: string, id: string): void {
@@ -140,7 +152,7 @@ export function rejudgeAll(db: DatabaseSync): void {
 	const set = db.prepare('UPDATE views SET bot = ? WHERE site = ? AND id = ?');
 	db.exec('BEGIN');
 	try {
-		for (const v of db.prepare(`SELECT site, id, bot, ${FACTS} FROM views`).all() as unknown as Array<BotFacts & { site: string; id: string; bot: string | null }>) {
+		for (const v of db.prepare(`SELECT id, bot, ${FACTS} FROM views`).all() as unknown as Array<BotFacts & { site: string; id: string; bot: string | null }>) {
 			const why = botReason(v);
 			if (why !== v.bot) set.run(why, v.site, v.id);
 		}

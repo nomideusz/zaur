@@ -16,6 +16,8 @@ export interface Site {
 	hosts: string[];
 	notHosts?: string[];
 	skip?: RegExp;
+	/** Addresses that are no page here and never were: whoever opens one is a crawler guessing, and counts as a bot. */
+	nopage?: RegExp;
 	mask?: [RegExp, string][];
 	detail?: boolean;
 	/** Days a view is kept. Default 90; null keeps it (zaur.app's tagged links read from all time). */
@@ -54,7 +56,13 @@ export const SITES: Site[] = [
 		skip: /^\/(app|auth)(\/|$)|^(\/[a-z]{2})?\/(watch|channel|hashtag|playlist|results|feed|shorts|embed)(\/|$)/
 	},
 	{ id: 'festivals', name: 'festivals.zaur.app', hosts: ['festivals.zaur.app'], skip: /^\/(admin|app|auth|organizer)(\/|$)/ },
-	{ id: 'kurcz', name: 'kurcz.pl', hosts: ['kurcz.pl', 'www.kurcz.pl'] },
+	{
+		id: 'kurcz',
+		name: 'kurcz.pl',
+		hosts: ['kurcz.pl', 'www.kurcz.pl'],
+		// A crawler's made-up search pages (2026-11-11), each one kurcz's 404 page.
+		nopage: /^\/orientacja(\/|$)/
+	},
 	{
 		id: 'mail',
 		name: 'Zaur Mail',

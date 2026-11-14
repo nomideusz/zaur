@@ -41,6 +41,17 @@ test('what gives a bot away, and what a person may do anyway', () => {
 	assert.equal(botReason(emulated), null);
 	assert.equal(botReason({ ...emulated, tz: 'Asia/Calcutta', country: 'United States', org: 'HostPapa' }), 'emulated');
 	assert.equal(botReason({ ...emulated, h: 560, tz: 'Asia/Calcutta', country: 'United States', org: 'HostPapa' }), null);
+	// A window filling its screen: a person full screen stays, a drawn browser is gone at once.
+	const full = { ...person, w: 1920, h: 1080 };
+	assert.equal(botReason({ ...full, secs: 40 }), null);
+	assert.equal(botReason(full), 'fullwindow');
+	assert.equal(botReason({ ...full, device: 'phone', browser: 'Safari', screen: '393x852', w: 393, h: 852 }), null); // a home-screen web app
+	assert.equal(botReason({ ...full, device: 'phone', browser: 'Chrome', screen: '390x844', w: 390, h: 844 }), 'fullwindow');
+	// In a cloud it has no person at it even when it stays, whatever its clock.
+	assert.equal(botReason({ ...full, secs: 23, org: 'Google LLC', tz: 'Europe/Rome', country: 'The Netherlands' }), 'cloud');
+	// An address the site never had.
+	assert.equal(botReason({ ...person, secs: 5, site: 'kurcz', path: '/orientacja/skurcze%20nocne' }), 'nopage');
+	assert.equal(botReason({ ...person, secs: 5, site: 'kurcz', path: '/kurcze-nog/' }), null);
 	assert.equal(botReason({ ...person, screen: '800x600', w: 800 }), null);
 });
 
