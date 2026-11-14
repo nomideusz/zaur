@@ -47,6 +47,8 @@ export interface VisitRow {
 	agent: number;
 	/** Why the rules took it for a program (bots.ts), or null. */
 	bot: string | null;
+	/** The same browser back within its visit: not a visit of its own. */
+	again: number | null;
 	secs: number | null;
 	depth: number | null;
 	clicks: string[] | null;
@@ -58,9 +60,10 @@ export const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00
 type Where = { sql: string; params: SQLInputValue[] };
 // Bots are judged among the others only: the owner's views are never a program's.
 const WHO_SQL: Record<Who | 'any', string> = { others: 'me = 0 AND bot IS NULL', mine: 'me = 1', all: 'bot IS NULL', bots: 'bot IS NOT NULL', any: '' };
-// A visit is an arrival from outside the site: the headline everywhere. Pages
-// opened, which a reader's every click adds to, are the detail under it.
-const ENTRY = `source <> 'internal'`;
+// A visit is an arrival from outside the site, unless the same browser was there
+// within the half hour (visits.ts): the headline everywhere. Pages opened, which a
+// reader's every click adds to, are the detail under it.
+const ENTRY = `source <> 'internal' AND again IS NULL`;
 const COUNTS = `COALESCE(SUM(me = 1 AND ${ENTRY}), 0) AS mine, COALESCE(SUM(me = 0 AND bot IS NULL AND ${ENTRY}), 0) AS others, COALESCE(SUM(bot IS NOT NULL AND ${ENTRY}), 0) AS bots`;
 type Counts = { mine: number; others: number; bots: number };
 function scope(site: string, who: Who | 'any', extra: Where): Where {
@@ -167,7 +170,7 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 
 	const totals = one<{ views: number; entries: number; depth: number | null; clicked: number; phones: number; dark: number; darkKnown: number; business: number }>(
 		`SELECT COUNT(*) AS views,
-			COALESCE(SUM(source <> 'internal'), 0) AS entries,
+			COALESCE(SUM(${ENTRY}), 0) AS entries,
 			CAST(ROUND(AVG(depth)) AS INTEGER) AS depth,
 			COALESCE(SUM(clicks IS NOT NULL), 0) AS clicked,
 			COALESCE(SUM(device = 'phone'), 0) AS phones,
@@ -375,7 +378,7 @@ export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; 
 	const columnPeak = days === 1 ? peak : Math.max(1, ...[...dailies.values()].flat());
 
 	const sources = new Map<string, Rows>();
-	for (const r of all<{ site: string; source: string; n: number }>(`SELECT site, source, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? AND source <> 'internal' GROUP BY 1, 2`, [from])) {
+	for (const r of all<{ site: string; source: string; n: number }>(`SELECT site, source, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? AND ${ENTRY} GROUP BY 1, 2`, [from])) {
 		sources.set(r.site, [...(sources.get(r.site) ?? []), [r.source, r.n]]);
 	}
 	const counts = { ...one<Counts>(`SELECT ${COUNTS} FROM views WHERE day >= ?`, [from]) };

@@ -7,6 +7,7 @@ import { createHmac } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { cleanPath, SITES, type Site } from '#lib/sites';
 import { rejudge } from './bots';
+import { again, stayed } from './visits';
 
 const BOT = /bot|crawl|spider|slurp|headless|lighthouse|preview|inspect|fetch|curl|wget|python|java\/|monitor|scrap|httpclient|facebookexternalhit/i;
 
@@ -130,6 +131,8 @@ export interface HitContext {
 	/** The address already told us this is the owner. */
 	owner: boolean;
 	place: Place;
+	/** Read in memory only, to tell a browser coming back within its visit (visits.ts). */
+	ip?: string;
 	now?: number;
 }
 
@@ -157,6 +160,7 @@ export function recordHit(db: DatabaseSync, raw: unknown, ctx: HitContext): 'vie
 			.prepare('UPDATE views SET secs = ?, depth = ?, clicks = ?, seen = ? WHERE site = ? AND id = ? AND t > ?')
 			.run(int(b.secs, 86_400), int(b.depth, 100), clicks.length ? JSON.stringify(clicks) : null, seen.length ? JSON.stringify(Object.fromEntries(seen)) : null, site.id, b.id, now - 86_400_000);
 		if (!done.changes) return false;
+		stayed(site.id, { ip: ctx.ip, ua: ctx.ua }, now);
 		// Staying is what tells a person on a VPN from a proxy.
 		rejudge(db, site.id, b.id);
 		return 'end';
@@ -179,12 +183,24 @@ export function recordHit(db: DatabaseSync, raw: unknown, ctx: HitContext): 'vie
 	// A desktop window exactly the size of its screen has no toolbar or taskbar:
 	// an AI agent's or a cloud browser. Still a visit.
 	const agent = device === 'desktop' && !!screen && screen === `${w}x${h}` ? 1 : 0;
+	const dpr = typeof b.dpr === 'number' && Number.isFinite(b.dpr) ? Math.round(b.dpr * 100) / 100 : null;
+	const tz = str(b.tz, 60);
+	const lang = str(b.lang, 20);
+	const sys = os(ctx.ua);
+	const back = again(
+		db,
+		site.id,
+		{ ip: ctx.ip, ua: ctx.ua },
+		{ tz, lang, screen, w, h, dpr, browser: name, os: sys, org: place.org ?? null, city: place.city ?? null, device, me },
+		internal,
+		now
+	);
 
 	const done = db
 		.prepare(
 			`INSERT INTO views (site, id, t, day, hour, host, path, source, ref, tag, hash, tz, lang, w, h, screen, dpr, dark, device, browser, os,
-				city, region, country, org, org_type, hosting, vpn, mobile, me, agent)
-			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				city, region, country, org, org_type, hosting, vpn, mobile, me, agent, again)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 			ON CONFLICT (site, id) DO NOTHING`
 		)
 		.run(
@@ -199,16 +215,16 @@ export function recordHit(db: DatabaseSync, raw: unknown, ctx: HitContext): 'vie
 			ref ?? null,
 			tag,
 			detail ? str(b.hash, 40) : null,
-			str(b.tz, 60),
-			str(b.lang, 20),
+			tz,
+			lang,
 			w,
 			h,
 			screen,
-			typeof b.dpr === 'number' && Number.isFinite(b.dpr) ? Math.round(b.dpr * 100) / 100 : null,
+			dpr,
 			b.dark === 1 ? 1 : b.dark === 0 ? 0 : null,
 			device,
 			name,
-			os(ctx.ua),
+			sys,
 			place.city ?? null,
 			place.region ?? null,
 			place.country ?? null,
@@ -218,7 +234,8 @@ export function recordHit(db: DatabaseSync, raw: unknown, ctx: HitContext): 'vie
 			place.vpn ?? null,
 			place.mobile ?? null,
 			me,
-			agent
+			agent,
+			back ? 1 : null
 		);
 	if (!done.changes) return false;
 	rejudge(db, site.id, b.id);

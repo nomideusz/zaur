@@ -69,6 +69,7 @@
 						<td class="from" class:within={v.source === 'internal' && !v.tag}>
 							{#if v.tag}<i class="chip"></i>{/if}{#if v.tag && tagHref}<a href={tagHref(v.tag)}>{v.tag}</a>{:else if v.tag}{v.tag}{:else}{from(v)}{/if}
 							{#if v.hash}{' '}<small>{v.hash}</small>{/if}
+							{#if v.again}<small class="line" title="The same browser, back within half an hour: part of its visit before">same visit</small>{/if}
 						</td>
 						<td>
 							<span class="items"><span>{place(v)}</span>{#if v.lang}<small>{v.lang}</small>{/if}</span>

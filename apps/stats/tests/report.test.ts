@@ -94,7 +94,7 @@ test('a line draws what it was given, and an empty one draws nothing', () => {
 test('an overview counts a column a day, and today alone by its hours', () => {
 	const db = openDb(':memory:');
 	recordHit(db, hit('e1111111'), ctx(NOW));
-	recordHit(db, hit('e2222222'), ctx(NOW));
+	recordHit(db, hit('e2222222', { w: 1601 }), ctx(NOW));
 	recordHit(db, hit('e3333333'), ctx(NOW - 48 * HOUR));
 	const week = overview(db, NOW, { days: 7 });
 	assert.equal(week.columnSlots, 7);

@@ -39,7 +39,8 @@ export const POST: RequestHandler = async (event) => {
 			host,
 			ua: request.headers.get('user-agent') ?? '',
 			owner: isOwnerIp(db, ip, secret()),
-			place: offlinePlace(ip)
+			place: offlinePlace(ip),
+			ip
 		});
 		if (done) hitHappened(site.id);
 		// Written first, asked after: an end beacon can come before the answer does.

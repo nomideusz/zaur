@@ -23,7 +23,7 @@ A site made of parts worth reading apart, as svelte.zaur.app is of its packages,
 
 Paths in an address that hold a secret go in the entry's `skip` and again in the tag's `data-skip`. The server drops them whatever the tag does. A signed-in app gets `detail: false`, and serves its own copy of `s.js` with `data-api` and `data-detail="off"`, so a stats compromise can't run code on that origin. `tests/ingest.test.ts` checks the copies stay identical.
 
-The headline figure everywhere is **visits**: arrivals from outside the site, by people (not yours, not bots, unless the tab says so). A click from one page to another is the same visit; pages opened are the detail under it, and the Log lists each.
+The headline figure everywhere is **visits**: arrivals from outside the site, by people (not yours, not bots, unless the tab says so). A click from one page to another is the same visit, and so is the same browser coming back from outside within half an hour of its last page (`again`, `src/lib/server/visits.ts`: told by address and user agent, hashed in memory for the half hour and never written; rows from before 2026-11-14, and the half hour after a restart, by what the row holds). Pages opened are the detail under it, and the Log lists each.
 
 ## What is kept
 

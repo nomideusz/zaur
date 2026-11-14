@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
 import { openDb } from '#lib/server/db';
+import { markAgainAll, memory } from '#lib/server/visits';
 import { dayOf, isOwnerIp, markOwnerIp, overLimit, recordHit, source, sweep } from '#lib/server/ingest';
 import { network } from '#lib/server/geo';
 import { liveSnapshot, overview, report } from '#lib/server/report';
@@ -107,7 +108,7 @@ test('a report tells others from the owner, and compares only a whole period', (
 	recordHit(db, view('h1111111', { path: '/krakow', ref: 'www.google.com' }), ctx('yoga'));
 	recordHit(db, { k: 'end', id: 'h1111111', secs: 40, depth: 80, clicks: ['phone', 'phone'], seen: { grafik: 12, opinie: 1 } }, ctx('yoga'));
 	recordHit(db, view('h2222222', { path: '/krakow', me: 1 }), ctx('yoga'));
-	recordHit(db, view('h3333333', { path: '/gdansk' }), ctx('yoga', { owner: true }));
+	recordHit(db, view('h3333333', { path: '/gdansk', w: 1601 }), ctx('yoga', { owner: true }));
 	recordHit(db, view('h4444444', { path: '/x', internal: 1, ref: '/krakow' }), ctx('yoga'));
 	recordHit(db, view('h5555555', { tag: 'acme' }), ctx('kurcz'));
 
@@ -190,4 +191,26 @@ test('the copies of the tracker that signed-in apps serve themselves are this on
 	for (const copy of ['../../mail2/static/s.js', '../../music/static/s.js', '../../register/public/s.js']) {
 		assert.equal(readFileSync(new URL(copy, import.meta.url), 'utf8'), own, copy);
 	}
+});
+
+test('a browser back within half an hour is still on its visit', () => {
+	const db = openDb(':memory:');
+	const MIN = 60_000;
+	memory.since = 0; // warm: an address seen nowhere is a browser new to the site
+	const at = (now: number, ip = '203.0.113.7') => ctx('festivals', { now, ip });
+	recordHit(db, view('v1000000', { tag: 'chatgpt.com' }), at(NOW - 120 * MIN));
+	recordHit(db, view('v1000001', { path: '/x', internal: 1, ref: '/' }), at(NOW - 100 * MIN));
+	recordHit(db, view('v1000002', { tag: 'chatgpt.com' }), at(NOW - 80 * MIN)); // 20 minutes after its last page
+	recordHit(db, view('v1000003'), at(NOW - 40 * MIN)); // 40 minutes after: a new visit
+	recordHit(db, view('v1000004'), at(NOW - 39 * MIN, '198.51.100.9')); // the same build, another address
+	const r = report(db, { site: 'festivals', days: 1, who: 'all', now: NOW });
+	assert.equal(r.views, 5);
+	assert.equal(r.entries, 3);
+	assert.equal(r.recent.find((v) => v.id === 'v1000002')!.again, 1);
+
+	// A store from before: told apart by what its rows hold, the same rule.
+	db.exec('UPDATE views SET again = NULL');
+	markAgainAll(db);
+	const marked = db.prepare('SELECT id FROM views WHERE again = 1 ORDER BY id').all().map((r) => r.id);
+	assert.deepEqual(marked, ['v1000002', 'v1000004']);
 });

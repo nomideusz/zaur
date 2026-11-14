@@ -7,6 +7,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { rejudgeAll } from './bots';
+import { markAgainAll } from './visits';
 
 export function openDb(path: string): DatabaseSync {
 	if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
@@ -48,6 +49,7 @@ export function openDb(path: string): DatabaseSync {
 			me INTEGER NOT NULL DEFAULT 0,
 			agent INTEGER NOT NULL DEFAULT 0,
 			bot TEXT,
+			again INTEGER,
 			secs INTEGER,
 			depth INTEGER,
 			clicks TEXT,
@@ -74,6 +76,11 @@ export function openDb(path: string): DatabaseSync {
 	if (!prefs.has('sort_asc')) db.exec('ALTER TABLE prefs ADD COLUMN sort_asc INTEGER NOT NULL DEFAULT 0');
 	const views = new Set((db.prepare('PRAGMA table_info(views)').all() as { name: string }[]).map((c) => c.name));
 	if (!views.has('bot')) db.exec('ALTER TABLE views ADD COLUMN bot TEXT');
+	// Returns within a visit, marked from what each row holds (2026-11-14).
+	if (!views.has('again')) {
+		db.exec('ALTER TABLE views ADD COLUMN again INTEGER');
+		markAgainAll(db);
+	}
 	// Tagged before an AI chat's utm_source counted as the chat (2026-11-14).
 	db.exec(`UPDATE views SET source = 'ai' WHERE source = 'tagged' AND lower(tag) IN ('chatgpt.com', 'openai.com', 'perplexity.ai', 'claude.ai', 'gemini.google.com', 'copilot.microsoft.com', 'deepseek.com', 'grok.com', 'mistral.ai')`);
 	// The rules change; every boot runs the current ones over every row.
