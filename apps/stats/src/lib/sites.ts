@@ -45,7 +45,14 @@ export const SITES: Site[] = [
 		skip: /^\/(guide|auth|bookings|verify|book)(\/|$)/
 	},
 	{ id: 'kompi', name: 'kompi.pl', hosts: ['kompi.pl', 'www.kompi.pl', 'recycling.kompi.pl'] },
-	{ id: 'kino', name: 'kino.net.pl', hosts: ['kino.net.pl', 'www.kino.net.pl'], skip: /^\/(app|auth)(\/|$)/ },
+	{
+		id: 'kino',
+		name: 'kino.net.pl',
+		hosts: ['kino.net.pl', 'www.kino.net.pl'],
+		// After the panel, Invidious's pages from before kino was a cinema guide: 404s
+		// now, still opened every day from old links (ChatGPT's, mostly).
+		skip: /^\/(app|auth)(\/|$)|^(\/[a-z]{2})?\/(watch|channel|hashtag|playlist|results|feed|shorts|embed)(\/|$)/
+	},
 	{ id: 'festivals', name: 'festivals.zaur.app', hosts: ['festivals.zaur.app'], skip: /^\/(admin|app|auth|organizer)(\/|$)/ },
 	{ id: 'kurcz', name: 'kurcz.pl', hosts: ['kurcz.pl', 'www.kurcz.pl'] },
 	{

@@ -32,6 +32,10 @@ test('a page whose address holds a secret is never kept, and a named one is mask
 	assert.equal(cleanPath(site('music'), '/album/42'), '/album/…');
 	assert.equal(cleanPath(site('radiobartek'), '/admin/settings'), null);
 	assert.equal(cleanPath(site('radiobartek'), '/shows'), '/shows');
+	assert.equal(cleanPath(site('kino'), '/watch'), null);
+	assert.equal(cleanPath(site('kino'), '/en/channel/UC1'), null);
+	assert.equal(cleanPath(site('kino'), '/en/barlinek'), '/en/barlinek');
+	assert.equal(cleanPath(site('kino'), '/watchmen'), '/watchmen');
 
 	const db = openDb(':memory:');
 	assert.equal(recordHit(db, view('aaaaaaaa', { path: '/pass/abc123' }), ctx('yoga')), false);
