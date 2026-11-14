@@ -74,6 +74,8 @@ export function openDb(path: string): DatabaseSync {
 	if (!prefs.has('sort_asc')) db.exec('ALTER TABLE prefs ADD COLUMN sort_asc INTEGER NOT NULL DEFAULT 0');
 	const views = new Set((db.prepare('PRAGMA table_info(views)').all() as { name: string }[]).map((c) => c.name));
 	if (!views.has('bot')) db.exec('ALTER TABLE views ADD COLUMN bot TEXT');
+	// Tagged before an AI chat's utm_source counted as the chat (2026-11-14).
+	db.exec(`UPDATE views SET source = 'ai' WHERE source = 'tagged' AND lower(tag) IN ('chatgpt.com', 'openai.com', 'perplexity.ai', 'claude.ai', 'gemini.google.com', 'copilot.microsoft.com', 'deepseek.com', 'grok.com', 'mistral.ai')`);
 	// The rules change; every boot runs the current ones over every row.
 	rejudgeAll(db);
 	return db;

@@ -60,7 +60,7 @@ const os = (ua: string) =>
 		] as [RegExp, string][]
 	).find(([re]) => re.test(ua))?.[1] ?? 'other';
 
-// Where a visit came from, as one word: the ?r= tag first, then the referrer's
+// Where a visit came from, as one word: the ?r= tag first (unless an AI chat put it there), then the referrer's
 // host. Host suffixes, so l.facebook.com matches facebook.com; AI before search,
 // as gemini.google.com is not a Google search.
 const AI = ['chatgpt.com', 'openai.com', 'perplexity.ai', 'claude.ai', 'gemini.google.com', 'copilot.microsoft.com', 'deepseek.com', 'grok.com', 'mistral.ai'];
@@ -73,7 +73,8 @@ const domain = (host: string) => host.split('.').slice(-2).join('.');
 
 export function source(v: { tag?: string | null; ref?: string | null; browser?: string | null; internal?: boolean; site?: Site }): string {
 	if (v.internal) return 'internal';
-	if (v.tag) return 'tagged';
+	// ChatGPT sends no referrer, only utm_source=chatgpt.com: an AI's name is no tag of ours.
+	if (v.tag) return under(v.tag.toLowerCase(), AI) ? 'ai' : 'tagged';
 	if (!v.ref) return /LinkedIn|Facebook|Instagram/.test(v.browser ?? '') ? 'social' : 'direct';
 	const host = v.ref.toLowerCase().replace(/:\d+$/, '');
 	// The panel and a school's subdomain are the same site as the directory.

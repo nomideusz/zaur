@@ -87,6 +87,7 @@ test('where a visit came from', () => {
 	assert.equal(source({ browser: 'Instagram app' }), 'social');
 	assert.equal(source({}), 'direct');
 	assert.equal(source({ tag: 'acme', ref: 'www.google.com' }), 'tagged');
+	assert.equal(source({ tag: 'chatgpt.com' }), 'ai');
 	assert.equal(source({ ref: 'panel.szkolyjogi.pl', site: yoga }), 'internal');
 	assert.equal(source({ ref: 'kurcz.pl', site: yoga }), 'own');
 	assert.equal(source({ ref: 'festivals.zaur.app', site: site('zaur') }), 'own');
