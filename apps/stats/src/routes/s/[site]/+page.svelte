@@ -34,7 +34,7 @@
 	});
 	const tagRows = $derived(r.tags.map((t): [string, number] => [t.k, t.n]));
 	const period = $derived(r.tag ? `tag ${r.tag}, all time` : r.days === 1 ? shortDay(r.today) : `${shortDay(r.from)} – ${shortDay(r.today)}`);
-	const whoWord = $derived(r.who === 'mine' ? 'Yours' : r.who === 'all' ? 'Everyone' : 'Others');
+	const whoWord = $derived(r.who === 'mine' ? 'Yours' : r.who === 'all' ? 'Everyone' : r.who === 'bots' ? 'Bots' : 'Others');
 	const emptyWord = $derived(r.who === 'mine' ? 'No visits of yours in this period.' : 'No visits in this period.');
 </script>
 

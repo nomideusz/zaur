@@ -21,6 +21,6 @@ export const load: PageServerLoad = async ({ params, url, depends }) => {
 		visits: q.get('view') === 'visits',
 		order: { ...order, page: r.page },
 		chart: readChart(q),
-		counts: { mine: r.mineCount, others: r.othersCount }
+		counts: { mine: r.mineCount, others: r.othersCount, bots: r.botsCount }
 	};
 };

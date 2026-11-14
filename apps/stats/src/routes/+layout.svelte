@@ -15,7 +15,7 @@
 	const days = $derived(readDays(page.url.searchParams));
 	const chart = $derived(readChart(page.url.searchParams));
 	const tagged = $derived(page.url.searchParams.has('tag'));
-	const counts = $derived(page.data.counts as { mine: number; others: number } | undefined);
+	const counts = $derived(page.data.counts as { mine: number; others: number; bots: number } | undefined);
 	// Only a period's chart has two ways to be drawn: not Live, the visit log or a tag's scattered days.
 	const log = $derived(!live && page.url.searchParams.get('view') === 'visits');
 	const chartable = $derived(!live && !tagged && !!page.route.id && !log);
@@ -28,7 +28,8 @@
 	const whoes: [Who, string, () => number | undefined][] = [
 		['others', 'Others', () => counts?.others],
 		['mine', 'Mine', () => counts?.mine],
-		['all', 'All', () => undefined]
+		['all', 'All', () => undefined],
+		['bots', 'Bots', () => counts?.bots]
 	];
 	const whoHref = (w: Who) => viewHref({ site, who: w, days, chart, live, extra: live ? undefined : { ...kept, tag: page.url.searchParams.get('tag') ?? undefined } });
 	const cur = (on: boolean) => (on ? ('page' as const) : undefined);

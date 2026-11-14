@@ -6,6 +6,7 @@
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { rejudgeAll } from './bots';
 
 export function openDb(path: string): DatabaseSync {
 	if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
@@ -46,6 +47,7 @@ export function openDb(path: string): DatabaseSync {
 			mobile INTEGER,
 			me INTEGER NOT NULL DEFAULT 0,
 			agent INTEGER NOT NULL DEFAULT 0,
+			bot TEXT,
 			secs INTEGER,
 			depth INTEGER,
 			clicks TEXT,
@@ -70,6 +72,10 @@ export function openDb(path: string): DatabaseSync {
 	const prefs = new Set((db.prepare('PRAGMA table_info(prefs)').all() as { name: string }[]).map((c) => c.name));
 	if (!prefs.has('sort')) db.exec('ALTER TABLE prefs ADD COLUMN sort TEXT');
 	if (!prefs.has('sort_asc')) db.exec('ALTER TABLE prefs ADD COLUMN sort_asc INTEGER NOT NULL DEFAULT 0');
+	const views = new Set((db.prepare('PRAGMA table_info(views)').all() as { name: string }[]).map((c) => c.name));
+	if (!views.has('bot')) db.exec('ALTER TABLE views ADD COLUMN bot TEXT');
+	// The rules change; every boot runs the current ones over every row.
+	rejudgeAll(db);
 	return db;
 }
 

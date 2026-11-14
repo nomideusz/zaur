@@ -1,5 +1,6 @@
 /** Which visits and which period a page shows: the same two choices, read and linked the same way everywhere. */
-export type Who = 'others' | 'mine' | 'all';
+/** Others and mine are people; all is both; bots are the views bots.ts took for programs. */
+export type Who = 'others' | 'mine' | 'all' | 'bots';
 export const DAYS = [1, 7, 30, 90] as const;
 
 export const PERIODS: [number, string][] = [
@@ -13,7 +14,7 @@ export const periodName = (days: number) => PERIODS.find(([d]) => d === days)?.[
 type Query = Pick<URLSearchParams, 'get'>;
 export const readWho = (q: Query): Who => {
 	const w = q.get('who');
-	return w === 'mine' || w === 'all' ? w : 'others';
+	return w === 'mine' || w === 'all' || w === 'bots' ? w : 'others';
 };
 export const readDays = (q: Query): number => {
 	const asked = Number(q.get('days'));

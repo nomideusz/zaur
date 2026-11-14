@@ -38,10 +38,14 @@ test('whose visits an overview counts', () => {
 	const db = openDb(':memory:');
 	recordHit(db, hit('b1111111'), ctx(NOW));
 	recordHit(db, hit('b2222222', { me: 1 }), ctx(NOW));
+	recordHit(db, hit('b3333333', { tz: 'UTC' }), ctx(NOW));
 	assert.equal(overview(db, NOW)('kompi').count, 1);
 	assert.equal(overview(db, NOW, { who: 'mine' })('kompi').count, 1);
 	assert.equal(overview(db, NOW, { who: 'all' })('kompi').count, 2);
-	assert.deepEqual(overview(db, NOW).counts, { mine: 1, others: 1 });
+	assert.equal(overview(db, NOW, { who: 'bots' })('kompi').count, 1);
+	assert.deepEqual(overview(db, NOW).counts, { mine: 1, others: 1, bots: 1 });
+	assert.equal(report(db, { site: 'kompi', now: NOW, who: 'bots' }).botsCount, 1);
+	assert.equal(report(db, { site: 'kompi', now: NOW, who: 'bots' }).recent[0].bot, 'utc');
 });
 
 test('a report stacks a line per day, and today stops at this hour', () => {

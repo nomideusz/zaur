@@ -5,14 +5,14 @@ import { onHit } from '#lib/server/bus';
 import { getDb } from '#lib/server/db';
 import { liveSnapshot, type Who } from '#lib/server/report';
 import { siteById } from '#lib/sites';
+import { readWho } from '#lib/view';
 
 const MIN_GAP_MS = 1000;
 
 export const GET: RequestHandler = ({ url, request }) => {
 	const site = url.searchParams.get('site') ?? 'all';
 	if (site !== 'all' && !siteById(site)) error(404, 'No such site');
-	const w = url.searchParams.get('who');
-	const who: Who = w === 'mine' ? 'mine' : w === 'all' ? 'all' : 'others';
+	const who: Who = readWho(url.searchParams);
 
 	const encoder = new TextEncoder();
 	let stop = () => {};

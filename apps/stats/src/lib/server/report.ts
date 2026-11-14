@@ -1,6 +1,7 @@
 /**
  * The numbers: one period of one audience, of one site or of all of them. `who`
- * is others, mine or all; a tag reads its visits from all time.
+ * is others, mine, all (the two together) or bots, which are in neither; a tag
+ * reads its visits from all time.
  */
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
 import { siteById, SITES } from '#lib/sites';
@@ -44,6 +45,8 @@ export interface VisitRow {
 	mobile: number | null;
 	me: number;
 	agent: number;
+	/** Why the rules took it for a program (bots.ts), or null. */
+	bot: string | null;
 	secs: number | null;
 	depth: number | null;
 	clicks: string[] | null;
@@ -53,14 +56,18 @@ export interface VisitRow {
 export const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00:00Z`) + n * 86_400_000).toISOString().slice(0, 10);
 
 type Where = { sql: string; params: SQLInputValue[] };
-function scope(site: string, who: Who, extra: Where): Where {
+// Bots are judged among the others only: the owner's views are never a program's.
+const WHO_SQL: Record<Who | 'any', string> = { others: 'me = 0 AND bot IS NULL', mine: 'me = 1', all: 'bot IS NULL', bots: 'bot IS NOT NULL', any: '' };
+const COUNTS = `COALESCE(SUM(me = 1), 0) AS mine, COALESCE(SUM(me = 0 AND bot IS NULL), 0) AS others, COALESCE(SUM(bot IS NOT NULL), 0) AS bots`;
+type Counts = { mine: number; others: number; bots: number };
+function scope(site: string, who: Who | 'any', extra: Where): Where {
 	const parts = [extra.sql];
 	const params = [...extra.params];
 	if (site !== 'all') {
 		parts.push('site = ?');
 		params.push(site);
 	}
-	if (who !== 'all') parts.push(who === 'mine' ? 'me = 1' : 'me = 0');
+	parts.push(WHO_SQL[who]);
 	return { sql: parts.filter(Boolean).join(' AND '), params };
 }
 
@@ -169,11 +176,11 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 	);
 	const pct = (n: number) => (totals.views ? Math.round((100 * n) / totals.views) : 0);
 
-	const everyone = scope(site, 'all', period);
-	const counts = one<{ mine: number; others: number }>(`SELECT COALESCE(SUM(me = 1), 0) AS mine, COALESCE(SUM(me = 0), 0) AS others FROM views WHERE ${everyone.sql}`, everyone.params);
+	const everyone = scope(site, 'any', period);
+	const counts = one<Counts>(`SELECT ${COUNTS} FROM views WHERE ${everyone.sql}`, everyone.params);
 
 	// Only a previous period the log saw whole is worth a comparison.
-	const siteOnly = scope(site, 'all', { sql: '', params: [] });
+	const siteOnly = scope(site, 'any', { sql: '', params: [] });
 	const first = one<{ day: string | null }>(`SELECT MIN(day) AS day FROM views ${siteOnly.sql ? `WHERE ${siteOnly.sql}` : ''}`, siteOnly.params).day;
 	let was: number | null = null;
 	if (!tag && first && first <= prevFrom) {
@@ -254,6 +261,7 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 		entries: totals.entries,
 		mineCount: counts.mine,
 		othersCount: counts.others,
+		botsCount: counts.bots,
 		was,
 		median: median(db, w),
 		depth: totals.depth,
@@ -322,7 +330,7 @@ export type Live = ReturnType<typeof liveSnapshot>;
 export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; days?: number } = {}) {
 	const { who = 'others', days = 30 } = opts;
 	const { all, one } = reader(db);
-	const me = who === 'all' ? '1 = 1' : who === 'mine' ? 'me = 1' : 'me = 0';
+	const me = WHO_SQL[who];
 	const today = dayOf(now);
 	const from = addDays(today, 1 - days);
 	const prevFrom = addDays(from, -days);
@@ -367,8 +375,7 @@ export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; 
 	for (const r of all<{ site: string; source: string; n: number }>(`SELECT site, source, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? AND source <> 'internal' GROUP BY 1, 2`, [from])) {
 		sources.set(r.site, [...(sources.get(r.site) ?? []), [r.source, r.n]]);
 	}
-	const { mine, others } = one<{ mine: number; others: number }>(`SELECT COALESCE(SUM(me = 1), 0) AS mine, COALESCE(SUM(me = 0), 0) AS others FROM views WHERE day >= ?`, [from]);
-	const counts = { mine, others };
+	const counts = { ...one<Counts>(`SELECT ${COUNTS} FROM views WHERE day >= ?`, [from]) };
 
 	const line = (site: string) => {
 		const own = perDay.filter((r) => r.site === site);

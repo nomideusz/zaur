@@ -29,6 +29,8 @@ A row is a page opened: path, source, referrer host, language, screen, browser a
 
 **Mine** is decided when a view arrives: `?stats=me` on the site, a site's own owner cookie (`data-me-cookie`), an address an admin opened this dashboard from in the last 60 days (held as a keyed hash), or a network in `OWN_NETWORKS`.
 
+**Bots** are taken out of Others and All and get a tab of their own. The ones that announce themselves never get in (`isBot` in `ingest.ts`); the rest run real browsers, so `src/lib/server/bots.ts` looks for a browser that doesn't fit where it is: a clock on UTC, a big cloud's address with a clock outside Europe (Microsoft's Safe Links, crawlers), a clock no one in the address's country keeps on a view that never sent its end beacon (residential proxies, like kurcz.pl's), and Puppeteer's 800×600 screen. A row's verdict is its `bot` column, written on arrival and again when its end or its place comes in, and every boot runs the current rules over every row. `src/lib/server/zones.json`, which countries keep which time zone, comes from the system's tzdata through `node scripts/zones.mjs`.
+
 ## Running
 
 ```bash

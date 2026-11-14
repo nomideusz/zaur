@@ -6,6 +6,7 @@
 import { createHmac } from 'node:crypto';
 import type { DatabaseSync } from 'node:sqlite';
 import { cleanPath, SITES, type Site } from '#lib/sites';
+import { rejudge } from './bots';
 
 const BOT = /bot|crawl|spider|slurp|headless|lighthouse|preview|inspect|fetch|curl|wget|python|java\/|monitor|scrap|httpclient|facebookexternalhit/i;
 
@@ -154,7 +155,10 @@ export function recordHit(db: DatabaseSync, raw: unknown, ctx: HitContext): 'vie
 		const done = db
 			.prepare('UPDATE views SET secs = ?, depth = ?, clicks = ?, seen = ? WHERE site = ? AND id = ? AND t > ?')
 			.run(int(b.secs, 86_400), int(b.depth, 100), clicks.length ? JSON.stringify(clicks) : null, seen.length ? JSON.stringify(Object.fromEntries(seen)) : null, site.id, b.id, now - 86_400_000);
-		return done.changes ? 'end' : false;
+		if (!done.changes) return false;
+		// Staying is what tells a person on a VPN from a proxy.
+		rejudge(db, site.id, b.id);
+		return 'end';
 	}
 
 	if (b.k !== 'view' || typeof b.path !== 'string' || !b.path.startsWith('/')) return false;
@@ -215,7 +219,9 @@ export function recordHit(db: DatabaseSync, raw: unknown, ctx: HitContext): 'vie
 			me,
 			agent
 		);
-	return done.changes ? 'view' : false;
+	if (!done.changes) return false;
+	rejudge(db, site.id, b.id);
+	return 'view';
 }
 
 /** What a slower lookup learned about a view already written. */
@@ -238,6 +244,7 @@ export function fillPlace(db: DatabaseSync, site: string, id: string, place: Pla
 		site,
 		id
 	);
+	rejudge(db, site, id);
 }
 
 /** Past their site's keepDays; no site, no keeping. */
