@@ -2,7 +2,7 @@
 	// A site's days, one line each through the 24 hours, the oldest at the back. A
 	// quiet night and a busy afternoon read straight off the shape, and a day that
 	// stood out stands up out of the stack. The numbers are also a table.
-	import { dayLabel, hourLabel, nf, opened, shortDay } from '#lib/format';
+	import { dayLabel, hourLabel, nf, shortDay, visitsWord } from '#lib/format';
 	import { BOX_H, BOX_W, linePaths } from '#lib/pulse';
 	import type { StackRow } from '#lib/server/report';
 
@@ -57,7 +57,7 @@
 			{/each}
 			{#if at && held}
 				<div class="tip" class:right={at.right} style:left="{at.x}px" style:top="{at.y}px">
-					<b>{nf.format(held.hours[at.hour] ?? 0)}</b> {opened(held.hours[at.hour] ?? 0)} · {nameOf(held)}, {hourLabel(at.hour)} · <b>{nf.format(held.n)}</b> {held.to ? 'that week' : 'that day'}
+					<b>{nf.format(held.hours[at.hour] ?? 0)}</b> {visitsWord(held.hours[at.hour] ?? 0)} · {nameOf(held)}, {hourLabel(at.hour)} · <b>{nf.format(held.n)}</b> {held.to ? 'that week' : 'that day'}
 				</div>
 			{/if}
 		</div>
@@ -66,7 +66,7 @@
 		<span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span>
 	</div>
 	<table class="sr">
-		<caption>Pages opened by {rows[0]?.to ? 'week' : 'day'}</caption>
+		<caption>Visits by {rows[0]?.to ? 'week' : 'day'}</caption>
 		<tbody>
 			{#each rows as r (r.label)}
 				<tr><th scope="row">{nameOf(r)}</th><td>{r.n}</td></tr>

@@ -14,7 +14,7 @@
 	const r = $derived(data.r);
 	reloading();
 
-	const delta = $derived(r.was == null ? null : r.was === 0 ? (r.views ? 'first visits' : null) : `${change(r.views, r.was)} vs ${nf.format(r.was)} before`);
+	const delta = $derived(r.was == null ? null : r.was === 0 ? (r.entries ? 'first visits' : null) : `${change(r.entries, r.was)} vs ${nf.format(r.was)} before`);
 	const pages = $derived(r.pages.map((p): [string, number] => [p.path, p.n]));
 	const medians = $derived(new Map(r.pages.map((p) => [p.path, p.median])));
 	const here = $derived({ site: r.site, who: r.who, days: r.days, chart: data.chart });
@@ -48,7 +48,7 @@
 	</p>
 	<nav class="seg tabs" aria-label="Report">
 		<a href={viewHref({ ...here, extra: narrow })} aria-current={data.visits ? undefined : 'page'}>Summary</a>
-		<a href={viewHref({ ...here, extra: { ...narrow, view: 'visits' } })} aria-current={data.visits ? 'page' : undefined}>Visits{#if r.views}<span class="n count">{nf.format(r.views)}</span>{/if}</a>
+		<a href={viewHref({ ...here, extra: { ...narrow, view: 'visits' } })} aria-current={data.visits ? 'page' : undefined}>Log{#if r.views}<span class="n count">{nf.format(r.views)}</span>{/if}</a>
 	</nav>
 </div>
 
@@ -67,8 +67,8 @@
 			<p class="nothing">{emptyWord}{#if r.who === 'mine' && data.origin}{' '}Open <a href="{data.origin}/?stats=me" target="_blank" rel="noopener noreferrer">{data.name}/?stats=me</a> to count this browser as yours.{/if}</p>
 		{/if}
 		<dl class="credits">
-			<div class="lead"><dt>Pages opened{#if delta}<span>{delta}</span>{/if}</dt><dd class="count">{nf.format(r.views)}</dd></div>
-			<div><dt>Arrivals from outside</dt><dd class="count">{nf.format(r.entries)}</dd></div>
+			<div class="lead"><dt>Visits{#if delta}<span>{delta}</span>{/if}</dt><dd class="count">{nf.format(r.entries)}</dd></div>
+			<div><dt>Pages opened</dt><dd class="count">{nf.format(r.views)}</dd></div>
 			<div><dt>Typical time in view</dt><dd class="count">{secs(r.median)}</dd></div>
 			<div><dt>Read, on average</dt><dd class="count">{r.depth == null ? '—' : `${r.depth}%`}</dd></div>
 			{#if data.detail}<div><dt>Opened something</dt><dd class="count">{r.views ? `${r.clicked}%` : '—'}</dd></div>{/if}

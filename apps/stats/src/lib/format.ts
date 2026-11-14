@@ -7,6 +7,7 @@ export const when = (t: number) => new Date(t).toLocaleString('en-GB', { timeZon
 export const clock = (t: number) => new Date(t).toLocaleTimeString('en-GB', { timeZone: TZ });
 /** "1 page opened", "3 pages opened": the words after a count. */
 export const opened = (n: number) => (n === 1 ? 'page opened' : 'pages opened');
+export const visitsWord = (n: number) => (n === 1 ? 'visit' : 'visits');
 export const siteName = (id: string) => siteById(id)?.name ?? id;
 /** A site's number in the catalogue, the same everywhere: its place in SITES, and the key that opens it. */
 export const siteNo = (id: string) => String(SITES.findIndex((s) => s.id === id) + 1).padStart(2, '0');

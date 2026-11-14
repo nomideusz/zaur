@@ -115,14 +115,14 @@ test('a report tells others from the owner, and compares only a whole period', (
 	assert.equal(r.views, 2);
 	assert.equal(r.entries, 1);
 	assert.equal(r.mineCount, 2);
-	assert.equal(r.othersCount, 2);
+	assert.equal(r.othersCount, 1); // visits: the click to /x is the same visit
 	assert.equal(r.median, 40);
 	assert.equal(r.depth, 80);
 	assert.deepEqual(r.opened, [['phone', 1]]);
 	assert.deepEqual(r.read, [['grafik', 1]]);
-	assert.equal(r.was, 2); // the two views in the 30 days before these
+	assert.equal(r.was, 2); // the two visits in the 30 days before these
 	assert.equal(r.bars.length, 30);
-	assert.equal(r.bars.at(-1)!.n, 2);
+	assert.equal(r.bars.at(-1)!.n, 1); // a day's bar is its visits, not its pages
 	assert.equal(r.recent.find((v) => v.id === 'h4444444')!.clicks, null); // no end yet
 	assert.deepEqual(r.recent.find((v) => v.id === 'h1111111')!.clicks, ['phone', 'phone']);
 

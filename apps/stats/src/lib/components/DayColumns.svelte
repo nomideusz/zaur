@@ -3,7 +3,7 @@
 	// day reads against another at a glance. Today, alone, steps once an hour. The
 	// numbers are also a table.
 	import { axisTicks } from '#lib/columns';
-	import { addDayStr, dayLabel, hourLabel, nf, opened } from '#lib/format';
+	import { addDayStr, dayLabel, hourLabel, nf, visitsWord } from '#lib/format';
 	import { BOX_H } from '#lib/pulse';
 	import ColumnAxis from './ColumnAxis.svelte';
 	import Ridge from './Ridge.svelte';
@@ -49,21 +49,21 @@
 				<i class="grid" style:bottom="{place(q / 4)}%"></i>
 			{/each}
 			<div class="drawn">
-				<Ridge steps stems linear {values} {slots} peak={top} held={at?.i ?? null} label="Pages opened by {unit}, at most {nf.format(tallest)}" />
+				<Ridge steps stems linear {values} {slots} peak={top} held={at?.i ?? null} label="Visits by {unit}, at most {nf.format(tallest)}" />
 			</div>
 			{#if tallest}
 				<span class="peak count" aria-hidden="true" style:left="{((tallestAt + 0.5) / slots) * 100}%" style:bottom="{place(tallest / top)}%">{nf.format(tallest)}</span>
 			{/if}
 			{#if at}
 				<div class="tip" class:right={at.right} style:left="{at.x}px" style:top="0">
-					<b>{nf.format(values[at.i])}</b> {opened(values[at.i])} · {nameOf(at.i)}{at.i === values.length - 1 ? ', so far' : ''}
+					<b>{nf.format(values[at.i])}</b> {visitsWord(values[at.i])} · {nameOf(at.i)}{at.i === values.length - 1 ? ', so far' : ''}
 				</div>
 			{/if}
 		</div>
 	</div>
 	<div class="chart-axis"><ColumnAxis {days} {from} {slots} /></div>
 	<table class="sr">
-		<caption>Pages opened by {unit}</caption>
+		<caption>Visits by {unit}</caption>
 		<tbody>
 			{#each values as n, i (i)}
 				<tr><th scope="row">{nameOf(i)}</th><td>{n}</td></tr>

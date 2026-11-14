@@ -23,6 +23,8 @@ A site made of parts worth reading apart, as svelte.zaur.app is of its packages,
 
 Paths in an address that hold a secret go in the entry's `skip` and again in the tag's `data-skip`. The server drops them whatever the tag does. A signed-in app gets `detail: false`, and serves its own copy of `s.js` with `data-api` and `data-detail="off"`, so a stats compromise can't run code on that origin. `tests/ingest.test.ts` checks the copies stay identical.
 
+The headline figure everywhere is **visits**: arrivals from outside the site, by people (not yours, not bots, unless the tab says so). A click from one page to another is the same visit; pages opened are the detail under it, and the Log lists each.
+
 ## What is kept
 
 A row is a page opened: path, source, referrer host, language, screen, browser and OS names, and how long it stayed in view. Places and networks come from DB-IP's free databases, downloaded to `GEO_DIR` (about 140 MB, held in memory; CC BY 4.0, credited in the footer). The address itself is never stored. zaur.app alone also sends addresses to ipapi.is (`lookup` in `sites.ts`), as it did before this app. Rows are kept for 90 days, except zaur.app's.

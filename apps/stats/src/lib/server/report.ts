@@ -58,7 +58,10 @@ export const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T12:00
 type Where = { sql: string; params: SQLInputValue[] };
 // Bots are judged among the others only: the owner's views are never a program's.
 const WHO_SQL: Record<Who | 'any', string> = { others: 'me = 0 AND bot IS NULL', mine: 'me = 1', all: 'bot IS NULL', bots: 'bot IS NOT NULL', any: '' };
-const COUNTS = `COALESCE(SUM(me = 1), 0) AS mine, COALESCE(SUM(me = 0 AND bot IS NULL), 0) AS others, COALESCE(SUM(bot IS NOT NULL), 0) AS bots`;
+// A visit is an arrival from outside the site: the headline everywhere. Pages
+// opened, which a reader's every click adds to, are the detail under it.
+const ENTRY = `source <> 'internal'`;
+const COUNTS = `COALESCE(SUM(me = 1 AND ${ENTRY}), 0) AS mine, COALESCE(SUM(me = 0 AND bot IS NULL AND ${ENTRY}), 0) AS others, COALESCE(SUM(bot IS NOT NULL AND ${ENTRY}), 0) AS bots`;
 type Counts = { mine: number; others: number; bots: number };
 function scope(site: string, who: Who | 'any', extra: Where): Where {
 	const parts = [extra.sql];
@@ -185,17 +188,17 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 	let was: number | null = null;
 	if (!tag && first && first <= prevFrom) {
 		const prev = scope(site, who, both({ sql: 'day >= ? AND day < ?', params: [prevFrom, from] }, narrow));
-		was = one<{ n: number }>(`SELECT COUNT(*) AS n FROM views WHERE ${prev.sql}`, prev.params).n;
+		was = one<{ n: number }>(`SELECT COUNT(*) AS n FROM views WHERE ${prev.sql} AND ${ENTRY}`, prev.params).n;
 	}
 
-	// Today by the hour, longer periods by the day.
+	// Visits: today by the hour, longer periods by the day.
 	const bars: { label: string; n: number }[] = [];
 	if (!tag) {
 		if (days === 1) {
-			const byHour = new Map(all<{ k: number; n: number }>(`SELECT hour AS k, COUNT(*) AS n FROM views WHERE ${w.sql} GROUP BY 1`, w.params).map((r) => [r.k, r.n]));
+			const byHour = new Map(all<{ k: number; n: number }>(`SELECT hour AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND ${ENTRY} GROUP BY 1`, w.params).map((r) => [r.k, r.n]));
 			for (let h = 0; h <= hourOf(now); h++) bars.push({ label: `${String(h).padStart(2, '0')}:00`, n: byHour.get(h) ?? 0 });
 		} else {
-			const byDay = new Map(all<{ k: string; n: number }>(`SELECT day AS k, COUNT(*) AS n FROM views WHERE ${w.sql} GROUP BY 1`, w.params).map((r) => [r.k, r.n]));
+			const byDay = new Map(all<{ k: string; n: number }>(`SELECT day AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND ${ENTRY} GROUP BY 1`, w.params).map((r) => [r.k, r.n]));
 			for (let i = 0; i < days; i++) {
 				const d = addDays(from, i);
 				bars.push({ label: d, n: byDay.get(d) ?? 0 });
@@ -203,9 +206,9 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 		}
 	}
 
-	// One line a day through its 24 hours; a week a line over 90 days, and a tag's
+	// Visits, one line a day through its 24 hours; a week a line over 90 days, and a tag's
 	// last 30 days with visits. The newest is last, and today's stops at this hour.
-	const cells = all<{ day: string; hour: number; n: number }>(`SELECT day, hour, COUNT(*) AS n FROM views WHERE ${w.sql} GROUP BY 1, 2`, w.params);
+	const cells = all<{ day: string; hour: number; n: number }>(`SELECT day, hour, COUNT(*) AS n FROM views WHERE ${w.sql} AND ${ENTRY} GROUP BY 1, 2`, w.params);
 	const byDay = new Map<string, number[]>();
 	for (const c of cells) {
 		const hours = byDay.get(c.day) ?? Array<number>(24).fill(0);
@@ -338,7 +341,7 @@ export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; 
 	const monthFrom = addDays(today, -29);
 	const earliest = [prevFrom, monthFrom].sort()[0];
 
-	const perDay = all<{ site: string; day: string; n: number }>(`SELECT site, day, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? GROUP BY 1, 2`, [earliest]);
+	const perDay = all<{ site: string; day: string; n: number }>(`SELECT site, day, COUNT(*) AS n FROM views WHERE ${me} AND ${ENTRY} AND day >= ? GROUP BY 1, 2`, [earliest]);
 	const recent = new Map(all<{ site: string; n: number }>(`SELECT site, COUNT(*) AS n FROM views WHERE ${me} AND t > ? GROUP BY 1`, [now - 5 * 60_000]).map((r) => [r.site, r.n]));
 	const firsts = new Map(all<{ site: string; day: string }>(`SELECT site, MIN(day) AS day FROM views GROUP BY 1`).map((r) => [r.site, r.day]));
 
@@ -349,7 +352,7 @@ export function overview(db: DatabaseSync, now = Date.now(), opts: { who?: Who; 
 	const filled = (days - 1) * perDayReadings + Math.floor(hourOf(now) / step) + 1;
 	const dayIndex = new Map(Array.from({ length: days }, (_, i) => [addDays(from, i), i] as const));
 	const pulses = new Map<string, number[]>();
-	for (const r of all<{ site: string; day: string; b: number; n: number }>(`SELECT site, day, hour / ${step} AS b, COUNT(*) AS n FROM views WHERE ${me} AND day >= ? GROUP BY 1, 2, 3`, [from])) {
+	for (const r of all<{ site: string; day: string; b: number; n: number }>(`SELECT site, day, hour / ${step} AS b, COUNT(*) AS n FROM views WHERE ${me} AND ${ENTRY} AND day >= ? GROUP BY 1, 2, 3`, [from])) {
 		const d = dayIndex.get(r.day);
 		if (d === undefined) continue;
 		const line = pulses.get(r.site) ?? Array<number>(filled).fill(0);

@@ -2,7 +2,7 @@
 	import { onDestroy, tick } from 'svelte';
 	import { invalidate } from '$app/navigation';
 	import { moved as shifted, type Sort } from '#lib/arrange';
-	import { addDayStr, change, dayLabel, hourLabel, nf, opened } from '#lib/format';
+	import { addDayStr, change, dayLabel, hourLabel, nf, visitsWord } from '#lib/format';
 	import { reloading } from '#lib/reloading.svelte';
 	import { SOURCE_GROUPS } from '#lib/sources';
 	import { periodName, viewHref } from '#lib/view';
@@ -128,7 +128,7 @@
 	};
 	const ariaFor = (s: SiteRow) => {
 		const top = Math.max(...s.pulse);
-		return top ? `${s.name}: ${nf.format(s.count)} ${opened(s.count)}, at most ${nf.format(top)} in one reading` : `${s.name}: no pages opened in this period`;
+		return top ? `${s.name}: ${nf.format(s.count)} ${visitsWord(s.count)}, at most ${nf.format(top)} in one reading` : `${s.name}: no visits in this period`;
 	};
 </script>
 
@@ -210,7 +210,7 @@
 		</tfoot>
 	</table>
 	{#if tip}
-		<div class="tip" class:right={tip.right} style:left="{tip.x}px" style:top="{tip.y}px"><b>{nf.format(tip.n)}</b> {opened(tip.n)} · {tip.label}</div>
+		<div class="tip" class:right={tip.right} style:left="{tip.x}px" style:top="{tip.y}px"><b>{nf.format(tip.n)}</b> {visitsWord(tip.n)} · {tip.label}</div>
 	{/if}
 </div>
 
