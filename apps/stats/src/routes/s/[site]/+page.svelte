@@ -105,13 +105,13 @@
 			{/if}
 			<Chapter title="Arrivals" lengths={data.detail ? [r.sources.length, r.refs.length, tagRows.length] : [r.sources.length, r.refs.length]}>
 				{#snippet children(limit, fill)}
-					<RowList title="Came from" rows={r.sources} total={r.views} shares {limit} {fill} href={only('source')}>
+					<RowList title="Came from" rows={r.sources} total={r.entries} shares {limit} {fill} href={only('source')}>
 						{#snippet name(k)}
 							{@const g = groupOf(k)}
 							<i class="chip" class:within={!g} style:background={g ? `var(--src-${g})` : undefined}></i>{SOURCES[k] ?? k}
 						{/snippet}
 					</RowList>
-					<RowList title="Referrers" rows={r.refs} total={r.views} {limit} {fill} href={only('ref')} />
+					<RowList title="Referrers" rows={r.refs} total={r.entries} {limit} {fill} href={only('ref')} />
 					{#if data.detail}{@render tagged(limit, fill)}{/if}
 				{/snippet}
 			</Chapter>
