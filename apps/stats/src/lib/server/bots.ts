@@ -21,6 +21,7 @@ export interface BotFacts {
 	browser: string | null;
 	screen: string | null;
 	w: number | null;
+	h: number | null;
 	secs: number | null;
 }
 
@@ -118,10 +119,15 @@ export function botReason(v: BotFacts): BotReason | null {
 	if (v.secs == null && !(v.org && RELAYS.test(v.org)) && v.browser != null && clockFits(v.tz, v.country, v.t) === false) return 'proxy';
 	// Puppeteer's screen stays 800×600 whatever window it is given.
 	if (v.device === 'desktop' && v.screen === '800x600' && (v.w ?? 0) > 800) return 'headless';
+	// A phone's screen on a desktop browser, its window filling it to the pixel, is
+	// a device emulated: a developer's DevTools, or a scraper dressed as a phone. Only
+	// the scraper keeps a clock from elsewhere (kino's HostPapa "iPhone SE" in Dallas
+	// on India's clock, a second's stay).
+	if (v.device === 'desktop' && v.screen && v.screen === `${v.w}x${v.h}` && Number.parseInt(v.screen) < 600 && clockFits(v.tz, v.country, v.t) === false) return 'emulated';
 	return null;
 }
 
-const FACTS = 'me, t, tz, country, org, device, browser, screen, w, secs';
+const FACTS = 'me, t, tz, country, org, device, browser, screen, w, h, secs';
 
 /** Judges one view again, after what it holds has changed. */
 export function rejudge(db: DatabaseSync, site: string, id: string): void {

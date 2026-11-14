@@ -7,7 +7,7 @@ import { siteById } from '#lib/sites';
 
 const T = Date.parse('2026-11-05T12:00:00Z');
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36';
-const person = { me: 0, t: T, tz: 'Europe/Warsaw', country: 'Poland', org: 'Orange Polska Spolka Akcyjna', device: 'desktop', browser: 'Chrome', screen: '1920x1080', w: 1912, secs: null };
+const person = { me: 0, t: T, tz: 'Europe/Warsaw', country: 'Poland', org: 'Orange Polska Spolka Akcyjna', device: 'desktop', browser: 'Chrome', screen: '1920x1080', w: 1912, h: 960, secs: null };
 
 test('a clock fits its country by the time it shows, not by its name', () => {
 	assert.equal(clockFits('Europe/Warsaw', 'Poland', T), true);
@@ -36,6 +36,11 @@ test('what gives a bot away, and what a person may do anyway', () => {
 	assert.equal(botReason({ ...proxied, org: 'Cloudflare, Inc.' }), null);
 	assert.equal(botReason({ ...proxied, browser: null }), null);
 	assert.equal(botReason({ ...person, screen: '800x600', w: 1366 }), 'headless');
+	// A phone emulated on a desktop: DevTools on a local clock is a person, a scraper on a far one is not.
+	const emulated = { ...person, screen: '375x667', w: 375, h: 667, secs: 1 };
+	assert.equal(botReason(emulated), null);
+	assert.equal(botReason({ ...emulated, tz: 'Asia/Calcutta', country: 'United States', org: 'HostPapa' }), 'emulated');
+	assert.equal(botReason({ ...emulated, h: 560, tz: 'Asia/Calcutta', country: 'United States', org: 'HostPapa' }), null);
 	assert.equal(botReason({ ...person, screen: '800x600', w: 800 }), null);
 });
 

@@ -85,7 +85,7 @@
 							<span class="whole">{device(v)}{' '}<small class="count">{v.w ?? ''}{v.h ? `×${v.h}` : ''}</small></span>
 							{#if v.os}<span class="items"><small>{v.os}</small><small>{v.browser}</small>{#if v.dark}<small>dark</small>{/if}</span>{/if}
 							{#if v.agent}<small class="line"><b>AI agent or cloud browser</b></small>{/if}
-							{#if v.bot}<small class="line"><b>Bot:</b> {botReasonText(v.bot)}{#if v.tz && (v.bot === 'proxy' || v.bot === 'cloud')}{' '}({v.tz.replace(/_/g, ' ')}){/if}</small>{/if}
+							{#if v.bot}<small class="line"><b>Bot:</b> {botReasonText(v.bot)}{#if v.tz && (v.bot === 'proxy' || v.bot === 'cloud' || v.bot === 'emulated')}{' '}({v.tz.replace(/_/g, ' ')}){/if}</small>{/if}
 						</td>
 						<td class="num count" data-label="Time">{secs(v.secs)}</td>
 						<td class="num count" data-label="Read">{v.depth == null ? '—' : `${v.depth}%`}</td>
