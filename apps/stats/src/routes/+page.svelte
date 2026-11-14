@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onDestroy, tick } from 'svelte';
 	import { invalidate } from '$app/navigation';
-	import { moved as shifted } from '#lib/arrange';
+	import { moved as shifted, type Sort } from '#lib/arrange';
 	import { addDayStr, change, dayLabel, hourLabel, nf, opened } from '#lib/format';
 	import { reloading } from '#lib/reloading.svelte';
 	import { SOURCE_GROUPS } from '#lib/sources';
@@ -30,7 +30,7 @@
 	let saving: ReturnType<typeof setTimeout> | undefined;
 	const rows = $derived(order ? order.map((id) => data.sites.find((s) => s.id === id)!) : data.sites);
 
-	async function save(change: { order?: string[]; ranked?: boolean }) {
+	async function save(change: { order?: string[]; sort?: Sort; asc?: boolean }) {
 		const res = await fetch('/api/arrange', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(change) }).catch(() => null);
 		failed = !res?.ok;
 		await invalidate('stats:data');
@@ -40,9 +40,12 @@
 		clearTimeout(saving);
 		saving = setTimeout(() => {
 			saving = undefined;
-			if (order) void save({ order, ranked: false });
+			if (order) void save({ order, sort: 'own' });
 		}, wait);
 	}
+	/** A column starts from its largest, and turns round when it is chosen again. */
+	const rank = (by: Sort) => save(by === data.sort ? { asc: !data.asc } : { sort: by, asc: false });
+	const sorted = (by: Sort) => (data.sort !== by ? undefined : data.asc ? 'ascending' : 'descending');
 
 	function grab(e: PointerEvent, id: string) {
 		if (e.button !== 0) return;
@@ -131,6 +134,14 @@
 
 <svelte:window onpointerdown={clear} />
 
+{#snippet head(by: Sort, label: string, title: string)}
+	<th class="num" scope="col" aria-sort={sorted(by)}>
+		<button class="sort" class:on={data.sort === by} {title} onclick={() => rank(by)}>
+			{#if data.sort === by}<svg class:up={data.asc} viewBox="0 0 8 8" width="8" height="8" aria-hidden="true"><path d="M4 0v7M1 4.5 4 7.5 7 4.5" /></svg>{/if}{label}
+		</button>
+	</th>
+{/snippet}
+
 <svelte:head><title>Stats</title></svelte:head>
 
 <h1 class="sr">Overview of every site</h1>
@@ -141,17 +152,13 @@
 		<thead>
 			<tr>
 				<th class="site" scope="col">
-					<button class="sort" class:on={!data.ranked} aria-pressed={!data.ranked} title="Your order" onclick={() => save({ ranked: false })}><span class="no">No.</span>Site</button>
+					<button class="sort" class:on={data.sort === 'own'} aria-pressed={data.sort === 'own'} title="Your order" onclick={() => save({ sort: 'own' })}><span class="no">No.</span>Site</button>
 				</th>
 				<th class="plot" scope="col"><span class="sr">{period}, one line a site</span></th>
-				<th class="num" scope="col" aria-sort={data.ranked ? 'descending' : undefined}>
-					<button class="sort" class:on={data.ranked} aria-pressed={data.ranked} title="Rank by {period}" onclick={() => save({ ranked: true })}>
-						{#if data.ranked}<svg viewBox="0 0 8 8" width="8" height="8" aria-hidden="true"><path d="M4 0v7M1 4.5 4 7.5 7 4.5" /></svg>{/if}{period}
-					</button>
-				</th>
-				<th class="num" scope="col">vs before</th>
-				{#if data.days !== 1}<th class="num" scope="col">Today</th>{/if}
-				<th class="num" scope="col" title="Pages opened in the last 5 minutes. Opens the live page.">Now</th>
+				{@render head('count', period, `Rank by ${period}`)}
+				{@render head('change', 'vs before', 'Rank by the change against the period before')}
+				{#if data.days !== 1}{@render head('today', 'Today', 'Rank by today')}{/if}
+				{@render head('live', 'Now', 'Rank by pages opened in the last 5 minutes. A figure opens the live page.')}
 			</tr>
 		</thead>
 		<tbody bind:this={body} class:dragging>
@@ -259,6 +266,9 @@
 		fill: none;
 		stroke: currentColor;
 		stroke-width: 1.15px;
+	}
+	.sort svg.up {
+		transform: scaleY(-1);
 	}
 	.sort .no {
 		display: inline-block;

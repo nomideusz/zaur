@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { arrange, moved, wholeOrder } from '#lib/arrange';
 import { axisTicks, columnTicks } from '#lib/columns';
@@ -9,7 +10,7 @@ import { readArrangement, writeArrangement } from '#lib/server/prefs';
 import { overview, report } from '#lib/server/report';
 import { siteById, SITES } from '#lib/sites';
 import { groupRows } from '#lib/sources';
-import { readChart, readDays, readWho, viewHref } from '#lib/view';
+import { readChart, readDays, readFilters, readVisitOrder, readWho, viewHref, visitQuery, VISITS_PER_PAGE } from '#lib/view';
 
 const UA = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 const NOW = Date.parse('2026-11-05T12:00:00Z'); // 13:00 in Warsaw
@@ -134,11 +135,24 @@ test('the held column stands on the baseline at the height of its reading', () =
 });
 
 test('the overview is ranked, or in the order the owner gave it', () => {
-	const rows = SITES.map((s, i) => ({ id: s.id, no: i + 1, count: s.id === 'kino' ? 50 : s.id === 'yoga' ? 90 : 0 }));
-	assert.deepEqual(arrange(rows, { order: [], ranked: true }).slice(0, 3).map((r) => r.id), ['yoga', 'kino', 'zaur']);
-	const own = arrange(rows, { order: ['kurcz', 'zaur'], ranked: false }).map((r) => r.id);
+	const rows = SITES.map((s, i) => ({ id: s.id, no: i + 1, count: s.id === 'kino' ? 50 : s.id === 'yoga' ? 90 : 0, was: null, today: 0, live: 0 }));
+	assert.deepEqual(arrange(rows, { order: [], sort: 'count', asc: false }).slice(0, 3).map((r) => r.id), ['yoga', 'kino', 'zaur']);
+	const own = arrange(rows, { order: ['kurcz', 'zaur'], sort: 'own', asc: false }).map((r) => r.id);
 	assert.deepEqual(own.slice(0, 3), ['kurcz', 'zaur', 'yoga']);
 	assert.equal(own.length, SITES.length);
+});
+
+test('the overview runs by any of its figures, either way, with a dash always last', () => {
+	const row = (id: string, no: number, count: number, was: number | null, today = 0, live = 0) => ({ id, no, count, was, today, live });
+	const rows = [row('a', 1, 40, 80, 1, 0), row('b', 2, 30, 10, 5, 2), row('c', 3, 20, null, 3, 0), row('d', 4, 10, 0, 0, 9), row('e', 5, 0, 0)];
+	const ids = (sort: 'count' | 'change' | 'today' | 'live', asc = false) => arrange(rows, { order: [], sort, asc }).map((r) => r.id).join('');
+	assert.equal(ids('count'), 'abcde');
+	assert.equal(ids('count', true), 'edcba');
+	assert.equal(ids('today'), 'bcade');
+	assert.equal(ids('live'), 'dbace', 'equal figures fall back to the ranking');
+	// d's visits are its first, which outgrows any change; c and e have nothing to compare.
+	assert.equal(ids('change'), 'dbace');
+	assert.equal(ids('change', true), 'abdce');
 });
 
 test('a saved order keeps to the sites there are, and a new site lands at the end', () => {
@@ -153,17 +167,103 @@ test('a saved order keeps to the sites there are, and a new site lands at the en
 
 test('how the owner arranged the overview is kept per owner, ranked until they say otherwise', () => {
 	const db = openDb(':memory:');
-	assert.deepEqual(readArrangement(db, 'a@zaur.app'), { order: SITES.map((s) => s.id), ranked: true });
-	writeArrangement(db, 'A@zaur.app ', { order: ['kurcz'], ranked: false });
+	assert.deepEqual(readArrangement(db, 'a@zaur.app'), { order: SITES.map((s) => s.id), sort: 'count', asc: false });
+	writeArrangement(db, 'A@zaur.app ', { order: ['kurcz'], sort: 'own' });
 	const mine = readArrangement(db, 'a@zaur.app');
-	assert.equal(mine.ranked, false);
+	assert.equal(mine.sort, 'own');
 	assert.equal(mine.order[0], 'kurcz');
 	assert.equal(mine.order.length, SITES.length);
-	writeArrangement(db, 'a@zaur.app', { ranked: true });
+	writeArrangement(db, 'a@zaur.app', { sort: 'change', asc: true });
 	const again = readArrangement(db, 'a@zaur.app');
-	assert.equal(again.ranked, true);
+	assert.deepEqual([again.sort, again.asc], ['change', true]);
 	assert.equal(again.order[0], 'kurcz', 'ranking keeps the own order for later');
-	assert.equal(readArrangement(db, 'b@zaur.app').ranked, true);
+	assert.equal(readArrangement(db, 'b@zaur.app').sort, 'count');
+});
+
+test('a store from before a column could be chosen keeps what its owner had', async () => {
+	const { mkdtempSync, rmSync } = await import('node:fs');
+	const { tmpdir } = await import('node:os');
+	const { join } = await import('node:path');
+	const dir = mkdtempSync(join(tmpdir(), 'stats-'));
+	try {
+		const old = new DatabaseSync(join(dir, 'stats.db'));
+		old.exec(`CREATE TABLE prefs (email TEXT PRIMARY KEY, site_order TEXT, ranked INTEGER NOT NULL DEFAULT 1);
+			INSERT INTO prefs VALUES ('own@zaur.app', '["kurcz"]', 0), ('ranked@zaur.app', NULL, 1)`);
+		old.close();
+		const db = openDb(join(dir, 'stats.db'));
+		assert.equal(readArrangement(db, 'own@zaur.app').sort, 'own');
+		assert.equal(readArrangement(db, 'own@zaur.app').order[0], 'kurcz');
+		assert.equal(readArrangement(db, 'ranked@zaur.app').sort, 'count');
+		writeArrangement(db, 'own@zaur.app', { sort: 'today' });
+		assert.equal(readArrangement(db, 'own@zaur.app').sort, 'today');
+		// A build from before `sort` still reads whether it was ranked.
+		assert.equal((db.prepare(`SELECT ranked FROM prefs WHERE email = 'own@zaur.app'`).get() as { ranked: number }).ranked, 1);
+		db.close();
+	} finally {
+		rmSync(dir, { recursive: true, force: true });
+	}
+});
+
+test('a visit log runs by any column, with an empty one last either way', () => {
+	const db = openDb(':memory:');
+	const at = (id: string, hoursAgo: number, over = {}) => recordHit(db, hit(id, over), ctx(NOW - hoursAgo * HOUR));
+	at('f1111111', 1, { path: '/b' });
+	at('f2222222', 2, { path: '/a', w: 390, h: 800 });
+	at('f3333333', 3, { path: '/C' });
+	db.prepare(`UPDATE views SET secs = 40, org = 'Orange' WHERE id = 'f2222222'`).run();
+	db.prepare(`UPDATE views SET secs = 5, org = 'apple' WHERE id = 'f3333333'`).run();
+	const log = (by: Parameters<typeof report>[1]['visits'] & {}) => report(db, { site: 'kompi', days: 7, now: NOW, visits: by }).recent.map((v) => v.path).join(' ');
+	assert.equal(log({ by: 'when', asc: false, page: 1 }), '/b /a /C');
+	assert.equal(log({ by: 'when', asc: true, page: 1 }), '/C /a /b');
+	assert.equal(log({ by: 'page', asc: true, page: 1 }), '/a /b /C', 'capitals sort with small letters');
+	assert.equal(log({ by: 'time', asc: false, page: 1 }), '/a /C /b');
+	assert.equal(log({ by: 'time', asc: true, page: 1 }), '/C /a /b', 'a visit with no time yet stays last');
+	assert.equal(log({ by: 'network', asc: true, page: 1 }), '/C /a /b');
+	assert.equal(log({ by: 'device', asc: false, page: 1 }), '/a /b /C', 'the phone, then the desktops, latest first');
+	for (const by of ['site', 'from', 'where', 'read'] as const) assert.equal(log({ by, asc: true, page: 1 }).length, 8, `${by} orders without failing`);
+});
+
+test('a visit log comes a page at a time, and a page past the end is the last one', () => {
+	const db = openDb(':memory:');
+	const total = VISITS_PER_PAGE + 5;
+	for (let i = 0; i < total; i++) recordHit(db, hit(`g${String(i).padStart(7, '0')}`, { path: `/p${i}` }), ctx(NOW - i * 60_000));
+	const first = report(db, { site: 'kompi', days: 7, now: NOW });
+	assert.equal(first.views, total);
+	assert.equal(first.recent.length, VISITS_PER_PAGE);
+	assert.equal(first.recent[0].path, '/p0');
+	const second = report(db, { site: 'kompi', days: 7, now: NOW, visits: { by: 'when', asc: false, page: 2 } });
+	assert.equal(second.recent.length, 5);
+	assert.equal(second.recent[0].path, `/p${VISITS_PER_PAGE}`);
+	const beyond = report(db, { site: 'kompi', days: 7, now: NOW, visits: { by: 'when', asc: false, page: 9 } });
+	assert.equal(beyond.page, 2);
+	assert.equal(beyond.recent.length, 5);
+});
+
+test('a report narrows to a row of one of its lists, and to several at once', () => {
+	const db = openDb(':memory:');
+	recordHit(db, hit('h1111111', { path: '/pricing', lang: 'pl-PL' }), ctx(NOW));
+	recordHit(db, hit('h2222222', { path: '/pricing', lang: 'en-GB' }), ctx(NOW - HOUR));
+	recordHit(db, hit('h3333333', { path: '/', lang: 'en-US' }), ctx(NOW - 2 * HOUR));
+	recordHit(db, hit('h4444444', { path: '/pricing', lang: 'pl-PL' }), ctx(NOW - 10 * 24 * HOUR));
+	const whole = report(db, { site: 'kompi', days: 7, now: NOW });
+	assert.equal(whole.views, 3);
+	const page = report(db, { site: 'kompi', days: 7, now: NOW, filters: { path: '/pricing' } });
+	assert.equal(page.views, 2);
+	assert.deepEqual(page.pages.map((p) => p.path), ['/pricing']);
+	assert.deepEqual([...page.langs].sort(), [['en', 1], ['pl', 1]]);
+	assert.equal(page.stack.rows.reduce((a, r) => a + r.n, 0), 2);
+	assert.equal(page.recent.length, 2);
+	assert.deepEqual(page.filters, { path: '/pricing' });
+	// A list's own words lead back to the same rows, whatever the list is named by.
+	for (const [k, list] of [['lang', whole.langs], ['system', whole.systems], ['screen', whole.screens], ['place', whole.places], ['source', whole.sources]] as const) {
+		for (const [value, n] of list) assert.equal(report(db, { site: 'kompi', days: 7, now: NOW, filters: { [k]: value } }).views, n, `${k} ${value}`);
+	}
+	assert.equal(report(db, { site: 'kompi', days: 7, now: NOW, filters: { path: '/pricing', lang: 'en' } }).views, 1);
+	assert.equal(report(db, { site: 'kompi', days: 7, now: NOW, filters: { path: "/x' OR 1=1 --" } }).views, 0);
+	// The period before is narrowed too, so a change compares like with like.
+	recordHit(db, hit('h5555555', { path: '/' }), ctx(NOW - 30 * 24 * HOUR));
+	assert.equal(report(db, { site: 'kompi', days: 7, now: NOW, filters: { path: '/pricing' } }).was, 1);
+	assert.equal(report(db, { site: 'kompi', days: 7, now: NOW }).was, 1);
 });
 
 test('columns are dated by the hour, the day or the Monday', () => {
@@ -197,4 +297,39 @@ test('a view is read and linked the same way', () => {
 	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 30, chart: 'pulse' }), '/s/yoga');
 	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 7, chart: 'days' }), '/s/yoga?days=7&chart=days');
 	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 7, chart: 'days', live: true }), '/s/yoga/live');
+	assert.equal(viewHref({ site: 'yoga', who: 'others', days: 30, extra: { path: '/a b', tag: undefined } }), '/s/yoga?path=%2Fa+b');
+});
+
+test('a site with parts counts each by the pages under its path, and narrows to one', () => {
+	const db = openDb(':memory:');
+	const open = (id: string, path: string) => recordHit(db, hit(id, { path }), ctx(NOW, 'svelte'));
+	open('p1111111', '/');
+	open('p2222222', '/calendar');
+	open('p3333333', '/calendar/docs');
+	open('p4444444', '/search');
+	open('p5555555', '/calendars');
+	const hub = report(db, { site: 'svelte', days: 7, now: NOW });
+	assert.equal(hub.views, 5);
+	assert.deepEqual(hub.parts, [['/calendar', 2], ['/search', 1]], 'a part with no visits has no row, and a longer name is another page');
+	const calendar = report(db, { site: 'svelte', days: 7, now: NOW, filters: { under: '/calendar' } });
+	assert.equal(calendar.views, 2);
+	assert.deepEqual(calendar.pages.map((p) => p.path).sort(), ['/calendar', '/calendar/docs']);
+	assert.deepEqual(calendar.parts, [['/calendar', 2]]);
+	assert.equal(report(db, { site: 'svelte', days: 7, now: NOW, filters: { under: '/calendar/' } }).views, 2);
+	assert.equal(report(db, { site: 'svelte', days: 7, now: NOW, filters: { under: '/' } }).views, 5);
+	assert.equal(report(db, { site: 'svelte', days: 7, now: NOW, filters: { under: '/c%' } }).views, 0, 'a % in a path is only itself');
+	assert.equal(report(db, { site: 'svelte', days: 7, now: NOW, filters: { under: '/calendar', path: '/calendar/docs' } }).views, 1);
+	assert.deepEqual(report(db, { site: 'kompi', days: 7, now: NOW }).parts, []);
+	assert.deepEqual(report(db, { site: 'all', days: 7, now: NOW }).parts, []);
+});
+
+test('filters and a log\'s order are read from the address, and the usual is left out of it', () => {
+	assert.deepEqual(readFilters(new URLSearchParams('path=/x&lang=pl&days=7&nonsense=1&ref=')), { path: '/x', lang: 'pl' });
+	assert.deepEqual(readVisitOrder(new URLSearchParams('')), { by: 'when', asc: false, page: 1 });
+	assert.deepEqual(readVisitOrder(new URLSearchParams('sort=page')), { by: 'page', asc: true, page: 1 });
+	assert.deepEqual(readVisitOrder(new URLSearchParams('sort=time&dir=asc&page=3')), { by: 'time', asc: true, page: 3 });
+	assert.deepEqual(readVisitOrder(new URLSearchParams('sort=toString&page=-2')), { by: 'when', asc: false, page: 1 });
+	assert.deepEqual(visitQuery({ by: 'when', asc: false, page: 1 }), { view: 'visits' });
+	assert.deepEqual(visitQuery({ by: 'page', asc: false, page: 2 }), { view: 'visits', sort: 'page', dir: 'desc', page: '2' });
+	assert.deepEqual(visitQuery({ by: 'time', asc: false, page: 1 }), { view: 'visits', sort: 'time' });
 });

@@ -1,28 +1,61 @@
 <script lang="ts">
 	// Who came, one page opened to a row. A row's time, depth and clicks fill in
 	// while the reader is still on the page.
-	import { clock, device, pageHref, place, secs, siteName, when } from '#lib/format';
+	import { clock, device, nf, pageHref, place, secs, siteName, when } from '#lib/format';
 	import { SOURCES } from '#lib/sources';
 	import type { VisitRow } from '#lib/types';
+	import type { VisitSort } from '#lib/view';
 
-	let { visits, showSite = false, live = false, tagHref, empty = 'No visits yet.' }: { visits: VisitRow[]; showSite?: boolean; live?: boolean; tagHref?: (tag: string) => string; empty?: string } = $props();
+	let {
+		visits,
+		showSite = false,
+		live = false,
+		tagHref,
+		empty = 'No visits yet.',
+		order,
+		sortHref,
+		pager
+	}: {
+		visits: VisitRow[];
+		showSite?: boolean;
+		live?: boolean;
+		tagHref?: (tag: string) => string;
+		empty?: string;
+		/** The column the rows run by. With `sortHref`, a column's head is the link that chooses it. */
+		order?: { by: VisitSort; asc: boolean };
+		sortHref?: (by: VisitSort) => string;
+		/** Where these rows stand among all of them, with the pages either side. */
+		pager?: { first: number; of: number; prev?: string; next?: string };
+	} = $props();
+	// The order of the log's rows in report.ts reads the same words: keep the two alike.
 	const from = (v: VisitRow) => v.ref || (v.source === 'social' ? v.browser : SOURCES[v.source]) || '';
 </script>
+
+{#snippet head(by: VisitSort, label: string, num = false)}
+	{@const on = order?.by === by}
+	<th class:num aria-sort={sortHref && on ? (order?.asc ? 'ascending' : 'descending') : undefined}>
+		{#if sortHref}
+			<a class="sort" class:on href={sortHref(by)} data-sveltekit-noscroll>
+				{label}{#if on}<svg class:up={order?.asc} viewBox="0 0 8 8" width="8" height="8" aria-hidden="true"><path d="M4 0v7M1 4.5 4 7.5 7 4.5" /></svg>{/if}
+			</a>
+		{:else}{label}{/if}
+	</th>
+{/snippet}
 
 {#if visits.length}
 	<div class="scroll" role="region" aria-label="Visits" tabindex="-1">
 		<table>
 			<thead>
 				<tr>
-					<th>When</th>
-					{#if showSite}<th>Site</th>{/if}
-					<th>Page</th>
-					<th>From</th>
-					<th>Where</th>
-					<th>Network</th>
-					<th>Device</th>
-					<th class="num">Time</th>
-					<th class="num">Read</th>
+					{@render head('when', 'When')}
+					{#if showSite}{@render head('site', 'Site')}{/if}
+					{@render head('page', 'Page')}
+					{@render head('from', 'From')}
+					{@render head('where', 'Where')}
+					{@render head('network', 'Network')}
+					{@render head('device', 'Device')}
+					{@render head('time', 'Time', true)}
+					{@render head('read', 'Read', true)}
 					<th>Looked at · opened</th>
 				</tr>
 			</thead>
@@ -62,6 +95,13 @@
 			</tbody>
 		</table>
 	</div>
+	{#if pager && pager.of > visits.length}
+		<nav class="pager caption" aria-label="Pages of visits">
+			<span>{nf.format(pager.first)}–{nf.format(pager.first + visits.length - 1)} of {nf.format(pager.of)}</span>
+			{#if pager.prev}<a href={pager.prev}>Previous</a>{/if}
+			{#if pager.next}<a href={pager.next}>Next</a>{/if}
+		</nav>
+	{/if}
 {:else}
 	<p class="none">{empty}</p>
 {/if}
@@ -88,6 +128,36 @@
 		padding: 8px 12px 8px 0;
 		border-bottom: 1px solid var(--rule);
 		vertical-align: top;
+	}
+	/* A head that orders the log: the chosen one in ink, its arrow after the word, or before a figure's. */
+	.sort {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+	}
+	.sort:hover,
+	.sort.on {
+		color: var(--ink);
+	}
+	.num .sort {
+		flex-direction: row-reverse;
+	}
+	.sort svg {
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.15px;
+	}
+	.sort svg.up {
+		transform: scaleY(-1);
+	}
+	.pager {
+		display: flex;
+		gap: 18px;
+		margin: 10px 0 0;
+	}
+	.pager a {
+		color: var(--ink);
+		text-decoration: underline;
 	}
 	small {
 		font-size: 12px;

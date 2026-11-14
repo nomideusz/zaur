@@ -4,7 +4,8 @@ One dashboard for every site, at **stats.zaur.app**: one sign-in, one small beac
 
 - `static/s.js` is the tracker. No cookie, and no id that outlives a page.
 - `POST /api/hit` takes its beacons. The site is read from the request's `Origin`, and an origin that isn't in `src/lib/sites.ts` is dropped.
-- `/` stacks every site's line on one scale, `/s/<site>` is a report (`/s/all` for everything, `?view=visits` for its visit log), and `/s/<site>/live` streams the last hour and day. Whose visits and the period are `?who=` and `?days=` on all of them, `?chart=days` draws the overview and reports as a line stepping once a day. O opens the overview, A all sites and a site's number key that site. Rows on the overview can be dragged into your own order, kept in the `prefs` table.
+- `/` stacks every site's line on one scale, `/s/<site>` is a report (`/s/all` for everything, `?view=visits` for its visit log), and `/s/<site>/live` streams the last hour and day. Whose visits and the period are `?who=` and `?days=` on all of them, `?chart=days` draws the overview and reports as a line stepping once a day. O opens the overview, A all sites and a site's number key that site. Rows on the overview can be dragged into your own order or ranked by any figure column from its head, both kept in the `prefs` table.
+- A row of a report's list narrows the report to it (`?under=` for a page and all under it, `?path=`, `?source=`, `?ref=`, `?place=`, `?network=`, `?lang=`, `?system=`, `?screen=`, together if several). The visit log is ordered from its column heads (`?sort=` and `?dir=`) over the whole period, 100 visits to a `?page=`.
 - The look is its own, in `DESIGN.md`, and doesn't use `@zaur/ui`. Fonts are self-hosted through `@fontsource-variable`.
 - Signing in goes through Zaur (mail2 is the OIDC issuer), and only addresses in `STATS_ADMINS` get in.
 
@@ -17,6 +18,8 @@ Add a line to `SITES` in `src/lib/sites.ts`, then put the tag on the site:
 ```
 
 If the site has a CSP, add `https://stats.zaur.app` to its `script-src` and `connect-src`.
+
+A site made of parts worth reading apart, as svelte.zaur.app is of its packages, lists them in the entry's `parts`: a name and a path each. It stays one site with one tag and one row on the overview; its report lists the parts, and a row narrows the report to the pages at and under that path (`?under=/calendar`).
 
 Paths in an address that hold a secret go in the entry's `skip` and again in the tag's `data-skip`. The server drops them whatever the tag does. A signed-in app gets `detail: false`, and serves its own copy of `s.js` with `data-api` and `data-detail="off"`, so a stats compromise can't run code on that origin. `tests/ingest.test.ts` checks the copies stay identical.
 

@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { nf } from '#lib/format';
 	import { SITES } from '#lib/sites';
-	import { PERIODS, readChart, readDays, readWho, viewHref, type Who } from '#lib/view';
+	import { PERIODS, readChart, readDays, readFilters, readVisitOrder, readWho, viewHref, visitQuery, type Who } from '#lib/view';
 	import SiteMenu from '#lib/components/SiteMenu.svelte';
 
 	let { children, data } = $props();
@@ -17,14 +17,20 @@
 	const tagged = $derived(page.url.searchParams.has('tag'));
 	const counts = $derived(page.data.counts as { mine: number; others: number } | undefined);
 	// Only a period's chart has two ways to be drawn: not Live, the visit log or a tag's scattered days.
-	const chartable = $derived(!live && !tagged && !!page.route.id && page.url.searchParams.get('view') !== 'visits');
+	const log = $derived(!live && page.url.searchParams.get('view') === 'visits');
+	const chartable = $derived(!live && !tagged && !!page.route.id && !log);
+	// What a report is narrowed to, and how its log runs, stay as whose visits and the period change.
+	const kept = $derived<Record<string, string | undefined>>({
+		...readFilters(page.url.searchParams),
+		...(log ? visitQuery({ ...readVisitOrder(page.url.searchParams), page: 1 }) : {})
+	});
 
 	const whoes: [Who, string, () => number | undefined][] = [
 		['others', 'Others', () => counts?.others],
 		['mine', 'Mine', () => counts?.mine],
 		['all', 'All', () => undefined]
 	];
-	const whoHref = (w: Who) => viewHref({ site, who: w, days, chart, live, extra: tagged ? { tag: page.url.searchParams.get('tag')! } : undefined });
+	const whoHref = (w: Who) => viewHref({ site, who: w, days, chart, live, extra: live ? undefined : { ...kept, tag: page.url.searchParams.get('tag') ?? undefined } });
 	const cur = (on: boolean) => (on ? ('page' as const) : undefined);
 
 	// The keys beside each entry in the site menu, wherever you are.
@@ -54,14 +60,14 @@
 		</nav>
 		<nav class="seg" aria-label="Period">
 			{#each PERIODS as [d, label] (d)}
-				<a href={viewHref({ site, who, days: d, chart })} aria-current={cur(!live && !tagged && days === d)}>{label}</a>
+				<a href={viewHref({ site, who, days: d, chart, extra: live ? undefined : kept })} aria-current={cur(!live && !tagged && days === d)}>{label}</a>
 			{/each}
 			<a href={viewHref({ site, who, days, live: true })} aria-current={cur(live)}>Live</a>
 		</nav>
 		{#if chartable}
 			<nav class="seg" aria-label="Chart">
-				<a href={viewHref({ site, who, days, chart: 'pulse' })} aria-current={cur(chart === 'pulse')}>Pulse</a>
-				<a href={viewHref({ site, who, days, chart: 'days' })} aria-current={cur(chart === 'days')}>{days === 1 ? 'By hour' : 'By day'}</a>
+				<a href={viewHref({ site, who, days, chart: 'pulse', extra: kept })} aria-current={cur(chart === 'pulse')}>Pulse</a>
+				<a href={viewHref({ site, who, days, chart: 'days', extra: kept })} aria-current={cur(chart === 'days')}>{days === 1 ? 'By hour' : 'By day'}</a>
 			</nav>
 		{/if}
 	</div>

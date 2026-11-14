@@ -3,7 +3,9 @@
  * is others, mine or all; a tag reads its visits from all time.
  */
 import type { DatabaseSync, SQLInputValue } from 'node:sqlite';
-import { DAYS, type Who } from '#lib/view';
+import { siteById, SITES } from '#lib/sites';
+import { SOURCES } from '#lib/sources';
+import { DAYS, FILTERS, VISITS_PER_PAGE, type Filter, type Filters, type VisitOrder, type VisitSort, type Who } from '#lib/view';
 import { dayOf, hourOf } from './ingest';
 
 export { DAYS, type Who };
@@ -62,6 +64,53 @@ function scope(site: string, who: Who, extra: Where): Where {
 	return { sql: parts.filter(Boolean).join(' AND '), params };
 }
 
+/** What a list's rows are named by, where that is more than a column: the same words a filter is matched against. */
+const PLACE = `CASE WHEN city IS NOT NULL THEN city || ', ' || COALESCE(country, '') ELSE COALESCE(country, REPLACE(SUBSTR(tz, INSTR(tz, '/') + 1), '_', ' ')) END`;
+const LANG = `CASE WHEN INSTR(lang, '-') THEN SUBSTR(lang, 1, INSTR(lang, '-') - 1) ELSE lang END`;
+const SYSTEM = `os || ' · ' || browser`;
+const SCREEN = `device || ' ' || REPLACE(screen, 'x', '×')`;
+// `views.path`, since the lists read out of a visit's JSON join a table with a `path` of its own.
+const FILTER_SQL: Record<Exclude<Filter, 'under'>, string> = { path: 'views.path', source: 'source', ref: 'ref', place: PLACE, network: 'org', lang: LANG, system: SYSTEM, screen: SCREEN };
+
+/** The page at a path and every page under it. A path's own `%` and `_` are only themselves. */
+function underPath(path: string): Where {
+	const base = path.replace(/\/+$/, '');
+	return { sql: `(views.path = ? OR views.path LIKE ? ESCAPE '\\')`, params: [base || '/', `${base.replace(/[\\%_]/g, '\\$&')}/%`] };
+}
+
+/** Only the visits every filter names. */
+function narrowed(filters: Filters): Where {
+	const set = (Object.keys(FILTERS) as Filter[]).filter((k) => filters[k]);
+	return set.map((k): Where => (k === 'under' ? underPath(filters[k]!) : { sql: `(${FILTER_SQL[k]}) = ?`, params: [filters[k]!] })).reduce(both, { sql: '', params: [] });
+}
+function both(a: Where, b: Where): Where {
+	return { sql: [a.sql, b.sql].filter(Boolean).join(' AND '), params: [...a.params, ...b.params] };
+}
+
+/**
+ * What a visit log's column is read by, so the rows run as the words on screen do.
+ * These mirror `device` in format.ts and `from` in VisitTable.svelte.
+ */
+const quote = (text: string) => `'${text.replace(/'/g, "''")}'`;
+const named = (column: string, names: [string, string][]) => `CASE ${column} ${names.map(([k, name]) => `WHEN ${quote(k)} THEN ${quote(name)}`).join(' ')} ELSE ${column} END`;
+const VISIT_ORDER: Record<VisitSort, string[]> = {
+	when: ['t'],
+	site: [named('site', SITES.map((s) => [s.id, s.name]))],
+	page: ['path'],
+	from: [`COALESCE(NULLIF(tag, ''), NULLIF(ref, ''), CASE WHEN source = 'social' THEN NULLIF(browser, '') END, ${named('source', Object.entries(SOURCES))})`],
+	where: [PLACE],
+	network: ['org'],
+	device: [`CASE WHEN device = 'phone' OR COALESCE(w, 2000) < 768 THEN 'phone' WHEN COALESCE(w, 2000) < 1100 THEN 'tablet' ELSE 'desktop' END`, 'w', 'h'],
+	time: ['secs'],
+	read: ['depth']
+};
+/** A visit with nothing in the column goes last whichever way it runs, and the latest leads among equals. */
+function visitOrder(o: Pick<VisitOrder, 'by' | 'asc'>): string {
+	const [first, ...rest] = VISIT_ORDER[o.by];
+	const dir = o.asc ? 'ASC' : 'DESC';
+	return [`COALESCE((${first}) = '', 1)`, ...[first, ...rest].map((k) => `${k} COLLATE NOCASE ${dir}`), 't DESC'].join(', ');
+}
+
 const reader = (db: DatabaseSync) => ({
 	all: <T>(sql: string, params: SQLInputValue[] = []) => db.prepare(sql).all(...params) as T[],
 	one: <T>(sql: string, params: SQLInputValue[] = []) => db.prepare(sql).get(...params) as T
@@ -96,13 +145,14 @@ export interface StackRow {
 	n: number;
 }
 
-export function report(db: DatabaseSync, opts: { site: string; days?: number; who?: Who; tag?: string | null; now?: number }) {
-	const { site, days = 30, who = 'others', tag = null, now = Date.now() } = opts;
+export function report(db: DatabaseSync, opts: { site: string; days?: number; who?: Who; tag?: string | null; filters?: Filters; visits?: VisitOrder; now?: number }) {
+	const { site, days = 30, who = 'others', tag = null, filters = {}, visits = { by: 'when', asc: false, page: 1 }, now = Date.now() } = opts;
 	const { all, one } = reader(db);
 	const today = dayOf(now);
 	const from = addDays(today, 1 - days);
 	const prevFrom = addDays(from, -days);
-	const period: Where = tag ? { sql: 'tag = ?', params: [tag] } : { sql: 'day >= ?', params: [from] };
+	const narrow = narrowed(filters);
+	const period = both(tag ? { sql: 'tag = ?', params: [tag] } : { sql: 'day >= ?', params: [from] }, narrow);
 	const w = scope(site, who, period);
 
 	const totals = one<{ views: number; entries: number; depth: number | null; clicked: number; phones: number; dark: number; darkKnown: number; business: number }>(
@@ -127,7 +177,7 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 	const first = one<{ day: string | null }>(`SELECT MIN(day) AS day FROM views ${siteOnly.sql ? `WHERE ${siteOnly.sql}` : ''}`, siteOnly.params).day;
 	let was: number | null = null;
 	if (!tag && first && first <= prevFrom) {
-		const prev = scope(site, who, { sql: 'day >= ? AND day < ?', params: [prevFrom, from] });
+		const prev = scope(site, who, both({ sql: 'day >= ? AND day < ?', params: [prevFrom, from] }, narrow));
 		was = one<{ n: number }>(`SELECT COUNT(*) AS n FROM views WHERE ${prev.sql}`, prev.params).n;
 	}
 
@@ -180,11 +230,24 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 		return { path, n, median: median(db, onPage) };
 	});
 
+	const everyTag = scope(site, who, both({ sql: 'tag IS NOT NULL', params: [] }, narrow));
+	// A site's parts, each by the pages under its path. A page under none of them is in no row.
+	const parts = (siteById(site)?.parts?.list ?? [])
+		.map((part): [string, number] => {
+			const within = both(w, underPath(part.path));
+			return [part.path, one<{ n: number }>(`SELECT COUNT(*) AS n FROM views WHERE ${within.sql}`, within.params).n];
+		})
+		.filter(([, n]) => n > 0)
+		.sort((a, b) => b[1] - a[1]);
+	// A page past the last one shows the last one.
+	const page = Math.max(1, Math.min(visits.page, Math.ceil(totals.views / VISITS_PER_PAGE)));
+
 	return {
 		site,
 		days,
 		who,
 		tag,
+		filters,
 		from,
 		today,
 		views: totals.views,
@@ -202,26 +265,22 @@ export function report(db: DatabaseSync, opts: { site: string; days?: number; wh
 		stack,
 		pages,
 		sites: site === 'all' ? rows(db, 'site', w, 20) : [],
+		parts,
 		sources: rows(db, 'source', w, 12),
 		refs: rows(db, 'ref', { sql: `${w.sql} AND source <> 'internal'`, params: w.params }, 12),
-		places: all<{ k: string; n: number }>(
-			`SELECT CASE WHEN city IS NOT NULL THEN city || ', ' || COALESCE(country, '') ELSE COALESCE(country, REPLACE(SUBSTR(tz, INSTR(tz, '/') + 1), '_', ' ')) END AS k, COUNT(*) AS n
-			FROM views WHERE ${w.sql} GROUP BY 1 HAVING k IS NOT NULL ORDER BY 2 DESC LIMIT 12`,
-			w.params
-		).map((r): [string, number] => [r.k, r.n]),
+		places: all<{ k: string; n: number }>(`SELECT ${PLACE} AS k, COUNT(*) AS n FROM views WHERE ${w.sql} GROUP BY 1 HAVING k IS NOT NULL ORDER BY 2 DESC LIMIT 12`, w.params).map((r): [string, number] => [r.k, r.n]),
 		networks: rows(db, 'org', w, 12),
-		langs: all<{ k: string; n: number }>(
-			`SELECT CASE WHEN INSTR(lang, '-') THEN SUBSTR(lang, 1, INSTR(lang, '-') - 1) ELSE lang END AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND lang IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 8`,
-			w.params
-		).map((r): [string, number] => [r.k, r.n]),
-		systems: all<{ k: string; n: number }>(`SELECT os || ' · ' || browser AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND os IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 10`, w.params).map((r): [string, number] => [r.k, r.n]),
-		screens: all<{ k: string; n: number }>(`SELECT device || ' ' || REPLACE(screen, 'x', '×') AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND screen IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 10`, w.params).map((r): [string, number] => [r.k, r.n]),
+		langs: all<{ k: string; n: number }>(`SELECT ${LANG} AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND lang IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 8`, w.params).map((r): [string, number] => [r.k, r.n]),
+		systems: all<{ k: string; n: number }>(`SELECT ${SYSTEM} AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND os IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 10`, w.params).map((r): [string, number] => [r.k, r.n]),
+		screens: all<{ k: string; n: number }>(`SELECT ${SCREEN} AS k, COUNT(*) AS n FROM views WHERE ${w.sql} AND screen IS NOT NULL GROUP BY 1 ORDER BY 2 DESC LIMIT 10`, w.params).map((r): [string, number] => [r.k, r.n]),
 		// What was opened, each target once per visit.
 		opened: all<{ k: string; n: number }>(`SELECT j.value AS k, COUNT(DISTINCT views.site || views.id) AS n FROM views, json_each(views.clicks) j WHERE ${w.sql} GROUP BY 1 ORDER BY 2 DESC LIMIT 15`, w.params).map((r): [string, number] => [r.k, r.n]),
 		// Parts of a page read for at least 3 seconds, once per visit.
 		read: all<{ k: string; n: number }>(`SELECT j.key AS k, COUNT(DISTINCT views.site || views.id) AS n FROM views, json_each(views.seen) j WHERE ${w.sql} AND j.value >= 3 GROUP BY 1 ORDER BY 2 DESC LIMIT 15`, w.params).map((r): [string, number] => [r.k, r.n]),
-		tags: all<{ k: string; n: number; last: number }>(`SELECT tag AS k, COUNT(*) AS n, MAX(t) AS last FROM views WHERE ${scope(site, who, { sql: 'tag IS NOT NULL', params: [] }).sql} GROUP BY 1 ORDER BY 3 DESC LIMIT 30`, scope(site, who, { sql: 'tag IS NOT NULL', params: [] }).params),
-		recent: all<Record<string, unknown>>(`SELECT * FROM views WHERE ${w.sql} ORDER BY t DESC LIMIT 100`, w.params).map(asVisit)
+		tags: all<{ k: string; n: number; last: number }>(`SELECT tag AS k, COUNT(*) AS n, MAX(t) AS last FROM views WHERE ${everyTag.sql} GROUP BY 1 ORDER BY 3 DESC LIMIT 30`, everyTag.params),
+		// One page of the visit log, in the order asked for.
+		page,
+		recent: all<Record<string, unknown>>(`SELECT * FROM views WHERE ${w.sql} ORDER BY ${visitOrder(visits)} LIMIT ${VISITS_PER_PAGE} OFFSET ${(page - 1) * VISITS_PER_PAGE}`, w.params).map(asVisit)
 	};
 }
 export type Report = ReturnType<typeof report>;

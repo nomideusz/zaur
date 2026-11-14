@@ -22,6 +22,11 @@ export interface Site {
 	keepDays?: number | null;
 	/** zaur.app alone sends an address to ipapi.is, as it always has. Everyone else stays on the offline database. */
 	lookup?: 'ipapi';
+	/**
+	 * Parts of the site read apart as well as together: each is the page at a path and
+	 * every page under it. `title` heads their list on the site's report.
+	 */
+	parts?: { title: string; list: { path: string; name: string }[] };
 }
 
 export const SITES: Site[] = [
@@ -65,6 +70,16 @@ export const SITES: Site[] = [
 		hosts: ['radiobartek.com', 'www.radiobartek.com'],
 		// SUB/WAVE's operator pages: the admin panel and its first-run setup.
 		skip: /^\/(admin|setup|onboarding)(\/|$)/
+	},
+	{
+		id: 'svelte',
+		name: 'svelte.zaur.app',
+		hosts: ['svelte.zaur.app'],
+		// The package hub (asini's packages/demo): a package's demo is at its slug and its docs under it.
+		parts: {
+			title: 'Packages',
+			list: ['calendar', 'search', 'scheduler', 'qr', 'i18n', 'geometrize', 'media', 'notify', 'payments'].map((slug) => ({ path: `/${slug}`, name: `svelte-${slug}` }))
+		}
 	}
 ];
 

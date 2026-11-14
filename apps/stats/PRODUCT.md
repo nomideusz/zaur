@@ -33,8 +33,8 @@ Success means the owner can answer "what happened on my sites?" here, without a 
 
 ## Operating Context
 
-- **`/` is the overview:** one row per site, ranked by traffic or in the owner's own order, with its line through the period on one shared scale, where its visits came from, its change, today and the last 5 minutes. Totals sit at the foot.
-- **`/s/<site>` is the report,** and `/s/all` covers everything. Its Summary holds a stack of days through their hours, or a line stepping once a day, figures, and chapters of lists: arrivals (sources, referrers, tagged links), pages (most opened, clicked, read), location (places, networks, languages) and devices (systems, screens). Its Visits tab holds the latest visits.
+- **`/` is the overview:** one row per site, ranked by any of its figures or in the owner's own order, with its line through the period on one shared scale, where its visits came from, its change, today and the last 5 minutes. Totals sit at the foot.
+- **`/s/<site>` is the report,** and `/s/all` covers everything. Its Summary holds a stack of days through their hours, or a line stepping once a day, figures, and chapters of lists: arrivals (sources, referrers, tagged links), pages (most opened, clicked, read), location (places, networks, languages) and devices (systems, screens). A row of a list narrows the whole report to it, so a page shows where its own readers came from. Its Visits tab holds the visits of the period, a page at a time, in the order of any column.
 - **`/s/<site>/live` streams** the last hour and day.
 - **Sites report through a tag.** A site joins by adding a line to `SITES` in `src/lib/sites.ts` and putting the tag on its pages.
 
@@ -43,12 +43,12 @@ Success means the owner can answer "what happened on my sites?" here, without a 
 - **Where it's read:** mostly at a desk, so wide screens lead. On a phone, the overview and live pages have to be excellent for a glance; the report only has to be readable.
 - **The visit log:** the owner looks at it now and then. Totals and lists come first, and the log stays one step away instead of lengthening the page.
 - **Stack:** SvelteKit with Svelte 5 and Tailwind v4, using SQLite. Sign-in is OIDC, with mail2 as the issuer.
-- **Sites counted:** zaur.app, szkolyjogi.pl, thebest.travel, kompi.pl, kino.net.pl, festivals.zaur.app, kurcz.pl, Zaur Mail, Zaur Music and Zaur Register. A beacon from an origin not in `SITES` is dropped.
+- **Sites counted:** zaur.app, szkolyjogi.pl, thebest.travel, kompi.pl, kino.net.pl, festivals.zaur.app, kurcz.pl, Zaur Mail, Zaur Music, Zaur Register, radiobartek.com and svelte.zaur.app, the package hub, which is one site read by its packages as well. A beacon from an origin not in `SITES` is dropped.
 - **What a row holds:** a page opened, with its path, source, referrer host, time zone, language, window and screen size, dark mode, device, browser and OS names, how long it stayed in view and how far it was read, plus a city, region, country and network. Never the address itself. Sites with detail on also keep the tag, the hash, clicks and the time each section was in view.
 - **Secrets in addresses:** paths that hold a secret or belong to an owner's panel are skipped by the tag (`data-skip`) and again by the server (`skip`). `mask` keeps a page but hides what it names, such as Music's albums and playlists.
 - **Signed-in apps report less:** Mail, Music and Register run with `detail: false`, because a click's label or link could be somebody's mail. They serve their own copy of `s.js`, so a compromise of Stats can't run code on their origins.
 - **The one third-party exception:** zaur.app alone sends addresses to ipapi.is (`lookup` in `sites.ts`). Every other site stays on the offline databases.
-- **The owner's arrangement:** the overview's order, and whether it's ranked, is the one thing kept about the owner rather than the visits, in a `prefs` row against their address.
+- **The owner's arrangement:** the overview's order, and the column it's ranked by, is the one thing kept about the owner rather than the visits, in a `prefs` row against their address.
 - **Terminology:**
   - *Pages opened* is the count; it does not claim to count people.
   - *Arrivals from outside* are views that weren't a move within the site, direct visits included.

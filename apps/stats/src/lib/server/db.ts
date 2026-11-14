@@ -61,9 +61,15 @@ export function openDb(path: string): DatabaseSync {
 		CREATE TABLE IF NOT EXISTS prefs (
 			email TEXT PRIMARY KEY,
 			site_order TEXT,
-			ranked INTEGER NOT NULL DEFAULT 1
+			ranked INTEGER NOT NULL DEFAULT 1,
+			sort TEXT,
+			sort_asc INTEGER NOT NULL DEFAULT 0
 		);
 	`);
+	// Columns a store made before them doesn't have yet. `ranked` stays written, for a build from before `sort`.
+	const prefs = new Set((db.prepare('PRAGMA table_info(prefs)').all() as { name: string }[]).map((c) => c.name));
+	if (!prefs.has('sort')) db.exec('ALTER TABLE prefs ADD COLUMN sort TEXT');
+	if (!prefs.has('sort_asc')) db.exec('ALTER TABLE prefs ADD COLUMN sort_asc INTEGER NOT NULL DEFAULT 0');
 	return db;
 }
 

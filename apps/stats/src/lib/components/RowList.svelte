@@ -11,6 +11,7 @@
 		total = 0,
 		shares = false,
 		name,
+		href,
 		detail,
 		detailHead,
 		note,
@@ -26,6 +27,8 @@
 		/** Shows the share as a column as well, where shares are the point. */
 		shares?: boolean;
 		name?: Snippet<[string]>;
+		/** Where a row leads, when its words are a link. */
+		href?: (key: string) => string;
 		detail?: Snippet<[string]>;
 		detailHead?: string;
 		note?: string;
@@ -42,6 +45,8 @@
 	const share = (n: number) => Math.round((100 * n) / total);
 </script>
 
+{#snippet words(k: string)}{#if name}{@render name(k)}{:else}{k}{/if}{/snippet}
+
 <section style:--flow={flow} class:has-detail={!!detail} class:has-share={shares}>
 	<div class="heads">
 		{#each { length: flow }, c (c)}
@@ -54,7 +59,7 @@
 	<div class="rows">
 		{#each shown as [k, n], i (k)}
 			<div class="row row-grid" class:lead={i === 0 && flow === 1}>
-				<span class="words" title={k}>{#if name}{@render name(k)}{:else}{k}{/if}</span>
+				<span class="words" title={k}>{#if href}<a href={href(k)}>{@render words(k)}</a>{:else}{@render words(k)}{/if}</span>
 				{#if detail}<span class="detail count">{@render detail(k)}</span>{/if}
 				<span class="n count" title={total && !shares ? `${share(n)}%` : undefined}>{nf.format(n)}</span>
 				{#if shares}<small class="count">{share(n)}%</small>{/if}
