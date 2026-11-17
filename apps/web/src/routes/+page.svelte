@@ -749,7 +749,7 @@
 							<li id="tpl-{tp.slug}">
 								<a class="t-name" href="#tpl-{tp.slug}">{tp.name}</a>
 								<p>{tp.desc}</p>
-								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a><a href={tp.source}>{t('templates.source')}</a></span>
+								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a>{#if tp.source}<a href={tp.source}>{t('templates.source')}</a>{/if}</span>
 							</li>
 						{/each}
 					</ul>

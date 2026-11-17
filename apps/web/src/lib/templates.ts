@@ -1,11 +1,16 @@
-// The Railway templates table, built at prerender. The list is every GitHub repo
-// with the railway-template topic: the README's deploy button gives the template
-// code, and Railway's public API gives the blurb, whether it is still published,
-// and how many projects were started from it and still run.
-// So a new template repo needs no change here; it only needs a group below.
+// The Railway templates table, built at prerender. The list comes from
+// Dispatcher (dispatcher.zaur.app), which samples the workspace hourly: every
+// PUBLISHED template, the kind set on its dashboard, and Railway's project
+// counts. GitHub repos with the railway-template topic add the source link and
+// the README title (the deploy button gives the template code), and Railway's
+// public API the blurb. Only public repos are linked: some template sources are
+// private on purpose, and the old public nomideusz/*-railway copies are not
+// linked, since they may hold code that has since gone private. A new template needs no change here: the `kinds` map
+// below only places and orders templates more finely than Dispatcher's kind.
+// If Dispatcher is down, the list falls back to the GitHub repos alone.
 
-// The first owner wins when a template still has a repo under both.
-const owners = ['two-workspaces', 'nomideusz'];
+// Template repos live in the two-workspaces org.
+const owner = 'two-workspaces';
 const referral = 'sLjDXb';
 // Templates whose source is not a template repo of its own: [code, source].
 const extra = [
@@ -13,7 +18,7 @@ const extra = [
 	['stalwart-webmail', 'https://github.com/two-workspaces/webmail']
 ];
 
-// Groups in display order, keyed by repo name without "-railway"; each lists
+// Groups in display order, keyed by repo name; each lists
 // its templates in display order. An unlisted repo goes by its Railway category,
 // else to the last group.
 export const kinds: [kind: string, slugs: string[]][] = [
@@ -47,10 +52,22 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	['Sites, games and more', ['wordpress', 'ghost', 'cockpit', 'directus', 'minecraft-crafty', 'horizon', 'mcsmanager', 'lnbits', 'babybuddy']]
 ];
 const byCategory: Record<string, string> = { 'AI/ML': 'AI and agents', Observability: 'Observability', Automation: 'Developer and automation', Queues: 'Developer and automation' };
+// Dispatcher's kinds, for a template the map above does not list.
+const byKind: Record<string, string> = {
+	ai: 'AI and agents',
+	agent: 'AI and agents',
+	devtools: 'Developer and automation',
+	business: 'Business',
+	media: 'Media and community',
+	desktop: 'Desktop apps in the cloud'
+};
+const dispatcher = process.env.DISPATCHER_URL ?? 'https://dispatcher.zaur.app';
 
-export type Template = { slug: string; name: string; desc: string; deploy: string; source: string; deploys: number; running: number };
+export type Template = { slug: string; name: string; desc: string; deploy: string; source?: string; deploys: number; running: number };
 type Fetch = typeof fetch;
-type Repo = { name: string; full_name: string; html_url: string; default_branch: string; owner: { login: string } };
+type Repo = { name: string; full_name: string; html_url: string; default_branch: string; private: boolean };
+type Listed = { code: string; slug: string; source?: string; name?: string; title?: string; kind?: string; deploys?: number; running?: number };
+type Meta = { name: string; description: string; category: string; status: string; projects: number; activeProjects: number };
 
 async function json(f: Fetch, url: string, init?: RequestInit, retry = true): Promise<any> {
 	const r = await f(url, init);
@@ -70,63 +87,125 @@ export function readme(md: string) {
 	return { code, name };
 }
 
-export async function loadTemplates(f: Fetch) {
+/** Every public template repo by its deploy code. */
+async function repos(f: Fetch) {
 	// Unauthenticated works (a few calls a build); a token only lifts the rate limit.
 	const headers: Record<string, string> = process.env.GITHUB_TOKEN ? { authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {};
-	const q = `topic:railway-template archived:false ${owners.map((o) => `user:${o}`).join(' ')}`;
-	const repos: Repo[] = [];
+	// is:public keeps private repos out even when the token could see them.
+	const q = `topic:railway-template archived:false is:public user:${owner}`;
+	const list: Repo[] = [];
 	for (let page = 1; ; page++) {
 		const r = await json(f, `https://api.github.com/search/repositories?q=${encodeURIComponent(q)}&per_page=100&page=${page}`, { headers });
-		repos.push(...r.items);
-		if (repos.length >= r.total_count || !r.items.length) break;
+		list.push(...r.items.filter((x: Repo) => !x.private));
+		if (page * 100 >= r.total_count || !r.items.length) break;
 	}
-	repos.sort((a, b) => owners.indexOf(a.owner.login) - owners.indexOf(b.owner.login));
 
 	const found = await Promise.all(
-		repos.map(async (r) => {
+		list.map(async (r) => {
 			const md = await f(`https://raw.githubusercontent.com/${r.full_name}/${r.default_branch}/README.md`).then((x) => (x.ok ? x.text() : ''))
 				.catch(() => '');
-			return { slug: r.name.replace(/-railway$/, ''), source: r.html_url, ...readme(md) };
+			return { slug: r.name, source: r.html_url, ...readme(md) };
 		})
 	);
 	const seen = new Set<string>();
-	const picked: { slug: string; source: string; code: string; name?: string }[] = [];
+	const byCode = new Map<string, Listed>();
 	for (const t of [...found, ...extra.map(([code, source]) => ({ slug: code, source, code, name: undefined }))]) {
 		if (!t.code || seen.has(t.slug) || seen.has(t.code)) continue;
 		seen.add(t.slug).add(t.code);
-		picked.push({ ...t, code: t.code });
+		byCode.set(t.code, { ...t, code: t.code });
 	}
+	return byCode;
+}
 
-	// One aliased query per 50 codes keeps under Railway's query-breadth limit.
-	const meta: Record<string, { name: string; description: string; category: string; status: string; projects: number; activeProjects: number } | null> = {};
-	for (let i = 0; i < picked.length; i += 50) {
-		const chunk = picked.slice(i, i + 50);
-		const query = `{${chunk.map((t, j) => `t${j}: template(code: ${JSON.stringify(t.code)}) { name description category status projects activeProjects }`).join(' ')}}`;
+/** Dispatcher's published templates, or null when it cannot be reached. */
+async function catalog(f: Fetch): Promise<{ code: string; name: string; kind: string; projects: number; activeProjects: number }[] | null> {
+	try {
+		const r = await f(`${dispatcher}/api/catalog`, { signal: AbortSignal.timeout(15_000) });
+		if (!r.ok) throw new Error(`${r.status}`);
+		const { templates } = await r.json();
+		if (!Array.isArray(templates) || !templates.length) throw new Error('no templates');
+		return templates;
+	} catch (e) {
+		console.warn(`Dispatcher catalog unavailable (${(e as Error).message}); listing the GitHub template repos`);
+		return null;
+	}
+}
+
+/** Railway's public blurb, status and counts per code. */
+export async function railwayMeta(f: Fetch, codes: string[]) {
+	const meta: Record<string, Meta | null> = {};
+	const ask = async (chunk: string[]) => {
+		const query = `{${chunk.map((c, j) => `t${j}: template(code: ${JSON.stringify(c)}) { name description category status projects activeProjects }`).join(' ')}}`;
 		const r = await json(f, 'https://backboard.railway.com/graphql/v2', {
 			method: 'POST',
 			headers: { 'content-type': 'application/json' },
 			body: JSON.stringify({ query })
 		});
-		chunk.forEach((t, j) => (meta[t.code] = r.data?.[`t${j}`] ?? null));
+		return chunk.map((_, j) => (r.data?.[`t${j}`] ?? null) as Meta | null);
+	};
+	// One aliased query per 50 codes keeps under Railway's query-breadth limit.
+	for (let i = 0; i < codes.length; i += 50) {
+		const chunk = codes.slice(i, i + 50);
+		let got = await ask(chunk);
+		// One unknown code (a README pointing at a deleted template) makes Railway
+		// answer the whole query with data: null, so ask a failed chunk code by code.
+		if (got.every((m) => m === null)) got = await Promise.all(chunk.map((c) => ask([c]).then(([m]) => m).catch(() => null)));
+		chunk.forEach((c, j) => (meta[c] = got[j]));
 	}
+	return meta;
+}
+
+export async function loadTemplates(f: Fetch) {
+	const [byCode, listed] = await Promise.all([repos(f), catalog(f)]);
+	// A template without a repo goes by its code, unless a repo already has that
+	// name for another template (rows are keyed and linked by slug).
+	const taken = new Set([...byCode.values()].map((t) => t.slug));
+	const slugFor = (code: string) => {
+		const repo = byCode.get(code);
+		if (repo) return repo.slug;
+		let slug = code;
+		for (let n = 2; taken.has(slug); n++) slug = `${code}-${n}`;
+		taken.add(slug);
+		return slug;
+	};
+	const picked: Listed[] = listed
+		? listed.map((t) => ({
+				...byCode.get(t.code),
+				code: t.code,
+				slug: slugFor(t.code),
+				title: t.name,
+				kind: t.kind,
+				deploys: t.projects,
+				running: t.activeProjects
+			}))
+		: [...byCode.values()];
+	const meta = await railwayMeta(f, picked.map((t) => t.code));
 
 	const list = picked.flatMap((t) => {
 		const m = meta[t.code];
-		if (m?.status !== 'PUBLISHED') return [];
-		const kind = kinds.find(([, slugs]) => slugs.includes(t.slug))?.[0] ?? byCategory[m.category] ?? kinds[kinds.length - 1][0];
+		// Dispatcher already lists only published templates; Railway's blurb may still be missing.
+		if (!listed && m?.status !== 'PUBLISHED') return [];
+		const name = t.name ?? (m?.name ?? t.title)?.split(' | ')[0];
+		if (!name) return [];
+		const kind =
+			kinds.find(([, slugs]) => slugs.includes(t.slug))?.[0] ??
+			(t.kind && byKind[t.kind]) ??
+			(m && byCategory[m.category]) ??
+			kinds[kinds.length - 1][0];
 		const item: Template = {
 			slug: t.slug,
-			name: t.name ?? m.name.split(' | ')[0],
-			desc: m.description,
+			name,
+			desc: m?.description ?? '',
 			deploy: `https://railway.com/deploy/${t.code}?referralCode=${referral}`,
 			source: t.source,
-			deploys: m.projects ?? 0,
-			running: m.activeProjects ?? 0
+			deploys: t.deploys ?? m?.projects ?? 0,
+			running: t.running ?? m?.activeProjects ?? 0
 		};
 		return [{ kind, item }];
 	});
 	if (list.length < 50) throw new Error(`Only ${list.length} Railway templates found; refusing to ship a gutted table`);
 
+	// Hand-placed templates first in their order, then the rest by how many run.
 	const rank = (kind: string, slug: string) => {
 		const i = kinds.find(([k]) => k === kind)?.[1].indexOf(slug) ?? -1;
 		return i < 0 ? Infinity : i;
@@ -137,7 +216,7 @@ export async function loadTemplates(f: Fetch) {
 			items: list
 				.filter((x) => x.kind === kind)
 				.map((x) => x.item)
-				.sort((a, b) => rank(kind, a.slug) - rank(kind, b.slug) || a.name.localeCompare(b.name))
+				.sort((a, b) => rank(kind, a.slug) - rank(kind, b.slug) || b.running - a.running || a.name.localeCompare(b.name))
 		}))
 		.filter((g) => g.items.length);
 }

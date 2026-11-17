@@ -1,9 +1,11 @@
 name: Refresh zaur.app templates
 
-# zaur.app builds its Railway templates table from GitHub and Railway at
-# prerender (apps/web/src/lib/templates.ts), so it only changes on a rebuild.
-# Hourly this fingerprints the template repos and, when that changes, calls the
-# web app's Dokploy deploy hook. A template repo can trigger it at once with
+# zaur.app builds its Railway templates table from Dispatcher's catalog, GitHub
+# and Railway at prerender (apps/web/src/lib/templates.ts), so it only changes on
+# a rebuild. Hourly this fingerprints the template repos, Dispatcher's published
+# templates and their kinds, and the UTC day (so the project counts refresh at
+# least daily); when that changes, it calls the web app's Dokploy deploy hook.
+# A template repo can trigger it at once with
 #   gh api repos/nomideusz/zaur/dispatches -f event_type=railway-templates
 
 on:
@@ -17,14 +19,18 @@ jobs:
   refresh:
     runs-on: ubuntu-latest
     steps:
-      - name: Fingerprint the template repos
+      - name: Fingerprint the templates
         id: fp
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sum=$(gh api -X GET search/repositories --paginate \
-            -f q='topic:railway-template archived:false user:two-workspaces user:nomideusz' -f per_page=100 \
-            --jq '.items[] | "\(.full_name) \(.pushed_at)"' | sort | sha256sum | cut -c1-16)
+          repos=$(gh api -X GET search/repositories --paginate \
+            -f q='topic:railway-template archived:false is:public user:two-workspaces' -f per_page=100 \
+            --jq '.items[] | "\(.full_name) \(.pushed_at)"' | sort)
+          # Dispatcher down: leave it out rather than fail; the build falls back to GitHub.
+          published=$(curl -fsS --max-time 30 https://dispatcher.zaur.app/api/catalog \
+            | jq -r '.templates[] | "\(.code) \(.kind) \(.name)"' | sort || true)
+          sum=$(printf '%s\n%s\n%s\n' "$repos" "$published" "$(date -u +%F)" | sha256sum | cut -c1-16)
           echo "sum=$sum" >> "$GITHUB_OUTPUT"
 
       - name: Check whether this fingerprint was built
