@@ -749,7 +749,7 @@
 							<li id="tpl-{tp.slug}">
 								<a class="t-name" href="#tpl-{tp.slug}">{tp.name}</a>
 								<p>{tp.desc}</p>
-								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a>{#if tp.source}<a href={tp.source}>{t('templates.source')}</a>{/if}</span>
+								<span class="t-src">{#if tp.running}<span class="t-runs">{t('templates.running', { n: num(tp.running) })}</span>{/if}<a href={tp.deploy}>{t('templates.deploy')}</a>{#if tp.source}<a href={tp.source}>{t('templates.source')}</a>{:else}<span class="t-nosrc" aria-hidden="true">{t('templates.source')}</span>{/if}</span>
 							</li>
 						{/each}
 					</ul>
@@ -1631,6 +1631,11 @@
 		justify-self: end;
 		white-space: nowrap;
 	}
+	/* A template whose source is private keeps the Source link's width, so the
+	   counts and deploy links stay in one column with the rows around it. */
+	.t-nosrc {
+		visibility: hidden;
+	}
 
 	/* A section opens on an ink band. */
 	.strip {
@@ -1696,8 +1701,9 @@
 	}
 	.write {
 		display: block;
-		padding: 0.6vw 1.39vw 0;
-		border-bottom: var(--rule) solid var(--orange-rule);
+		width: fit-content;
+		max-width: 100%;
+		padding: 0.6vw 1.39vw 0.14em;
 		font-weight: 700;
 		font-size: max(2.5rem, 8.4vw);
 		line-height: 1;
@@ -1715,6 +1721,7 @@
 		flex-wrap: wrap;
 		gap: 0.5rem 2rem;
 		padding: 1.25rem 1.39vw 2rem;
+		border-top: var(--rule) solid var(--orange-rule);
 		font-size: 0.9375rem;
 	}
 
@@ -1954,7 +1961,7 @@
 			padding: 1.5rem 1rem 0;
 		}
 		.write {
-			padding: 0.4rem 1rem 0;
+			padding: 0.4rem 1rem 0.14em;
 		}
 		.foot .small {
 			padding: 1.25rem 1rem 2rem;
