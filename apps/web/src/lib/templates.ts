@@ -25,7 +25,7 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	[
 		'AI and agents',
 		['claude-code', 'opencode', 'codewhale', 't3code', 'orca', 'hermes', 'openworker', 'paperclip', 'aionui', 'lobe-chat', 'open-webui-litellm',
-		'dify', 'flowise', 'langflow', 'sim', 'ragflow', 'morphik', 'airweave', 'firecrawl', 'openconnector', 'skillhub', 'moli', 'inbox-zero', 'laya']
+		'dify', 'flowise', 'langflow', 'sim', 'ragflow', 'morphik', 'airweave', 'firecrawl', 'openconnector', 'skillhub', 'inbox-zero', 'laya']
 	],
 	['Observability', ['langfuse', 'opik', 'laminar', 'rustrak', 'hyperdx', 'uptrace', 'openreplay', 'goalert', 'dependency-track']],
 	[
@@ -44,9 +44,14 @@ export const kinds: [kind: string, slugs: string[]][] = [
 	[
 		'Media and community',
 		['subwave', 'navidrome', 'funkwhale', 'azuracast', 'owncast', 'oryx', 'peertube', 'mediacms', 'invidious', 'tubearchivist', 'audiobookshelf',
-		'pixelfed', 'chevereto', 'neko']
+		'pixelfed', 'chevereto']
 	],
-	['Browsers in the cloud', ['chrome', 'chromium', 'ungoogled-chromium', 'brave', 'firefox', 'librewolf', 'mullvad', 'edge', 'vivaldi', 'opera']],
+	// Desktop browsers streamed to you, then Neko (one shared by a room), then the
+	// headless ones an agent drives over CDP.
+	[
+		'Browsers in the cloud',
+		['chrome', 'chromium', 'ungoogled-chromium', 'brave', 'firefox', 'librewolf', 'mullvad', 'edge', 'vivaldi', 'opera', 'neko', 'moli', 'lightpanda']
+	],
 	['Desktop apps in the cloud', ['vscodium', 'obsidian', 'libreoffice', 'genoffice', 'thunderbird', 'gimp', 'blender', 'filezilla']],
 	['Linux machines', ['terminal', 'webtop', 'webtop-kde', 'webtop-mate', 'webtop-i3', 'webtop-lxqt', 'webtop-debian', 'webtop-arch', 'webtop-alpine']],
 	['Sites, games and more', ['wordpress', 'ghost', 'cockpit', 'directus', 'minecraft-crafty', 'horizon', 'mcsmanager', 'lnbits', 'babybuddy']]
