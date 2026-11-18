@@ -117,6 +117,8 @@
 			wip: true,
 			uses: ['svelte-calendar', 'svelte-scheduler', 'svelte-search', 'svelte-i18n', 'svelte-qr', 'svelte-media', 'svelte-notify', 'svelte-payments']
 		},
+		// The product itself is private, behind a sign-in: this is its open demo, with a made-up person.
+		{ id: 'jobs', name: 'Jobs', href: 'https://jobs-demo.zaur.app', uses: [] },
 		{ id: 'kino', name: 'Kino', href: 'https://kino.net.pl', uses: ['svelte-i18n', 'svelte-notify'] },
 		{ id: 'kompi', name: 'Kompi', href: 'https://kompi.pl', uses: [] },
 		{ id: 'festivals', name: 'Friendly Festivals', href: 'https://festivals.zaur.app', uses: ['zaur-world', 'svelte-search', 'svelte-i18n', 'svelte-media', 'svelte-notify'] }
