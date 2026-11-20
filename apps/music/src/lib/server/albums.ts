@@ -207,7 +207,8 @@ export const sameArtist = (credit: string, artist: string) =>
 
 /**
  * The song a radio listener asked for, as Deezer has it, filed as on its album; by the artist
- * alone, their most played. Nothing rather than someone else's song of the same name.
+ * alone, their most played. Nothing rather than someone else's song of the same name, or
+ * another song of theirs when the one named isn't there.
  */
 export async function requestedTrack(artist: string, title?: string): Promise<AlbumTrack | null> {
 	type Hit = { id: number; title: string; rank?: number; artist: { name: string } };
@@ -221,7 +222,7 @@ export async function requestedTrack(artist: string, title?: string): Promise<Al
 		// The song by its own name, then a remaster of it, the most played release first; not a remix.
 		const exact = (hit: Hit) => Number(norm(hit.title) === norm(title));
 		const song = theirs.filter((hit) => sameSong(hit.title, title)).sort((a, b) => exact(b) - exact(a) || (b.rank ?? 0) - (a.rank ?? 0))[0];
-		id = (song ?? theirs[0])?.id;
+		id = song?.id;
 	} else {
 		const { data } = await deezer<{ data: { id: number; name: string }[] }>(`/search/artist?${new URLSearchParams({ q: artist, limit: '5' })}`);
 		const found = data.find((hit) => norm(hit.name) === norm(artist)) ?? data.find((hit) => sameArtist(hit.name, artist));
