@@ -22,7 +22,7 @@ parts (no design of its own yet).
 - [x] Live updates — JMAP push (`/z/events`), with polling as the net †
 - [x] Search via remote functions (`from:` / `subject:` / `has:attachment` / …) †
 - [x] Attachment downloads (`/z/download`) †
-- [x] Server-side rules (JMAP Sieve) †
+- [x] Server-side rules (Stalwart mail rules, `x:MailRule`) †
 - [x] Settings that follow the account rather than the browser
 - [x] Design system v2 applied — channel hues, identity tones on avatars, the ZA/UR
   logomark, system fonts, tactile controls, the v2 sign-in, phone and settings
@@ -456,8 +456,8 @@ decision rather than an accident of where it was easiest to put:
 
 - **The mail account (Stalwart).** The send-as display name per identity,
   through `settings.remote.ts` (`Identity/get` + `Identity/set`), plus the
-  account address, quota and sign-out. Mail rules live here too, as a Sieve
-  script — see [Rules](#rules).
+  account address, quota and sign-out. Mail rules live here too, as
+  Stalwart mail rules — see [Rules](#rules).
 - **The Zaur account (our store).** The preferences that should be the
   same wherever you sign in — see
   [Settings that follow the account](#settings-that-follow-the-account).
@@ -1543,51 +1543,67 @@ in one place, the mail page's `handleKeydown`, in this order:
 
 ## Rules
 
-Rules run on the **server**, through JMAP for Sieve (RFC 9661). That is the
-whole point of them: a rule that lives in a browser tab only sorts mail while
-that tab is open, on that one device. Nothing in this repo had ever called
-`SieveScript/*` — not mail2, not 1.0 — so there was nothing to port and the
-shape was ours to choose.
+Rules run on the **server**. That is the whole point of them: a rule that
+lives in a browser tab only sorts mail while that tab is open, on that one
+device.
 
-**The awkward part is that RFC 9661 stores a script, not rules.** There is no
-structured rule object on the wire; a script is raw octets, uploaded as a blob
-and referenced by id (§2.2 — there is no inline `content` property). Sieve is
-also a real language with control flow, so parsing an arbitrary script back
-into an editor is not something to attempt.
+They are **Stalwart mail rules** (`x:MailRule`, Stalwart 1.2 and later), read
+and written by `rules.remote.ts` through `#lib/server/mail-rules` and the
+mapping in `@zaur/mail-core` (`mail-rules.ts`). Each rule is a structured
+object with conditions and actions, which Stalwart compiles, together with the
+account's auto-reply and blocked and safe senders, into one read-only Sieve
+script named `managed`.
 
-So the rules are the source of truth and the script is generated from them,
-with the rules themselves carried as JSON in a marker comment on the first
-line. `buildRuleScript` and `parseRuleScript` in `@zaur/mail-core` are a pair,
-and the round trip is exact — a rule goes out and comes back identical, which
-is the property the tests pin hardest.
+**Why not a Sieve script of our own any more.** Until Stalwart 1.2 the rules
+were a script mail2 generated, `zaur-rules`, with the rules carried as JSON in
+a marker comment on its first line (`buildRuleScript` / `parseRuleScript`).
+Only one Sieve script runs at a time, and Stalwart 1.2 activates `managed`
+whenever the auto-reply changes. So turning the auto-reply on silently switched
+the rules off, and saving the rules switched the auto-reply off (Stalwart then
+reports it as off). Kept as mail rules, both run from the same script.
 
-A script **without** that marker was written by hand or by another client.
-`parseRuleScript` reports `managed: false`, the editor shows the script
-read-only, and saving is refused until the person explicitly says to replace
-it. Silently overwriting someone's own Sieve would be the worst thing this
-feature could do.
+**The move is automatic and happens once.** The first time an account's rules
+or auto-reply are opened or saved, `moveLegacyRules` turns a `zaur-rules`
+script that still has its marker into mail rules, renames the script
+`zaur-rules-moved` and switches it off. It is never deleted. Rules that were
+unfinished (they never ran) or file into a folder that is gone stay only in
+that script, and the server logs their names. The auto-reply keeps the state
+the account showed before the move, because one that Stalwart had reported as
+off would otherwise start sending again. Concurrent requests for one account
+share one move.
 
-The details that are easy to get wrong, and are tested:
+The mapping is exact in both directions for everything the editor can make,
+and the tests pin it:
 
-- **`require` lists only what is used.** `fileinto` and `imap4flags` earn their
-  place; `discard` and `stop` are core Sieve and requiring them would be wrong.
-- **Flags are emitted before `fileinto`.** `imap4flags` applies to whatever
-  keeps the message next, so a flag set afterwards lands on nothing.
-- **Escaping happens twice for `:matches`.** A user's own `*` has to be escaped
-  to stay literal, and the backslash that escapes it then has to survive Sieve's
-  quoted-string escaping too.
-- **A rule name cannot forge a marker line.** `JSON.stringify` escapes the
-  newline, and the generated `# name` comment has its newlines flattened.
-- **Unfinished and disabled rules are carried but not compiled**, so editing one
-  is not a one-way trip — and the editor says out loud that they will not run.
+- **"Contains" on From, To or Cc reads the whole header**, display name
+  included, as the Sieve it replaces did (a `Header` test), so "from contains
+  Ann" still catches `Ann <a@example.com>`. Is, starts with and ends with read
+  the address alone.
+- **Starts with and ends with are `matches` patterns**, with the user's own
+  `*`, `?` and `\` escaped so they stay literal.
+- **Folders go out as mailbox ids** (`moveTo`) and come back as names, so a
+  renamed folder keeps its rules. A rule that files into a folder that no
+  longer exists is refused when saving, with the folder named.
+- **Flags and categories are keywords**: `$seen`, `$flagged`, `$important`
+  and `cat.<id>`.
 
-Every script is put through `SieveScript/validate` **before** it is stored, and
-activated in the same `SieveScript/set` via `onSuccessActivateScript`, so there
-is never a window where the rules exist but nothing is filtering. A script the
-server refuses reaches the person as "The server did not accept these rules.
-Nothing was saved." (`saveRules` turns the failure into a 502 with that text);
-left alone it arrived as "Internal Error". The editor asks before rules that
-were not saved are left
+**Rules made somewhere else are kept.** Stalwart's web admin and Outlook (over
+the Exchange protocols) edit the same rules, with conditions and actions the
+editor has no control for. Such a rule maps to `null`: the editor lists it by
+name as kept, and saving updates or deletes only the rules it showed.
+
+**A hand-written script is still asked about.** Saving rules makes Stalwart run
+`managed`, which switches off any other active script. So when one is active
+(and does not `include "managed"`, which Stalwart leaves running), the editor
+shows it read-only and saving is refused until the person takes over. Taking
+over switches that script off and keeps it.
+
+**Unfinished rules cannot be saved.** Stalwart stores only rules that can run
+(no empty values, at least one action), so Save waits until every rule is
+finished or removed, and the editor says so. A disabled rule saves as
+disabled. A save the server refuses reaches the person with the server's own
+words ("The server did not accept these rules: …"). The editor asks before
+rules that were not saved are left
 ([Unsaved work asks first](#unsaved-work-asks-first)).
 
 The editor reads as **cards**, one per rule: its name, a chip per condition,

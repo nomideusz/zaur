@@ -12,6 +12,7 @@ import type {
 	JMAPVacationResponse
 } from './types';
 import { allOf, parseSearchQuery } from '../mail/search-query';
+import type { ServerMailRule } from '../mail/mail-rules';
 import { emailQueryHasMore } from './email-query';
 import {
 	answerHeaders,
@@ -138,6 +139,9 @@ const VACATION_URN = 'urn:ietf:params:jmap:vacationresponse';
 const VACATION_USING = ['urn:ietf:params:jmap:core', VACATION_URN] as const;
 const SIEVE_URN = 'urn:ietf:params:jmap:sieve';
 const SIEVE_USING = ['urn:ietf:params:jmap:core', SIEVE_URN] as const;
+/** Stalwart's own objects (`x:*`), mail rules among them. */
+const STALWART_URN = 'urn:stalwart:jmap';
+const STALWART_USING = ['urn:ietf:params:jmap:core', STALWART_URN] as const;
 const CONTACTS_USING = ['urn:ietf:params:jmap:core', CONTACTS_URN] as const;
 /** RFC 9661 §2.2 — the media type a script blob is uploaded as. */
 const SIEVE_MEDIA_TYPE = 'application/sieve';
@@ -416,6 +420,12 @@ export class JMAPClient {
 		// per-account permissions, so a session-level miss is not a no.
 		if (this.session?.capabilities?.[SIEVE_URN]) return true;
 		return !!this.session?.accounts?.[this.accountId]?.accountCapabilities?.[SIEVE_URN];
+	}
+
+	/** Stalwart's structured mail rules (`x:MailRule`, Stalwart 1.2 and later). */
+	hasMailRules(): boolean {
+		if (this.session?.capabilities?.[STALWART_URN]) return true;
+		return !!this.session?.accounts?.[this.accountId]?.accountCapabilities?.[STALWART_URN];
 	}
 
 	hasVacationResponse(): boolean {
@@ -1718,6 +1728,108 @@ export class JMAPClient {
 		if (rejection) {
 			throw new Error(rejection.description ?? rejection.type ?? 'Could not delete the script');
 		}
+	}
+
+	/**
+	 * Rename a script, and switch it off if it is the active one. A script that
+	 * is not active never runs, and keeping it costs nothing.
+	 */
+	async retireSieveScript(id: string, name: string, deactivate: boolean): Promise<void> {
+		const response = await this.request(
+			[
+				[
+					'SieveScript/set',
+					{
+						accountId: this.accountId,
+						update: { [id]: { name } },
+						...(deactivate ? { onSuccessDeactivateScript: true } : {})
+					},
+					's'
+				]
+			],
+			[...SIEVE_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'SieveScript/set') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'SieveScript/set failed');
+		}
+		const rejection = (
+			first[1] as { notUpdated?: Record<string, { type?: string; description?: string }> }
+		).notUpdated?.[id];
+		if (rejection) throw new Error(rejection.description ?? rejection.type ?? 'Could not rename the script');
+	}
+
+	/** Make a script the one that runs, or with `null` let none run (RFC 9661 §2.2). */
+	async activateSieveScript(id: string | null): Promise<void> {
+		const response = await this.request(
+			[
+				[
+					'SieveScript/set',
+					id
+						? { accountId: this.accountId, onSuccessActivateScript: id }
+						: { accountId: this.accountId, onSuccessDeactivateScript: true },
+					's'
+				]
+			],
+			[...SIEVE_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'SieveScript/set') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'SieveScript/set failed');
+		}
+	}
+
+	/** The account's mail rules (`x:MailRule/get`), in no particular order. */
+	async getMailRules(): Promise<ServerMailRule[]> {
+		const response = await this.request(
+			[['x:MailRule/get', { accountId: this.accountId, ids: null }, 'r']],
+			[...STALWART_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'x:MailRule/get') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw Object.assign(new Error(error?.description ?? error?.type ?? 'x:MailRule/get failed'), {
+				type: error?.type
+			});
+		}
+		return ((first[1].list as ServerMailRule[]) ?? []).filter(Boolean);
+	}
+
+	/**
+	 * One `x:MailRule/set`. Stalwart compiles all of an account's rules into one
+	 * script, so it refuses a change that would make that script too big as a
+	 * whole; anything else it refuses is listed per rule. The failures come back
+	 * as the server worded them, created rules by creation id.
+	 */
+	async setMailRules(changes: {
+		create?: Record<string, ServerMailRule>;
+		update?: Record<string, ServerMailRule>;
+		destroy?: string[];
+	}): Promise<{ created: Record<string, string>; failures: string[] }> {
+		const response = await this.request(
+			[['x:MailRule/set', { accountId: this.accountId, ...changes }, 'r']],
+			[...STALWART_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'x:MailRule/set') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'x:MailRule/set failed');
+		}
+		type Refusal = { type?: string; description?: string; properties?: string[] };
+		const result = first[1] as {
+			created?: Record<string, { id?: string }>;
+			notCreated?: Record<string, Refusal>;
+			notUpdated?: Record<string, Refusal>;
+			notDestroyed?: Record<string, Refusal>;
+		};
+		const created: Record<string, string> = {};
+		for (const [key, value] of Object.entries(result.created ?? {})) if (value?.id) created[key] = value.id;
+		const failures = [result.notCreated, result.notUpdated, result.notDestroyed].flatMap((map) =>
+			Object.values(map ?? {}).map((refusal) => refusal.description ?? refusal.type ?? 'refused')
+		);
+		return { created, failures };
 	}
 
 	async queryCalendarEvents(params: {

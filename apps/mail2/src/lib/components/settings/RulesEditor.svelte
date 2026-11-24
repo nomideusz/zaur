@@ -25,6 +25,8 @@
 					rules: MailRule[];
 					managed: boolean;
 					foreignScript: string | null;
+					/** Rules made elsewhere that this editor cannot show; they run, untouched. */
+					kept: string[];
 			  }
 			| undefined;
 		error: unknown;
@@ -66,8 +68,8 @@
 	// A rule with a few conditions is a minute of work: leaving asks first.
 	leaveGuard(() => dirty, 'your rules');
 	const problems = $derived(draft.flatMap((rule) => ruleProblems(rule)));
-	/** Incomplete rules are kept but not compiled, so they must not block a save. */
-	const blocked = $derived(draft.some((rule) => !rule.name.trim()));
+	/** The server keeps only rules that can run, so an unfinished one waits here. */
+	const blocked = $derived(problems.length > 0);
 
 	const FIELDS: { value: RuleField; label: string }[] = [
 		{ value: 'from', label: 'From' },
@@ -205,8 +207,8 @@
 	<h2 class="z-card-head">Rules</h2>
 	<div class="z-card-body">
 		<p class="text-[12.5px] leading-[1.6] text-[var(--z-muted)]">
-			Rules compile to one Sieve script the server runs on delivery, so they apply on every
-			device, whether or not this one is open. A rule is conditions matched <em>all</em> or
+			Rules are kept on the mail server and run on delivery, next to your auto-reply, so they
+			apply on every device, whether or not this one is open. A rule is conditions matched <em>all</em> or
 			<em>any</em>, then actions: file into a folder, mark, categorise, or discard — and
 			optionally stop testing the rest.
 		</p>
@@ -220,13 +222,13 @@
 			<div class="z-skeleton mt-3 h-[72px] rounded-[10px] bg-[var(--z-sunken)]" aria-hidden="true"></div>
 		{:else if !data.supported}
 			<p class="mt-3 text-[13px] leading-relaxed text-[var(--z-soft)]">
-				This mail server does not offer server-side rules
-				(<span class="font-mono text-[12px]">urn:ietf:params:jmap:sieve</span>).
+				This mail server does not offer mail rules
+				(<span class="font-mono text-[12px]">x:MailRule</span>, Stalwart 1.2 and later).
 			</p>
 		{:else if !data.managed}
 			<!--
-				Someone's hand-written Sieve is not ours to silently replace, so the
-				editor stays shut until they say so.
+				Saving rules makes the server run its own script, which switches
+				someone's hand-written Sieve off — so the editor stays shut until they say so.
 			-->
 			<div class="z-railed mt-3 flex items-start gap-[9px] rounded-[10px] border border-[var(--z-ch-needs-solid)] bg-[var(--z-ch-needs-fill)] py-2.5 pr-3 pl-[18px] text-[var(--z-ch-needs-ink)]" style="--z-rail:var(--z-ch-needs-solid);--z-rail-inset:10px">
 				<svg class="mt-px size-[15px] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -236,10 +238,10 @@
 				<div class="min-w-0 flex-1">
 					<p class="text-[13px] font-semibold">A filtering script here was not written by {appName}</p>
 					<p class="mt-0.5 text-[12.5px] leading-normal">
-						Rules stay read-only until you hand this account over — taking over replaces that script.
+						Rules stay read-only until you hand this account over. Taking over switches that script off; it stays on the server, so nothing is deleted.
 					</p>
 					{#if data.foreignScript}
-						<!-- What would be replaced stays one click away, never silently gone. -->
+						<!-- What would be switched off stays one click away, never silently gone. -->
 						<details class="mt-1.5">
 							<summary class="cursor-pointer text-[12px] font-medium">Show script</summary>
 							<pre class="mt-1.5 max-h-40 overflow-auto rounded-[6px] border border-[var(--z-ch-needs-solid)]/40 bg-[var(--z-surface)] p-2.5 font-mono text-[11px] leading-relaxed text-[var(--z-strong)]">{data.foreignScript}</pre>
@@ -468,6 +470,15 @@
 					</div>
 				{/if}
 
+				{#if data.kept.length > 0}
+					<!-- Made in Stalwart's web admin or by Outlook: running, just not editable here. -->
+					<p class="text-[12px] leading-relaxed text-[var(--z-soft)]">
+						{data.kept.length === 1 ? 'One rule' : `${data.kept.length} rules`} made in another app
+						({data.kept.join(', ')}) also {data.kept.length === 1 ? 'runs' : 'run'}. Saving here leaves
+						{data.kept.length === 1 ? 'it' : 'them'} as {data.kept.length === 1 ? 'it is' : 'they are'}.
+					</p>
+				{/if}
+
 				<button type="button" class="btn-tactile !h-[34px] w-full" onclick={addRule}>
 					<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
@@ -481,9 +492,8 @@
 	{#if !error && data?.supported && data.managed && dirty}
 		<div class="z-card-foot justify-end">
 			{#if problems.length > 0}
-				<!-- Unfinished rules are kept, just not compiled — say so rather than
-				     letting them look saved and working. -->
-				<span class="mr-auto text-[var(--z-ch-needs-ink)]">Rules that are not finished are saved but will not run.</span>
+				<!-- The server only keeps rules that can run: say what stands in the way. -->
+				<span class="mr-auto text-[var(--z-ch-needs-ink)]">Finish or remove the unfinished rules to save.</span>
 			{/if}
 			<button
 				type="button"

@@ -5,6 +5,7 @@ import { connect, refuse, requireAccountKey } from '#lib/server/account';
 import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, cleanFeeds, type AccountPrefs } from '#lib/settings';
 import { aiCategoriesAvailable, aiSettings, recheckOther } from '#lib/server/categorize';
 import { importWebmailSignature } from '#lib/server/webmail-import';
+import { moveLegacyRules } from '#lib/server/mail-rules';
 
 function schema<T>() {
 	return {
@@ -159,6 +160,11 @@ export const saveVacation = command(
 		const textBody = String(input.textBody ?? '').trimEnd();
 		if (subject.length > 200 || textBody.length > 8000) error(400, 'The auto-reply is too long');
 		const client = await connect();
+		// Changing the auto-reply makes the server run its own script, which would
+		// switch off rules still kept in the script mail2 used to write.
+		await moveLegacyRules(client).catch((cause: unknown) =>
+			error(502, `${(cause as Error)?.message ?? cause}. The auto-reply was not changed, so your rules keep running.`)
+		);
 		// Whole days in UTC, the way webmail 1.0 stored them: "until the 20th" includes the 20th.
 		await client.setVacationResponse({
 			isEnabled: Boolean(input.isEnabled),

@@ -2,6 +2,13 @@
 
 Each version's section becomes its GitHub release. See "Releases" in the README.
 
+## 2.5.0
+
+- Rules and the auto-reply no longer switch each other off. On Stalwart 1.2 they were separate scripts and only one could run, so turning the auto-reply on stopped your rules, and saving rules turned the auto-reply off. Rules are now kept as the mail server's own mail rules, next to the auto-reply. Needs Stalwart 1.2 or later
+- Existing rules move over by themselves the first time you open Rules or change the auto-reply. The old script is kept on the server, switched off. The auto-reply stays as it is shown
+- Rules made in Stalwart's web admin or in Outlook are listed and left as they are when you save here
+- An unfinished rule has to be finished or removed before saving: the server only keeps rules that can run
+
 ## 2.4.0
 
 - When Mail is served on the mail server's own origin (as on `mail.zaur.app`), passkeys work on Mail's own pages: "Sign in with a passkey" asks for one right on the sign-in page, the address field offers your passkeys in its autofill, and Password & sign-in adds a passkey itself (your password, then your device's prompt). Elsewhere it still goes through the mail server's pages

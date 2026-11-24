@@ -1,7 +1,14 @@
 import { error } from '@sveltejs/kit';
 import { query, command } from '$app/server';
-import { buildRuleScript, parseRuleScript, type MailRule } from '@zaur/mail-core';
-import { connect, requireAccount } from '#lib/server/account';
+import {
+	fromServerRule,
+	planRuleSave,
+	ruleProblems,
+	sortServerRules,
+	type MailRule
+} from '@zaur/mail-core';
+import { connect } from '#lib/server/account';
+import { foreignFilter, mailboxIndex, moveLegacyRules, runManagedScript } from '#lib/server/mail-rules';
 
 function schema<T>() {
 	return {
@@ -15,91 +22,103 @@ function schema<T>() {
 	} as any;
 }
 
-/** The script this app owns. One script holds every rule, in order. */
-const SCRIPT_NAME = 'zaur-rules';
-
 export interface RulesState {
-	/** False when the server does not advertise `urn:ietf:params:jmap:sieve`. */
+	/** False when the server has no mail rules (`x:MailRule`, Stalwart 1.2 and later). */
 	supported: boolean;
 	rules: MailRule[];
 	/**
-	 * False when a filtering script exists that this app did not write. The
-	 * rules editor is read-only then: someone's hand-written Sieve is not ours
-	 * to silently replace.
+	 * False when a hand-written Sieve script is filtering mail. Saving rules
+	 * makes the server run its own script instead, which switches that one off,
+	 * so the editor stays read-only until the person says to go ahead.
 	 */
 	managed: boolean;
-	/** The foreign script's source, so it can at least be read. */
+	/** The hand-written script's source, so it can at least be read. */
 	foreignScript: string | null;
-	scriptId: string | null;
+	/**
+	 * Rules made somewhere else (Stalwart's web admin, Outlook) that this editor
+	 * cannot show faithfully. They run, and saving here leaves them as they are.
+	 */
+	kept: string[];
+}
+
+const UNSUPPORTED: RulesState = { supported: false, rules: [], managed: true, foreignScript: null, kept: [] };
+
+/** The server's rules, split into the ones the editor shows and the ones it keeps. */
+async function load(client: Awaited<ReturnType<typeof connect>>) {
+	const [serverRules, boxes] = await Promise.all([client.getMailRules(), mailboxIndex(client)]);
+	const shown: MailRule[] = [];
+	const kept: string[] = [];
+	for (const server of sortServerRules(serverRules)) {
+		const rule = fromServerRule(server, boxes.name);
+		if (rule) shown.push(rule);
+		else kept.push(server.name);
+	}
+	return { shown, kept, boxes };
+}
+
+function unsupported(cause: unknown): boolean {
+	const type = (cause as { type?: string } | null)?.type;
+	return type === 'unknownMethod' || type === 'forbidden' || type === 'unknownCapability';
 }
 
 export const rules = query(async (): Promise<RulesState> => {
 	const client = await connect();
-	if (!client.hasSieve()) {
-		return { supported: false, rules: [], managed: true, foreignScript: null, scriptId: null };
-	}
-
-	const scripts = await client.getSieveScripts();
-	// Ours by name first; otherwise whatever is actually filtering mail.
-	const own = scripts.find((script) => script.name === SCRIPT_NAME);
-	const active = scripts.find((script) => script.isActive);
-	const target = own ?? active;
-
-	if (!target) {
-		return { supported: true, rules: [], managed: true, foreignScript: null, scriptId: null };
-	}
-
-	const source = await client.getSieveScriptSource(target.blobId);
-	const parsed = parseRuleScript(source);
-
-	if (!parsed.managed) {
+	if (!client.hasMailRules()) return UNSUPPORTED;
+	try {
+		await moveLegacyRules(client);
+		const [{ shown, kept }, foreign] = await Promise.all([load(client), foreignFilter(client)]);
 		return {
 			supported: true,
-			rules: [],
-			managed: false,
-			foreignScript: source,
-			scriptId: target.id
+			rules: shown,
+			managed: !foreign,
+			foreignScript: foreign?.source ?? null,
+			kept
 		};
+	} catch (cause) {
+		if (unsupported(cause)) return UNSUPPORTED;
+		throw cause;
 	}
-
-	return {
-		supported: true,
-		rules: parsed.rules,
-		managed: true,
-		foreignScript: null,
-		scriptId: target.id
-	};
 });
 
 /**
- * Replace the rules.
+ * Replace the rules this editor shows. Rules it cannot show are left alone.
  *
- * `takeOver` is the explicit consent to overwrite a script this app did not
- * write — without it, a foreign script is refused rather than replaced.
+ * `takeOver` is the explicit consent to switch off a hand-written script that
+ * is filtering mail — without it, saving is refused rather than doing that.
  */
 export const saveRules = command(
 	schema<{ rules: MailRule[]; takeOver?: boolean }>(),
 	async ({ rules: next, takeOver }): Promise<{ count: number }> => {
-		const client = await connect();
-		if (!client.hasSieve()) error(501, 'This server does not support mail rules');
-
-		const scripts = await client.getSieveScripts();
-		const own = scripts.find((script) => script.name === SCRIPT_NAME);
-		const active = scripts.find((script) => script.isActive);
-		const target = own ?? active;
-
-		if (target && !takeOver) {
-			const source = await client.getSieveScriptSource(target.blobId);
-			if (!parseRuleScript(source).managed) {
-				error(409, 'A filtering script already on this account was not created here');
-			}
+		const list: MailRule[] = Array.isArray(next) ? next : [];
+		for (const rule of list) {
+			const problem = ruleProblems(rule)[0];
+			if (problem) error(400, `“${rule.name.trim() || 'A rule'}” is not finished: ${problem}`);
 		}
 
-		// A script the server refuses would otherwise reach the page as "Internal Error".
-		await client
-			.saveSieveScript({ id: target?.id, name: SCRIPT_NAME, source: buildRuleScript(next) })
-			.catch(() => error(502, 'The server did not accept these rules. Nothing was saved.'));
+		const client = await connect();
+		if (!client.hasMailRules()) error(501, 'This server does not support mail rules');
+		await moveLegacyRules(client).catch((cause: unknown) => error(502, String((cause as Error)?.message ?? cause)));
 
-		return { count: next.filter((rule: MailRule) => rule.enabled).length };
+		const foreign = await foreignFilter(client);
+		if (foreign && !takeOver) {
+			error(409, 'A filtering script already on this account was not created here');
+		}
+
+		const { shown, boxes } = await load(client);
+		let plan: ReturnType<typeof planRuleSave>;
+		try {
+			plan = planRuleSave(list, new Set(shown.map((rule) => rule.id)), boxes.id);
+		} catch (cause) {
+			error(400, (cause as Error).message);
+		}
+
+		const { failures } = await client
+			.setMailRules(plan)
+			.catch(() => error(502, 'The server did not accept these rules. Nothing was saved.'));
+		if (failures.length > 0) error(502, `The server did not accept these rules: ${failures[0]}`);
+
+		if (foreign) await runManagedScript(client);
+
+		return { count: list.filter((rule) => rule.enabled).length };
 	}
 );

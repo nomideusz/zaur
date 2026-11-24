@@ -1,6 +1,12 @@
 /**
  * Mail rules, and the Sieve they compile to.
  *
+ * Since Stalwart 1.2 the rules are kept as the server's own mail rules
+ * (`mail-rules.ts`), so they run next to the auto-reply. This module still
+ * holds the editor's rule types, `ruleProblems` and `emptyRule`, and
+ * `parseRuleScript` reads the old `zaur-rules` script once, to move it.
+ * `buildRuleScript` writes no script any more outside tests.
+ *
  * JMAP for Sieve (RFC 9661) stores a script as raw octets — there is no
  * structured rule object on the wire, and Sieve is a real language with
  * control flow, so parsing arbitrary scripts back into a rules UI is not
