@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Zaur Ród · Jeden plan dla całej rodziny. Każdy pod swoim dachem.</title>
+<meta name="description" content="Do 7 osób w jednym planie, 103 GB od 8,79 zł miesięcznie. Poczta, kalendarz, pliki, zdjęcia, muzyka i BarTube bez reklam. Bez wymogu wspólnego gospodarstwa domowego." />
+<link rel="canonical" href="https://zaur.app/rod" />
+<link rel="icon" href="/favicon.ico" sizes="48x48" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<meta name="theme-color" content="#f6f7f9" />
+
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="Zaur" />
+<meta property="og:locale" content="pl_PL" />
+<meta property="og:url" content="https://zaur.app/rod" />
+<meta property="og:title" content="Zaur Ród: cała rodzina w jednym planie. Nawet jeśli nie mieszkacie razem." />
+<meta property="og:description" content="Do 7 osób, 103 GB od 8,79 zł/mies. Poczta, pliki, zdjęcia, muzyka i BarTube bez reklam. Nie sprawdzamy, gdzie śpicie." />
+<meta property="og:image" content="https://zaur.app/rod/og.png" />
+<meta property="og:image:secure_url" content="https://zaur.app/rod/og.png" />
+<meta property="og:image:type" content="image/png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="Zaur Ród: do 7 osób w jednym planie, bez wymogu wspólnego gospodarstwa domowego. Od 8,79 zł miesięcznie." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="Zaur Ród: cała rodzina w jednym planie. Nawet jeśli nie mieszkacie razem." />
+<meta name="twitter:description" content="Do 7 osób, 103 GB od 8,79 zł/mies. Nie sprawdzamy, gdzie śpicie." />
+<meta name="twitter:image" content="https://zaur.app/rod/og.png" />
+
+<style>
+@font-face { font-family: 'Ioskeley Mono'; src: url('/rod/fonts/IoskeleyMono-Medium.woff2') format('woff2'); font-weight: 500; font-display: swap; }
+@font-face { font-family: 'Ioskeley Mono'; src: url('/rod/fonts/IoskeleyMono-SemiBold.woff2') format('woff2'); font-weight: 600; font-display: swap; }
+
+:root {
+	color-scheme: light;
+	--ground: #eef1f5; --canvas: #f6f7f9; --surface: #fff; --sunken: #f1f5f9; --hover: #f8fafc;
+	--ink: #0b1220; --body: #1e293b; --strong: #334155; --muted: #475569; --soft: #64748b; --faint: #94a3b8;
+	--hairline: #e2e8f0; --line: #cbd5e1;
+	--accent: #2563eb; --accent-edge: #1d4ed8; --accent-stroke: #3b82f6; --accent-ink: #1e40af; --accent-soft: #dbeafe; --accent-tint: #eff6ff;
+	--ok-fill: #dcfce7; --ok-stroke: #16a34a; --ok-ink: #14532d;
+	--needs-fill: #fde68a; --needs-stroke: #d97706; --needs-ink: #78350f;
+	--flag-fill: #fbcfe8; --flag-stroke: #db2777; --flag-ink: #831843;
+	--dig-fill: #ddd6fe; --dig-stroke: #7c3aed; --dig-ink: #4c1d95;
+	--red-fill: #fee2e2; --red-stroke: #ef4444; --red-ink: #b91c1c;
+	--sky-fill: #bae6fd; --sky-stroke: #0284c7; --sky-ink: #0c4a6e;
+	--ind-fill: #c7d2fe; --ind-stroke: #4f46e5; --ind-ink: #312e81;
+	--teal-fill: #ccfbf1; --teal-stroke: #0d9488; --teal-ink: #134e4a;
+	--sans: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, system-ui, sans-serif;
+	--mono: 'Ioskeley Mono', ui-monospace, Menlo, Consolas, monospace;
+	--sh-tactile: 0 1px 2px rgba(15,23,42,.06);
+	--sh-raised: 0 1px 2px rgba(15,23,42,.05), 0 0 0 1px rgba(15,23,42,.02);
+	--sh-window: 0 24px 56px rgba(11,18,32,.14);
+	--sh-primary: 0 1px 2px rgba(15,23,42,.18);
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 72px; }
+body { margin: 0; background: var(--canvas); color: var(--body); font: 500 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-edge); }
+h1, h2, h3 { color: var(--ink); margin: 0; letter-spacing: -.025em; line-height: 1.12; }
+p { margin: 0; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+.label { font: 600 11px/1 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--soft); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+/* Controls, as in Mail */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 7px; height: 36px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); color: var(--body); font: 600 14px/1 var(--sans); box-shadow: var(--sh-tactile); cursor: pointer; transition: background-color .12s, border-color .12s, transform .08s; white-space: nowrap; }
+.btn:hover { background: var(--hover); border-color: var(--faint); color: var(--body); }
+.btn:active { transform: translateY(.5px); }
+.btn-primary { background: var(--accent); border-color: var(--accent-edge); color: #fff; box-shadow: var(--sh-primary); }
+.btn-primary:hover { background: var(--accent-edge); border-color: var(--accent-edge); color: #fff; }
+.btn-lg { height: 44px; padding: 0 20px; font-size: 15px; border-radius: 10px; }
+.btn:focus-visible, .seg button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent-stroke); outline-offset: 2px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 9px; border-radius: 999px; border: 1px solid var(--accent-stroke); background: var(--accent-soft); color: var(--accent-ink); font: 600 12px/1 var(--sans); white-space: nowrap; }
+.chip.ok { border-color: var(--ok-stroke); background: var(--ok-fill); color: var(--ok-ink); }
+.chip.needs { border-color: var(--needs-stroke); background: var(--needs-fill); color: var(--needs-ink); }
+.chip.dig { border-color: var(--dig-stroke); background: var(--dig-fill); color: var(--dig-ink); }
+.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+/* Header */
+header.top { position: sticky; top: 0; z-index: 10; background: rgba(246,247,249,.86); backdrop-filter: saturate(1.4) blur(10px); -webkit-backdrop-filter: saturate(1.4) blur(10px); border-bottom: 1px solid var(--hairline); }
+header.top .wrap { display: flex; align-items: center; gap: 18px; height: 60px; }
+.brand { display: flex; align-items: center; gap: 9px; color: var(--ink); font-weight: 700; font-size: 18px; letter-spacing: -.02em; }
+.brand:hover { color: var(--ink); }
+.mark { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface); box-shadow: var(--sh-tactile); }
+.mark img { width: 22px; height: 22px; }
+.brand small { font: 600 11px/1 var(--mono); color: var(--soft); letter-spacing: .04em; margin-left: 2px; padding: 4px 6px; border-radius: 5px; background: var(--sunken); border: 1px solid var(--hairline); }
+nav.links { display: flex; gap: 4px; margin-left: 12px; }
+nav.links a { color: var(--muted); font-size: 14px; padding: 7px 10px; border-radius: 8px; }
+nav.links a:hover { background: var(--sunken); color: var(--ink); }
+.top .actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* Hero */
+.hero { padding: 64px 0 56px; }
+.hero .wrap { display: grid; grid-template-columns: 1.05fr .95fr; gap: 56px; align-items: center; }
+.hero h1 { font-size: clamp(36px, 5.2vw, 58px); margin: 18px 0 18px; }
+.hero h1 em { font-style: normal; color: var(--accent); }
+.hero .lede { font-size: 18px; color: var(--muted); max-width: 34em; }
+.hero .cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
+.hero .fine { margin-top: 14px; font-size: 13px; color: var(--soft); }
+
+/* The household panel */
+.panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; box-shadow: var(--sh-window); overflow: hidden; }
+.panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--hairline); }
+.panel-head h3 { font-size: 15px; letter-spacing: -.01em; }
+.panel-head p { font-size: 12.5px; color: var(--soft); margin-top: 2px; }
+.member { display: grid; grid-template-columns: 34px 1fr auto; align-items: center; gap: 12px; padding: 10px 16px; border-bottom: 1px solid var(--hairline); }
+.member:last-of-type { border-bottom: 0; }
+.av { width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font: 700 13px/1 var(--sans); border: 1px solid; }
+.member b { display: block; color: var(--ink); font-size: 14px; font-weight: 600; }
+.member span.where { display: flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--soft); }
+.member span.where svg { width: 12px; height: 12px; flex: none; }
+.panel-foot { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; background: var(--sunken); border-top: 1px solid var(--hairline); font-size: 13px; color: var(--muted); }
+.panel-foot strong { color: var(--ok-ink); }
+.meter { height: 8px; border-radius: 99px; background: var(--hairline); overflow: hidden; display: flex; margin: 4px 16px 14px; }
+.meter i { display: block; height: 100%; }
+.meter-legend { display: flex; flex-wrap: wrap; gap: 4px 14px; padding: 12px 16px 6px; font-size: 12px; color: var(--soft); }
+.meter-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.meter-legend i { width: 8px; height: 8px; border-radius: 3px; display: inline-block; }
+
+/* Sections */
+section.block { padding: 72px 0; }
+section.block.alt { background: var(--surface); border-top: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); }
+.sec-head { max-width: 640px; margin-bottom: 36px; }
+.sec-head h2 { font-size: clamp(28px, 3.6vw, 38px); }
+.sec-head p { color: var(--muted); margin-top: 12px; font-size: 16px; }
+
+/* Services */
+.apps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.app { display: flex; gap: 14px; padding: 18px; border-radius: 12px; background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--sh-raised); }
+section.alt .app { background: var(--canvas); }
+.tile { flex: none; width: 44px; height: 44px; border-radius: 11px; border: 1px solid; display: grid; place-items: center; }
+.tile svg { width: 22px; height: 22px; }
+.tile img { width: 28px; height: 28px; }
+.app h3 { font-size: 16px; letter-spacing: -.01em; }
+.app p { font-size: 13.5px; color: var(--muted); margin-top: 4px; line-height: 1.45; }
+.app .host { font: 500 11.5px/1 var(--mono); color: var(--soft); margin-top: 8px; display: block; }
+
+/* Pricing */
+.price-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--sunken); border: 1px solid var(--hairline); }
+.seg button { height: 32px; padding: 0 14px; border-radius: 7px; border: 1px solid transparent; background: none; color: var(--muted); font: 600 13.5px/1 var(--sans); cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.seg button[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent-stroke); color: var(--accent-ink); }
+.seg .save { font: 600 11px/1 var(--mono); padding: 3px 5px; border-radius: 4px; background: var(--ok-fill); color: var(--ok-ink); }
+.plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; align-items: stretch; }
+.plan { position: relative; display: flex; flex-direction: column; padding: 22px 20px 20px; border-radius: 14px; background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--sh-raised); }
+.plan.best { border: 2px solid var(--accent-stroke); padding: 21px 19px 19px; box-shadow: 0 18px 40px rgba(37,99,235,.13); }
+.plan .flag { position: absolute; top: -12px; left: 18px; }
+.plan h3 { font-size: 17px; }
+.plan .gb { font: 600 30px/1 var(--mono); letter-spacing: -.04em; color: var(--ink); margin-top: 14px; }
+.plan .gb small { font-size: 15px; letter-spacing: 0; color: var(--strong); margin-left: 2px; }
+.plan .vs { font-size: 12.5px; color: var(--soft); margin-top: 6px; }
+.plan .vs s { color: var(--soft); }
+.plan .price { margin-top: 18px; display: flex; align-items: baseline; gap: 4px; color: var(--ink); }
+.plan .price b { font: 700 30px/1 var(--sans); letter-spacing: -.03em; }
+.plan .price span { font-size: 13px; color: var(--soft); }
+.plan .was { font-size: 12.5px; color: var(--soft); margin-top: 4px; min-height: 19px; }
+.plan .was s { text-decoration-color: var(--red-stroke); }
+.plan ul { list-style: none; margin: 18px 0 20px; padding: 16px 0 0; border-top: 1px solid var(--hairline); display: grid; gap: 9px; font-size: 13.5px; color: var(--body); flex: 1; align-content: start; }
+.plan li { display: grid; grid-template-columns: 16px 1fr; gap: 8px; line-height: 1.4; }
+.plan li svg { width: 16px; height: 16px; margin-top: 1px; color: var(--ok-stroke); }
+.plan li.plus svg { color: var(--dig-stroke); }
+.plan .btn { width: 100%; }
+.price-note { margin-top: 16px; font-size: 12.5px; color: var(--soft); }
+
+/* Comparison */
+.cmp { width: 100%; border-collapse: separate; border-spacing: 0; background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; box-shadow: var(--sh-raised); font-size: 14px; }
+.cmp th, .cmp td { padding: 13px 18px; text-align: left; border-bottom: 1px solid var(--hairline); vertical-align: middle; }
+.cmp tr:last-child td { border-bottom: 0; }
+.cmp thead th { background: var(--sunken); font: 600 11px/1.2 var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--soft); }
+.cmp thead th.us { color: var(--accent-ink); background: var(--accent-tint); }
+.cmp td.us { background: #f8fbff; color: var(--ink); font-weight: 600; }
+.cmp td:first-child { color: var(--strong); }
+.cmp td.them { color: var(--muted); }
+.cmp .yes, .cmp .no { display: inline-flex; align-items: center; gap: 6px; }
+.cmp .yes svg { color: var(--ok-stroke); width: 16px; height: 16px; }
+.cmp .no svg { color: var(--red-stroke); width: 16px; height: 16px; }
+.cmp tfoot td { background: var(--sunken); font-weight: 700; color: var(--ink); }
+.cmp tfoot td.us { background: var(--accent-soft); color: var(--accent-ink); }
+.cmp-wrap { overflow-x: auto; border-radius: 14px; }
+
+/* Quote */
+.quote { display: grid; grid-template-columns: auto 1fr; gap: 18px; align-items: start; max-width: 760px; margin: 0 auto; padding: 26px; border-radius: 14px; background: var(--surface); border: 1px solid var(--hairline); box-shadow: var(--sh-raised); }
+.quote p { font-size: 18px; color: var(--ink); line-height: 1.5; letter-spacing: -.01em; }
+.quote cite { display: block; margin-top: 10px; font-style: normal; font-size: 13px; color: var(--soft); }
+
+/* FAQ */
+.faq { max-width: 780px; display: grid; gap: 8px; }
+.faq details { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; box-shadow: var(--sh-raised); }
+section.alt .faq details { background: var(--canvas); }
+.faq summary { cursor: pointer; list-style: none; padding: 15px 18px; font-weight: 600; color: var(--ink); display: flex; justify-content: space-between; gap: 12px; align-items: center; border-radius: 10px; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary::after { content: ''; flex: none; width: 8px; height: 8px; border-right: 1.5px solid var(--soft); border-bottom: 1.5px solid var(--soft); transform: rotate(45deg) translateY(-2px); transition: transform .15s; }
+.faq details[open] summary::after { transform: rotate(-135deg) translateY(-2px); }
+.faq details p { padding: 0 18px 16px; color: var(--muted); }
+
+/* CTA band + footer */
+.band { padding: 64px 0; }
+.band .box { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; padding: 32px; border-radius: 16px; background: var(--ink); color: #cbd5e1; }
+.band h2 { color: #fff; font-size: clamp(24px, 3vw, 32px); }
+.band p { margin-top: 8px; }
+footer { border-top: 1px solid var(--hairline); padding: 28px 0 40px; font-size: 13px; color: var(--soft); }
+footer .wrap { display: flex; flex-wrap: wrap; gap: 12px 24px; justify-content: space-between; }
+footer nav { display: flex; flex-wrap: wrap; gap: 16px; }
+footer a { color: var(--muted); }
+
+/* Dialog */
+dialog { border: 1px solid var(--hairline); border-radius: 14px; padding: 0; width: min(420px, calc(100vw - 32px)); box-shadow: 0 24px 56px rgba(11,18,32,.22); color: var(--body); }
+dialog::backdrop { background: rgba(15,23,42,.25); }
+dialog .in { padding: 22px; }
+dialog h3 { font-size: 18px; margin: 14px 0 8px; }
+dialog p { color: var(--muted); font-size: 14.5px; }
+dialog .row { display: flex; justify-content: flex-end; gap: 8px; padding: 14px 22px; background: var(--sunken); border-top: 1px solid var(--hairline); }
+
+@media (max-width: 980px) {
+	.plans { grid-template-columns: repeat(2, 1fr); }
+	.apps { grid-template-columns: repeat(2, 1fr); }
+	nav.links { display: none; }
+}
+@media (max-width: 820px) {
+	.hero { padding-top: 36px; }
+	.hero .wrap { grid-template-columns: 1fr; gap: 36px; }
+}
+@media (max-width: 600px) {
+	body { font-size: 14.5px; }
+	.plans, .apps { grid-template-columns: 1fr; }
+	.top .actions .btn:not(.btn-primary) { display: none; }
+	.brand small { display: none; }
+	section.block { padding: 52px 0; }
+	.cmp th, .cmp td { padding: 11px 12px; }
+	.band .box { padding: 24px; }
+	.quote { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+	<symbol id="i-check" viewBox="0 0 16 16"><path d="M3.5 8.5l3 3 6-7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+	<symbol id="i-x" viewBox="0 0 16 16"><path d="M4.5 4.5l7 7M11.5 4.5l-7 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+	<symbol id="i-plus" viewBox="0 0 16 16"><path d="M8 3.5v9M3.5 8h9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+	<symbol id="i-pin" viewBox="0 0 16 16"><g fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M8 14.5s4.5-4.2 4.5-7.8a4.5 4.5 0 0 0-9 0c0 3.6 4.5 7.8 4.5 7.8z"/><circle cx="8" cy="6.7" r="1.6"/></g></symbol>
+</svg>
+
+<header class="top">
+	<div class="wrap">
+		<a class="brand" href="#">
+			<span class="mark"><img src="/favicon.svg" alt="" /></span>
+			Zaur <small>RÓD</small>
+		</a>
+		<nav class="links" aria-label="Sekcje">
+			<a href="#uslugi">Usługi</a>
+			<a href="#cennik">Cennik</a>
+			<a href="#porownanie">Porównanie</a>
+			<a href="#pytania">Pytania</a>
+		</nav>
+		<div class="actions">
+			<a class="btn" href="https://mail.zaur.app">Zaloguj się</a>
+			<button class="btn btn-primary" type="button" data-join>Załóż Ród</button>
+		</div>
+	</div>
+</header>
+
+<main>
+	<section class="hero">
+		<div class="wrap">
+			<div>
+				<span class="chip ok"><span class="dot"></span>Nowość · Zaur Ród</span>
+				<h1>Cała rodzina w&nbsp;jednym planie. <em>Każdy pod swoim dachem.</em></h1>
+				<p class="lede">Do 7 osób, 103&nbsp;GB na start i&nbsp;dziewięć usług Zaur w&nbsp;cenie. Mieszkajcie, gdzie chcecie: nie sprawdzamy adresu, nie pytamy o&nbsp;Wi‑Fi i&nbsp;nie wylogujemy cioci, bo pojechała do Chicago.</p>
+				<div class="cta">
+					<button class="btn btn-primary btn-lg" type="button" data-join>Załóż Ród za 8,79&nbsp;zł</button>
+					<a class="btn btn-lg" href="#porownanie">Porównaj z&nbsp;Google</a>
+				</div>
+				<p class="fine">Pierwszy miesiąc gratis. Rezygnujesz kiedy chcesz, nawet jeśli się wyprowadzisz.</p>
+			</div>
+
+			<div class="panel" aria-label="Przykładowy Ród">
+				<div class="panel-head">
+					<div>
+						<h3>Ród Kowalskich</h3>
+						<p>Ród Premium · 6 z&nbsp;7 miejsc</p>
+					</div>
+					<span class="chip ok"><span class="dot"></span>Aktywny</span>
+				</div>
+				<div class="member">
+					<span class="av" style="background:var(--sky-fill);border-color:var(--sky-stroke);color:var(--sky-ink)">TY</span>
+					<div><b>Ty <span style="color:var(--soft);font-weight:500">· Senior Rodu</span></b><span class="where"><svg><use href="#i-pin"/></svg>Kraków</span></div>
+					<span class="chip">Zarządza</span>
+				</div>
+				<div class="member">
+					<span class="av" style="background:var(--flag-fill);border-color:var(--flag-stroke);color:var(--flag-ink)">M</span>
+					<div><b>Mama</b><span class="where"><svg><use href="#i-pin"/></svg>Tarnów</span></div>
+					<span class="chip ok">Członek</span>
+				</div>
+				<div class="member">
+					<span class="av" style="background:var(--ind-fill);border-color:var(--ind-stroke);color:var(--ind-ink)">B</span>
+					<div><b>Brat</b><span class="where"><svg><use href="#i-pin"/></svg>Londyn</span></div>
+					<span class="chip ok">Członek</span>
+				</div>
+				<div class="member">
+					<span class="av" style="background:var(--needs-fill);border-color:var(--needs-stroke);color:var(--needs-ink)">C</span>
+					<div><b>Ciocia Halina</b><span class="where"><svg><use href="#i-pin"/></svg>Chicago, IL</span></div>
+					<span class="chip ok">Członek</span>
+				</div>
+				<div class="member">
+					<span class="av" style="background:var(--dig-fill);border-color:var(--dig-stroke);color:var(--dig-ink)">S</span>
+					<div><b>Szwagier</b><span class="where"><svg><use href="#i-pin"/></svg>Nie wiadomo. Nie pytamy.</span></div>
+					<span class="chip ok">Członek</span>
+				</div>
+				<div class="meter-legend">
+					<span><i style="background:var(--accent-stroke)"></i>Poczta</span>
+					<span><i style="background:var(--sky-stroke)"></i>Zdjęcia</span>
+					<span><i style="background:var(--needs-stroke)"></i>Pliki</span>
+					<span><i style="background:var(--dig-stroke)"></i>Muzyka</span>
+					<span style="margin-left:auto" class="num">1,31 z 2,06 TB</span>
+				</div>
+				<div class="meter" aria-hidden="true">
+					<i style="width:14%;background:var(--accent-stroke)"></i>
+					<i style="width:31%;background:var(--sky-stroke)"></i>
+					<i style="width:12%;background:var(--needs-stroke)"></i>
+					<i style="width:7%;background:var(--dig-stroke)"></i>
+				</div>
+				<div class="panel-foot">
+					<span>Wspólne gospodarstwo domowe</span>
+					<strong>Niewymagane</strong>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="block alt" id="uslugi">
+		<div class="wrap">
+			<div class="sec-head">
+				<h2>Dziewięć usług, jedno konto, siedem osób</h2>
+				<p>Każdy w Rodzie ma własny adres @zaur.app i własną, prywatną przestrzeń. Dzielicie tylko rachunek. I kalendarz urodzin.</p>
+			</div>
+			<div class="apps">
+				<div class="app">
+					<span class="tile" style="background:var(--surface);border-color:var(--line)"><img src="/favicon.svg" alt="" /></span>
+					<div><h3>Zaur Mail</h3><p>Poczta, która sama sortuje listy na ważne, potwierdzenia i newslettery. Bez reklam w skrzynce.</p><span class="host">mail.zaur.app</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--ok-fill);border-color:var(--ok-stroke);color:var(--ok-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="3.5" width="11" height="10" rx="1.5"/><path d="M2.5 6.5h11M5.5 2v3M10.5 2v3"/></svg></span>
+					<div><h3>Zaur Kalendarz</h3><p>Wspólny kalendarz Rodu, święta i strefy czasowe. Wigilia w Tarnowie i w Chicago o tej samej godzinie.</p><span class="host">mail.zaur.app/calendar</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--ind-fill);border-color:var(--ind-stroke);color:var(--ind-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="5.5" r="2.5"/><path d="M3.5 13.5c.6-2.4 2.3-3.5 4.5-3.5s3.9 1.1 4.5 3.5"/></svg></span>
+					<div><h3>Zaur Kontakty</h3><p>Wszystkie numery w jednym miejscu, łącznie z tym do szwagra, którego nikt nie miał.</p><span class="host">mail.zaur.app/contacts</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--needs-fill);border-color:var(--needs-stroke);color:var(--needs-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 4.5a1 1 0 0 1 1-1h3l1.5 1.5h4.5a1 1 0 0 1 1 1v6.5a1 1 0 0 1-1 1h-9a1 1 0 0 1-1-1z"/></svg></span>
+					<div><h3>Zaur Pliki</h3><p>Dysk na dokumenty, skany i&nbsp;tę jedną fakturę, której szukacie co roku w&nbsp;kwietniu.</p><span class="host">mail.zaur.app/files</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--flag-fill);border-color:var(--flag-stroke);color:var(--flag-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="4" width="9" height="8" rx="1.5"/><path d="M10.5 7l4-2.2v6.4l-4-2.2"/></svg></span>
+					<div><h3>Zaur Meet</h3><p>Wideorozmowy prosto z&nbsp;poczty. Niedzielny obiad dla tych, którzy nie dojechali.</p><span class="host">mail.zaur.app</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--dig-fill);border-color:var(--dig-stroke);color:var(--dig-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12V3.5l7-1.5v8.5"/><circle cx="4.25" cy="12" r="1.75"/><circle cx="11.25" cy="10.5" r="1.75"/></svg></span>
+					<div><h3>Zaur Music</h3><p>Twoja biblioteka muzyki w każdym telefonie. Dodasz utwór z YouTube jednym kliknięciem.</p><span class="host">music.zaur.app</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--sky-fill);border-color:var(--sky-stroke);color:var(--sky-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1.5"/><path d="M2 11l3.5-3.5 3 3 2-2L14 12"/><circle cx="10.5" cy="6" r="1"/></svg></span>
+					<div><h3>Zaur Photos</h3><p>Kopia zdjęć z&nbsp;każdego telefonu w&nbsp;Rodzie. Wspólne albumy z wesela, bez przesyłania na WhatsAppie.</p><span class="host">photos.zaur.app</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--red-fill);border-color:var(--red-stroke);color:var(--red-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="3" width="13" height="10" rx="3"/><path d="M6.5 5.8v4.4L10.3 8z" fill="currentColor"/></svg></span>
+					<div><h3>BarTube</h3><p>Filmy bez reklam dla całego Rodu. Bez sprawdzania, gdzie kto śpi i&nbsp;skąd się loguje.</p><span class="host">bartube.zaur.app</span></div>
+				</div>
+				<div class="app">
+					<span class="tile" style="background:var(--teal-fill);border-color:var(--teal-stroke);color:var(--teal-ink)"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="12" height="7.5" rx="1.5"/><path d="M4.5 6L11 2.5"/><circle cx="10.5" cy="9.75" r="1.75"/><path d="M4.5 8.5h2.5M4.5 11h2.5"/></svg></span>
+					<div><h3>Radio Bartek</h3><p>Radio na żywo z&nbsp;Krakowa. Jedyne radio, w&nbsp;którym możesz zamówić piosenkę u&nbsp;szwagra.</p><span class="host">radio.zaur.app</span></div>
+				</div>
+			</div>
+		</div>
+	</section>
+
+	<section class="block" id="cennik">
+		<div class="wrap">
+			<div class="price-bar">
+				<div class="sec-head" style="margin:0">
+					<h2>Trochę więcej. Trochę taniej.</h2>
+					<p>Każdy plan obejmuje do 7 osób, wszystkie usługi Zaur i brak wymogu wspólnego adresu.</p>
+				</div>
+				<div class="seg" role="group" aria-label="Okres rozliczeniowy">
+					<button type="button" aria-pressed="true" data-period="m">Miesięcznie</button>
+					<button type="button" aria-pressed="false" data-period="y">Rocznie <span class="save">−2 MIES.</span></button>
+				</div>
+			</div>
+
+			<div class="plans">
+				<article class="plan">
+					<h3>Ród Podstawowy</h3>
+					<div class="gb">103<small>GB</small></div>
+					<p class="vs">Google One: <s>100 GB</s></p>
+					<div class="price"><b data-m="8,79 zł" data-y="87,49 zł">8,79 zł</b><span data-m="/mies." data-y="/rok">/mies.</span></div>
+					<p class="was" data-m="zamiast 8,99 zł" data-y="zamiast 89,99 zł">zamiast <s>8,99 zł</s></p>
+					<ul>
+						<li><svg><use href="#i-check"/></svg>Do 7 osób w Rodzie (Google: 6)</li>
+						<li><svg><use href="#i-check"/></svg>Poczta, kalendarz, pliki, Meet</li>
+						<li><svg><use href="#i-check"/></svg>Radio Bartek na żywo</li>
+						<li><svg><use href="#i-check"/></svg>Bez wymogu wspólnego adresu</li>
+					</ul>
+					<button class="btn" type="button" data-join>Wybierz</button>
+				</article>
+
+				<article class="plan">
+					<h3>Ród Plus</h3>
+					<div class="gb">206<small>GB</small></div>
+					<p class="vs">Google AI Plus: <s>200 GB</s></p>
+					<div class="price"><b data-m="34,49 zł" data-y="344,49 zł">34,49 zł</b><span data-m="/mies." data-y="/rok">/mies.</span></div>
+					<p class="was" data-m="zamiast 34,99 zł" data-y="zamiast 349,99 zł">zamiast <s>34,99 zł</s></p>
+					<ul>
+						<li><svg><use href="#i-check"/></svg>Wszystko z&nbsp;Podstawowego</li>
+						<li><svg><use href="#i-check"/></svg>Zaur Photos dla całego Rodu</li>
+						<li class="plus"><svg><use href="#i-plus"/></svg>AI sortuje pocztę. Nie czyta jej nikomu na głos.</li>
+						<li><svg><use href="#i-check"/></svg>Wspólne albumy</li>
+					</ul>
+					<button class="btn" type="button" data-join>Wybierz</button>
+				</article>
+
+				<article class="plan best">
+					<span class="chip flag" style="background:var(--accent);border-color:var(--accent-edge);color:#fff">Najczęściej wybierany</span>
+					<h3>Ród Premium</h3>
+					<div class="gb">2,06<small>TB</small></div>
+					<p class="vs">Google One Premium: <s>2 TB</s></p>
+					<div class="price"><b data-m="46,49 zł" data-y="464,49 zł">46,49 zł</b><span data-m="/mies." data-y="/rok">/mies.</span></div>
+					<p class="was" data-m="zamiast 46,99 zł" data-y="zamiast 469,99 zł">zamiast <s>46,99 zł</s></p>
+					<ul>
+						<li><svg><use href="#i-check"/></svg>Wszystko z&nbsp;Plusa</li>
+						<li class="plus"><svg><use href="#i-plus"/></svg><span><b>BarTube Premium</b> dla 7 osób w&nbsp;cenie</span></li>
+						<li class="plus"><svg><use href="#i-plus"/></svg>Zaur Music bez limitów</li>
+						<li><svg><use href="#i-check"/></svg>Ciocia w Chicago też się liczy</li>
+					</ul>
+					<button class="btn btn-primary" type="button" data-join>Załóż Ród Premium</button>
+				</article>
+
+				<article class="plan">
+					<h3>Ród Max</h3>
+					<div class="gb">5,15<small>TB</small></div>
+					<p class="vs">Google AI Pro: <s>5 TB</s></p>
+					<div class="price"><b data-m="97,49 zł" data-y="974,49 zł">97,49 zł</b><span data-m="/mies." data-y="/rok">/mies.</span></div>
+					<p class="was" data-m="zamiast 97,99 zł" data-y="zamiast 979,99 zł">zamiast <s>97,99 zł</s></p>
+					<ul>
+						<li><svg><use href="#i-check"/></svg>Wszystko z&nbsp;Premium</li>
+						<li class="plus"><svg><use href="#i-plus"/></svg>Własna audycja w&nbsp;Radiu Bartek (raz w&nbsp;miesiącu)</li>
+						<li class="plus"><svg><use href="#i-plus"/></svg>Priorytetowe wsparcie przez telefon do Bartka</li>
+						<li><svg><use href="#i-check"/></svg>Miejsce na zdjęcia z&nbsp;trzech wesel</li>
+					</ul>
+					<button class="btn" type="button" data-join>Wybierz</button>
+				</article>
+			</div>
+			<p class="price-note">Ceny brutto z&nbsp;VAT. Ceny Google według cennika Google One i&nbsp;YouTube Premium w&nbsp;Polsce, listopad 2026.</p>
+		</div>
+	</section>
+
+	<section class="block alt" id="porownanie">
+		<div class="wrap">
+			<div class="sec-head">
+				<h2>Zaur Ród Premium a&nbsp;Google One&nbsp;+ YouTube Premium Rodzina</h2>
+				<p>To samo, tylko trochę lepiej. A&nbsp;tam, gdzie mieszkacie osobno, dużo lepiej.</p>
+			</div>
+			<div class="cmp-wrap">
+				<table class="cmp">
+					<thead>
+						<tr><th scope="col"></th><th scope="col" class="us">Zaur Ród Premium</th><th scope="col">Google One 2&nbsp;TB + YouTube Premium Rodzina</th></tr>
+					</thead>
+					<tbody>
+						<tr><td>Przestrzeń</td><td class="us num">2,06 TB</td><td class="them num">2 TB</td></tr>
+						<tr><td>Osób w planie</td><td class="us num">7</td><td class="them num">6</td></tr>
+						<tr><td>Wymóg wspólnego gospodarstwa domowego</td><td class="us"><span class="yes"><svg><use href="#i-check"/></svg>Nie ma</span></td><td class="them"><span class="no"><svg><use href="#i-x"/></svg>Wszyscy pod jednym dachem</span></td></tr>
+						<tr><td>Weryfikacja, gdzie mieszkasz</td><td class="us"><span class="yes"><svg><use href="#i-check"/></svg>Nigdy</span></td><td class="them"><span class="no"><svg><use href="#i-x"/></svg>Okresowo</span></td></tr>
+						<tr><td>Filmy bez reklam</td><td class="us"><span class="yes"><svg><use href="#i-check"/></svg>BarTube, w cenie</span></td><td class="them">YouTube Premium, osobno</td></tr>
+						<tr><td>Radio na żywo z&nbsp;Krakowa</td><td class="us"><span class="yes"><svg><use href="#i-check"/></svg>Radio Bartek</span></td><td class="them"><span class="no"><svg><use href="#i-x"/></svg>Brak</span></td></tr>
+						<tr><td>Kto odbiera, gdy coś nie działa</td><td class="us">Bartek</td><td class="them">Formularz</td></tr>
+					</tbody>
+					<tfoot>
+						<tr><td>Razem miesięcznie</td><td class="us num">46,49 zł</td><td class="num">106,98 zł</td></tr>
+					</tfoot>
+				</table>
+			</div>
+		</div>
+	</section>
+
+	<section class="block">
+		<div class="wrap">
+			<figure class="quote" style="margin:0 auto">
+				<span class="av" style="width:44px;height:44px;border-radius:11px;background:var(--needs-fill);border-color:var(--needs-stroke);color:var(--needs-ink);font-size:16px">H</span>
+				<div>
+					<p>„YouTube wyrzucił mnie z&nbsp;rodziny, bo mieszkam w&nbsp;Chicago. W&nbsp;Zaur Ród jestem od trzech tygodni i&nbsp;nikt mnie nie pytał o&nbsp;adres. Nawet siostra.”</p>
+					<cite>Ciocia Halina, członek Rodu od 2026 r.</cite>
+				</div>
+			</figure>
+		</div>
+	</section>
+
+	<section class="block alt" id="pytania">
+		<div class="wrap">
+			<div class="sec-head">
+				<h2>Częste pytania</h2>
+			</div>
+			<div class="faq">
+				<details open>
+					<summary>Czy członkowie Rodu muszą mieszkać razem?</summary>
+					<p>Nie. Możecie mieszkać w&nbsp;różnych miastach, krajach i&nbsp;strefach czasowych. Nie sprawdzamy adresu IP, nie prosimy o&nbsp;zalogowanie się z&nbsp;domowego Wi‑Fi raz w&nbsp;miesiącu i&nbsp;nie wysyłamy maili „Wygląda na to, że nie mieszkasz z&nbsp;tą rodziną”.</p>
+				</details>
+				<details>
+					<summary>Mój brat wyjeżdża na rok do Norwegii. Co się zmieni?</summary>
+					<p>Nic. Gratulujemy bratu.</p>
+				</details>
+				<details>
+					<summary>Dlaczego 103 GB, a&nbsp;nie 100 GB?</summary>
+					<p>Bo 100&nbsp;GB to za mało, a&nbsp;105&nbsp;GB to byłaby już przesada. Te 3&nbsp;GB to mniej więcej 900 zdjęć z&nbsp;wesela kuzyna albo jeden film z&nbsp;komunii w&nbsp;4K.</p>
+				</details>
+				<details>
+					<summary>Czy muszę być spokrewniony z&nbsp;członkami Rodu?</summary>
+					<p>Nie. Ród to ludzie, którzy razem płacą za jeden plan. Szwagier, sąsiad z&nbsp;bloku, kolega z&nbsp;liceum: każdy się liczy.</p>
+				</details>
+				<details>
+					<summary>Kim jest Senior Rodu?</summary>
+					<p>Osobą, która płaci. Zaprasza członków, zarządza miejscami i&nbsp;jako jedyna nie ma prawa narzekać na cenę.</p>
+				</details>
+				<details>
+					<summary>Czy ktoś czyta moją pocztę?</summary>
+					<p>Nie. Poczta Zaur stoi na naszych serwerach w&nbsp;Europie, a&nbsp;każdy członek Rodu ma własną, prywatną skrzynkę. Senior Rodu widzi tylko, ile miejsca zajmujesz. Nie widzi, czym.</p>
+				</details>
+				<details>
+					<summary>Co jeśli pokłócimy się w&nbsp;Wigilię?</summary>
+					<p>Senior Rodu może usunąć członka jednym kliknięciem. Przywrócenie zajmuje tyle samo, a&nbsp;dane czekają 30 dni. Polecamy odczekać do Nowego Roku.</p>
+				</details>
+			</div>
+		</div>
+	</section>
+
+	<section class="band">
+		<div class="wrap">
+			<div class="box">
+				<div>
+					<h2>Zbierz swój Ród</h2>
+					<p>Siedem miejsc. Zero pytań o&nbsp;adres. Od 8,79&nbsp;zł miesięcznie.</p>
+				</div>
+				<button class="btn btn-primary btn-lg" type="button" data-join>Załóż Ród</button>
+			</div>
+		</div>
+	</section>
+</main>
+
+<footer>
+	<div class="wrap">
+		<span>© 2026 Zaur · Kraków</span>
+		<nav>
+			<a href="https://zaur.app">zaur.app</a>
+			<a href="#pytania">Pomoc</a>
+			<a href="#cennik">Cennik</a>
+			<span>Prywatność</span>
+			<span>Regulamin Rodu</span>
+		</nav>
+	</div>
+</footer>
+
+<dialog id="join" aria-labelledby="join-title">
+	<div class="in">
+		<span class="chip needs"><span class="dot"></span>Lista oczekujących</span>
+		<h3 id="join-title">Rody zakładamy ręcznie</h3>
+		<p>Ze względu na ogromne zainteresowanie po zmianach w&nbsp;YouTube Premium każdy Ród zatwierdza osobiście Senior Zaur. Odpisz na wiadomość, z&nbsp;której masz ten link, i&nbsp;podaj, ile osób liczy Twój Ród oraz w&nbsp;ilu domach mieszka.</p>
+	</div>
+	<form method="dialog" class="row">
+		<button class="btn btn-primary" value="ok">Rozumiem</button>
+	</form>
+</dialog>
+
+<script>
+	const seg = document.querySelectorAll('.seg button');
+	seg.forEach((b) => b.addEventListener('click', () => {
+		const p = b.dataset.period;
+		seg.forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+		document.querySelectorAll('.plan [data-m]').forEach((el) => {
+			const text = el.dataset[p];
+			if (el.classList.contains('was')) {
+				const [lead, ...rest] = text.split(' ');
+				el.innerHTML = `${lead} <s>${rest.join(' ')}</s>`;
+			} else el.textContent = text;
+		});
+	}));
+	const dlg = document.getElementById('join');
+	document.querySelectorAll('[data-join]').forEach((b) => b.addEventListener('click', () => dlg.showModal()));
+	dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
+</script>
+</body>
+</html>
