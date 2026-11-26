@@ -23,7 +23,7 @@ SITES = {
     'intertech': 'https://intertechpoland.pl',
     'polaczenie': 'https://gabinet-polaczenie.pl',
     'kurcz': 'https://kurcz.pl',
-    'kruk': 'https://kruk.live',
+    'kruk': 'https://kruk.zaur.app',
 }
 # Products shown in a live window: the capture stands in until the site loads.
 WINDOWS = {

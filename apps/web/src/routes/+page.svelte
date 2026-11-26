@@ -224,7 +224,7 @@
 		{ id: 'polaczenie', name: 'gabinet-polaczenie.pl', href: 'https://gabinet-polaczenie.pl', basket: 'client' },
 		{ id: 'kurcz', name: 'kurcz.pl', href: 'https://kurcz.pl', basket: 'client', uses: ['svelte-i18n'] },
 		{ id: 'radiobartek', name: 'radiobartek.com', href: 'https://radiobartek.com', basket: 'side', live: true, uses: ['zaur-world'] },
-		{ id: 'kruk', name: 'kruk.live', href: 'https://kruk.live', basket: 'side' }
+		{ id: 'kruk', name: 'kruk.zaur.app', href: 'https://kruk.zaur.app', basket: 'side' }
 	];
 	const websites: Site[] = siteFacts.map((s) => ({
 		...s,
